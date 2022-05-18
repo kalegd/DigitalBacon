@@ -1,0 +1,190 @@
+<html>
+  <head>
+    <title>Digital Bacon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./css/index.css">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <!-- SHIM FOR IMPORT MAP CAUSE SAFARI IS OLD MAN -->
+    <script async src="https://unpkg.com/es-module-shims@1.5.4/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "DigitalBacon": "/scripts/core/DigitalBacon.js",
+          "three": "/node_modules/three/build/three.module.js",
+          "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js"
+        }
+      }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous" defer></script>
+    <script src="https://apis.google.com/js/api.js" defer></script>
+    <script src="https://accounts.google.com/gsi/client" defer></script>
+  </head>
+  <body>
+    <div id="container-parent">
+      <div id="container"></div>
+    </div>
+    <div id="open-app-overlay" class="overlay">
+      <div id="open-app-div">
+        <a href="/app">Open App</a>
+      </div>
+      <div id="what-it-is">
+        <h2>Create your own 3D website for free with Digital Bacon</h2>
+        <p>Beautiful immersive environments, easy to use, build whatever you like. What are you waiting for? <a href="/app.html">Try it out Now!</a></p>
+      </div>
+    </div>
+    <div id="fade-dark-to-light" class="overlay"></div>
+    <div id="features" class="overlay">
+      <h2>Features</h2>
+      <div class="dark-box">
+        <div class="icons">
+          <i class="las la-tools"></i>
+        </div>
+        <div><h3>No Coding Needed</h3></div>
+        <div>The visual editor allows you to create 3D websites without any programming knowledge</div>
+      </div>
+      <div class="dark-box">
+        <div class="icons">
+          <i class="las la-piggy-bank"></i>
+        </div>
+        <div><h3>Free</h3></div>
+        <div>You own whatever you create and it costs nothing to use Digital Bacon</div>
+      </div>
+      <div class="dark-box">
+        <div class="icons">
+          <i class="lab la-google-drive"></i>
+        </div>
+        <div><h3>Google Drive</h3></div>
+        <div>Save/Load your projects securely from Google Drive to easily continue working across different devices</div>
+      </div>
+      <div class="dark-box">
+        <div class="icons">
+          <i class="las la-laptop"></i>
+          <i class="las la-vr-cardboard"></i>
+          <i class="las la-mobile"></i>
+        </div>
+        <div><h3>Cross Platform Support</h3></div>
+        <div>Runs on your Computer, Mobile Device, and VR Headset through the browser</div>
+      </div>
+      <div class="dark-box">
+        <div class="icons">
+          <i class="las la-code"></i>
+        </div>
+        <div><h3>Javascript Library</h3></div>
+        <div>Developers can import the Digital Bacon library to integrate within their own more complex projects</div>
+      </div>
+      <div class="dark-box">
+        <div class="icons">
+          <i class="las la-lock-open"></i>
+        </div>
+        <div><h3>Open Source</h3></div>
+        <div>MPL 2.0 License allows you to use Digital Bacon as a library without affecting the privacy of your own software</div>
+      </div>
+    </div>
+    <div id="fade-light-to-dark" class="overlay"></div>
+    <div id="hosting" class="overlay">
+      <h2>Hosting</h2>
+      <div class="light-box">
+        <div><h3>Host It Yourself</h3></div>
+        <div>Want to host a Digital Bacon website through GitHub or AWS? Just follow one of our <a href="/resources#self-hosting">self hosting guides</a></div>
+      </div>
+      <div class="light-box">
+        <div><h3>Use a Hosting Provider</h3></div>
+        <div>Coming soon. Currently working with hosting providers to support Digital Bacon out of the box</div>
+        <!--<div>Don't want to deal with the hassle of hosting it yourself? Use a Hosting Provider that supports Digital Bacon like <a href="https://mydigitalbacon.com">MyDigitalBacon.com</a></div>-->
+      </div>
+    </div>
+    <div id="fade-dark-to-light" class="overlay"></div>
+    <div id="resources" class="overlay">
+      <h2>Resources</h2>
+      <div class="dark-box">
+        <div><h3>Tutorials</h3></div>
+        <div>Step-by-step tutorials on how to build 3D websites like art gallaries, natural wonderlands, and creative spaces</div>
+        <br>
+        <div><a href="/resources#tutorials">Tutorials</a></div>
+      </div>
+      <div class="dark-box">
+        <div><h3>Application Guide</h3></div>
+        <div>In depth documentation on how to configure assets such as models, images, shapes, lights, materials, and textures</div>
+        <br>
+        <div><a href="/resources#documentation">Find the guide here</a></div>
+      </div>
+      <div class="dark-box">
+        <div><h3>Developer Guide</h3></div>
+        <div>Developers can find more information about using Digital Bacon as a library and its API documentation in GitHub</div>
+        <br>
+        <div><a href="https://github.com/kalegd/digitalbacon">GitHub Repository<i class="lab la-github"></i></a></div>
+      </div>
+      <div class="dark-box">
+        <div><h3>Swag</h3></div>
+        <div>Want to rep Digital Bacon with tank tops, T-shirts, stickers, and more? Check out our merchandise</div>
+        <br>
+        <div><a href="https://digital-bacon.creator-spring.com">Shop Now</a></div>
+      </div>
+    </div>
+    <div id="fade-light-to-dark" class="overlay"></div>
+    <div id="contact-us" class="overlay">
+      <h2>Contact Us</h2>
+      <p>For feature requests and bug reports, please use the project's <a href="https://github.com/kalegd/digitalbacon">GitHub Repository<i class="lab la-github"></i></a></p>
+      <p>For all other matters, please reach out to us on <a href="https://twitter.com/DigitalBacon3D">Twitter<i class="lab la-twitter"></i></a></p>
+    </div>
+    <script type="module">
+      import {
+          setup,
+          getDeviceType,
+          disableImmersion,
+          LibraryHandler,
+          ProjectHandler
+      } from 'DigitalBacon';
+      import { Object3D } from 'three';
+
+      let app, camera, cameraFocus, scene;
+
+      function addControlsPanel() {
+          let imagePath;
+          let deviceType = getDeviceType();
+          if(deviceType == "XR") {
+              imagePath = "images/vr_controls.png";
+          } else if(deviceType == "MOBILE") {
+              imagePath = "images/mobile_controls.png";
+          } else if(deviceType == "POINTER") {
+              imagePath = "images/computer_controls.png";
+          }
+          LibraryHandler.loadAsset(imagePath, (assetId) => {
+                ProjectHandler.addImage({
+                    "assetId": assetId,
+                    "position": [0, 1.35, -4.72],
+                    "scale": [3.77, 3.77, 3.77],
+                }, true);
+            });
+      }
+
+      function onResize() {
+          let container = document.getElementById("container");
+          let aspectRatio = container.clientWidth / container.clientHeight;
+          if(aspectRatio < 1.08) {
+              camera.position.set(0, 8 * 1.08 / aspectRatio, 23 * 1.08 / aspectRatio);
+          } else {
+            camera.position.set(0, 8, 23);
+          }
+      }
+
+      disableImmersion();
+      setup("container", "/projects/default-project.zip").then((App) => {
+          addControlsPanel();
+          app = App;
+          camera = App.getCamera();
+          cameraFocus = new Object3D();
+          scene = App.getScene();
+          scene.add(cameraFocus);
+          cameraFocus.add(camera);
+          camera.position.set(0, 8, 23);
+          camera.rotation.set(-Math.PI / 10, 0, 0);
+          setInterval(() => {
+              cameraFocus.rotateY(Math.PI / 5000);
+          }, 10);
+          window.addEventListener('resize', onResize);
+          onResize();
+      });
+    </script>
+  </body>
+</html>

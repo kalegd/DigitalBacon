@@ -1,0 +1,136 @@
+body {
+    background-color: #f0eded;;
+    color: #FFF;
+    margin: 0px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    font-family: sans-serif;
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Old versions of Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, Chrome, Edge, Opera
+                                    and Firefox */
+}
+
+p {
+    color: white;
+}
+
+a, a:hover, a:active, a:visited {
+    color: #ffc7e5;
+}
+
+.light-box a, .light-box a:hover, .light-box a:active, .light-box a:visited {
+    color: #4723D9;
+}
+
+#container-parent, #container {
+    height: 100%;
+    width: 100%;
+    position: fixed;
+}
+
+#open-app-overlay {
+    height: 100%;
+}
+
+#open-app-div {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 101;
+    padding: 25px 0;
+}
+
+#open-app-div > a {
+    padding: 12px;
+    border: 2px solid #ffc7e5;
+    border-radius: 4px;
+    color: #ffc7e5;
+    font: normal 18px sans-serif;
+    outline: none;
+    text-decoration: none;
+}
+
+#open-app-div a:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#what-it-is {
+    background: rgba(0,0,0,0.5);
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+#what-it-is > * {
+    padding: 0px 7px;
+}
+
+#features, #resources {
+    background: rgba(255, 255, 255, 0.5);
+    padding: 1px 20px;
+    min-height: 100%;
+    color: #4723D9;
+}
+
+#hosting, #contact-us {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px 20px;
+    min-height: 100%;
+    color: #ffc7e5;
+}
+
+.dark-box, .light-box {
+    height: 180px;
+    max-width: 250px;
+    border-radius: 8px;
+    padding: 35px 10px;
+    display: inline-table;
+    margin: 5px;
+}
+
+.dark-box {
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+}
+
+.light-box {
+    background-color: rgba(255, 255, 255, 0.75);
+    color: black;
+}
+
+.dark-box > .icons {
+    font-size: 32px;
+    height: 37px;
+}
+
+#fade-dark-to-light {
+    height: 20px;
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(255,255,255,0.5));
+}
+
+#fade-light-to-dark {
+    height: 20px;
+    background-image: linear-gradient(rgba(255,255,255,0.5), rgba(0,0,0,0.5));
+}
+
+.overlay {
+    position: relative;
+}
+
+@media only screen and (max-height: 450px) {
+    #open-app-div {
+        top: 25%;
+    }
+}
+
+@media only screen and (max-width: 320px) and (max-height: 500px) {
+    #open-app-div {
+        top: 25%;
+    }
+}

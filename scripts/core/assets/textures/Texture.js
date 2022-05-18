@@ -1,0 +1,131 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+import global from '/scripts/core/global.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
+import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import * as THREE from 'three';
+
+const FIELDS = [];
+
+export default class Texture {
+    constructor(params = {}) {
+        this._id = params['id'] || uuidv4();
+        this._name = ('name' in params)
+            ? params['name']
+            : this._getDefaultName();
+    }
+
+    _getDefaultName() {
+        console.error("Texture._getDefaultName() should be overridden");
+        return;
+    }
+
+    _createTexture() {
+        console.error("Texture._createTexture() should be overridden");
+        return;
+    }
+
+    exportParams() {
+        return {
+            "id": this._id,
+            "name": this._name,
+        };
+    }
+
+    setFromParams(params) {
+        console.warn("Unexpectedly trying to setFromParams() for Texture...");
+        //PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
+    }
+
+    getMenuFields(fields) {
+        if(this._menuFields) return this._menuFields;
+
+        let menuFieldsMap = this._getMenuFieldsMap();
+        let menuFields = [];
+        for(let field of fields) {
+            if(field.name in menuFieldsMap) {
+                menuFields.push(menuFieldsMap[field.name]);
+            }
+        }
+        this._menuFields = menuFields;
+        return menuFields;
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = {};
+        return menuFieldsMap;
+    }
+
+    _updateEnum(parameter, option, map) {
+        let val;
+        if(map) {
+            val = map[option];
+        } else {
+            val = option;
+        }
+        this._texture[parameter] = val;
+        this['_' + parameter] = val;
+        this._updateTexture();
+    }
+
+    _updateTexture() {
+        let oldTexture = this._texture;
+        this._createTexture();
+        setTimeout(() => {
+            oldTexture.dispose();
+        }, 20);
+        PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
+    }
+
+    dispose() {
+        setTimeout(() => {
+            this._texture.dispose();
+        }, 20);
+    }
+
+    getTexture() {
+        return this._texture;
+    }
+
+    getPreviewTexture() {
+        return this._texture;
+    }
+
+    getAssetIds() {
+        console.error("Texture.getAssetIds() should be overridden");
+        return;
+    }
+
+    getTextureType() {
+        console.error("Texture.getTextureType() should be overridden");
+        return;
+    }
+
+    getId() {
+        return this._id;
+    }
+
+    getName() {
+        return this._name;
+    }
+
+    setName(newName, isUndoRedo) {
+        if(!newName || this._name == newName) return;
+        let oldName = this._name;
+        this._name = newName;
+        PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
+        if(!isUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this.setName(oldName, true);
+            }, () => {
+                this.setName(newName, true);
+            });
+        }
+    }
+}

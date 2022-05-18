@@ -1,0 +1,22 @@
+{
+  "scripts": {
+    "build": "rollup -c",
+    "start": "http-server -c-1 -p 8000"
+  },
+  "dependencies": {
+    "file-saver": "2.0.5",
+    "jszip": "3.9.1",
+    "jszip-utils": "0.1.0",
+    "nipplejs": "0.9.1",
+    "three": "0.139.0",
+    "three-mesh-ui": "6.4.3"
+  },
+  "devDependencies": {
+    "@rollup/plugin-replace": "4.0.0",
+    "http-server": "14.1.0",
+    "mime": "3.0.0",
+    "rollup": "^2.64.0",
+    "rollup-plugin-root-import": "^1.0.0",
+    "rollup-plugin-terser": "^7.0.2"
+  }
+}
