@@ -53,11 +53,15 @@ class UploadHandler {
     }
 
     _uploadAssets() {
+        this.uploadFiles(this._input.files, this._callback);
+    }
+
+    uploadFiles(files, callback) {
         //Adding functionLock for potential race condition where LibraryHandler
         //callback gets called before next iteration of loop for multiple files
         let functionLock = uuidv4();
         this._locks.add(functionLock);
-        for(let file of this._input.files) {
+        for(let file of files) {
             let extension = file.name.split('.').pop().toLowerCase();
             if(extension in FileTypes) {
                 let lock = uuidv4();
@@ -65,13 +69,13 @@ class UploadHandler {
                     this._locks.add(lock);
                     LibraryHandler.addNewAsset(file, file.name,
                         AssetTypes.IMAGE, (assetId) => {
-                            this._libraryCallback(assetId, lock);
+                            this._libraryCallback(assetId, lock, callback);
                         });
                 } else if(extension in ModelFileTypes) {
                     this._locks.add(lock);
                     LibraryHandler.addNewAsset(file, file.name,AssetTypes.MODEL,
                         (assetId) => {
-                            this._libraryCallback(assetId, lock);
+                            this._libraryCallback(assetId, lock, callback);
                         });
                 } else {
                     console.log("TODO: Support other file types");
@@ -83,16 +87,16 @@ class UploadHandler {
         this._input.value = '';
         this._locks.delete(functionLock);
         if(this._locks.size == 0) {
-            if(this._callback) this._callback(this._assetIds);
+            if(callback) callback(this._assetIds);
             this._assetIds = [];
         }
     }
 
-    _libraryCallback(assetId, lock) {
+    _libraryCallback(assetId, lock, callback) {
         this._assetIds.push(assetId);
         this._locks.delete(lock);
         if(this._locks.size == 0) {
-            if(this._callback) this._callback(this._assetIds);
+            if(callback) callback(this._assetIds);
             this._assetIds = [];
         }
     }

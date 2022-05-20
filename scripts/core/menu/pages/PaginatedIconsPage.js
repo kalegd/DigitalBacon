@@ -76,7 +76,6 @@ class PaginatedIconsPage extends MenuPage {
                 button.add(imageBlock);
                 button.add(textBlock);
                 row.add(button);
-                window.b = button;
                 this._paginatedListButtons.push(button);
                 let interactable = new PointerInteractable(button, () => {
                     let index = this._page * ROWS * OPTIONS + OPTIONS * i + j;

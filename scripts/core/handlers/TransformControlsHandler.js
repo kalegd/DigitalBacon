@@ -6,14 +6,17 @@
 
 import global from '/scripts/core/global.js';
 import UserController from '/scripts/core/assets/UserController.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import { vector3s } from '/scripts/core/helpers/constants.js';
+import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { TransformControls } from '/node_modules/three/examples/jsm/controls/TransformControls.js';
 import * as THREE from 'three';
@@ -143,8 +146,14 @@ class TransformControlsHandler {
     }
 
     _paste(e) {
-        if(e.clipboardData.types.indexOf('text/digitalbacon') < 0) return;
-        let data = e.clipboardData.getData('text/digitalbacon');
+        if(e.clipboardData.types.indexOf('Files') >= 0)
+            this._pasteFiles(e.clipboardData.files);
+        if(e.clipboardData.types.indexOf('text/digitalbacon') >= 0)
+            this._parseDigitalBaconData(
+                e.clipboardData.getData('text/digitalbacon'));
+    }
+
+    _pasteDigitalBaconData(data) {
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
         let instances = ProjectHandler.getInstancesForAssetId(assetId);
@@ -156,6 +165,39 @@ class TransformControlsHandler {
             if(!this._isDragging(instance)) this._offsetClone(clone);
             e.preventDefault();
         }
+    }
+
+    _pasteFiles(files) {
+        UploadHandler.uploadFiles(files, (assetIds) => {
+            global.camera.getWorldPosition(vector3s[0]);
+            global.camera.getWorldDirection(vector3s[1]);
+            vector3s[1].normalize().multiplyScalar(11/12);
+            vector3s[0].add(vector3s[1]);
+            let position = vector3s[0].toArray();
+            global.camera.getWorldQuaternion(quaternion);
+            euler.setFromQuaternion(quaternion.normalize());
+            let rotation = euler.toArray();
+            for(let assetId of assetIds) {
+                let type = LibraryHandler.getType(assetId);
+                if(type == AssetTypes.IMAGE) {
+                    ProjectHandler.addImage({
+                        "assetId": assetId,
+                        "position": position,
+                        "rotation": rotation,
+                        "doubleSided": true,
+                        "transparent": true,
+                        "enableInteractions": true,
+                    });
+                } else if(type == AssetTypes.MODEL) {
+                    ProjectHandler.addGLTF({
+                        "assetId": assetId,
+                        "position": position,
+                        "rotation": rotation,
+                        "enableInteractions": true,
+                    });
+                }
+            }
+        });
     }
 
     _clone(option) {

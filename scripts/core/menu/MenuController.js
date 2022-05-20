@@ -208,7 +208,6 @@ export default class MenuController extends PointerInteractableEntity {
         vector3s[1].normalize().divideScalar(menuDistanceScale);
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
-        //this._object.add(this._object);
         this.addToScene(this._scene);
     }
 
