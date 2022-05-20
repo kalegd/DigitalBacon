@@ -4,15 +4,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
+import { Colors, Fonts, FontSizes, vector3s } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-//import ThreeMeshUI from 'three-mesh-ui';
+import ThreeMeshUI from 'three-mesh-ui';
 
 class AssetPage extends PaginatedPage {
     constructor(controller) {
@@ -20,6 +22,7 @@ class AssetPage extends PaginatedPage {
         this._instances = {};
         this._items = Object.keys(this._instances);
         this._addPageContent();
+        this._createAddButton();
     }
 
     _addPageContent() {
@@ -34,6 +37,52 @@ class AssetPage extends PaginatedPage {
         this._addList();
     }
 
+    _createAddButton() {
+        let addButtonParent = new ThreeMeshUI.Block({
+            height: 0.06,
+            width: 0.06,
+            backgroundColor: Colors.defaultMenuBackground,
+            backgroundOpacity: 0,
+        });
+        let addButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "+",
+            'fontSize': 0.04,
+            'height': 0.04,
+            'width': 0.04,
+        });
+        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.position.fromArray([.175, 0.12, -0.001]);
+        addButtonParent.add(addButton);
+        let interactable = new PointerInteractable(addButton, () => {
+            let position = this._controller
+                .getPosition(vector3s[0]);
+            let direction = this._controller
+                .getDirection(vector3s[1]).normalize()
+                .divideScalar(4);
+            position.sub(direction);
+            let params = {
+                assetId: this._assetId,
+                position: position.toArray(),
+                rotation: this._controller.getRotationArray(),
+                enableInteractions: true,
+            };
+            let type = LibraryHandler.getType(this._assetId);
+            if(type == AssetTypes.IMAGE) {
+                params['doubleSided'] = true;
+                params['transparent'] = true;
+                ProjectHandler.addImage(params);
+            } else if(type == AssetTypes.MODEL) {
+                ProjectHandler.addGLTF(params);
+            } else if(type == AssetTypes.SHAPE) {
+                ProjectHandler.addShape(params, this._assetId);
+            } else if(type == AssetTypes.LIGHT) {
+                ProjectHandler.addLight(params, this._assetId);
+            }
+        });
+        this._containerInteractable.addChild(interactable);
+        this._object.add(addButtonParent);
+    }
+
     _getItemName(item) {
         return this._instances[item].getName();
     }
@@ -45,6 +94,7 @@ class AssetPage extends PaginatedPage {
     }
 
     _refreshItems() {
+        this._instances = ProjectHandler.getInstancesForAssetId(this._assetId);
         this._items = Object.keys(this._instances);
     }
 
@@ -57,7 +107,10 @@ class AssetPage extends PaginatedPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
+            console.log(instance);
+            console.log(this._assetId);
             if(instance.getAssetId() == this._assetId) {
+                console.log("Hello");
                 this._refreshItems();
                 this._updateItemsGUI();
             }

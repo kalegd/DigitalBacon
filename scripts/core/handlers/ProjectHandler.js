@@ -124,12 +124,12 @@ class ProjectHandler {
 
     _addLights(instancesParams, assetId, ignoreUndoRedo) {
         for(let params of instancesParams) {
-            this.addLight(new this._lightClassMap[assetId](params),
-                ignoreUndoRedo);
+            this.addLight(params, assetId, ignoreUndoRedo);
         }
     }
 
-    addLight(instance, ignoreUndoRedo) {
+    addLight(params, assetId, ignoreUndoRedo) {
+        let instance = new this._lightClassMap[assetId](params);
         instance.addToScene(this._scene);
         this._addAsset(instance, ignoreUndoRedo);
         return instance;
@@ -142,12 +142,12 @@ class ProjectHandler {
 
     _addShapes(instancesParams, assetId, ignoreUndoRedo) {
         for(let params of instancesParams) {
-            this.addShape(new this._shapeClassMap[assetId](params),
-                ignoreUndoRedo);
+            this.addShape(params, assetId, ignoreUndoRedo);
         }
     }
 
-    addShape(instance, ignoreUndoRedo) {
+    addShape(params, assetId, ignoreUndoRedo) {
+        let instance = new this._shapeClassMap[assetId](params);
         instance.addToScene(this._scene);
         this._addAsset(instance, ignoreUndoRedo);
         return instance;

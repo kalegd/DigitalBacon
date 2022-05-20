@@ -65,7 +65,7 @@ class UploadPage extends MenuPage {
                 ProjectHandler.addImage({
                     "assetId": assetId,
                     "position": position.toArray(),
-                    "rotation": [0,0,0],
+                    "rotation": this._controller.getRotationArray(),
                     "doubleSided": true,
                     "transparent": true,
                     "enableInteractions": true,
@@ -74,7 +74,7 @@ class UploadPage extends MenuPage {
                 ProjectHandler.addGLTF({
                     "assetId": assetId,
                     "position": position.toArray(),
-                    "rotation": [0,0,0],
+                    "rotation": this._controller.getRotationArray(),
                     "enableInteractions": true,
                 });
             }
