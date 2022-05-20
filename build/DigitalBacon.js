@@ -8585,6 +8585,158 @@ class InteractableHandler {
 
 }
 
+const FileTypes$1 = {
+    jpg: "jpg",
+    jpeg: "jpeg",
+    png: "png",
+    glb: "glb",
+};
+
+const FileTypes = {
+    glb: "glb",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class UploadHandler {
+    constructor() {
+        this._input = document.createElement('input');
+        this._input.type = "file";
+        this._locks = new Set();
+        this._assetIds = [];
+        this._fileListenerActive = false;
+        this._triggerUpload = false;
+        this._addEventListeners();
+    }
+
+    _addEventListeners() {
+        this._input.addEventListener("change", () => { this._upload(); });
+        if(global$1.deviceType != "XR") {
+            this._input.addEventListener("click",
+                (e) => { e.stopPropagation(); });
+            this._eventType = global$1.deviceType == "MOBILE"
+                ? 'touchend'
+                : 'click';
+            this._clickListener = (e) => {
+                setTimeout(() => {
+                    if(this._triggerUpload) {
+                        this._triggerUpload = false;
+                        this._input.click();
+                    }
+                }, 20);
+            };
+            //Why this convoluted chain of event listener checking a variable
+            //set by interactable action (which uses polling)? Because we can't
+            //trigger the file input with a click event outside of an event
+            //listener on Firefox and Safari :(
+        }
+    }
+
+    _uploadProjectFile() {
+        if(this._input.files.length > 0 && this._callback)
+            this._callback(this._input.files[0]);
+    }
+
+    _uploadAssets() {
+        this.uploadFiles(this._input.files, this._callback);
+    }
+
+    uploadFiles(files, callback) {
+        //Adding functionLock for potential race condition where LibraryHandler
+        //callback gets called before next iteration of loop for multiple files
+        let functionLock = uuidv4();
+        this._locks.add(functionLock);
+        for(let file of files) {
+            let extension = file.name.split('.').pop().toLowerCase();
+            if(extension in FileTypes$1) {
+                let lock = uuidv4();
+                if(extension in FileTypes$2) {
+                    this._locks.add(lock);
+                    libraryHandler.addNewAsset(file, file.name,
+                        AssetTypes.IMAGE, (assetId) => {
+                            this._libraryCallback(assetId, lock, callback);
+                        });
+                } else if(extension in FileTypes) {
+                    this._locks.add(lock);
+                    libraryHandler.addNewAsset(file, file.name,AssetTypes.MODEL,
+                        (assetId) => {
+                            this._libraryCallback(assetId, lock, callback);
+                        });
+                } else {
+                    console.log("TODO: Support other file types");
+                }
+            } else {
+                console.log("TODO: Tell user invalid filetype, and list valid ones");
+            }
+        }
+        this._input.value = '';
+        this._locks.delete(functionLock);
+        if(this._locks.size == 0) {
+            if(callback) callback(this._assetIds);
+            this._assetIds = [];
+        }
+    }
+
+    _libraryCallback(assetId, lock, callback) {
+        this._assetIds.push(assetId);
+        this._locks.delete(lock);
+        if(this._locks.size == 0) {
+            if(callback) callback(this._assetIds);
+            this._assetIds = [];
+        }
+    }
+
+    listenForAssets(callback, supportMultipleFiles, type) {
+        if(this._fileListenerActive)
+            throw new Error("File listener already in use");
+        this._callback = callback;
+        this._fileListenerActive = true;
+        this._input.multiple = supportMultipleFiles;
+        this._upload = this._uploadAssets;
+        if(type == AssetTypes.IMAGE) {
+            this._input.accept = "image/*";
+        } else if(type == AssetTypes.MODEL) {
+            this._input.accept = ".glb";
+        } else {
+            this._input.accept = '';
+        }
+        document.addEventListener(this._eventType, this._clickListener);
+    }
+
+    listenForProjectFile(callback) {
+        if(this._fileListenerActive)
+            throw new Error("File listener already in use");
+        this._callback = callback;
+        this._fileListenerActive = true;
+        this._input.multiple = false;
+        this._input.accept = '.zip';
+        this._upload = this._uploadProjectFile;
+        document.addEventListener(this._eventType, this._clickListener);
+    }
+
+    triggerUpload() {
+        if(global$1.deviceType == 'XR') {
+            sessionHandler.exitXRSession();
+            this._input.click();
+        } else {
+            this._triggerUpload = true;
+        }
+    }
+
+    stopListening() {
+        this._callback = null;
+        this._fileListenerActive = false;
+        document.removeEventListener(this._eventType, this._clickListener);
+    }
+
+}
+
+let uploadHandler = new UploadHandler();
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10774,8 +10926,14 @@ class TransformControlsHandler {
     }
 
     _paste(e) {
-        if(e.clipboardData.types.indexOf('text/digitalbacon') < 0) return;
-        let data = e.clipboardData.getData('text/digitalbacon');
+        if(e.clipboardData.types.indexOf('Files') >= 0)
+            this._pasteFiles(e.clipboardData.files);
+        if(e.clipboardData.types.indexOf('text/digitalbacon') >= 0)
+            this._parseDigitalBaconData(
+                e.clipboardData.getData('text/digitalbacon'));
+    }
+
+    _pasteDigitalBaconData(data) {
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
         let instances = projectHandler.getInstancesForAssetId(assetId);
@@ -10787,6 +10945,39 @@ class TransformControlsHandler {
             if(!this._isDragging(instance)) this._offsetClone(clone);
             e.preventDefault();
         }
+    }
+
+    _pasteFiles(files) {
+        uploadHandler.uploadFiles(files, (assetIds) => {
+            global$1.camera.getWorldPosition(vector3s[0]);
+            global$1.camera.getWorldDirection(vector3s[1]);
+            vector3s[1].normalize().multiplyScalar(11/12);
+            vector3s[0].add(vector3s[1]);
+            let position = vector3s[0].toArray();
+            global$1.camera.getWorldQuaternion(quaternion);
+            euler.setFromQuaternion(quaternion.normalize());
+            let rotation = euler.toArray();
+            for(let assetId of assetIds) {
+                let type = libraryHandler.getType(assetId);
+                if(type == AssetTypes.IMAGE) {
+                    projectHandler.addImage({
+                        "assetId": assetId,
+                        "position": position,
+                        "rotation": rotation,
+                        "doubleSided": true,
+                        "transparent": true,
+                        "enableInteractions": true,
+                    });
+                } else if(type == AssetTypes.MODEL) {
+                    projectHandler.addGLTF({
+                        "assetId": assetId,
+                        "position": position,
+                        "rotation": rotation,
+                        "enableInteractions": true,
+                    });
+                }
+            }
+        });
     }
 
     _clone(option) {
@@ -13542,34 +13733,7 @@ class ImageInput extends PointerInteractableEntity {
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
         this._updateImage(this._lastValue);
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _createInputs(title) {
@@ -13618,28 +13782,16 @@ class ImageInput extends PointerInteractableEntity {
                 if(assetId == "null\n") assetId = null;
                 this._handleAssetSelection(assetId);
             }, () => {
-                this._triggerFileUpload = true;
+                uploadHandler.triggerUpload();
             }, () => {
-                document.removeEventListener(this._eventType,
-                    this._clickListener);
+                uploadHandler.stopListening();
             });
             global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
-            document.addEventListener(this._eventType, this._clickListener);
+            uploadHandler.listenForAssets((assetIds) => {
+                if(assetIds.length > 0) this._handleAssetSelection(assetIds[0]);
+            }, false, AssetTypes.IMAGE);
         });
         this._pointerInteractable.addChild(interactable);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$2) {
-                libraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => { this._handleAssetSelection(assetId); });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
     }
 
     _handleAssetSelection(assetId) {
@@ -14003,35 +14155,8 @@ class CubeImageInput extends PointerInteractableEntity {
         this._title = params['title'] || null;
         this._buttons = [];
         this._createInputs();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
         for(let side of SIDES) {
             this._updateImage(side, this._lastValues[side]);
-        }
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
         }
     }
 
@@ -14119,28 +14244,16 @@ class CubeImageInput extends PointerInteractableEntity {
             this._handleAssetSelection(side, assetId);
         }, () => {
             this._fileUploadSide = side;
-            this._triggerFileUpload = true;
+            uploadHandler.triggerUpload();
         }, () => {
-            document.removeEventListener(this._eventType, this._clickListener);
+            uploadHandler.stopListening();
         });
         global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
         document.addEventListener(this._eventType, this._clickListener);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$2) {
-                libraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => {
-                        this._handleAssetSelection(this._fileUploadSide,
-                            assetId);
-                    });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
+        uploadHandler.listenForAssets((assetIds) => {
+            if(assetIds.length > 0)
+                this._handleAssetSelection(this._fileUploadSide, assetIds[0]);
+        }, false, AssetTypes.IMAGE);
     }
 
     _handleAssetSelection(side, assetId) {
@@ -16098,12 +16211,12 @@ class ProjectHandler {
 
     _addLights(instancesParams, assetId, ignoreUndoRedo) {
         for(let params of instancesParams) {
-            this.addLight(new this._lightClassMap[assetId](params),
-                ignoreUndoRedo);
+            this.addLight(params, assetId, ignoreUndoRedo);
         }
     }
 
-    addLight(instance, ignoreUndoRedo) {
+    addLight(params, assetId, ignoreUndoRedo) {
+        let instance = new this._lightClassMap[assetId](params);
         instance.addToScene(this._scene);
         this._addAsset(instance, ignoreUndoRedo);
         return instance;
@@ -16116,12 +16229,12 @@ class ProjectHandler {
 
     _addShapes(instancesParams, assetId, ignoreUndoRedo) {
         for(let params of instancesParams) {
-            this.addShape(new this._shapeClassMap[assetId](params),
-                ignoreUndoRedo);
+            this.addShape(params, assetId, ignoreUndoRedo);
         }
     }
 
-    addShape(instance, ignoreUndoRedo) {
+    addShape(params, assetId, ignoreUndoRedo) {
+        let instance = new this._shapeClassMap[assetId](params);
         instance.addToScene(this._scene);
         this._addAsset(instance, ignoreUndoRedo);
         return instance;
@@ -16647,7 +16760,6 @@ class PaginatedPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-//import ThreeMeshUI from 'three-mesh-ui';
 
 class AssetPage extends PaginatedPage {
     constructor(controller) {
@@ -16655,6 +16767,7 @@ class AssetPage extends PaginatedPage {
         this._instances = {};
         this._items = Object.keys(this._instances);
         this._addPageContent();
+        this._createAddButton();
     }
 
     _addPageContent() {
@@ -16669,6 +16782,52 @@ class AssetPage extends PaginatedPage {
         this._addList();
     }
 
+    _createAddButton() {
+        let addButtonParent = new ThreeMeshUI.Block({
+            height: 0.06,
+            width: 0.06,
+            backgroundColor: Colors.defaultMenuBackground,
+            backgroundOpacity: 0,
+        });
+        let addButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "+",
+            'fontSize': 0.04,
+            'height': 0.04,
+            'width': 0.04,
+        });
+        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.position.fromArray([.175, 0.12, -0.001]);
+        addButtonParent.add(addButton);
+        let interactable = new PointerInteractable(addButton, () => {
+            let position = this._controller
+                .getPosition(vector3s[0]);
+            let direction = this._controller
+                .getDirection(vector3s[1]).normalize()
+                .divideScalar(4);
+            position.sub(direction);
+            let params = {
+                assetId: this._assetId,
+                position: position.toArray(),
+                rotation: this._controller.getRotationArray(),
+                enableInteractions: true,
+            };
+            let type = libraryHandler.getType(this._assetId);
+            if(type == AssetTypes.IMAGE) {
+                params['doubleSided'] = true;
+                params['transparent'] = true;
+                projectHandler.addImage(params);
+            } else if(type == AssetTypes.MODEL) {
+                projectHandler.addGLTF(params);
+            } else if(type == AssetTypes.SHAPE) {
+                projectHandler.addShape(params, this._assetId);
+            } else if(type == AssetTypes.LIGHT) {
+                projectHandler.addLight(params, this._assetId);
+            }
+        });
+        this._containerInteractable.addChild(interactable);
+        this._object.add(addButtonParent);
+    }
+
     _getItemName(item) {
         return this._instances[item].getName();
     }
@@ -16680,6 +16839,7 @@ class AssetPage extends PaginatedPage {
     }
 
     _refreshItems() {
+        this._instances = projectHandler.getInstancesForAssetId(this._assetId);
         this._items = Object.keys(this._instances);
     }
 
@@ -16692,7 +16852,10 @@ class AssetPage extends PaginatedPage {
 
     _addSubscriptions() {
         pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
+            console.log(instance);
+            console.log(this._assetId);
             if(instance.getAssetId() == this._assetId) {
+                console.log("Hello");
                 this._refreshItems();
                 this._updateItemsGUI();
             }
@@ -17784,7 +17947,7 @@ class GoogleDrive {
     }
 
     isSignedIn() {
-        return gapi.client.getToken() != null;
+        return gapi.client && gapi.client.getToken() != null;
     }
 
     //TODO: Change how we determine if this is active. Once local save/load
@@ -18126,7 +18289,6 @@ class PaginatedIconsPage extends MenuPage {
                 button.add(imageBlock);
                 button.add(textBlock);
                 row.add(button);
-                window.b = button;
                 this._paginatedListButtons.push(button);
                 let interactable = new PointerInteractable(button, () => {
                     let index = this._page * ROWS * OPTIONS$1 + OPTIONS$1 * i + j;
@@ -18929,35 +19091,9 @@ const OPTIONS = {
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._input = document.createElement('input');
-        this._input.type = "file";
         this._items = Object.keys(OPTIONS).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () =>{this._handleLocalFile();});
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -19024,6 +19160,7 @@ class ProjectPage extends PaginatedPage {
     }
 
     _localLoad() {
+        uploadHandler.triggerUpload();
         if(global$1.deviceType == 'XR') {
             this._input.click();
             sessionHandler.exitXRSession();
@@ -19091,25 +19228,17 @@ class ProjectPage extends PaginatedPage {
         this._updateItemsGUI();
     }
 
-    _handleLocalFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension == "zip") {
-                this._updateLoading(false);
-                pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
-                JSZip.loadAsync(file).then((jsZip) => {
-                    projectHandler.loadZip(jsZip, () => {
-                        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
-                            { text: 'Project Loaded', });
-                    }, () => {
-                        this._loadErrorCallback();
-                    });
-                });
-            } else {
+    _handleLocalFile(file) {
+        this._updateLoading(false);
+        pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+        JSZip.loadAsync(file).then((jsZip) => {
+            projectHandler.loadZip(jsZip, () => {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
+                    { text: 'Project Loaded', });
+            }, () => {
                 this._loadErrorCallback();
-            }
-        }
+            });
+        });
     }
 
     _loadErrorCallback() {
@@ -19168,12 +19297,14 @@ class ProjectPage extends PaginatedPage {
     }
 
     addToScene(scene, parentInteractable) {
-        document.addEventListener(this._eventType, this._clickListener);
+        uploadHandler.listenForProjectFile((file) => {
+            this._handleLocalFile(file);
+        });
         super.addToScene(scene, parentInteractable);
     }
 
     removeFromScene() {
-        document.removeEventListener(this._eventType, this._clickListener);
+        uploadHandler.stopListening();
         super.removeFromScene();
     }
 
@@ -19340,33 +19471,6 @@ class SkyboxPage extends MenuPage {
         super(controller, false, true);
         this._buttons = [];
         this._addPageContent();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -19416,13 +19520,18 @@ class SkyboxPage extends MenuPage {
                     this._controller.back();
                 }, () => {
                     this._fileUploadSide = sides[i];
-                    this._triggerFileUpload = true;
+                    uploadHandler.triggerUpload();
                 }, () => {
-                    document.removeEventListener(this._eventType,
-                        this._clickListener);
+                    uploadHandler.stopListening();
                 });
                 this._controller.pushPage(MenuPages.ASSET_SELECT);
-                document.addEventListener(this._eventType, this._clickListener);
+                uploadHandler.listenForAssets((assetIds) => {
+                    if(assetIds.length > 0) {
+                        settingsHandler.setSkyboxSide(this._fileUploadSide,
+                            assetIds[0]);
+                        this._controller.back();
+                    }
+                }, false, AssetTypes.IMAGE);
             });
             this._containerInteractable.addChild(interactable);
             if(i == 0) {
@@ -19453,23 +19562,6 @@ class SkyboxPage extends MenuPage {
             this._buttons.push(button);
         }
         this._container.add(columnBlock);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$2) {
-                libraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => {
-                        settingsHandler.setSkyboxSide(this._fileUploadSide,
-                            assetId);
-                        this._controller.back();
-                    });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
     }
 
     _setTextures() {
@@ -19760,17 +19852,6 @@ class TextInputPage extends MenuPage {
 
 }
 
-const FileTypes$1 = {
-    jpg: "jpg",
-    jpeg: "jpeg",
-    png: "png",
-    glb: "glb",
-};
-
-const FileTypes = {
-    glb: "glb",
-};
-
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -19781,33 +19862,6 @@ class UploadPage extends MenuPage {
     constructor(controller) {
         super(controller, false, true);
         this._addPageContent();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.multiple = true;
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -19834,70 +19888,50 @@ class UploadPage extends MenuPage {
         });
         columnBlock.add(linkButton);
         let interactable = new PointerInteractable(linkButton, () => {
-            if(global$1.deviceType == 'XR') {
-                sessionHandler.exitXRSession();
-                this._input.click();
-            } else {
-                this._triggerFileUpload = true;
-            }
+            uploadHandler.triggerUpload();
         });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
     }
 
-    _uploadFile() {
-        for(let file of this._input.files) {
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$1) {
-                if(extension in FileTypes$2) {
-                    libraryHandler.addNewAsset(file, file.name,
-                        AssetTypes.IMAGE, (assetId) => {
-                            let position = this._controller
-                                .getPosition(vector3s[0]);
-                            let direction = this._controller
-                                .getDirection(vector3s[1]).normalize()
-                                .divideScalar(4);
-                            projectHandler.addImage({
-                                "assetId": assetId,
-                                "position": position.sub(direction).toArray(),
-                                "rotation": [0,0,0],
-                                "doubleSided": true,
-                                "transparent": true,
-                                "enableInteractions": true,
-                            });
-                    });
-                } else if(extension in FileTypes) {
-                    libraryHandler.addNewAsset(file, file.name,AssetTypes.MODEL,
-                        (assetId) => {
-                            let position = this._controller
-                                .getPosition(vector3s[0]);
-                            let direction = this._controller
-                                .getDirection(vector3s[1]).normalize()
-                                .divideScalar(4);
-                            projectHandler.addGLTF({
-                                "assetID": assetId,
-                                "position": position.sub(direction).toArray(),
-                                "rotation": [0,0,0],
-                                "enableInteractions": true,
-                            });
-                    });
-                } else {
-                    console.log("TODO: Support other file types");
-                }
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
+    _uploadCallback(assetIds) {
+        let position = this._controller
+            .getPosition(vector3s[0]);
+        let direction = this._controller
+            .getDirection(vector3s[1]).normalize()
+            .divideScalar(4);
+        position.sub(direction);
+        for(let assetId of assetIds) {
+            let type = libraryHandler.getType(assetId);
+            if(type == AssetTypes.IMAGE) {
+                projectHandler.addImage({
+                    "assetId": assetId,
+                    "position": position.toArray(),
+                    "rotation": this._controller.getRotationArray(),
+                    "doubleSided": true,
+                    "transparent": true,
+                    "enableInteractions": true,
+                });
+            } else if(type == AssetTypes.MODEL) {
+                projectHandler.addGLTF({
+                    "assetId": assetId,
+                    "position": position.toArray(),
+                    "rotation": this._controller.getRotationArray(),
+                    "enableInteractions": true,
+                });
             }
         }
-        this._input.value = '';
     }
 
     addToScene(scene, parentInteractable) {
-        document.addEventListener(this._eventType, this._clickListener);
+        uploadHandler.listenForAssets((assetIds) => {
+            this._uploadCallback(assetIds);
+        }, true);
         super.addToScene(scene, parentInteractable);
     }
 
     removeFromScene() {
-        document.removeEventListener(this._eventType, this._clickListener);
+        uploadHandler.stopListening();
         super.removeFromScene();
     }
 }
@@ -20191,7 +20225,6 @@ class MenuController extends PointerInteractableEntity {
         vector3s[1].normalize().divideScalar(menuDistanceScale);
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
-        //this._object.add(this._object);
         this.addToScene(this._scene);
     }
 
@@ -20240,6 +20273,7 @@ class MenuController extends PointerInteractableEntity {
     }
 
     addToScene(scene) {
+        if(this._object.parent == scene) return;
         super.addToScene(scene);
         this._scene = scene;
         this._getCurrentPage().addToScene(this._object,
