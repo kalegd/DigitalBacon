@@ -2,6 +2,11 @@
   <head>
     <title>Digital Bacon - App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffebfd"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="./css/app.css">
     <!-- SHIM FOR IMPORT MAP CAUSE SAFARI IS OLD MAN -->
     <script async src="https://unpkg.com/es-module-shims@1.5.4/dist/es-module-shims.js"></script>
@@ -47,5 +52,17 @@
             });
       });
     </script>
+    <!--<script>
+        //For setting up ServiceWorker
+        if("serviceWorker" in navigator) {
+            window.addEventListener("load", function() {
+                navigator.serviceWorker
+                    .register("/ServiceWorker.js", { scope: '/app' })
+                    .then(res => console.log("service worker registered"))
+                    .catch(err => console.log("service worker not registered",
+                        err));
+            });
+        }
+    </script>-->
   </body>
 </html>

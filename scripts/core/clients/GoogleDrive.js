@@ -100,7 +100,7 @@ class GoogleDrive {
     }
 
     isSignedIn() {
-        return gapi.client.getToken() != null;
+        return gapi.client && gapi.client.getToken() != null;
     }
 
     //TODO: Change how we determine if this is active. Once local save/load
