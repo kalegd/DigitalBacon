@@ -257,6 +257,7 @@ export default class MenuController extends PointerInteractableEntity {
     }
 
     addToScene(scene) {
+        if(this._object.parent == scene) return;
         super.addToScene(scene);
         this._scene = scene;
         this._getCurrentPage().addToScene(this._object,

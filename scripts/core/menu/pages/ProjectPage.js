@@ -12,6 +12,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
@@ -28,35 +29,9 @@ const OPTIONS = {
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._input = document.createElement('input');
-        this._input.type = "file";
         this._items = Object.keys(OPTIONS).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () =>{this._handleLocalFile();});
-        if(global.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -123,6 +98,7 @@ class ProjectPage extends PaginatedPage {
     }
 
     _localLoad() {
+        UploadHandler.triggerUpload();
         if(global.deviceType == 'XR') {
             this._input.click();
             SessionHandler.exitXRSession();
@@ -190,25 +166,17 @@ class ProjectPage extends PaginatedPage {
         this._updateItemsGUI();
     }
 
-    _handleLocalFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension == "zip") {
-                this._updateLoading(false);
-                PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
-                JSZip.loadAsync(file).then((jsZip) => {
-                    ProjectHandler.loadZip(jsZip, () => {
-                        PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
-                            { text: 'Project Loaded', });
-                    }, () => {
-                        this._loadErrorCallback();
-                    });
-                });
-            } else {
+    _handleLocalFile(file) {
+        this._updateLoading(false);
+        PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+        JSZip.loadAsync(file).then((jsZip) => {
+            ProjectHandler.loadZip(jsZip, () => {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
+                    { text: 'Project Loaded', });
+            }, () => {
                 this._loadErrorCallback();
-            }
-        }
+            });
+        });
     }
 
     _loadErrorCallback() {
@@ -267,12 +235,14 @@ class ProjectPage extends PaginatedPage {
     }
 
     addToScene(scene, parentInteractable) {
-        document.addEventListener(this._eventType, this._clickListener);
+        UploadHandler.listenForProjectFile((file) => {
+            this._handleLocalFile(file);
+        });
         super.addToScene(scene, parentInteractable);
     }
 
     removeFromScene() {
-        document.removeEventListener(this._eventType, this._clickListener);
+        UploadHandler.stopListening();
         super.removeFromScene();
     }
 

@@ -7,13 +7,13 @@
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
+import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
@@ -51,35 +51,8 @@ class CubeImageInput extends PointerInteractableEntity {
         this._title = params['title'] || null;
         this._buttons = [];
         this._createInputs();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
         for(let side of SIDES) {
             this._updateImage(side, this._lastValues[side]);
-        }
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
         }
     }
 
@@ -167,28 +140,16 @@ class CubeImageInput extends PointerInteractableEntity {
             this._handleAssetSelection(side, assetId);
         }, () => {
             this._fileUploadSide = side;
-            this._triggerFileUpload = true;
+            UploadHandler.triggerUpload();
         }, () => {
-            document.removeEventListener(this._eventType, this._clickListener);
+            UploadHandler.stopListening();
         });
         global.menuController.pushPage(MenuPages.ASSET_SELECT);
         document.addEventListener(this._eventType, this._clickListener);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in ImageFileTypes) {
-                LibraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => {
-                        this._handleAssetSelection(this._fileUploadSide,
-                            assetId);
-                    });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
+        UploadHandler.listenForAssets((assetIds) => {
+            if(assetIds.length > 0)
+                this._handleAssetSelection(this._fileUploadSide, assetIds[0]);
+        }, false, AssetTypes.IMAGE);
     }
 
     _handleAssetSelection(side, assetId) {

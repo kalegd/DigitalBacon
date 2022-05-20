@@ -6,17 +6,13 @@
 
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
-import FileTypes from '/scripts/core/enums/FileTypes.js';
-import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
-import ModelFileTypes from '/scripts/core/enums/ModelFileTypes.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
+import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -24,33 +20,6 @@ class UploadPage extends MenuPage {
     constructor(controller) {
         super(controller, false, true);
         this._addPageContent();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.multiple = true;
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -77,70 +46,50 @@ class UploadPage extends MenuPage {
         });
         columnBlock.add(linkButton);
         let interactable = new PointerInteractable(linkButton, () => {
-            if(global.deviceType == 'XR') {
-                SessionHandler.exitXRSession();
-                this._input.click();
-            } else {
-                this._triggerFileUpload = true;
-            }
+            UploadHandler.triggerUpload();
         });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
     }
 
-    _uploadFile() {
-        for(let file of this._input.files) {
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes) {
-                if(extension in ImageFileTypes) {
-                    LibraryHandler.addNewAsset(file, file.name,
-                        AssetTypes.IMAGE, (assetId) => {
-                            let position = this._controller
-                                .getPosition(vector3s[0]);
-                            let direction = this._controller
-                                .getDirection(vector3s[1]).normalize()
-                                .divideScalar(4);
-                            ProjectHandler.addImage({
-                                "assetId": assetId,
-                                "position": position.sub(direction).toArray(),
-                                "rotation": [0,0,0],
-                                "doubleSided": true,
-                                "transparent": true,
-                                "enableInteractions": true,
-                            });
-                    });
-                } else if(extension in ModelFileTypes) {
-                    LibraryHandler.addNewAsset(file, file.name,AssetTypes.MODEL,
-                        (assetId) => {
-                            let position = this._controller
-                                .getPosition(vector3s[0]);
-                            let direction = this._controller
-                                .getDirection(vector3s[1]).normalize()
-                                .divideScalar(4);
-                            ProjectHandler.addGLTF({
-                                "assetID": assetId,
-                                "position": position.sub(direction).toArray(),
-                                "rotation": [0,0,0],
-                                "enableInteractions": true,
-                            });
-                    });
-                } else {
-                    console.log("TODO: Support other file types");
-                }
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
+    _uploadCallback(assetIds) {
+        let position = this._controller
+            .getPosition(vector3s[0]);
+        let direction = this._controller
+            .getDirection(vector3s[1]).normalize()
+            .divideScalar(4);
+        position.sub(direction);
+        for(let assetId of assetIds) {
+            let type = LibraryHandler.getType(assetId);
+            if(type == AssetTypes.IMAGE) {
+                ProjectHandler.addImage({
+                    "assetId": assetId,
+                    "position": position.toArray(),
+                    "rotation": [0,0,0],
+                    "doubleSided": true,
+                    "transparent": true,
+                    "enableInteractions": true,
+                });
+            } else if(type == AssetTypes.MODEL) {
+                ProjectHandler.addGLTF({
+                    "assetId": assetId,
+                    "position": position.toArray(),
+                    "rotation": [0,0,0],
+                    "enableInteractions": true,
+                });
             }
         }
-        this._input.value = '';
     }
 
     addToScene(scene, parentInteractable) {
-        document.addEventListener(this._eventType, this._clickListener);
+        UploadHandler.listenForAssets((assetIds) => {
+            this._uploadCallback(assetIds);
+        }, true);
         super.addToScene(scene, parentInteractable);
     }
 
     removeFromScene() {
-        document.removeEventListener(this._eventType, this._clickListener);
+        UploadHandler.stopListening();
         super.removeFromScene();
     }
 }

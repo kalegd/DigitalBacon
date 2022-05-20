@@ -6,12 +6,12 @@
 
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
+import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -31,33 +31,6 @@ class SkyboxPage extends MenuPage {
         super(controller, false, true);
         this._buttons = [];
         this._addPageContent();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -107,13 +80,18 @@ class SkyboxPage extends MenuPage {
                     this._controller.back();
                 }, () => {
                     this._fileUploadSide = sides[i];
-                    this._triggerFileUpload = true;
+                    UploadHandler.triggerUpload();
                 }, () => {
-                    document.removeEventListener(this._eventType,
-                        this._clickListener);
+                    UploadHandler.stopListening();
                 });
                 this._controller.pushPage(MenuPages.ASSET_SELECT);
-                document.addEventListener(this._eventType, this._clickListener);
+                UploadHandler.listenForAssets((assetIds) => {
+                    if(assetIds.length > 0) {
+                        SettingsHandler.setSkyboxSide(this._fileUploadSide,
+                            assetIds[0]);
+                        this._controller.back();
+                    }
+                }, false, AssetTypes.IMAGE);
             });
             this._containerInteractable.addChild(interactable);
             if(i == 0) {
@@ -144,23 +122,6 @@ class SkyboxPage extends MenuPage {
             this._buttons.push(button);
         }
         this._container.add(columnBlock);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in ImageFileTypes) {
-                LibraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => {
-                        SettingsHandler.setSkyboxSide(this._fileUploadSide,
-                            assetId);
-                        this._controller.back();
-                    });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
     }
 
     _setTextures() {
