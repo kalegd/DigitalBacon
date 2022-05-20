@@ -6,8 +6,10 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
@@ -93,6 +95,29 @@ class LightsPage extends PaginatedPage {
             this._containerInteractable.removeChild(this._addInteractable);
         }
         this._titleBlock.children[1].set({ content: title });
+    }
+
+    _addSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
+            if(LibraryHandler.getType(assetId) == this._assetType) {
+                this._refreshItems();
+                this._updateItemsGUI();
+            }
+        });
+    }
+
+    _removeSubscriptions() {
+        PubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._addSubscriptions();
+        super.addToScene(scene, parentInteractable);
+    }
+
+    removeFromScene() {
+        this._removeSubscriptions();
+        super.removeFromScene();
     }
 
 }

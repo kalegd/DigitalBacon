@@ -135,3 +135,16 @@ export const rgbToHex = (rgb) => {
   }
   return hex;
 }
+
+export const blobToHash = (blob) => {
+    return new Promise((resolve, reject) => {
+        blob.arrayBuffer().then((arrayBuffer) => {
+            crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
+                let hashArray = Array.from(new Uint8Array(hashBuffer));
+                let hash = hashArray.map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+                resolve(hash);
+            });
+        });
+    });
+}

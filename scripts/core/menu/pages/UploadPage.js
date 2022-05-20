@@ -11,7 +11,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import { vector3s } from '/scripts/core/helpers/constants.js';
+import { euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -53,19 +53,24 @@ class UploadPage extends MenuPage {
     }
 
     _uploadCallback(assetIds) {
-        let position = this._controller
+        this._controller
             .getPosition(vector3s[0]);
-        let direction = this._controller
+        this._controller
             .getDirection(vector3s[1]).normalize()
             .divideScalar(4);
-        position.sub(direction);
+        let position = vector3s[0].sub(vector3s[1]).toArray();
+        vector3s[0].set(0, 0, 1);
+        vector3s[1].setY(0).normalize();
+        quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+        euler.setFromQuaternion(quaternion);
+        let rotation = euler.toArray();
         for(let assetId of assetIds) {
             let type = LibraryHandler.getType(assetId);
             if(type == AssetTypes.IMAGE) {
                 ProjectHandler.addImage({
                     "assetId": assetId,
-                    "position": position.toArray(),
-                    "rotation": this._controller.getRotationArray(),
+                    "position": position,
+                    "rotation": rotation,
                     "doubleSided": true,
                     "transparent": true,
                     "enableInteractions": true,
@@ -73,8 +78,8 @@ class UploadPage extends MenuPage {
             } else if(type == AssetTypes.MODEL) {
                 ProjectHandler.addGLTF({
                     "assetId": assetId,
-                    "position": position.toArray(),
-                    "rotation": this._controller.getRotationArray(),
+                    "position": position,
+                    "rotation": rotation,
                     "enableInteractions": true,
                 });
             }

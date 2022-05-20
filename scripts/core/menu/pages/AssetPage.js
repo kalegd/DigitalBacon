@@ -4,13 +4,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts, FontSizes, vector3s } from '/scripts/core/helpers/constants.js';
+import { Colors, Fonts, FontSizes, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
@@ -54,16 +55,21 @@ class AssetPage extends PaginatedPage {
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(addButton);
         let interactable = new PointerInteractable(addButton, () => {
-            let position = this._controller
+            this._controller
                 .getPosition(vector3s[0]);
-            let direction = this._controller
+            this._controller
                 .getDirection(vector3s[1]).normalize()
                 .divideScalar(4);
-            position.sub(direction);
+            let position = vector3s[0].sub(vector3s[1]).toArray();
+            vector3s[0].set(0, 0, 1);
+            vector3s[1].setY(0).normalize();
+            quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+            euler.setFromQuaternion(quaternion);
+            let rotation = euler.toArray();
             let params = {
                 assetId: this._assetId,
-                position: position.toArray(),
-                rotation: this._controller.getRotationArray(),
+                position: position,
+                rotation: rotation,
                 enableInteractions: true,
             };
             let type = LibraryHandler.getType(this._assetId);
@@ -107,10 +113,7 @@ class AssetPage extends PaginatedPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
-            console.log(instance);
-            console.log(this._assetId);
             if(instance.getAssetId() == this._assetId) {
-                console.log("Hello");
                 this._refreshItems();
                 this._updateItemsGUI();
             }

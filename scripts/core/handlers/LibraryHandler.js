@@ -6,8 +6,10 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { defaultImageSize } from '/scripts/core/helpers/constants.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { blobToHash, uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
@@ -15,16 +17,24 @@ import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 class LibraryHandler {
     constructor() {
         this.library = {};
+        this._blobHashMap = {};
     }
 
     addNewAsset(blob, name, type, callback) {
-        let assetId = uuidv4();
-        this.library[assetId] = {
-            'Blob': blob,
-            'Name': name,
-            'Type': type,
-        }
-        this._loadMesh(assetId, blob).then(() => { callback(assetId) });
+        blobToHash(blob).then((hash) => {
+            if(hash in this._blobHashMap) {
+                if(callback) callback(this._blobHashMap[hash]);
+                return;
+            }
+            let assetId = uuidv4();
+            this._blobHashMap[hash] = assetId;
+            this.library[assetId] = {
+                'Blob': blob,
+                'Name': name,
+                'Type': type,
+            }
+            this._loadMesh(assetId, blob).then(() => { callback(assetId) });
+        });
     }
 
     load(library, jsZip, successCallback, errorCallback) {
@@ -41,12 +51,19 @@ class LibraryHandler {
                 }
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('blob').then((blob)=>{
-                    this.library[assetId] = {
-                        'Blob': blob,
-                        'Name': assetDetails['Name'],
-                        'Type': assetDetails['Type'],
-                    }
-                    return this._loadMesh(assetId, blob);
+                    return blobToHash(blob).then((hash) => {
+                        if(hash in this._blobHashMap) {
+                            console.warn("Unreachable statement reached...");
+                            return;
+                        }
+                        this._blobHashMap[hash] = assetId;
+                        this.library[assetId] = {
+                            'Blob': blob,
+                            'Name': assetDetails['Name'],
+                            'Type': assetDetails['Type'],
+                        }
+                        return this._loadMesh(assetId, blob);
+                    });
                 });
                 loadPromises.push(promise);
             }
@@ -70,12 +87,19 @@ class LibraryHandler {
             type = AssetTypes.MODEL;
         }
         fetch(filepath).then(response => response.blob()).then((blob) => {
-            this.library[assetId] = {
-                'Blob': blob,
-                'Name': name,
-                'Type': type,
-            };
-            this._loadMesh(assetId, blob).then(() => { callback(assetId) });
+            blobToHash(blob).then((hash) => {
+                if(hash in this._blobHashMap) {
+                    if(callback) callback(this._blobHashMap[hash]);
+                    return;
+                }
+                this._blobHashMap[hash] = assetId;
+                this.library[assetId] = {
+                    'Blob': blob,
+                    'Name': name,
+                    'Type': type,
+                };
+                this._loadMesh(assetId, blob).then(() => { callback(assetId) });
+            });
         });
     }
 
@@ -109,6 +133,7 @@ class LibraryHandler {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
+                PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                 resolve();
             });
         });
@@ -136,6 +161,7 @@ class LibraryHandler {
                     });
                     let mesh = new THREE.Mesh( geometry, material );
                     this.library[assetId]['Mesh'] = mesh;
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                     resolve();
                 }
             );
@@ -188,6 +214,7 @@ class LibraryHandler {
             }
         }
         this.library = newLibrary;
+        this._blobHashMap = {};
     }
 
     getLibraryDetails(assetIds) {
