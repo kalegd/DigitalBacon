@@ -85,6 +85,14 @@ a, a:hover, a:active, a:visited {
     color: #ffc7e5;
 }
 
+#footer {
+    background: rgba(0,0,0,0.5);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
 .dark-box, .light-box {
     height: 180px;
     max-width: 250px;
