@@ -27,6 +27,81 @@ const FileTypes$2 = {
     png: "png",
 };
 
+const PubSubTopics = {
+    ASSET_ADDED: "ASSED_ADDED",
+    HAND_TOOLS_SWITCH: "HAND_TOOLS_SWITCH",
+    INSTANCE_ADDED: "INSTANCE_ADDED",
+    INSTANCE_DELETED: "INSTANCE_DELETED",
+    INSTANCE_UPDATED: "INSTANCE_UPDATED",
+    INSTANCE_ATTACHED: "INSTANCE_ATTACHED",
+    INSTANCE_DETACHED: "INSTANCE_DETACHED",
+    MATERIAL_ADDED: "MATERIAL_ADDED",
+    MATERIAL_DELETED: "MATERIAL_DELETED",
+    MATERIAL_UPDATED: "MATERIAL_UPDATED",
+    MENU_FIELD_FOCUSED: "MENU_FIELD_FOCUSED",
+    MENU_NOTIFICATION: "MENU_NOTIFICATION",
+    NOTIFICATION: "NOTIFICATION",
+    PROJECT_LOADING: "PROJECT_LOADING",
+    PROJECT_SAVING: "PROJECT_SAVING",
+    TEXTURE_ADDED: "TEXTURE_ADDED",
+    TEXTURE_DELETED: "TEXTURE_DELETED",
+    TEXTURE_UPDATED: "TEXTURE_UPDATED",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class PubSub {
+    constructor() {
+        this._topics = {};
+        this._toPublish = [];
+    }
+
+    subscribe(owner, topic, callback) {
+        if(!(topic in this._topics)) this._topics[topic] = {};
+        this._topics[topic][owner] = callback;
+    }
+
+    unsubscribe(owner, topic) {
+        if(!(topic in this._topics)) return;
+
+        delete this._topics[topic][owner];
+        if(Object.keys(this._topics[topic]).length == 0) {
+            delete this._topics[topic];
+        }
+    }
+
+    publish(owner, topic, message, urgent) {
+        if(!topic in this._topics) {
+            return;
+        } else if(urgent) {
+            this._publish(owner, topic, message);
+        } else {
+            this._toPublish.push(() => { this._publish(owner, topic, message);});
+        }
+    }
+
+    _publish(owner, topic, message) {
+        let topicSubscribers = this._topics[topic];
+        for(let subscriber in topicSubscribers) {
+            if(subscriber == owner) continue;
+            topicSubscribers[subscriber](message);
+        }
+    }
+
+    update() {
+        for(let toPublish of this._toPublish) {
+            toPublish();
+        }
+        this._toPublish = [];
+    }
+}
+
+let pubSub = new PubSub();
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -161,6 +236,19 @@ const rgbToHex = (rgb) => {
        hex = "0" + hex;
   }
   return hex;
+};
+
+const blobToHash = (blob) => {
+    return new Promise((resolve, reject) => {
+        blob.arrayBuffer().then((arrayBuffer) => {
+            crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
+                let hashArray = Array.from(new Uint8Array(hashBuffer));
+                let hash = hashArray.map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+                resolve(hash);
+            });
+        });
+    });
 };
 
 /*
@@ -4749,16 +4837,24 @@ function parallelTraverse( a, b, callback ) {
 class LibraryHandler {
     constructor() {
         this.library = {};
+        this._blobHashMap = {};
     }
 
     addNewAsset(blob, name, type, callback) {
-        let assetId = uuidv4();
-        this.library[assetId] = {
-            'Blob': blob,
-            'Name': name,
-            'Type': type,
-        };
-        this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+        blobToHash(blob).then((hash) => {
+            if(hash in this._blobHashMap) {
+                if(callback) callback(this._blobHashMap[hash]);
+                return;
+            }
+            let assetId = uuidv4();
+            this._blobHashMap[hash] = assetId;
+            this.library[assetId] = {
+                'Blob': blob,
+                'Name': name,
+                'Type': type,
+            };
+            this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+        });
     }
 
     load(library, jsZip, successCallback, errorCallback) {
@@ -4775,12 +4871,19 @@ class LibraryHandler {
                 }
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('blob').then((blob)=>{
-                    this.library[assetId] = {
-                        'Blob': blob,
-                        'Name': assetDetails['Name'],
-                        'Type': assetDetails['Type'],
-                    };
-                    return this._loadMesh(assetId, blob);
+                    return blobToHash(blob).then((hash) => {
+                        if(hash in this._blobHashMap) {
+                            console.warn("Unreachable statement reached...");
+                            return;
+                        }
+                        this._blobHashMap[hash] = assetId;
+                        this.library[assetId] = {
+                            'Blob': blob,
+                            'Name': assetDetails['Name'],
+                            'Type': assetDetails['Type'],
+                        };
+                        return this._loadMesh(assetId, blob);
+                    });
                 });
                 loadPromises.push(promise);
             }
@@ -4804,12 +4907,19 @@ class LibraryHandler {
             type = AssetTypes.MODEL;
         }
         fetch(filepath).then(response => response.blob()).then((blob) => {
-            this.library[assetId] = {
-                'Blob': blob,
-                'Name': name,
-                'Type': type,
-            };
-            this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+            blobToHash(blob).then((hash) => {
+                if(hash in this._blobHashMap) {
+                    if(callback) callback(this._blobHashMap[hash]);
+                    return;
+                }
+                this._blobHashMap[hash] = assetId;
+                this.library[assetId] = {
+                    'Blob': blob,
+                    'Name': name,
+                    'Type': type,
+                };
+                this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+            });
         });
     }
 
@@ -4843,6 +4953,7 @@ class LibraryHandler {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
+                pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                 resolve();
             });
         });
@@ -4870,6 +4981,7 @@ class LibraryHandler {
                     });
                     let mesh = new THREE.Mesh( geometry, material );
                     this.library[assetId]['Mesh'] = mesh;
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                     resolve();
                 }
             );
@@ -4922,6 +5034,7 @@ class LibraryHandler {
             }
         }
         this.library = newLibrary;
+        this._blobHashMap = {};
     }
 
     getLibraryDetails(assetIds) {
@@ -4990,26 +5103,6 @@ const HandTools = {
     COPY_PASTE: "COPY_PASTE",
     DELETE: "DELETE",
     ACTIVE: "EDIT",
-};
-
-const PubSubTopics = {
-    HAND_TOOLS_SWITCH: "HAND_TOOLS_SWITCH",
-    INSTANCE_ADDED: "INSTANCE_ADDED",
-    INSTANCE_DELETED: "INSTANCE_DELETED",
-    INSTANCE_UPDATED: "INSTANCE_UPDATED",
-    INSTANCE_ATTACHED: "INSTANCE_ATTACHED",
-    INSTANCE_DETACHED: "INSTANCE_DETACHED",
-    MATERIAL_ADDED: "MATERIAL_ADDED",
-    MATERIAL_DELETED: "MATERIAL_DELETED",
-    MATERIAL_UPDATED: "MATERIAL_UPDATED",
-    MENU_FIELD_FOCUSED: "MENU_FIELD_FOCUSED",
-    MENU_NOTIFICATION: "MENU_NOTIFICATION",
-    NOTIFICATION: "NOTIFICATION",
-    PROJECT_LOADING: "PROJECT_LOADING",
-    PROJECT_SAVING: "PROJECT_SAVING",
-    TEXTURE_ADDED: "TEXTURE_ADDED",
-    TEXTURE_DELETED: "TEXTURE_DELETED",
-    TEXTURE_UPDATED: "TEXTURE_UPDATED",
 };
 
 /*
@@ -8743,60 +8836,6 @@ let uploadHandler = new UploadHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class PubSub {
-    constructor() {
-        this._topics = {};
-        this._toPublish = [];
-    }
-
-    subscribe(owner, topic, callback) {
-        if(!(topic in this._topics)) this._topics[topic] = {};
-        this._topics[topic][owner] = callback;
-    }
-
-    unsubscribe(owner, topic) {
-        if(!(topic in this._topics)) return;
-
-        delete this._topics[topic][owner];
-        if(Object.keys(this._topics[topic]).length == 0) {
-            delete this._topics[topic];
-        }
-    }
-
-    publish(owner, topic, message, urgent) {
-        if(!topic in this._topics) {
-            return;
-        } else if(urgent) {
-            this._publish(owner, topic, message);
-        } else {
-            this._toPublish.push(() => { this._publish(owner, topic, message);});
-        }
-    }
-
-    _publish(owner, topic, message) {
-        let topicSubscribers = this._topics[topic];
-        for(let subscriber in topicSubscribers) {
-            if(subscriber == owner) continue;
-            topicSubscribers[subscriber](message);
-        }
-    }
-
-    update() {
-        for(let toPublish of this._toPublish) {
-            toPublish();
-        }
-        this._toPublish = [];
-    }
-}
-
-let pubSub = new PubSub();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
 const defaultOffset = 0.008;
 const defaultMargin = 0.01;
 
@@ -10954,8 +10993,10 @@ class TransformControlsHandler {
             vector3s[1].normalize().multiplyScalar(11/12);
             vector3s[0].add(vector3s[1]);
             let position = vector3s[0].toArray();
-            global$1.camera.getWorldQuaternion(quaternion);
-            euler.setFromQuaternion(quaternion.normalize());
+            vector3s[0].set(0, 0, 1);
+            vector3s[1].setY(0).normalize();
+            quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+            euler.setFromQuaternion(quaternion);
             let rotation = euler.toArray();
             for(let assetId of assetIds) {
                 let type = libraryHandler.getType(assetId);
@@ -16799,16 +16840,21 @@ class AssetPage extends PaginatedPage {
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(addButton);
         let interactable = new PointerInteractable(addButton, () => {
-            let position = this._controller
+            this._controller
                 .getPosition(vector3s[0]);
-            let direction = this._controller
+            this._controller
                 .getDirection(vector3s[1]).normalize()
                 .divideScalar(4);
-            position.sub(direction);
+            let position = vector3s[0].sub(vector3s[1]).toArray();
+            vector3s[0].set(0, 0, 1);
+            vector3s[1].setY(0).normalize();
+            quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+            euler.setFromQuaternion(quaternion);
+            let rotation = euler.toArray();
             let params = {
                 assetId: this._assetId,
-                position: position.toArray(),
-                rotation: this._controller.getRotationArray(),
+                position: position,
+                rotation: rotation,
                 enableInteractions: true,
             };
             let type = libraryHandler.getType(this._assetId);
@@ -16852,10 +16898,7 @@ class AssetPage extends PaginatedPage {
 
     _addSubscriptions() {
         pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
-            console.log(instance);
-            console.log(this._assetId);
             if(instance.getAssetId() == this._assetId) {
-                console.log("Hello");
                 this._refreshItems();
                 this._updateItemsGUI();
             }
@@ -16979,6 +17022,29 @@ class LightsPage extends PaginatedPage {
             this._containerInteractable.removeChild(this._addInteractable);
         }
         this._titleBlock.children[1].set({ content: title });
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
+            if(libraryHandler.getType(assetId) == this._assetType) {
+                this._refreshItems();
+                this._updateItemsGUI();
+            }
+        });
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._addSubscriptions();
+        super.addToScene(scene, parentInteractable);
+    }
+
+    removeFromScene() {
+        this._removeSubscriptions();
+        super.removeFromScene();
     }
 
 }
@@ -19895,19 +19961,24 @@ class UploadPage extends MenuPage {
     }
 
     _uploadCallback(assetIds) {
-        let position = this._controller
+        this._controller
             .getPosition(vector3s[0]);
-        let direction = this._controller
+        this._controller
             .getDirection(vector3s[1]).normalize()
             .divideScalar(4);
-        position.sub(direction);
+        let position = vector3s[0].sub(vector3s[1]).toArray();
+        vector3s[0].set(0, 0, 1);
+        vector3s[1].setY(0).normalize();
+        quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+        euler.setFromQuaternion(quaternion);
+        let rotation = euler.toArray();
         for(let assetId of assetIds) {
             let type = libraryHandler.getType(assetId);
             if(type == AssetTypes.IMAGE) {
                 projectHandler.addImage({
                     "assetId": assetId,
-                    "position": position.toArray(),
-                    "rotation": this._controller.getRotationArray(),
+                    "position": position,
+                    "rotation": rotation,
                     "doubleSided": true,
                     "transparent": true,
                     "enableInteractions": true,
@@ -19915,8 +19986,8 @@ class UploadPage extends MenuPage {
             } else if(type == AssetTypes.MODEL) {
                 projectHandler.addGLTF({
                     "assetId": assetId,
-                    "position": position.toArray(),
-                    "rotation": this._controller.getRotationArray(),
+                    "position": position,
+                    "rotation": rotation,
                     "enableInteractions": true,
                 });
             }
