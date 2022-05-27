@@ -14,7 +14,6 @@ let replacementMap = {};
 let icons = ['audio', 'checkmark', 'hamburger', 'image', 'lightbulb', 'material', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let filesToReplace = [
     'images/black_pixel.png',
-    'images/white_pixel.png',
     'images/digital_bacon_pig_compressed.png',
     'images/icons/backspace_icon_white.png',
     'images/icons/shift_icon_white.png',

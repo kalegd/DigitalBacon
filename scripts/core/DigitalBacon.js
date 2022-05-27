@@ -8,6 +8,8 @@ import global from '/scripts/core/global.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 
+const version = "0.0.1";
+
 function getDeviceType() {
     return global.deviceType;
 }
@@ -21,3 +23,4 @@ export { LibraryHandler };
 export { ProjectHandler };
 export { getDeviceType };
 export { disableImmersion };
+export { version };

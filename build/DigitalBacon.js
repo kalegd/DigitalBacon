@@ -27,6 +27,81 @@ const FileTypes$2 = {
     png: "png",
 };
 
+const PubSubTopics = {
+    ASSET_ADDED: "ASSED_ADDED",
+    HAND_TOOLS_SWITCH: "HAND_TOOLS_SWITCH",
+    INSTANCE_ADDED: "INSTANCE_ADDED",
+    INSTANCE_DELETED: "INSTANCE_DELETED",
+    INSTANCE_UPDATED: "INSTANCE_UPDATED",
+    INSTANCE_ATTACHED: "INSTANCE_ATTACHED",
+    INSTANCE_DETACHED: "INSTANCE_DETACHED",
+    MATERIAL_ADDED: "MATERIAL_ADDED",
+    MATERIAL_DELETED: "MATERIAL_DELETED",
+    MATERIAL_UPDATED: "MATERIAL_UPDATED",
+    MENU_FIELD_FOCUSED: "MENU_FIELD_FOCUSED",
+    MENU_NOTIFICATION: "MENU_NOTIFICATION",
+    NOTIFICATION: "NOTIFICATION",
+    PROJECT_LOADING: "PROJECT_LOADING",
+    PROJECT_SAVING: "PROJECT_SAVING",
+    TEXTURE_ADDED: "TEXTURE_ADDED",
+    TEXTURE_DELETED: "TEXTURE_DELETED",
+    TEXTURE_UPDATED: "TEXTURE_UPDATED",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class PubSub {
+    constructor() {
+        this._topics = {};
+        this._toPublish = [];
+    }
+
+    subscribe(owner, topic, callback) {
+        if(!(topic in this._topics)) this._topics[topic] = {};
+        this._topics[topic][owner] = callback;
+    }
+
+    unsubscribe(owner, topic) {
+        if(!(topic in this._topics)) return;
+
+        delete this._topics[topic][owner];
+        if(Object.keys(this._topics[topic]).length == 0) {
+            delete this._topics[topic];
+        }
+    }
+
+    publish(owner, topic, message, urgent) {
+        if(!topic in this._topics) {
+            return;
+        } else if(urgent) {
+            this._publish(owner, topic, message);
+        } else {
+            this._toPublish.push(() => { this._publish(owner, topic, message);});
+        }
+    }
+
+    _publish(owner, topic, message) {
+        let topicSubscribers = this._topics[topic];
+        for(let subscriber in topicSubscribers) {
+            if(subscriber == owner) continue;
+            topicSubscribers[subscriber](message);
+        }
+    }
+
+    update() {
+        for(let toPublish of this._toPublish) {
+            toPublish();
+        }
+        this._toPublish = [];
+    }
+}
+
+let pubSub = new PubSub();
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -163,6 +238,19 @@ const rgbToHex = (rgb) => {
   return hex;
 };
 
+const blobToHash = (blob) => {
+    return new Promise((resolve, reject) => {
+        blob.arrayBuffer().then((arrayBuffer) => {
+            crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
+                let hashArray = Array.from(new Uint8Array(hashBuffer));
+                let hash = hashArray.map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+                resolve(hash);
+            });
+        });
+    });
+};
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -173,9 +261,7 @@ const rgbToHex = (rgb) => {
 let icons = ['audio', 'checkmark', 'hamburger', 'image', 'lightbulb', 'material', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
-let whitePixelLock = uuidv4();
 global$1.loadingLocks.add(blackPixelLock);
-global$1.loadingLocks.add(whitePixelLock);
 for(let icon of icons) {
     locks[icon] = uuidv4();
     global$1.loadingLocks.add(locks[icon]);
@@ -244,10 +330,6 @@ const Textures = {
     "blackPixel": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWNgAAAAAgABz8g15QAAAABJRU5ErkJggg==',
         function(texture) { global$1.loadingLocks.delete(blackPixelLock); },
-    ),
-    "whitePixel": new THREE.TextureLoader().load(
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdj+P///38ACfsD/QVDRcoAAAAASUVORK5CYII=',
-        function(texture) { global$1.loadingLocks.delete(whitePixelLock); },
     ),
 };
 
@@ -4749,16 +4831,24 @@ function parallelTraverse( a, b, callback ) {
 class LibraryHandler {
     constructor() {
         this.library = {};
+        this._blobHashMap = {};
     }
 
     addNewAsset(blob, name, type, callback) {
-        let assetId = uuidv4();
-        this.library[assetId] = {
-            'Blob': blob,
-            'Name': name,
-            'Type': type,
-        };
-        this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+        blobToHash(blob).then((hash) => {
+            if(hash in this._blobHashMap) {
+                if(callback) callback(this._blobHashMap[hash]);
+                return;
+            }
+            let assetId = uuidv4();
+            this._blobHashMap[hash] = assetId;
+            this.library[assetId] = {
+                'Blob': blob,
+                'Name': name,
+                'Type': type,
+            };
+            this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+        });
     }
 
     load(library, jsZip, successCallback, errorCallback) {
@@ -4775,12 +4865,19 @@ class LibraryHandler {
                 }
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('blob').then((blob)=>{
-                    this.library[assetId] = {
-                        'Blob': blob,
-                        'Name': assetDetails['Name'],
-                        'Type': assetDetails['Type'],
-                    };
-                    return this._loadMesh(assetId, blob);
+                    return blobToHash(blob).then((hash) => {
+                        if(hash in this._blobHashMap) {
+                            console.warn("Unreachable statement reached...");
+                            return;
+                        }
+                        this._blobHashMap[hash] = assetId;
+                        this.library[assetId] = {
+                            'Blob': blob,
+                            'Name': assetDetails['Name'],
+                            'Type': assetDetails['Type'],
+                        };
+                        return this._loadMesh(assetId, blob);
+                    });
                 });
                 loadPromises.push(promise);
             }
@@ -4804,12 +4901,19 @@ class LibraryHandler {
             type = AssetTypes.MODEL;
         }
         fetch(filepath).then(response => response.blob()).then((blob) => {
-            this.library[assetId] = {
-                'Blob': blob,
-                'Name': name,
-                'Type': type,
-            };
-            this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+            blobToHash(blob).then((hash) => {
+                if(hash in this._blobHashMap) {
+                    if(callback) callback(this._blobHashMap[hash]);
+                    return;
+                }
+                this._blobHashMap[hash] = assetId;
+                this.library[assetId] = {
+                    'Blob': blob,
+                    'Name': name,
+                    'Type': type,
+                };
+                this._loadMesh(assetId, blob).then(() => { callback(assetId); });
+            });
         });
     }
 
@@ -4843,6 +4947,7 @@ class LibraryHandler {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
+                pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                 resolve();
             });
         });
@@ -4870,6 +4975,7 @@ class LibraryHandler {
                     });
                     let mesh = new THREE.Mesh( geometry, material );
                     this.library[assetId]['Mesh'] = mesh;
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                     resolve();
                 }
             );
@@ -4922,6 +5028,7 @@ class LibraryHandler {
             }
         }
         this.library = newLibrary;
+        this._blobHashMap = {};
     }
 
     getLibraryDetails(assetIds) {
@@ -4990,26 +5097,6 @@ const HandTools = {
     COPY_PASTE: "COPY_PASTE",
     DELETE: "DELETE",
     ACTIVE: "EDIT",
-};
-
-const PubSubTopics = {
-    HAND_TOOLS_SWITCH: "HAND_TOOLS_SWITCH",
-    INSTANCE_ADDED: "INSTANCE_ADDED",
-    INSTANCE_DELETED: "INSTANCE_DELETED",
-    INSTANCE_UPDATED: "INSTANCE_UPDATED",
-    INSTANCE_ATTACHED: "INSTANCE_ATTACHED",
-    INSTANCE_DETACHED: "INSTANCE_DETACHED",
-    MATERIAL_ADDED: "MATERIAL_ADDED",
-    MATERIAL_DELETED: "MATERIAL_DELETED",
-    MATERIAL_UPDATED: "MATERIAL_UPDATED",
-    MENU_FIELD_FOCUSED: "MENU_FIELD_FOCUSED",
-    MENU_NOTIFICATION: "MENU_NOTIFICATION",
-    NOTIFICATION: "NOTIFICATION",
-    PROJECT_LOADING: "PROJECT_LOADING",
-    PROJECT_SAVING: "PROJECT_SAVING",
-    TEXTURE_ADDED: "TEXTURE_ADDED",
-    TEXTURE_DELETED: "TEXTURE_DELETED",
-    TEXTURE_UPDATED: "TEXTURE_UPDATED",
 };
 
 /*
@@ -8104,18 +8191,9 @@ class Skybox {
             SIDES$1[CubeSides.FRONT].canvas,
             SIDES$1[CubeSides.BACK].canvas,
         ]);
-        this._defaultTexture = Textures.whitePixel;
-    }
-
-    getDefaultTexture() {
-        return this._defaultTexture;
     }
 
     setSides(assetIds) {
-        if(!this._defaultTexture) {
-            this._onDefaultTextureLoad = () => { this.setSides(assetId); };
-            return;
-        }
         for(let side in assetIds) {
             this.setSide(side, assetIds[side]);
         }
@@ -8124,14 +8202,13 @@ class Skybox {
     setSide(side, assetId) {
         let image = (assetId)
             ? libraryHandler.getImage(assetId)
-            : this._defaultTexture.image;
+            : null;
         this._drawImage(side, image);
         this._scene.background.needsUpdate = true;
     }
 
     deleteSide(side) {
-        let image = this._defaultTexture.image;
-        this._drawImage(side, image);
+        this._drawImage(side);
         this._scene.background.needsUpdate = true;
     }
 
@@ -8139,14 +8216,14 @@ class Skybox {
     _drawImage(side, image) {
         let canvas = SIDES$1[side]['canvas'];
         let context = SIDES$1[side]['context'];
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if(!image) return;
         let ratio  = RESOLUTION / Math.max(image.width, image.height);
         let centerShift_x = (canvas.width - image.width*ratio) / 2;
         let centerShift_y = (canvas.height - image.height*ratio) / 2;
-        context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
             centerShift_y, image.width * ratio, image.height * ratio);
     }
-
 }
 
 let skybox = new Skybox();
@@ -8585,59 +8662,157 @@ class InteractableHandler {
 
 }
 
+const FileTypes$1 = {
+    jpg: "jpg",
+    jpeg: "jpeg",
+    png: "png",
+    glb: "glb",
+};
+
+const FileTypes = {
+    glb: "glb",
+};
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class PubSub {
+class UploadHandler {
     constructor() {
-        this._topics = {};
-        this._toPublish = [];
+        this._input = document.createElement('input');
+        this._input.type = "file";
+        this._locks = new Set();
+        this._assetIds = [];
+        this._fileListenerActive = false;
+        this._triggerUpload = false;
+        this._addEventListeners();
     }
 
-    subscribe(owner, topic, callback) {
-        if(!(topic in this._topics)) this._topics[topic] = {};
-        this._topics[topic][owner] = callback;
-    }
-
-    unsubscribe(owner, topic) {
-        if(!(topic in this._topics)) return;
-
-        delete this._topics[topic][owner];
-        if(Object.keys(this._topics[topic]).length == 0) {
-            delete this._topics[topic];
+    _addEventListeners() {
+        this._input.addEventListener("change", () => { this._upload(); });
+        if(global$1.deviceType != "XR") {
+            this._input.addEventListener("click",
+                (e) => { e.stopPropagation(); });
+            this._eventType = global$1.deviceType == "MOBILE"
+                ? 'touchend'
+                : 'click';
+            this._clickListener = (e) => {
+                setTimeout(() => {
+                    if(this._triggerUpload) {
+                        this._triggerUpload = false;
+                        this._input.click();
+                    }
+                }, 20);
+            };
+            //Why this convoluted chain of event listener checking a variable
+            //set by interactable action (which uses polling)? Because we can't
+            //trigger the file input with a click event outside of an event
+            //listener on Firefox and Safari :(
         }
     }
 
-    publish(owner, topic, message, urgent) {
-        if(!topic in this._topics) {
-            return;
-        } else if(urgent) {
-            this._publish(owner, topic, message);
+    _uploadProjectFile() {
+        if(this._input.files.length > 0 && this._callback)
+            this._callback(this._input.files[0]);
+    }
+
+    _uploadAssets() {
+        this.uploadFiles(this._input.files, this._callback);
+    }
+
+    uploadFiles(files, callback) {
+        //Adding functionLock for potential race condition where LibraryHandler
+        //callback gets called before next iteration of loop for multiple files
+        let functionLock = uuidv4();
+        this._locks.add(functionLock);
+        for(let file of files) {
+            let extension = file.name.split('.').pop().toLowerCase();
+            if(extension in FileTypes$1) {
+                let lock = uuidv4();
+                if(extension in FileTypes$2) {
+                    this._locks.add(lock);
+                    libraryHandler.addNewAsset(file, file.name,
+                        AssetTypes.IMAGE, (assetId) => {
+                            this._libraryCallback(assetId, lock, callback);
+                        });
+                } else if(extension in FileTypes) {
+                    this._locks.add(lock);
+                    libraryHandler.addNewAsset(file, file.name,AssetTypes.MODEL,
+                        (assetId) => {
+                            this._libraryCallback(assetId, lock, callback);
+                        });
+                } else {
+                    console.log("TODO: Support other file types");
+                }
+            } else {
+                console.log("TODO: Tell user invalid filetype, and list valid ones");
+            }
+        }
+        this._input.value = '';
+        this._locks.delete(functionLock);
+        if(this._locks.size == 0) {
+            if(callback) callback(this._assetIds);
+            this._assetIds = [];
+        }
+    }
+
+    _libraryCallback(assetId, lock, callback) {
+        this._assetIds.push(assetId);
+        this._locks.delete(lock);
+        if(this._locks.size == 0) {
+            if(callback) callback(this._assetIds);
+            this._assetIds = [];
+        }
+    }
+
+    listenForAssets(callback, supportMultipleFiles, type) {
+        if(this._fileListenerActive)
+            throw new Error("File listener already in use");
+        this._callback = callback;
+        this._fileListenerActive = true;
+        this._input.multiple = supportMultipleFiles;
+        this._upload = this._uploadAssets;
+        if(type == AssetTypes.IMAGE) {
+            this._input.accept = "image/*";
+        } else if(type == AssetTypes.MODEL) {
+            this._input.accept = ".glb";
         } else {
-            this._toPublish.push(() => { this._publish(owner, topic, message);});
+            this._input.accept = '';
+        }
+        document.addEventListener(this._eventType, this._clickListener);
+    }
+
+    listenForProjectFile(callback) {
+        if(this._fileListenerActive)
+            throw new Error("File listener already in use");
+        this._callback = callback;
+        this._fileListenerActive = true;
+        this._input.multiple = false;
+        this._input.accept = '.zip';
+        this._upload = this._uploadProjectFile;
+        document.addEventListener(this._eventType, this._clickListener);
+    }
+
+    triggerUpload() {
+        if(global$1.deviceType == 'XR') {
+            sessionHandler.exitXRSession();
+            this._input.click();
+        } else {
+            this._triggerUpload = true;
         }
     }
 
-    _publish(owner, topic, message) {
-        let topicSubscribers = this._topics[topic];
-        for(let subscriber in topicSubscribers) {
-            if(subscriber == owner) continue;
-            topicSubscribers[subscriber](message);
-        }
+    stopListening() {
+        this._callback = null;
+        this._fileListenerActive = false;
+        document.removeEventListener(this._eventType, this._clickListener);
     }
 
-    update() {
-        for(let toPublish of this._toPublish) {
-            toPublish();
-        }
-        this._toPublish = [];
-    }
 }
 
-let pubSub = new PubSub();
+let uploadHandler = new UploadHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -10774,8 +10949,14 @@ class TransformControlsHandler {
     }
 
     _paste(e) {
-        if(e.clipboardData.types.indexOf('text/digitalbacon') < 0) return;
-        let data = e.clipboardData.getData('text/digitalbacon');
+        if(e.clipboardData.types.indexOf('Files') >= 0)
+            this._pasteFiles(e.clipboardData.files);
+        if(e.clipboardData.types.indexOf('text/digitalbacon') >= 0)
+            this._parseDigitalBaconData(
+                e.clipboardData.getData('text/digitalbacon'));
+    }
+
+    _pasteDigitalBaconData(data) {
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
         let instances = projectHandler.getInstancesForAssetId(assetId);
@@ -10787,6 +10968,41 @@ class TransformControlsHandler {
             if(!this._isDragging(instance)) this._offsetClone(clone);
             e.preventDefault();
         }
+    }
+
+    _pasteFiles(files) {
+        uploadHandler.uploadFiles(files, (assetIds) => {
+            global$1.camera.getWorldPosition(vector3s[0]);
+            global$1.camera.getWorldDirection(vector3s[1]);
+            vector3s[1].normalize().multiplyScalar(11/12);
+            vector3s[0].add(vector3s[1]);
+            let position = vector3s[0].toArray();
+            vector3s[0].set(0, 0, 1);
+            vector3s[1].setY(0).normalize();
+            quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+            euler.setFromQuaternion(quaternion);
+            let rotation = euler.toArray();
+            for(let assetId of assetIds) {
+                let type = libraryHandler.getType(assetId);
+                if(type == AssetTypes.IMAGE) {
+                    projectHandler.addImage({
+                        "assetId": assetId,
+                        "position": position,
+                        "rotation": rotation,
+                        "doubleSided": true,
+                        "transparent": true,
+                        "enableInteractions": true,
+                    });
+                } else if(type == AssetTypes.MODEL) {
+                    projectHandler.addGLTF({
+                        "assetId": assetId,
+                        "position": position,
+                        "rotation": rotation,
+                        "enableInteractions": true,
+                    });
+                }
+            }
+        });
     }
 
     _clone(option) {
@@ -12769,7 +12985,7 @@ const FIELDS$l = [
     { "name": "Position", "objParam": "position", "type": Vector3Input },
     { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
     { "name": "Scale", "objParam": "scale", "type": Vector3Input },
-    { "name": "Edit Visually", "type": CheckboxInput },
+    { "name": "Visually Edit", "type": CheckboxInput },
 ];
 
 class Asset extends Entity {
@@ -13096,7 +13312,7 @@ function makeMaterialTranslucent(material) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 const FIELDS$k = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Double Sided", "type": CheckboxInput },
     { "name": "Position" },
     { "name": "Rotation" },
@@ -13198,7 +13414,7 @@ class ClampedTexturePlane extends Asset {
  */
 
 const FIELDS$j = [
-    { "name": "Edit Visually", "type": CheckboxInput },
+    { "name": "Visually Edit", "type": CheckboxInput },
     { "name": "Position", "objParam": "position", "type": Vector3Input },
     { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
     { "name": "Scale", "objParam": "scale", "type": Vector3Input },
@@ -13542,34 +13758,7 @@ class ImageInput extends PointerInteractableEntity {
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
         this._updateImage(this._lastValue);
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _createInputs(title) {
@@ -13618,28 +13807,16 @@ class ImageInput extends PointerInteractableEntity {
                 if(assetId == "null\n") assetId = null;
                 this._handleAssetSelection(assetId);
             }, () => {
-                this._triggerFileUpload = true;
+                uploadHandler.triggerUpload();
             }, () => {
-                document.removeEventListener(this._eventType,
-                    this._clickListener);
+                uploadHandler.stopListening();
             });
             global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
-            document.addEventListener(this._eventType, this._clickListener);
+            uploadHandler.listenForAssets((assetIds) => {
+                if(assetIds.length > 0) this._handleAssetSelection(assetIds[0]);
+            }, false, AssetTypes.IMAGE);
         });
         this._pointerInteractable.addChild(interactable);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$2) {
-                libraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => { this._handleAssetSelection(assetId); });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
     }
 
     _handleAssetSelection(assetId) {
@@ -13945,6 +14122,8 @@ class BasicTexture extends Texture {
                     },
                     'setToSource': (v) => {
                         this._texture[field.parameter][field.parameter2] = v;
+                        this['_' + field.parameter +
+                            field.parameter2.toUpperCase()] = v;
                     },
                     'minValue': field.min,
                     'maxValue': field.max,
@@ -14003,35 +14182,8 @@ class CubeImageInput extends PointerInteractableEntity {
         this._title = params['title'] || null;
         this._buttons = [];
         this._createInputs();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
         for(let side of SIDES) {
             this._updateImage(side, this._lastValues[side]);
-        }
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
         }
     }
 
@@ -14119,28 +14271,16 @@ class CubeImageInput extends PointerInteractableEntity {
             this._handleAssetSelection(side, assetId);
         }, () => {
             this._fileUploadSide = side;
-            this._triggerFileUpload = true;
+            uploadHandler.triggerUpload();
         }, () => {
-            document.removeEventListener(this._eventType, this._clickListener);
+            uploadHandler.stopListening();
         });
         global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
         document.addEventListener(this._eventType, this._clickListener);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$2) {
-                libraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => {
-                        this._handleAssetSelection(this._fileUploadSide,
-                            assetId);
-                    });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
+        uploadHandler.listenForAssets((assetIds) => {
+            if(assetIds.length > 0)
+                this._handleAssetSelection(this._fileUploadSide, assetIds[0]);
+        }, false, AssetTypes.IMAGE);
     }
 
     _handleAssetSelection(side, assetId) {
@@ -16098,12 +16238,12 @@ class ProjectHandler {
 
     _addLights(instancesParams, assetId, ignoreUndoRedo) {
         for(let params of instancesParams) {
-            this.addLight(new this._lightClassMap[assetId](params),
-                ignoreUndoRedo);
+            this.addLight(params, assetId, ignoreUndoRedo);
         }
     }
 
-    addLight(instance, ignoreUndoRedo) {
+    addLight(params, assetId, ignoreUndoRedo) {
+        let instance = new this._lightClassMap[assetId](params);
         instance.addToScene(this._scene);
         this._addAsset(instance, ignoreUndoRedo);
         return instance;
@@ -16116,12 +16256,12 @@ class ProjectHandler {
 
     _addShapes(instancesParams, assetId, ignoreUndoRedo) {
         for(let params of instancesParams) {
-            this.addShape(new this._shapeClassMap[assetId](params),
-                ignoreUndoRedo);
+            this.addShape(params, assetId, ignoreUndoRedo);
         }
     }
 
-    addShape(instance, ignoreUndoRedo) {
+    addShape(params, assetId, ignoreUndoRedo) {
+        let instance = new this._shapeClassMap[assetId](params);
         instance.addToScene(this._scene);
         this._addAsset(instance, ignoreUndoRedo);
         return instance;
@@ -16647,7 +16787,6 @@ class PaginatedPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-//import ThreeMeshUI from 'three-mesh-ui';
 
 class AssetPage extends PaginatedPage {
     constructor(controller) {
@@ -16655,6 +16794,7 @@ class AssetPage extends PaginatedPage {
         this._instances = {};
         this._items = Object.keys(this._instances);
         this._addPageContent();
+        this._createAddButton();
     }
 
     _addPageContent() {
@@ -16669,6 +16809,57 @@ class AssetPage extends PaginatedPage {
         this._addList();
     }
 
+    _createAddButton() {
+        let addButtonParent = new ThreeMeshUI.Block({
+            height: 0.06,
+            width: 0.06,
+            backgroundColor: Colors.defaultMenuBackground,
+            backgroundOpacity: 0,
+        });
+        let addButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "+",
+            'fontSize': 0.04,
+            'height': 0.04,
+            'width': 0.04,
+        });
+        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.position.fromArray([.175, 0.12, -0.001]);
+        addButtonParent.add(addButton);
+        let interactable = new PointerInteractable(addButton, () => {
+            this._controller
+                .getPosition(vector3s[0]);
+            this._controller
+                .getDirection(vector3s[1]).normalize()
+                .divideScalar(4);
+            let position = vector3s[0].sub(vector3s[1]).toArray();
+            vector3s[0].set(0, 0, 1);
+            vector3s[1].setY(0).normalize();
+            quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+            euler.setFromQuaternion(quaternion);
+            let rotation = euler.toArray();
+            let params = {
+                assetId: this._assetId,
+                position: position,
+                rotation: rotation,
+                enableInteractions: true,
+            };
+            let type = libraryHandler.getType(this._assetId);
+            if(type == AssetTypes.IMAGE) {
+                params['doubleSided'] = true;
+                params['transparent'] = true;
+                projectHandler.addImage(params);
+            } else if(type == AssetTypes.MODEL) {
+                projectHandler.addGLTF(params);
+            } else if(type == AssetTypes.SHAPE) {
+                projectHandler.addShape(params, this._assetId);
+            } else if(type == AssetTypes.LIGHT) {
+                projectHandler.addLight(params, this._assetId);
+            }
+        });
+        this._containerInteractable.addChild(interactable);
+        this._object.add(addButtonParent);
+    }
+
     _getItemName(item) {
         return this._instances[item].getName();
     }
@@ -16680,6 +16871,7 @@ class AssetPage extends PaginatedPage {
     }
 
     _refreshItems() {
+        this._instances = projectHandler.getInstancesForAssetId(this._assetId);
         this._items = Object.keys(this._instances);
     }
 
@@ -16816,6 +17008,29 @@ class LightsPage extends PaginatedPage {
             this._containerInteractable.removeChild(this._addInteractable);
         }
         this._titleBlock.children[1].set({ content: title });
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
+            if(libraryHandler.getType(assetId) == this._assetType) {
+                this._refreshItems();
+                this._updateItemsGUI();
+            }
+        });
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._addSubscriptions();
+        super.addToScene(scene, parentInteractable);
+    }
+
+    removeFromScene() {
+        this._removeSubscriptions();
+        super.removeFromScene();
     }
 
 }
@@ -17784,13 +17999,15 @@ class GoogleDrive {
     }
 
     isSignedIn() {
-        return gapi.client.getToken() != null;
+        return gapi.client && gapi.client.getToken() != null;
     }
 
-    //TODO: Change how we determine if this is active. Once local save/load
-    //      is working then this won't necessarily be true
     hasActiveFile() {
         return this._fileId != null;
+    }
+
+    clearActiveFile() {
+        this._fileId = null;
     }
 
     fetchFiles(callback) {
@@ -18126,7 +18343,6 @@ class PaginatedIconsPage extends MenuPage {
                 button.add(imageBlock);
                 button.add(textBlock);
                 row.add(button);
-                window.b = button;
                 this._paginatedListButtons.push(button);
                 let interactable = new PointerInteractable(button, () => {
                     let index = this._page * ROWS * OPTIONS$1 + OPTIONS$1 * i + j;
@@ -18812,7 +19028,7 @@ class NewTexturePage extends PaginatedPage {
 const ASSET_ID$9 = '7605bff2-8ca3-4a47-b6f7-311d745507de';
 const ASSET_NAME$9 = 'Ambient Light';
 const FIELDS$9 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Color", "parameter": "color", "type": ColorInput },
     { "name": "Intensity", "parameter": "_intensity", "min": 0,
         "type": NumberInput },
@@ -18929,35 +19145,9 @@ const OPTIONS = {
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._input = document.createElement('input');
-        this._input.type = "file";
         this._items = Object.keys(OPTIONS).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () =>{this._handleLocalFile();});
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -19002,7 +19192,8 @@ class ProjectPage extends PaginatedPage {
         let ambientLight = new PrimitiveAmbientLight({
             'enableInteractions': false,
         });
-        projectHandler.addLight(ambientLight, true);
+        projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+        googleDrive.clearActiveFile();
     }
 
     _localSave() {
@@ -19024,12 +19215,7 @@ class ProjectPage extends PaginatedPage {
     }
 
     _localLoad() {
-        if(global$1.deviceType == 'XR') {
-            this._input.click();
-            sessionHandler.exitXRSession();
-        } else {
-            this._triggerFileUpload = true;
-        }
+        uploadHandler.triggerUpload();
     }
 
     _googleDriveSave() {
@@ -19091,25 +19277,18 @@ class ProjectPage extends PaginatedPage {
         this._updateItemsGUI();
     }
 
-    _handleLocalFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension == "zip") {
-                this._updateLoading(false);
-                pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
-                JSZip.loadAsync(file).then((jsZip) => {
-                    projectHandler.loadZip(jsZip, () => {
-                        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
-                            { text: 'Project Loaded', });
-                    }, () => {
-                        this._loadErrorCallback();
-                    });
-                });
-            } else {
+    _handleLocalFile(file) {
+        this._updateLoading(false);
+        pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+        JSZip.loadAsync(file).then((jsZip) => {
+            googleDrive.clearActiveFile();
+            projectHandler.loadZip(jsZip, () => {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
+                    { text: 'Project Loaded', });
+            }, () => {
                 this._loadErrorCallback();
-            }
-        }
+            });
+        });
     }
 
     _loadErrorCallback() {
@@ -19168,12 +19347,14 @@ class ProjectPage extends PaginatedPage {
     }
 
     addToScene(scene, parentInteractable) {
-        document.addEventListener(this._eventType, this._clickListener);
+        uploadHandler.listenForProjectFile((file) => {
+            this._handleLocalFile(file);
+        });
         super.addToScene(scene, parentInteractable);
     }
 
     removeFromScene() {
-        document.removeEventListener(this._eventType, this._clickListener);
+        uploadHandler.stopListening();
         super.removeFromScene();
     }
 
@@ -19195,7 +19376,7 @@ class ReadyPlayerMe {
         this._iframe = document.createElement('iframe');
         this._iframe.id = "digital-bacon-rpm-iframe";
         this._iframe.allow = 'camera *; microphone *; clipboard-write';
-        this._iframe.src = 'https://demo.readyplayer.me/avatar?frameApi';
+        this._iframe.src = 'https://digitalbacon.readyplayer.me/avatar?frameApi';
         this._iframe.hidden = true;
         this._closeButton = document.createElement('button');
         this._closeButton.innerHTML = "Close Ready Player Me";
@@ -19340,33 +19521,6 @@ class SkyboxPage extends MenuPage {
         super(controller, false, true);
         this._buttons = [];
         this._addPageContent();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.accept = "image/*";
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -19416,13 +19570,18 @@ class SkyboxPage extends MenuPage {
                     this._controller.back();
                 }, () => {
                     this._fileUploadSide = sides[i];
-                    this._triggerFileUpload = true;
+                    uploadHandler.triggerUpload();
                 }, () => {
-                    document.removeEventListener(this._eventType,
-                        this._clickListener);
+                    uploadHandler.stopListening();
                 });
                 this._controller.pushPage(MenuPages.ASSET_SELECT);
-                document.addEventListener(this._eventType, this._clickListener);
+                uploadHandler.listenForAssets((assetIds) => {
+                    if(assetIds.length > 0) {
+                        settingsHandler.setSkyboxSide(this._fileUploadSide,
+                            assetIds[0]);
+                        this._controller.back();
+                    }
+                }, false, AssetTypes.IMAGE);
             });
             this._containerInteractable.addChild(interactable);
             if(i == 0) {
@@ -19453,23 +19612,6 @@ class SkyboxPage extends MenuPage {
             this._buttons.push(button);
         }
         this._container.add(columnBlock);
-    }
-
-    _uploadFile() {
-        if(this._input.files.length > 0) {
-            let file = this._input.files[0];
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$2) {
-                libraryHandler.addNewAsset(file, file.name, AssetTypes.IMAGE,
-                    (assetId) => {
-                        settingsHandler.setSkyboxSide(this._fileUploadSide,
-                            assetId);
-                        this._controller.back();
-                    });
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
-            }
-        }
     }
 
     _setTextures() {
@@ -19760,17 +19902,6 @@ class TextInputPage extends MenuPage {
 
 }
 
-const FileTypes$1 = {
-    jpg: "jpg",
-    jpeg: "jpeg",
-    png: "png",
-    glb: "glb",
-};
-
-const FileTypes = {
-    glb: "glb",
-};
-
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -19781,33 +19912,6 @@ class UploadPage extends MenuPage {
     constructor(controller) {
         super(controller, false, true);
         this._addPageContent();
-        this._input = document.createElement('input');
-        this._input.type = "file";
-        this._input.multiple = true;
-        this._addEventListeners();
-    }
-
-    _addEventListeners() {
-        this._input.addEventListener("change", () => { this._uploadFile(); });
-        if(global$1.deviceType != "XR") {
-            this._input.addEventListener("click",
-                (e) => { e.stopPropagation(); });
-            this._eventType = global$1.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = (e) => {
-                setTimeout(() => {
-                    if(this._triggerFileUpload) {
-                        this._triggerFileUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
-        }
     }
 
     _addPageContent() {
@@ -19834,70 +19938,55 @@ class UploadPage extends MenuPage {
         });
         columnBlock.add(linkButton);
         let interactable = new PointerInteractable(linkButton, () => {
-            if(global$1.deviceType == 'XR') {
-                sessionHandler.exitXRSession();
-                this._input.click();
-            } else {
-                this._triggerFileUpload = true;
-            }
+            uploadHandler.triggerUpload();
         });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
     }
 
-    _uploadFile() {
-        for(let file of this._input.files) {
-            let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$1) {
-                if(extension in FileTypes$2) {
-                    libraryHandler.addNewAsset(file, file.name,
-                        AssetTypes.IMAGE, (assetId) => {
-                            let position = this._controller
-                                .getPosition(vector3s[0]);
-                            let direction = this._controller
-                                .getDirection(vector3s[1]).normalize()
-                                .divideScalar(4);
-                            projectHandler.addImage({
-                                "assetId": assetId,
-                                "position": position.sub(direction).toArray(),
-                                "rotation": [0,0,0],
-                                "doubleSided": true,
-                                "transparent": true,
-                                "enableInteractions": true,
-                            });
-                    });
-                } else if(extension in FileTypes) {
-                    libraryHandler.addNewAsset(file, file.name,AssetTypes.MODEL,
-                        (assetId) => {
-                            let position = this._controller
-                                .getPosition(vector3s[0]);
-                            let direction = this._controller
-                                .getDirection(vector3s[1]).normalize()
-                                .divideScalar(4);
-                            projectHandler.addGLTF({
-                                "assetID": assetId,
-                                "position": position.sub(direction).toArray(),
-                                "rotation": [0,0,0],
-                                "enableInteractions": true,
-                            });
-                    });
-                } else {
-                    console.log("TODO: Support other file types");
-                }
-            } else {
-                console.log("TODO: Tell user invalid filetype, and list valid ones");
+    _uploadCallback(assetIds) {
+        this._controller
+            .getPosition(vector3s[0]);
+        this._controller
+            .getDirection(vector3s[1]).normalize()
+            .divideScalar(4);
+        let position = vector3s[0].sub(vector3s[1]).toArray();
+        vector3s[0].set(0, 0, 1);
+        vector3s[1].setY(0).normalize();
+        quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+        euler.setFromQuaternion(quaternion);
+        let rotation = euler.toArray();
+        for(let assetId of assetIds) {
+            let type = libraryHandler.getType(assetId);
+            if(type == AssetTypes.IMAGE) {
+                projectHandler.addImage({
+                    "assetId": assetId,
+                    "position": position,
+                    "rotation": rotation,
+                    "doubleSided": true,
+                    "transparent": true,
+                    "enableInteractions": true,
+                });
+            } else if(type == AssetTypes.MODEL) {
+                projectHandler.addGLTF({
+                    "assetId": assetId,
+                    "position": position,
+                    "rotation": rotation,
+                    "enableInteractions": true,
+                });
             }
         }
-        this._input.value = '';
     }
 
     addToScene(scene, parentInteractable) {
-        document.addEventListener(this._eventType, this._clickListener);
+        uploadHandler.listenForAssets((assetIds) => {
+            this._uploadCallback(assetIds);
+        }, true);
         super.addToScene(scene, parentInteractable);
     }
 
     removeFromScene() {
-        document.removeEventListener(this._eventType, this._clickListener);
+        uploadHandler.stopListening();
         super.removeFromScene();
     }
 }
@@ -20191,7 +20280,6 @@ class MenuController extends PointerInteractableEntity {
         vector3s[1].normalize().divideScalar(menuDistanceScale);
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
-        //this._object.add(this._object);
         this.addToScene(this._scene);
     }
 
@@ -20240,6 +20328,7 @@ class MenuController extends PointerInteractableEntity {
     }
 
     addToScene(scene) {
+        if(this._object.parent == scene) return;
         super.addToScene(scene);
         this._scene = scene;
         this._getCurrentPage().addToScene(this._object,
@@ -20537,6 +20626,11 @@ class Main {
                 $(this._errorMessage).addClass("error");
                 if(error) throw error;
             });
+        } else {
+            let ambientLight = new PrimitiveAmbientLight({
+                'enableInteractions': false,
+            });
+            projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
         }
     }
 
@@ -20943,7 +21037,7 @@ class PrimitiveMesh extends Asset {
 const ASSET_ID$8 = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
 const ASSET_NAME$8 = 'Box';
 const FIELDS$8 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
     { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },
@@ -21045,7 +21139,7 @@ projectHandler.registerShape(PrimitiveBox, ASSET_ID$8, ASSET_NAME$8);
 const ASSET_ID$7 = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
 const ASSET_NAME$7 = 'Circle';
 const FIELDS$7 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0, "type": NumberInput },
     { "name": "Sides", "parameter": "_segments", "min": 3,
@@ -21145,7 +21239,7 @@ projectHandler.registerShape(PrimitiveCircle, ASSET_ID$7, ASSET_NAME$7);
 const ASSET_ID$6 = '42779f01-e2cc-495a-a4b3-b286197fa762';
 const ASSET_NAME$6 = 'Cone';
 const FIELDS$6 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Height", "parameter": "_height", "min": 0,
         "type": NumberInput },
@@ -21262,7 +21356,7 @@ projectHandler.registerShape(PrimitiveCone, ASSET_ID$6, ASSET_NAME$6);
 const ASSET_ID$5 = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
 const ASSET_NAME$5 = 'Cylinder';
 const FIELDS$5 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Height", "parameter": "_height", "min": 0,
         "type": NumberInput },
@@ -21383,7 +21477,7 @@ projectHandler.registerShape(PrimitiveCylinder, ASSET_ID$5, ASSET_NAME$5);
 const ASSET_ID$4 = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
 const ASSET_NAME$4 = 'Plane';
 const FIELDS$4 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
     { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },
@@ -21485,7 +21579,7 @@ projectHandler.registerShape(PrimitivePlane, ASSET_ID$4, ASSET_NAME$4);
 const ASSET_ID$3 = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
 const ASSET_NAME$3 = 'Basic Light';
 const FIELDS$3 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Color", "parameter": "color", "type": ColorInput },
     { "name": "Intensity", "parameter": "_intensity", "min": 0,
         "type": NumberInput },
@@ -21604,7 +21698,7 @@ projectHandler.registerLight(PrimitivePointLight, ASSET_ID$3, ASSET_NAME$3);
 const ASSET_ID$2 = '534f29c3-1e85-4510-bb84-459011de6722';
 const ASSET_NAME$2 = 'Ring';
 const FIELDS$2 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Inner Radius", "parameter": "_innerRadius", "min": 0,
         "type": NumberInput },
@@ -21716,7 +21810,7 @@ projectHandler.registerShape(PrimitiveRing, ASSET_ID$2, ASSET_NAME$2);
 const ASSET_ID$1 = '423c9506-52f4-4725-b848-69913cce2b00';
 const ASSET_NAME$1 = 'Sphere';
 const FIELDS$1 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0,
         "type": NumberInput },
@@ -21821,7 +21915,7 @@ projectHandler.registerShape(PrimitiveSphere, ASSET_ID$1, ASSET_NAME$1);
 const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
 const ASSET_NAME = 'Torus';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0,
         "type": NumberInput },
@@ -33837,6 +33931,8 @@ function setup(containerId, projectFilePath) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const version = "0.0.1";
+
 function getDeviceType() {
     return global$1.deviceType;
 }
@@ -33845,4 +33941,4 @@ function disableImmersion() {
     global$1.disableImmersion = true;
 }
 
-export { libraryHandler as LibraryHandler, projectHandler as ProjectHandler, disableImmersion, getDeviceType, setup, setupEditor };
+export { libraryHandler as LibraryHandler, projectHandler as ProjectHandler, disableImmersion, getDeviceType, setup, setupEditor, version };

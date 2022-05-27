@@ -13,9 +13,7 @@ import * as THREE from 'three';
 let icons = ['audio', 'checkmark', 'hamburger', 'image', 'lightbulb', 'material', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
-let whitePixelLock = uuidv4();
 global.loadingLocks.add(blackPixelLock);
-global.loadingLocks.add(whitePixelLock);
 for(let icon of icons) {
     locks[icon] = uuidv4();
     global.loadingLocks.add(locks[icon]);
@@ -84,10 +82,6 @@ export const Textures = {
     "blackPixel": new THREE.TextureLoader().load(
         'images/black_pixel.png',
         function(texture) { global.loadingLocks.delete(blackPixelLock); },
-    ),
-    "whitePixel": new THREE.TextureLoader().load(
-        'images/white_pixel.png',
-        function(texture) { global.loadingLocks.delete(whitePixelLock); },
     ),
 };
 

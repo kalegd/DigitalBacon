@@ -1,4 +1,17 @@
 {
+  "name": "DigitalBacon",
+  "version": "0.0.1",
+  "description": "Content management system for 3D websites",
+  "main": "/build/DigitalBacon.min.js",
+  "license": "MPL 2.0",
+  "repository": "github:kalegd/DigitalBacon",
+  "bugs": "https://github.com/kalegd/DigitalBacon/issues",
+  "keywords": [
+    "webxr",
+    "threejs",
+    "3d website",
+    "cool"
+  ],
   "scripts": {
     "build": "rollup -c",
     "start": "http-server -c-1 -p 8000"
