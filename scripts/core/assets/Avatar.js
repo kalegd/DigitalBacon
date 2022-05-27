@@ -24,7 +24,7 @@ export default class Avatar {
         this._xrViewPoint = (params['XR View Point'])
             ? params['XR View Point']
             : [0,1.7,0];
-        this._defaultURL = '/models/default_avatar.glb';
+        this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
         this._pivotPoint = new THREE.Object3D();
         this._createBoundingBox(params);
         //this._pivotPoint.position.setY(1.3);

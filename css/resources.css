@@ -271,8 +271,30 @@ table.basic-table tr:nth-child(even) {
     background-color: #f8f8f8;
 }
 
+.guidance-images > img {
+    background-color: #24292f;
+    border-radius: 10px;
+    display: block;
+    margin: 10px;
+    padding: 10px;
+}
+
+.guidance-images > img.wide-image {
+    width: 100%;
+    max-width: 750px;
+}
+
+.guidance-images > img.long-image {
+    width: 40%;
+    max-width: 300px;
+}
+
 .bold {
     font-weight: bold;
+}
+
+.italic {
+    font-style: italic;
 }
 
 .return-data {

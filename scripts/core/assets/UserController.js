@@ -25,7 +25,7 @@ class UserController {
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
         this._avatarURL = localStorage.getItem(AVATAR_KEY)
-            || '/models/default_avatar.glb';
+            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
 
         this._setup();
     }
