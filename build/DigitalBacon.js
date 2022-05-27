@@ -261,9 +261,7 @@ const blobToHash = (blob) => {
 let icons = ['audio', 'checkmark', 'hamburger', 'image', 'lightbulb', 'material', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
-let whitePixelLock = uuidv4();
 global$1.loadingLocks.add(blackPixelLock);
-global$1.loadingLocks.add(whitePixelLock);
 for(let icon of icons) {
     locks[icon] = uuidv4();
     global$1.loadingLocks.add(locks[icon]);
@@ -332,10 +330,6 @@ const Textures = {
     "blackPixel": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWNgAAAAAgABz8g15QAAAABJRU5ErkJggg==',
         function(texture) { global$1.loadingLocks.delete(blackPixelLock); },
-    ),
-    "whitePixel": new THREE.TextureLoader().load(
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdj+P///38ACfsD/QVDRcoAAAAASUVORK5CYII=',
-        function(texture) { global$1.loadingLocks.delete(whitePixelLock); },
     ),
 };
 
@@ -8197,18 +8191,9 @@ class Skybox {
             SIDES$1[CubeSides.FRONT].canvas,
             SIDES$1[CubeSides.BACK].canvas,
         ]);
-        this._defaultTexture = Textures.whitePixel;
-    }
-
-    getDefaultTexture() {
-        return this._defaultTexture;
     }
 
     setSides(assetIds) {
-        if(!this._defaultTexture) {
-            this._onDefaultTextureLoad = () => { this.setSides(assetId); };
-            return;
-        }
         for(let side in assetIds) {
             this.setSide(side, assetIds[side]);
         }
@@ -8217,14 +8202,13 @@ class Skybox {
     setSide(side, assetId) {
         let image = (assetId)
             ? libraryHandler.getImage(assetId)
-            : this._defaultTexture.image;
+            : null;
         this._drawImage(side, image);
         this._scene.background.needsUpdate = true;
     }
 
     deleteSide(side) {
-        let image = this._defaultTexture.image;
-        this._drawImage(side, image);
+        this._drawImage(side);
         this._scene.background.needsUpdate = true;
     }
 
@@ -8232,14 +8216,14 @@ class Skybox {
     _drawImage(side, image) {
         let canvas = SIDES$1[side]['canvas'];
         let context = SIDES$1[side]['context'];
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if(!image) return;
         let ratio  = RESOLUTION / Math.max(image.width, image.height);
         let centerShift_x = (canvas.width - image.width*ratio) / 2;
         let centerShift_y = (canvas.height - image.height*ratio) / 2;
-        context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
             centerShift_y, image.width * ratio, image.height * ratio);
     }
-
 }
 
 let skybox = new Skybox();
@@ -13001,7 +12985,7 @@ const FIELDS$l = [
     { "name": "Position", "objParam": "position", "type": Vector3Input },
     { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
     { "name": "Scale", "objParam": "scale", "type": Vector3Input },
-    { "name": "Edit Visually", "type": CheckboxInput },
+    { "name": "Visually Edit", "type": CheckboxInput },
 ];
 
 class Asset extends Entity {
@@ -13328,7 +13312,7 @@ function makeMaterialTranslucent(material) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 const FIELDS$k = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Double Sided", "type": CheckboxInput },
     { "name": "Position" },
     { "name": "Rotation" },
@@ -13430,7 +13414,7 @@ class ClampedTexturePlane extends Asset {
  */
 
 const FIELDS$j = [
-    { "name": "Edit Visually", "type": CheckboxInput },
+    { "name": "Visually Edit", "type": CheckboxInput },
     { "name": "Position", "objParam": "position", "type": Vector3Input },
     { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
     { "name": "Scale", "objParam": "scale", "type": Vector3Input },
@@ -14138,6 +14122,8 @@ class BasicTexture extends Texture {
                     },
                     'setToSource': (v) => {
                         this._texture[field.parameter][field.parameter2] = v;
+                        this['_' + field.parameter +
+                            field.parameter2.toUpperCase()] = v;
                     },
                     'minValue': field.min,
                     'maxValue': field.max,
@@ -18016,10 +18002,12 @@ class GoogleDrive {
         return gapi.client && gapi.client.getToken() != null;
     }
 
-    //TODO: Change how we determine if this is active. Once local save/load
-    //      is working then this won't necessarily be true
     hasActiveFile() {
         return this._fileId != null;
+    }
+
+    clearActiveFile() {
+        this._fileId = null;
     }
 
     fetchFiles(callback) {
@@ -19040,7 +19028,7 @@ class NewTexturePage extends PaginatedPage {
 const ASSET_ID$9 = '7605bff2-8ca3-4a47-b6f7-311d745507de';
 const ASSET_NAME$9 = 'Ambient Light';
 const FIELDS$9 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Color", "parameter": "color", "type": ColorInput },
     { "name": "Intensity", "parameter": "_intensity", "min": 0,
         "type": NumberInput },
@@ -19204,7 +19192,8 @@ class ProjectPage extends PaginatedPage {
         let ambientLight = new PrimitiveAmbientLight({
             'enableInteractions': false,
         });
-        projectHandler.addLight(ambientLight, true);
+        projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+        googleDrive.clearActiveFile();
     }
 
     _localSave() {
@@ -19227,12 +19216,6 @@ class ProjectPage extends PaginatedPage {
 
     _localLoad() {
         uploadHandler.triggerUpload();
-        if(global$1.deviceType == 'XR') {
-            this._input.click();
-            sessionHandler.exitXRSession();
-        } else {
-            this._triggerFileUpload = true;
-        }
     }
 
     _googleDriveSave() {
@@ -19298,6 +19281,7 @@ class ProjectPage extends PaginatedPage {
         this._updateLoading(false);
         pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
         JSZip.loadAsync(file).then((jsZip) => {
+            googleDrive.clearActiveFile();
             projectHandler.loadZip(jsZip, () => {
                 pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
                     { text: 'Project Loaded', });
@@ -19392,7 +19376,7 @@ class ReadyPlayerMe {
         this._iframe = document.createElement('iframe');
         this._iframe.id = "digital-bacon-rpm-iframe";
         this._iframe.allow = 'camera *; microphone *; clipboard-write';
-        this._iframe.src = 'https://demo.readyplayer.me/avatar?frameApi';
+        this._iframe.src = 'https://digitalbacon.readyplayer.me/avatar?frameApi';
         this._iframe.hidden = true;
         this._closeButton = document.createElement('button');
         this._closeButton.innerHTML = "Close Ready Player Me";
@@ -20642,6 +20626,11 @@ class Main {
                 $(this._errorMessage).addClass("error");
                 if(error) throw error;
             });
+        } else {
+            let ambientLight = new PrimitiveAmbientLight({
+                'enableInteractions': false,
+            });
+            projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
         }
     }
 
@@ -21048,7 +21037,7 @@ class PrimitiveMesh extends Asset {
 const ASSET_ID$8 = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
 const ASSET_NAME$8 = 'Box';
 const FIELDS$8 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
     { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },
@@ -21150,7 +21139,7 @@ projectHandler.registerShape(PrimitiveBox, ASSET_ID$8, ASSET_NAME$8);
 const ASSET_ID$7 = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
 const ASSET_NAME$7 = 'Circle';
 const FIELDS$7 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0, "type": NumberInput },
     { "name": "Sides", "parameter": "_segments", "min": 3,
@@ -21250,7 +21239,7 @@ projectHandler.registerShape(PrimitiveCircle, ASSET_ID$7, ASSET_NAME$7);
 const ASSET_ID$6 = '42779f01-e2cc-495a-a4b3-b286197fa762';
 const ASSET_NAME$6 = 'Cone';
 const FIELDS$6 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Height", "parameter": "_height", "min": 0,
         "type": NumberInput },
@@ -21367,7 +21356,7 @@ projectHandler.registerShape(PrimitiveCone, ASSET_ID$6, ASSET_NAME$6);
 const ASSET_ID$5 = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
 const ASSET_NAME$5 = 'Cylinder';
 const FIELDS$5 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Height", "parameter": "_height", "min": 0,
         "type": NumberInput },
@@ -21488,7 +21477,7 @@ projectHandler.registerShape(PrimitiveCylinder, ASSET_ID$5, ASSET_NAME$5);
 const ASSET_ID$4 = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
 const ASSET_NAME$4 = 'Plane';
 const FIELDS$4 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
     { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },
@@ -21590,7 +21579,7 @@ projectHandler.registerShape(PrimitivePlane, ASSET_ID$4, ASSET_NAME$4);
 const ASSET_ID$3 = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
 const ASSET_NAME$3 = 'Basic Light';
 const FIELDS$3 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Color", "parameter": "color", "type": ColorInput },
     { "name": "Intensity", "parameter": "_intensity", "min": 0,
         "type": NumberInput },
@@ -21709,7 +21698,7 @@ projectHandler.registerLight(PrimitivePointLight, ASSET_ID$3, ASSET_NAME$3);
 const ASSET_ID$2 = '534f29c3-1e85-4510-bb84-459011de6722';
 const ASSET_NAME$2 = 'Ring';
 const FIELDS$2 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Inner Radius", "parameter": "_innerRadius", "min": 0,
         "type": NumberInput },
@@ -21821,7 +21810,7 @@ projectHandler.registerShape(PrimitiveRing, ASSET_ID$2, ASSET_NAME$2);
 const ASSET_ID$1 = '423c9506-52f4-4725-b848-69913cce2b00';
 const ASSET_NAME$1 = 'Sphere';
 const FIELDS$1 = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0,
         "type": NumberInput },
@@ -21926,7 +21915,7 @@ projectHandler.registerShape(PrimitiveSphere, ASSET_ID$1, ASSET_NAME$1);
 const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
 const ASSET_NAME = 'Torus';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0,
         "type": NumberInput },
@@ -33942,6 +33931,8 @@ function setup(containerId, projectFilePath) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const version = "0.0.1";
+
 function getDeviceType() {
     return global$1.deviceType;
 }
@@ -33950,4 +33941,4 @@ function disableImmersion() {
     global$1.disableImmersion = true;
 }
 
-export { libraryHandler as LibraryHandler, projectHandler as ProjectHandler, disableImmersion, getDeviceType, setup, setupEditor };
+export { libraryHandler as LibraryHandler, projectHandler as ProjectHandler, disableImmersion, getDeviceType, setup, setupEditor, version };

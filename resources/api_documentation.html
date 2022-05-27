@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Digital Bacon - API Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/resources.css">
+    <link href="http://fonts.cdnfonts.com/css/montserrat" rel="stylesheet">
+  </head>
+  <body>
+    <div id="doc-container">
+      <div class="sidebar">
+        <a href="/">
+          <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
+        </a>
+        <!--<div role="search" id="sidebar-search">
+          <svg version="1.1" viewBox="0 0 1000 1000" x="0px" xmlns="http://www.w3.org/2000/svg" y="0px">
+            <path d="M968.2,849.4L667.3,549c83.9-136.5,66.7-317.4-51.7-435.6C477.1-25,252.5-25,113.9,113.4c-138.5,138.3-138.5,362.6,0,501C219.2,730.1,413.2,743,547.6,666.5l301.9,301.4c43.6,43.6,76.9,14.9,104.2-12.4C981,928.3,1011.8,893,968.2,849.4z M524.5,522c-88.9,88.7-233,88.7-321.8,0c-88.9-88.7-88.9-232.6,0-321.3c88.9-88.7,233-88.7,321.8,0C613.4,289.4,613.4,433.3,524.5,522z"></path>
+          </svg>
+          <input placeholder="Search..." aria-label="Search" type="text" value="">
+        </div>-->
+        <div id="sidebar-navigation">
+          <ul>
+            <li>
+              <a href="#section/Introduction">
+                <label type="section" role="menuitem">
+                  <span title="Introduction">Introduction</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/HowToUse">
+                <label type="section" role="menuitem">
+                  <span title="How to Use">How to Use</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/DigitalBacon">
+                <label type="section" role="menuitem">
+                  <span title="DigitalBacon">DigitalBacon</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/App">
+                <label type="section" role="menuitem">
+                  <span title="App">App</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/LibraryHandler">
+                <label type="section" role="menuitem">
+                  <span title="Library Handler">Library Handler</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/ProjectHandler">
+                <label type="section" role="menuitem">
+                  <span title="Project Handler">Project Handler</span>
+                </label>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div id="main-content">
+        <a class="only-large-screen" href="/">
+          <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
+        </a>
+        <h1>DigitalBacon (0.0.1)</h1>
+        <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
+        <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
+        <h1 id="section/Introduction">Introduction</h1>
+        <p>DigitalBacon is a library to create and deploy three.js scenes that support PC, Mobile, and VR sessions without all the boilerplate required to do it yourself. Additionally this library hopes to enable developers to create more complex scenes faster by exposing the renderer, scene, camera, helper functions, and more</p>
+        <h1 id="section/HowToUse">How to Use</h1>
+        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a>. When importing it into your project, Digital Bacon requires three.js and three-mesh-ui to be included in the import map. Please see below for an example</p>
+        <pre class="codeblock"><code>&lt;script type="importmap"&gt;
+  {
+    "imports": {
+      "DigitalBacon": "/scripts/core/DigitalBacon.js",
+      "three": "/node_modules/three/build/three.module.js",
+      "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js"
+    }
+  }
+&lt;/script&gt;</code></pre>
+        <p>Then in the script you want to use the module in, you can import either the attributes and functions you need individually or everything as so</p>
+        <pre class="codeblock"<code>import * as DigitalBacon from 'DigitalBacon';</code></pre>
+        <h1 id="section/DigitalBacon">DigitalBacon Module</h1>
+        <h5>Attributes</h5>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">version</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The version of DigitalBacon this module is</p>
+              </td>
+            </tr>
+              <td>
+                <span></span>
+                <span class="property-name">LibraryHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/LibraryHandler">LibraryHandler</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ProjectHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/ProjectHandler">ProjectHandler</a> for more info</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h5>Functions</h5>
+        <p class="bold">setup(containerId, projectFilePath)</p>
+        <p>Sets up project without user editing enabled</p>
+        <p class="return-data">Returns Promise&lt;App&gt; that resolves after initial assets have loaded</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">containerId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>id of the div element you want DigitalBacon to render in</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">fileProjectPath</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p class="optional">Optional</p>
+                <p>File path of the Digital Bacon project you want to load on startup. If not provided, a scene with only ambient lighting will be created</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">setupEditor(containerId, projectFilePath)</p>
+        <p>Sets up project with user editing enabled</p>
+        <p class="return-data">Returns Promise&lt;App&gt; that resolves after initial assets have loaded</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">containerId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>id of the div element you want DigitalBacon to render in</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">fileProjectPath</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p class="optional">Optional</p>
+                <p>File path of the Digital Bacon project you want to load on startup. If not provided, a scene with only ambient lighting will be created</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">getDeviceType()</p>
+        <p>Should only be run after Promise from setup() or setupEditor() resolves</p>
+        <p class="return-data pb-40">Returns one of "XR", "MOBILE", or "POINTER"</p>
+        <p class="bold">disableImmersion()</p>
+        <p>Disables immersive capabilities such as the UserController and Menu. Must be run before calling either setup() or setupEditor()</p>
+        <h1 id="section/App">App</h1>
+        <h5>Functions</h5>
+        <p class="bold">getCamera()</p>
+        <p class="return-data pb-40">Returns the Camera used for viewing the scene <a href="https://threejs.org/docs/#api/en/cameras/Camera">(See Three.js Camera Documentation for more details)</a></p>
+        <p class="bold">getRenderer()</p>
+        <p class="return-data pb-40">Returns the Renderer <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer">(See Three.js WebGLRenderer Documentation for more details)</a></p>
+        <p class="bold">getScene()</p>
+        <p class="return-data pb-40">Returns the Scene <a href="https://threejs.org/docs/#api/en/scenes/Scene">(See Three.js Scene Documentation for more details)</a></p>
+        <h1 id="section/LibraryHandler">LibraryHandler</h1>
+        <p class="bold">loadAsset(filepath, callback)</p>
+        <p>Adds image/model to library</p>
+        <p class="return-data">Returns Promise&lt;App&gt; that resolves after initial assets have loaded</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">filepath</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>File path of the image/model you want to add</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">callback</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function</p>
+                <p class="optional">Optional</p>
+                <p>Callback that when called, will pass in the library asset object</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">getType(assetId)</p>
+        <p class="return-data">Returns the type of the corresponding asset. Will be one of "MODEL", "IMAGE", "LIGHT", or "SHAPE"</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">assetId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>id of the asset in question</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="section/ProjectHandler">ProjectHandler</h1>
+        <p class="bold">load(filepath, successCallback, errorCallback)</p>
+        <p>Loads the provided Digital Bacon project</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">filepath</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>File path of the Digital Bacon project you want to load</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">successCallback</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function</p>
+                <p class="optional">Optional</p>
+                <p>Callback function that is triggered after successfully loading the project file</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">errorCallback</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function</p>
+                <p class="optional">Optional</p>
+                <p>Callback function that is triggered if an error occerred while loading the project file</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">addImage(params, ignoreUndoRedo)</p>
+        <p>Adds an instance of ClampedTexturePlane to the project</p>
+        <p class="return-data">Returns the instance of ClampedTexturePlane that was created</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">params</span>
+              </td>
+              <td class="details">
+                <p class="datatype">object</p>
+                <p>Parameters used for creating a ClampedTexturePlane</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignoreUndoRedo</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">addGLTF(params, ignoreUndoRedo)</p>
+        <p>Adds an instance of GLTFAsset to the project</p>
+        <p class="return-data">Returns the instance of GLTFAsset that was created</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">params</span>
+              </td>
+              <td class="details">
+                <p class="datatype">object</p>
+                <p>Parameters used for creating a GLTFAsset</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignoreUndoRedo</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">addLight(params, assetId, ignoreUndoRedo)</p>
+        <p>Adds an instance of the specified Light to the project</p>
+        <p class="return-data">Returns the instance of the specified Light that was created</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">params</span>
+              </td>
+              <td class="details">
+                <p class="datatype">object</p>
+                <p>Parameters used for creating the Light</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">assetId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>AssetId for the type of Light you want to create</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignoreUndoRedo</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">addShape(params, assetId, ignoreUndoRedo)</p>
+        <p>Adds an instance of the specified Shape to the project</p>
+        <p class="return-data">Returns the instance of the specified Shape that was created</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">params</span>
+              </td>
+              <td class="details">
+                <p class="datatype">object</p>
+                <p>Parameters used for creating the Shape</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">assetId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>AssetId for the type of Shape you want to create</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignoreUndoRedo</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
