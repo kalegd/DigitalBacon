@@ -1,13 +1,333 @@
+/* Acknowledgement: This CSS file is largely inspired by redocly :) */
+
+html {
+    scroll-behavior: smooth;
+}
+
 body {
-    background-color: #f0eded;;
+    padding: 0;
+    margin: 0;
     color: #4723D9;
     letter-spacing: 0.05em;
     font-family: sans-serif;
-    -webkit-touch-callout: none; /* iOS Safari */
-      -webkit-user-select: none; /* Safari */
-       -khtml-user-select: none; /* Konqueror HTML */
-         -moz-user-select: none; /* Old versions of Firefox */
-          -ms-user-select: none; /* Internet Explorer/Edge */
-              user-select: none; /* Non-prefixed version, Chrome, Edge, Opera
-                                    and Firefox */
+}
+
+#doc-container {
+    font-family: Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5em;
+    color: rgb(51, 51, 51);
+    display: flex;
+    position: relative;
+    text-align: left;
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+    text-rendering: optimizespeed !important;
+}
+
+.sidebar {
+    top: 0px;
+    height: calc(100vh - 0px);
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+    width: 260px;
+    background-color: rgb(250, 250, 250);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    backface-visibility: hidden;
+    height: 100vh;
+    position: sticky;
+    top: 0px;
+}
+
+.sidebar .logo {
+    max-height: 160px;
+    max-width: 260px;
+    padding: 2px;
+    height: 100%;
+    display: block;
+    margin: auto;
+}
+
+#sidebar-search {
+    padding: 5px 0px;
+}
+
+#sidebar-search > svg {
+    position: absolute;
+    left: 20px;
+    height: 1.8em;
+    width: 0.9em;
+}
+
+#sidebar-search > input {
+    width: calc(100% - 40px);
+    box-sizing: border-box;
+    margin: 0px 20px;
+    padding: 5px 10px 5px 20px;
+    border-width: 0px 0px 1px;
+    border-top-style: initial;
+    border-right-style: initial;
+    border-left-style: initial;
+    border-top-color: initial;
+    border-right-color: initial;
+    border-left-color: initial;
+    border-image: initial;
+    border-bottom-style: solid;
+    border-bottom-color: rgb(225, 225, 225);
+    font-family: Roboto, sans-serif;
+    font-weight: bold;
+    font-size: 13px;
+    color: rgb(51, 51, 51);
+    background-color: transparent;
+    outline: none;
+}
+
+#sidebar-navigation {
+    overflow-anchor: none;
+    touch-action: auto;
+    overflow: scroll;
+}
+
+#sidebar-navigation > ul {
+    margin: 0px;
+    padding: 0px;
+}
+
+#sidebar-navigation > ul > li {
+    list-style: inside none none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0px;
+}
+
+#sidebar-navigation > ul > li > a {
+    text-decoration: none;
+}
+
+#sidebar-navigation > ul > li > a > label {
+    cursor: pointer;
+    color: rgb(51, 51, 51);
+    margin: 0px;
+    padding: 12.5px 20px;
+    display: flex;
+    -webkit-box-pack: justify;
+    justify-content: space-between;
+    font-family: Montserrat, sans-serif;
+    font-size: 0.929em;
+    text-transform: none;
+}
+
+#sidebar-navigation > ul > li > a > label:hover {
+    background-color: rgb(237, 237, 237);
+    color: rgb(50, 50, 159);
+}
+
+#main-content {
+    z-index: 1;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    width: calc(100% - 260px);
+    contain: layout;
+}
+
+#main-content .logo {
+    max-height: 120px;
+    height: 100%;
+    display: block;
+    margin: auto;
+}
+
+#main-content h1 {
+    font-family: Montserrat, sans-serif;
+    font-weight: 400;
+    font-size: 1.85714em;
+    line-height: 1.6em;
+    color: rgb(50, 50, 159);
+    padding-top: 40px;
+}
+
+#main-content h1:first-of-type {
+    padding-top: 0;
+}
+
+#main-content h5 {
+    border-bottom: 1px solid rgba(38, 50, 56, 0.3);
+    margin: 1em 0px;
+    color: rgba(38, 50, 56, 0.5);
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 0.929em;
+    line-height: 20px;
+}
+
+table.attributes {
+    border-spacing: 0;
+    padding-bottom: 40px;
+}
+
+table.attributes p {
+    margin: 0;
+}
+
+table.attributes td {
+    padding: 10px 0px;
+}
+
+table.attributes tr td:first-child {
+    background-position: left top;
+    background-repeat: no-repeat;
+    background-size: 1px 100%;
+    border-left: 1px solid rgb(124, 124, 187);
+    font-size: 13px;
+    font-family: Courier, monospace;
+    min-width: 175px;
+    vertical-align: top;
+    padding-right: 10px;
+}
+
+table.attributes.mw-190 tr td:first-child {
+    min-width: 190px;
+}
+
+table.attributes.mw-200 tr td:first-child {
+    min-width: 200px;
+}
+
+table.attributes tr:first-of-type > td:first-child {
+    background-image: linear-gradient(transparent 0%, transparent 22px, rgb(124, 124, 187) 22px, rgb(124, 124, 187) 100%);
+    background-position: left top;
+    border-left-width: 0px;
+}
+
+table.attributes tr:last-child > td:first-child {
+    background-image: linear-gradient(rgb(124, 124, 187) 0%, rgb(124, 124, 187) 22px, transparent 22px, transparent 100%);
+    border-left-width: 0px;
+}
+
+table.attributes tr:first-of-type:last-child > td:first-child {
+    background-image: none;
+}
+
+table.attributes td > span:first-child {
+    margin-right: 10px;
+}
+
+table.attributes td > span:first-child::before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    width: 10px;
+    height: 1px;
+    background: rgb(124, 124, 187);
+}
+
+table.attributes > tr:first-child > td > span:first-child::before, table.attributes > tr:last-child > td > span:first-child::before {
+    width: 11px;
+}
+
+table.attributes td > span:first-child::after {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    width: 1px;
+    background: rgb(124, 124, 187);
+    height: 7px
+}
+
+table.attributes td.details {
+    border-bottom: 1px solid rgb(159, 180, 190);
+    width: 100%;
+}
+
+table a {
+    color: rgb(50, 50, 159);
+    text-decoration: none;
+}
+
+table a:hover {
+    color: rgb(104, 104, 207);
+}
+
+table.basic-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.basic-table td {
+    border: 1px solid #f1f1f1;
+    text-align: left;
+    padding: 8px;
+}
+
+table.basic-table td:first-child {
+    font-weight: bold;
+}
+
+table.basic-table tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.return-data {
+    color: #32329f;
+}
+
+.datatype {
+    color: rgb(102, 102, 102);
+    vertical-align: middle;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.optional {
+    color: #ff8200;
+    font-size: 13px;
+}
+
+.codeblock {
+    background-color: #efefef;
+    border-radius: 4px;
+    margin-right: -40px;
+    overflow-x: scroll;
+    padding: 10px;
+}
+
+.pb-40 {
+    padding-bottom: 40px;
+}
+
+.c-blue {
+    color: rgb(50, 50, 159);
+}
+
+@media screen and (max-width: 30rem) {
+    td {
+        min-width: auto !important;
+    }
+}
+
+@media screen and (max-width: 50rem) {
+    .sidebar {
+        position: fixed;
+        z-index: 20;
+        width: 100%;
+        background: rgb(250, 250, 250);
+        display: none;
+    }
+    #main-content {
+        width: 100%;
+    }
+}
+
+@media screen and (min-width: 50.001rem) {
+    .only-large-screen {
+        display: none;
+    }
 }
