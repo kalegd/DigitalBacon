@@ -12,7 +12,7 @@ import * as THREE from 'three';
 const ASSET_ID = '534f29c3-1e85-4510-bb84-459011de6722';
 const ASSET_NAME = 'Ring';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Inner Radius", "parameter": "_innerRadius", "min": 0,
         "type": NumberInput },

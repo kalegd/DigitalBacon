@@ -13,7 +13,7 @@ import * as THREE from 'three';
 const ASSET_ID = '42779f01-e2cc-495a-a4b3-b286197fa762';
 const ASSET_NAME = 'Cone';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Height", "parameter": "_height", "min": 0,
         "type": NumberInput },

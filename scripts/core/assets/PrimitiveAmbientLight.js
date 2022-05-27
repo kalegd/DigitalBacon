@@ -15,7 +15,7 @@ import * as THREE from 'three';
 const ASSET_ID = '7605bff2-8ca3-4a47-b6f7-311d745507de';
 const ASSET_NAME = 'Ambient Light';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Color", "parameter": "color", "type": ColorInput },
     { "name": "Intensity", "parameter": "_intensity", "min": 0,
         "type": NumberInput },

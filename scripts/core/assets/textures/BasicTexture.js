@@ -124,6 +124,8 @@ export default class BasicTexture extends Texture {
                     },
                     'setToSource': (v) => {
                         this._texture[field.parameter][field.parameter2] = v;
+                        this['_' + field.parameter +
+                            field.parameter2.toUpperCase()] = v
                     },
                     'minValue': field.min,
                     'maxValue': field.max,

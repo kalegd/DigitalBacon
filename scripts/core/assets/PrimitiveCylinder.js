@@ -13,7 +13,7 @@ import * as THREE from 'three';
 const ASSET_ID = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
 const ASSET_NAME = 'Cylinder';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Height", "parameter": "_height", "min": 0,
         "type": NumberInput },

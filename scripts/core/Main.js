@@ -5,6 +5,7 @@
  */
 
 import MenuController from '/scripts/core/menu/MenuController.js';
+import PrimitiveAmbientLight from '/scripts/core/assets/PrimitiveAmbientLight.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
@@ -127,6 +128,11 @@ export default class Main {
                 $(this._errorMessage).addClass("error");
                 if(error) throw error;
             });
+        } else {
+            let ambientLight = new PrimitiveAmbientLight({
+                'enableInteractions': false,
+            });
+            ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
         }
     }
 

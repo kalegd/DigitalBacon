@@ -76,7 +76,8 @@ class ProjectPage extends PaginatedPage {
         let ambientLight = new PrimitiveAmbientLight({
             'enableInteractions': false,
         });
-        ProjectHandler.addLight(ambientLight, true);
+        ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+        GoogleDrive.clearActiveFile();
     }
 
     _localSave() {
@@ -99,12 +100,6 @@ class ProjectPage extends PaginatedPage {
 
     _localLoad() {
         UploadHandler.triggerUpload();
-        if(global.deviceType == 'XR') {
-            this._input.click();
-            SessionHandler.exitXRSession();
-        } else {
-            this._triggerFileUpload = true;
-        }
     }
 
     _googleDriveSave() {
@@ -170,6 +165,7 @@ class ProjectPage extends PaginatedPage {
         this._updateLoading(false);
         PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
         JSZip.loadAsync(file).then((jsZip) => {
+            GoogleDrive.clearActiveFile();
             ProjectHandler.loadZip(jsZip, () => {
                 PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
                     { text: 'Project Loaded', });

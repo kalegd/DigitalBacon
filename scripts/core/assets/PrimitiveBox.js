@@ -12,7 +12,7 @@ import * as THREE from 'three';
 const ASSET_ID = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
 const ASSET_NAME = 'Box';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
     { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },

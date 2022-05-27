@@ -12,7 +12,7 @@ import * as THREE from 'three';
 const ASSET_ID = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
 const ASSET_NAME = 'Circle';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0, "type": NumberInput },
     { "name": "Sides", "parameter": "_segments", "min": 3,

@@ -13,7 +13,7 @@ import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 import * as THREE from 'three';
 
 const FIELDS = [
-    { "name": "Edit Visually", "type": CheckboxInput },
+    { "name": "Visually Edit", "type": CheckboxInput },
     { "name": "Position", "objParam": "position", "type": Vector3Input },
     { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
     { "name": "Scale", "objParam": "scale", "type": Vector3Input },

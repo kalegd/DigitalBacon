@@ -13,7 +13,7 @@ import * as THREE from 'three';
 const ASSET_ID = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
 const ASSET_NAME = 'Plane';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
     { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },

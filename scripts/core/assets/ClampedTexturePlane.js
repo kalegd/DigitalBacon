@@ -12,7 +12,7 @@ import * as THREE from 'three';
 
 const DEFAULT_SIZE = 1;
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Double Sided", "type": CheckboxInput },
     { "name": "Position" },
     { "name": "Rotation" },

@@ -12,7 +12,7 @@ import * as THREE from 'three';
 const ASSET_ID = '423c9506-52f4-4725-b848-69913cce2b00';
 const ASSET_NAME = 'Sphere';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0,
         "type": NumberInput },

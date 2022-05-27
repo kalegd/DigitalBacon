@@ -12,7 +12,7 @@ import * as THREE from 'three';
 const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
 const ASSET_NAME = 'Torus';
 const FIELDS = [
-    { "name": "Edit Visually" },
+    { "name": "Visually Edit" },
     { "name": "Material" },
     { "name": "Radius", "parameter": "_radius", "min": 0,
         "type": NumberInput },

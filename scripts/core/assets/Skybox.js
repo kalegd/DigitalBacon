@@ -7,7 +7,6 @@
 import global from '/scripts/core/global.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import { Textures } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { CubeTexture } from 'three';
 
@@ -34,18 +33,9 @@ class Skybox {
             SIDES[CubeSides.FRONT].canvas,
             SIDES[CubeSides.BACK].canvas,
         ]);
-        this._defaultTexture = Textures.whitePixel;
-    }
-
-    getDefaultTexture() {
-        return this._defaultTexture;
     }
 
     setSides(assetIds) {
-        if(!this._defaultTexture) {
-            this._onDefaultTextureLoad = () => { this.setSides(assetId) };
-            return;
-        }
         for(let side in assetIds) {
             this.setSide(side, assetIds[side]);
         }
@@ -54,14 +44,13 @@ class Skybox {
     setSide(side, assetId) {
         let image = (assetId)
             ? LibraryHandler.getImage(assetId)
-            : this._defaultTexture.image;
+            : null;
         this._drawImage(side, image);
         this._scene.background.needsUpdate = true;
     }
 
     deleteSide(side) {
-        let image = this._defaultTexture.image;
-        this._drawImage(side, image);
+        this._drawImage(side);
         this._scene.background.needsUpdate = true;
     }
 
@@ -69,14 +58,14 @@ class Skybox {
     _drawImage(side, image) {
         let canvas = SIDES[side]['canvas'];
         let context = SIDES[side]['context'];
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if(!image) return;
         let ratio  = RESOLUTION / Math.max(image.width, image.height);
         let centerShift_x = (canvas.width - image.width*ratio) / 2;
         let centerShift_y = (canvas.height - image.height*ratio) / 2;
-        context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
             centerShift_y, image.width * ratio, image.height * ratio);
     }
-
 }
 
 let skybox = new Skybox();

@@ -38,7 +38,7 @@ const FIELDS = [
     { "name": "Position", "objParam": "position", "type": Vector3Input },
     { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
     { "name": "Scale", "objParam": "scale", "type": Vector3Input },
-    { "name": "Edit Visually", "type": CheckboxInput },
+    { "name": "Visually Edit", "type": CheckboxInput },
 ];
 
 export default class Asset extends Entity {

@@ -103,10 +103,12 @@ class GoogleDrive {
         return gapi.client && gapi.client.getToken() != null;
     }
 
-    //TODO: Change how we determine if this is active. Once local save/load
-    //      is working then this won't necessarily be true
     hasActiveFile() {
         return this._fileId != null;
+    }
+
+    clearActiveFile() {
+        this._fileId = null;
     }
 
     fetchFiles(callback) {
