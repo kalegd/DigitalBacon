@@ -49,8 +49,42 @@
         <!--<p>If you'd prefer to watch a video on the basics of using Digital Bacon, then <a href="#TODO">check out this tutorial on YouTube</a></p>-->
         <h1 id="section/GitHub">Hosting on GitHub</h1>
         <p>Hosting your Digital Bacon website on GitHub is arguably the easiest self hosting solution. Just follow the steps below to host it yourself</p>
+        <ul>
+          <li><a href="https://github.com/kalegd/DigitalBaconSampleProject">Fork this repository</a> (feel free to name it whatever you like)</li>
+          <li>Go to your forked version of the repository</li>
+          <li>Replace my-project.zip with your Digital Bacon project file</li>
+          <li>Go to Settings -&gt; Pages</li>
+          <li>Set the source to main (or whatever your desired branch name is)</li>
+          <li>Save your GitHub Page settings</li>
+          <li>GitHub will present you the URL to access your website! (It may take a few minutes for the website to be running</li>
+        </ul>
+        <p>See the below images for further guidance</p>
+        <div class="guidance-images">
+          <img class="wide-image" src="./images/fork.jpg">
+          <img class="wide-image" src="./images/fork details.jpg">
+          <img class="wide-image" src="./images/settings.jpg">
+          <img class="long-image" src="./images/settings navigation.jpg">
+          <img class="long-image" src="./images/branch selection.jpg">
+          <img class="long-image" src="./images/save.jpg">
+          <img class="wide-image" src="./images/page url.jpg">
+        </div>
         <h1 id="section/AWS">Hosting on AWS</h1>
-        <p>There a many different ways to host a Digital Bacon website on AWS. We'll be going over a simple solution that sets up a static website on S3 using the instructions below</p>
+        <p>There a many different ways to host a Digital Bacon website on AWS. We'll be going over a simple solution that sets up a static website on S3 using the instructions below. This guide assumes prior familiarity with GitHub and AWS</p>
+        <p class="italic">Please note, hosting on AWS does cost money, please check their current prices for more information</p>
+        <ul>
+          <li>Sign into your AWS account (or create one if you do not already have one)</li>
+          <li>Create an S3 Bucket</li>
+          <li>Clone the contents of the sample project in <a href="https://github.com/kalegd/DigitalBaconSampleProject">this GitHub repository</a> into a local workspace</li>
+          <li>Replace my-project.zip with your Digital Bacon project file</li>
+          <li>Copy the contents of your workspace into the S3 Bucket</li>
+          <li>Go the the Properties section of your S3 Bucket</li>
+          <li>Scroll down to the Static website hosting section and click the Edit button</li>
+          <li>Make sure "Enable" and "Host a static website" are both checked</li>
+          <li>Use index.html for the Index document (unless you have changed the name of the document)</li>
+          <li>Save your changes</li>
+          <li>Find your website URL in the Static website hosting section</li>
+        </ul>
+        <p>To support VR headsets, you will need to serve your website over https instead of http. This can be done by having a domain name, ssl certificate, and setting up a Cloudfront distribution. You can find many resources for hosting online</p>
       </div>
     </div>
   </body>
