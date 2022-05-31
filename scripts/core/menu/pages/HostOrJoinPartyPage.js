@@ -13,22 +13,19 @@ import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const pages = [
-    { "title": "Hand Tools", "menuPage": MenuPages.HANDS },
-    { "title": "Library", "menuPage": MenuPages.LIBRARY },
-    { "title": "Settings", "menuPage": MenuPages.SETTINGS },
-    { "title": "Project File", "menuPage": MenuPages.PROJECT },
-    { "title": "Connect with Peers", "menuPage": MenuPages.HOST_OR_JOIN_PARTY },
+    { "title": "Host Party", "menuPage": MenuPages.HOST_PARTY },
+    { "title": "Join Party", "menuPage": MenuPages.JOIN_PARTY },
 ];
 
-class NavigationPage extends MenuPage {
+class HostOrJoinPartyPage extends MenuPage {
     constructor(controller) {
-        super(controller, false);
+        super(controller, true);
         this._addPageContent();
     }
 
     _addPageContent() {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Menu',
+            'text': 'Connect',
             'fontSize': FontSizes.header,
             'height': 0.04,
             'width': 0.2,
@@ -43,8 +40,6 @@ class NavigationPage extends MenuPage {
             'backgroundOpacity': 0,
         });
         for(let page of pages) {
-            if(global.deviceType != 'XR' && page['menuPage'] == MenuPages.HANDS)
-                continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': page.title,
                 'fontSize': FontSizes.body,
@@ -54,7 +49,9 @@ class NavigationPage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
-                this._controller.setPage(page.menuPage);
+                let menuPage = this._controller.getPage(page.menuPage);
+                menuPage.clearContent();
+                this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);
         }
@@ -63,4 +60,4 @@ class NavigationPage extends MenuPage {
 
 }
 
-export default NavigationPage;
+export default HostOrJoinPartyPage;

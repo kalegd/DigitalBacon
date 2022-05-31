@@ -9,26 +9,19 @@ import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import TextField from '/scripts/core/menu/input/TextField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
-const pages = [
-    { "title": "Hand Tools", "menuPage": MenuPages.HANDS },
-    { "title": "Library", "menuPage": MenuPages.LIBRARY },
-    { "title": "Settings", "menuPage": MenuPages.SETTINGS },
-    { "title": "Project File", "menuPage": MenuPages.PROJECT },
-    { "title": "Connect with Peers", "menuPage": MenuPages.HOST_OR_JOIN_PARTY },
-];
-
-class NavigationPage extends MenuPage {
+class JoinPartyPage extends MenuPage {
     constructor(controller) {
-        super(controller, false);
+        super(controller, false, true);
         this._addPageContent();
     }
 
     _addPageContent() {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Menu',
+            'text': 'Join Party',
             'fontSize': FontSizes.header,
             'height': 0.04,
             'width': 0.2,
@@ -42,25 +35,41 @@ class NavigationPage extends MenuPage {
             'justifyContent': 'start',
             'backgroundOpacity': 0,
         });
-        for(let page of pages) {
-            if(global.deviceType != 'XR' && page['menuPage'] == MenuPages.HANDS)
-                continue;
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': page.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
-            columnBlock.add(button);
-            let interactable = new PointerInteractable(button, () => {
-                this._controller.setPage(page.menuPage);
-            });
-            this._containerInteractable.addChild(interactable);
-        }
+        this._textField = new TextField({
+            'height': 0.03,
+            'width': 0.4,
+            'text': 'Party Name',
+            'onEnter': () => { this._textField.deactivate(); },
+        });
+        this._textField.addToScene(columnBlock,
+            this._containerInteractable);
+        let button = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Join",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.2,
+            'margin': 0.002,
+        });
+        columnBlock.add(button);
+        let interactable = new PointerInteractable(button, () => {
+            this._hostParty();
+        });
+        this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
+    }
+
+    _inputConfirmed(textField) {
+        this._textField.deactivate();
+    }
+
+    _hostParty() {
+        console.log("TODO: Validate fields and then join party");
+    }
+
+    clearContent() {
+        this._textField.reset();
     }
 
 }
 
-export default NavigationPage;
+export default JoinPartyPage;

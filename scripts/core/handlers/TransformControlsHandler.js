@@ -149,11 +149,11 @@ class TransformControlsHandler {
         if(e.clipboardData.types.indexOf('Files') >= 0)
             this._pasteFiles(e.clipboardData.files);
         if(e.clipboardData.types.indexOf('text/digitalbacon') >= 0)
-            this._parseDigitalBaconData(
-                e.clipboardData.getData('text/digitalbacon'));
+            this._pasteDigitalBaconData(e);
     }
 
-    _pasteDigitalBaconData(data) {
+    _pasteDigitalBaconData(e) {
+        let data = e.clipboardData.getData('text/digitalbacon');
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
         let instances = ProjectHandler.getInstancesForAssetId(assetId);
