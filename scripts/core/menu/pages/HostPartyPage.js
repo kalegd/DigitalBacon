@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import Party from '/scripts/core/clients/Party.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
@@ -58,16 +59,26 @@ class HostPartyPage extends MenuPage {
         this._container.add(columnBlock);
     }
 
+    clearContent() {
+        this._textField.reset();
+    }
+
     _inputConfirmed(textField) {
         this._textField.deactivate();
     }
 
     _hostParty() {
         console.log("TODO: Validate fields and then host party");
+        Party.host("testRoomId", () => { this._successCallback(); },
+            () => { this._errorCallback(); });
     }
 
-    clearContent() {
-        this._textField.reset();
+    _successCallback() {
+        console.log("TODO: Handle success callback");
+    }
+
+    _errorCallback() {
+        console.log("TODO: Handle error callback");
     }
 
 }

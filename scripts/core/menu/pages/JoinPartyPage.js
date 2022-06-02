@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import Party from '/scripts/core/clients/Party.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
@@ -52,22 +53,32 @@ class JoinPartyPage extends MenuPage {
         });
         columnBlock.add(button);
         let interactable = new PointerInteractable(button, () => {
-            this._hostParty();
+            this._joinParty();
         });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
+    }
+
+    clearContent() {
+        this._textField.reset();
     }
 
     _inputConfirmed(textField) {
         this._textField.deactivate();
     }
 
-    _hostParty() {
+    _joinParty() {
         console.log("TODO: Validate fields and then join party");
+        Party.join("testRoomId", () => { this._successCallback(); },
+            () => { this._errorCallback(); });
     }
 
-    clearContent() {
-        this._textField.reset();
+    _successCallback() {
+        console.log("TODO: Handle success callback");
+    }
+
+    _errorCallback() {
+        console.log("TODO: Handle error callback");
     }
 
 }

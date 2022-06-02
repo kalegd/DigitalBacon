@@ -235,12 +235,13 @@ function setupContainer(containerId) {
     container.style.position = 'relative';
 }
 
-function setupEditor(containerId, projectFilePath) {
+function setupEditor(containerId, projectFilePath, partyUrl) {
     global.isEditor = true;
-    return setup(containerId, projectFilePath);
+    return setup(containerId, projectFilePath, partyUrl);
 }
 
-function setup(containerId, projectFilePath) {
+function setup(containerId, projectFilePath, partyUrl) {
+    global.partyUrl = partyUrl;
     let promise = new Promise((resolve) => {
         if('xr' in navigator) {
             navigator.xr.isSessionSupported( 'immersive-vr' )
