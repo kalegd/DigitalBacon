@@ -10952,11 +10952,11 @@ class TransformControlsHandler {
         if(e.clipboardData.types.indexOf('Files') >= 0)
             this._pasteFiles(e.clipboardData.files);
         if(e.clipboardData.types.indexOf('text/digitalbacon') >= 0)
-            this._parseDigitalBaconData(
-                e.clipboardData.getData('text/digitalbacon'));
+            this._pasteDigitalBaconData(e);
     }
 
-    _pasteDigitalBaconData(data) {
+    _pasteDigitalBaconData(e) {
+        let data = e.clipboardData.getData('text/digitalbacon');
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
         let instances = projectHandler.getInstancesForAssetId(assetId);
@@ -13712,7 +13712,10 @@ const MenuPages = {
     COLOR_WHEEL: "COLOR_WHEEL",
     EDITOR_SETTINGS: "EDITOR_SETTINGS",
     HANDS: "HANDS",
+    HOST_OR_JOIN_PARTY: "HOST_OR_JOIN_PARTY",
+    HOST_PARTY: "HOST_PARTY",
     INSTANCE: "INSTANCE",
+    JOIN_PARTY: "JOIN_PARTY",
     LIBRARY: "LIBRARY",
     LIBRARY_SEARCH: "LIBRARY_SEARCH",
     LOAD_GDRIVE: "LOAD_GDRIVE",
@@ -17803,6 +17806,357 @@ class HandsPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const pages$2 = [
+    { "title": "Host Party", "menuPage": MenuPages.HOST_PARTY },
+    { "title": "Join Party", "menuPage": MenuPages.JOIN_PARTY },
+];
+
+class HostOrJoinPartyPage extends MenuPage {
+    constructor(controller) {
+        super(controller, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Connect',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.2,
+        });
+        this._container.add(titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        for(let page of pages$2) {
+            let button = ThreeMeshUIHelper.createButtonBlock({
+                'text': page.title,
+                'fontSize': FontSizes.body,
+                'height': 0.035,
+                'width': 0.3,
+                'margin': 0.002,
+            });
+            columnBlock.add(button);
+            let interactable = new PointerInteractable(button, () => {
+                let menuPage = this._controller.getPage(page.menuPage);
+                menuPage.clearContent();
+                this._controller.pushPage(page.menuPage);
+            });
+            this._containerInteractable.addChild(interactable);
+        }
+        this._container.add(columnBlock);
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const CONSTRAINTS = { audio: true, video: false };
+const ICE_SERVER_URLS = [
+    'stun:stun1.l.google.com:19302',
+    'stun:stun2.l.google.com:19302',
+    'stun:stun3.l.google.com:19302',
+    'stun:stun4.l.google.com:19302'
+];
+const CONFIGURATION = { iceServers: [{ urls: ICE_SERVER_URLS }] };
+
+class Party {
+    constructor() {
+        //this._id = uuidv4();
+        this._peerData = {};
+        this._userAudio = this._createAudioElement();
+        this._userAudio.defaultMuted = true;
+        this._userAudio.muted = true;
+    }
+
+    host(roomId, successCallback, errorCallback) {
+        if(this._socket) this.disconnect();
+        this._isHost = true;
+        this._roomId = roomId;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        if(this._userAudio.srcObject) {
+            this._setupWebSocket();
+        } else {
+            this._setupUserMedia();
+        }
+    }
+
+    join(roomId, successCallback, errorCallback) {
+        if(this._socket) this.disconnect();
+        this._roomId = roomId;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        if(this._userAudio.srcObject) {
+            this._setupWebSocket();
+        } else {
+            this._setupUserMedia();
+        }
+    }
+
+    disconnect() {
+        if(this._socket) this._socket.close();
+        this._socket = null;
+        this._isHost = false;
+        for(let peerId in this._peerData) {
+            let data = this._peerData[peerId];
+            data.connection.close();
+            data.audio.srcObject = null;
+            document.body.removeChild(data.audio);
+        }
+        this._peerData = {};
+    }
+
+    _setupUserMedia() {
+        navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
+            this._userAudio.srcObject = stream;
+            this._setupWebSocket();
+        }).catch((error) => {
+            this._userAudio.srcObject = new MediaStream();
+            this._setupWebSocket();
+        });
+    }
+
+    _setupWebSocket() {
+        this._socket = new WebSocket(global$1.partyUrl);
+        this._socket.onopen = (e) => { this._onSocketOpen(e); };
+        this._socket.onclose = (e) => { this._onSocketClose(e); };
+        this._socket.onmessage = (e) => { this._onSocketMessage(e); };
+        this._socket.onerror = (e) => { this._onSocketError(e); };
+    }
+
+    _onSocketOpen(e) {
+        console.log("TODO: _onSocketOpen()");
+        console.log(e);
+        this._socket.send(JSON.stringify({
+            topic: "identify",
+            //id: this._id,
+            roomId: this._roomId,
+            isHost: this._isHost,
+        }));
+    }
+
+    _onSocketClose(e) {
+        console.log("TODO: _onSocketClose()");
+        console.log(e);
+    }
+
+    _onSocketMessage(e) {
+        console.log("TODO: _onSocketMessage()");
+        console.log(e);
+        let message = JSON.parse(e.data);
+        let topic = message.topic;
+        if(topic == "initiate") {
+            this._setupRTC(message);
+        } else if(topic == "candidate") {
+            this._handleCandidate(message);
+        } else if(topic == "description") {
+            this._handleDescription(message);
+        }
+    }
+
+    _onSocketError(e) {
+        console.log("TODO: _onSocketError()");
+        console.log(e);
+    }
+
+    _setupRTC(message) {
+        let peerId = message.peerId;
+        let peerConnection = new RTCPeerConnection(CONFIGURATION);
+        let peerAudio = this._createAudioElement();
+        peerConnection.ontrack = (e) => {
+            e.track.onunmute = () => {
+                if(peerAudio.srcObject) return;
+                peerAudio.srcObject = e.streams[0];
+            };
+        };
+        this._peerData[peerId] = {
+            connection: peerConnection,
+            audio: peerAudio,
+            makingOffer: false,
+            ignoreOffer: false,
+            hasConnected: false,
+            isSettingRemoteAnswerPending: false,
+            polite: message.polite,
+        };
+        peerConnection.onicecandidate = (e) => {
+            this._socket.send(JSON.stringify({
+                topic: "candidate",
+                to: peerId,
+                //from: this._id,
+                candidate: e.candidate,
+            }));
+        };
+        peerConnection.onnegotiationneeded = async () => {
+            try {
+                this._peerData[peerId].makingOffer = true;
+                await peerConnection.setLocalDescription();
+                this._socket.send(JSON.stringify({
+                    topic: "description",
+                    to: peerId,
+                    //from: this._id,
+                    description: peerConnection.localDescription,
+                }));
+            } catch(error) {
+                console.error(error);
+            } finally {
+                this._peerData[peerId].makingOffer = false;
+            }
+        };
+        //peerConnection.onconnectionstatechange = (e) => {
+        //    let state = peerConnection.connectionState;
+        //    if(state == "connected" && !this._peerData[peerId].hasConnected) {
+        //        this._peerData[peerId].hasConnected = true;
+        //        //Do I need to do anything here?
+        //    } else if(state == "disconnected" || state == "failed") {
+        //        //TODO: handle disconnect
+        //    }
+        //}
+        this._userAudio.srcObject.getTracks().forEach((track) => {
+            peerConnection.addTrack(track, this._userAudio.srcObject);
+        });
+    }
+
+    _handleCandidate(message) {
+        let peerId = message.from;
+        let peerConnection = this._peerData[peerId].connection;
+        try {
+            peerConnection.addIceCandidate(message.candidate);
+        } catch(error) {
+            if(!this._peerData[peerId].ignoreOffer) console.error(error);
+        }
+    }
+
+    async _handleDescription(message) {
+        let peerId = message.from;
+        let peerData = this._peerData[peerId];
+        let peerConnection = peerData.connection;
+        let description = message.description;
+        try {
+            let readyForOffer = !peerData.makingOffer
+                && (peerConnection.signalingState == "stable"
+                    || peerData.isSettingRemoteAnswerPending);
+            let offerCollision = description.type == "offer" && !readyForOffer;
+            peerData.ignoreOffer = !peerData.polite && offerCollision;
+            if(peerData.ignoreOffer) return;
+
+            peerData.isSettingRemoteAnswerPending = description.type =="answer";
+            await peerConnection.setRemoteDescription(description);
+            peerData.isSettingRemoteAnswerPending = false;
+            if(description.type == "offer") {
+                await peerConnection.setLocalDescription();
+                this._socket.send(JSON.stringify({
+                    topic: "description",
+                    to: peerId,
+                    //from: this._id,
+                    description: peerConnection.localDescription,
+                }));
+            }
+        } catch(error) {
+            console.error(error);
+        }
+    }
+
+    _createAudioElement() {
+        let audioElement = document.createElement('audio');
+        audioElement.autoplay = true;
+        document.body.appendChild(audioElement);
+        return audioElement;
+    }
+}
+
+let party = new Party();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class HostPartyPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Host Party',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.2,
+        });
+        this._container.add(titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        this._textField = new TextField({
+            'height': 0.03,
+            'width': 0.4,
+            'text': 'Party Name',
+            'onEnter': () => { this._textField.deactivate(); },
+        });
+        this._textField.addToScene(columnBlock,
+            this._containerInteractable);
+        let button = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Submit",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.2,
+            'margin': 0.002,
+        });
+        columnBlock.add(button);
+        let interactable = new PointerInteractable(button, () => {
+            this._hostParty();
+        });
+        this._containerInteractable.addChild(interactable);
+        this._container.add(columnBlock);
+    }
+
+    clearContent() {
+        this._textField.reset();
+    }
+
+    _inputConfirmed(textField) {
+        this._textField.deactivate();
+    }
+
+    _hostParty() {
+        console.log("TODO: Validate fields and then host party");
+        party.host("testRoomId", () => { this._successCallback(); },
+            () => { this._errorCallback(); });
+    }
+
+    _successCallback() {
+        console.log("TODO: Handle success callback");
+    }
+
+    _errorCallback() {
+        console.log("TODO: Handle error callback");
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 class InstancePage extends DynamicFieldsPage {
     constructor(controller) {
         super(controller, false, true);
@@ -17893,6 +18247,81 @@ class InstancePage extends DynamicFieldsPage {
 
     removeFromScene() {
         super.removeFromScene();
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class JoinPartyPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Join Party',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.2,
+        });
+        this._container.add(titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        this._textField = new TextField({
+            'height': 0.03,
+            'width': 0.4,
+            'text': 'Party Name',
+            'onEnter': () => { this._textField.deactivate(); },
+        });
+        this._textField.addToScene(columnBlock,
+            this._containerInteractable);
+        let button = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Join",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.2,
+            'margin': 0.002,
+        });
+        columnBlock.add(button);
+        let interactable = new PointerInteractable(button, () => {
+            this._joinParty();
+        });
+        this._containerInteractable.addChild(interactable);
+        this._container.add(columnBlock);
+    }
+
+    clearContent() {
+        this._textField.reset();
+    }
+
+    _inputConfirmed(textField) {
+        this._textField.deactivate();
+    }
+
+    _joinParty() {
+        console.log("TODO: Validate fields and then join party");
+        party.join("testRoomId", () => { this._successCallback(); },
+            () => { this._errorCallback(); });
+    }
+
+    _successCallback() {
+        console.log("TODO: Handle success callback");
+    }
+
+    _errorCallback() {
+        console.log("TODO: Handle error callback");
     }
 
 }
@@ -18870,6 +19299,7 @@ const pages$1 = [
     { "title": "Library", "menuPage": MenuPages.LIBRARY },
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
     { "title": "Project File", "menuPage": MenuPages.PROJECT },
+    { "title": "Connect with Peers", "menuPage": MenuPages.HOST_OR_JOIN_PARTY },
 ];
 
 class NavigationPage extends MenuPage {
@@ -20124,7 +20554,10 @@ class MenuController extends PointerInteractableEntity {
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
         this._pages[MenuPages.COLOR_WHEEL] = new ColorWheelPage(this);
         this._pages[MenuPages.EDITOR_SETTINGS] = new EditorSettingsPage(this);
+        this._pages[MenuPages.HOST_OR_JOIN_PARTY] = new HostOrJoinPartyPage(this);
+        this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.INSTANCE] = new InstancePage(this);
+        this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
         this._pages[MenuPages.LIBRARY] = new LibraryPage(this);
         this._pages[MenuPages.LIBRARY_SEARCH] = new LibrarySearchPage(this);
         this._pages[MenuPages.LOAD_GDRIVE] = new LoadFromGDrivePage(this);
@@ -33897,12 +34330,13 @@ function setupContainer(containerId) {
     container.style.position = 'relative';
 }
 
-function setupEditor(containerId, projectFilePath) {
+function setupEditor(containerId, projectFilePath, partyUrl) {
     global$1.isEditor = true;
-    return setup(containerId, projectFilePath);
+    return setup(containerId, projectFilePath, partyUrl);
 }
 
-function setup(containerId, projectFilePath) {
+function setup(containerId, projectFilePath, partyUrl) {
+    global$1.partyUrl = partyUrl;
     let promise = new Promise((resolve) => {
         if('xr' in navigator) {
             navigator.xr.isSessionSupported( 'immersive-vr' )
