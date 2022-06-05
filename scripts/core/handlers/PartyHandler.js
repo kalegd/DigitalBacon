@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import Avatar from '/scripts/core/assets/Avatar.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import Party from '/scripts/core/clients/Party.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -15,6 +16,7 @@ const SIXTEEN_KB = 1024 * 16;
 class PartyHandler {
     constructor() {
         this._peers = {};
+        this._avatars = {};
         this._partyActive = false;
         Party.setOnSetupPeer((peer) => { this._registerPeer(peer); });
         Party.setOnDisconnect(() => { this._onDisconnect(); });
@@ -22,6 +24,14 @@ class PartyHandler {
 
     _onDisconnect() {
         this._partyActive = false;
+        for(let peerId in this._peers) {
+            this._peers[peerId].close();
+        }
+        for(let peerId in this._avatars) {
+            this._avatars[peerId].removeFromScene();
+        }
+        this._peers = {};
+        this._avatars = {};
     }
 
     _registerPeer(peer) {
@@ -38,6 +48,11 @@ class PartyHandler {
         peer.setOnSendDataChannelClose(() => {
             delete this._peers[peer.getPeerId()];
         });
+        peer.setOnDisconnect(() => {
+            delete this._peers[peer.getPeerId()];
+            this._avatars[peer.getPeerId()].removeFromScene();
+            delete this._avatars[peer.getPeerId()];
+        });
         peer.setOnMessage((message) => {
             if(typeof message == "string") {
                 this._handleJSON(peer, JSON.parse(message));
@@ -49,7 +64,7 @@ class PartyHandler {
 
     _handleJSON(peer, message) {
         if(message.topic == "avatar") {
-            console.log("TODO: Update avatar");
+            this._handleAvatar(peer, message);
         } else if(message.topic == "project") {
             this._handleProject(peer, message);
         }
@@ -60,7 +75,13 @@ class PartyHandler {
             this._handleEventArrayBuffer(peer, message);
             return;
         }
-        console.log("Handle Array Buffer");
+        let avatar = this._avatars[peer.getPeerId()];
+        if(!avatar) return;
+        let object = avatar.getObject();
+        let float32Array = new Float32Array(message);
+        object.position.fromArray(float32Array);
+        let rotation = float32Array.slice(3, 6);
+        object.rotation.fromArray(rotation);
     }
 
     _sendProject(peer, parts) {
@@ -103,6 +124,16 @@ class PartyHandler {
         }
     }
 
+    _handleAvatar(peer, message) {
+        let peerId = peer.getPeerId();
+        if(this._avatars[peerId]) {
+            this._avatars[peerId].updateSourceUrl(message.url);
+        } else {
+            this._avatars[peer.getPeerId()] = new Avatar({ URL: message.url });
+            this._avatars[peer.getPeerId()].addToScene(global.scene);
+        }
+    }
+
     host(roomId, successCallback, errorCallback) {
         this._isHost = true;
         this._partyActive = true;
@@ -119,6 +150,11 @@ class PartyHandler {
 
     update() {
         if(!this._partyActive) return;
+        if(global.renderer.info.render.frame % 2 == 0) return;
+        let buffer = UserController.getDataForRTC();
+        for(let peerId in this._peers) {
+            this._peers[peerId].sendData(buffer);
+        }
     }
 }
 

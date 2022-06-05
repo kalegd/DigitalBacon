@@ -70,7 +70,7 @@ export default class Avatar {
                         }
                     });
                     hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(1);
+                    gltf.scene.position.setY(-0.7);
                 }
                 this._pivotPoint.add(gltf.scene);
                 this._dimensions = 3;
@@ -138,6 +138,10 @@ export default class Avatar {
             fullDispose(child, true);
         }
         this._createMesh(url);
+    }
+
+    getObject() {
+        return this._pivotPoint;
     }
 
     addToScene(scene) {

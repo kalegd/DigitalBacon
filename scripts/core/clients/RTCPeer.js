@@ -73,8 +73,7 @@ export default class RTCPeer {
                 this._hasConnected = true;
                 this._setupDataChannel();
             } else if(state == "disconnected" || state == "failed") {
-                //TODO: handle disconnect
-                console.log("TODO: Handle user disconnecting");
+                if(this._onDisconnect) this._onDisconnect(e);
             }
         }
     }
@@ -161,16 +160,24 @@ export default class RTCPeer {
         }
     }
 
+    close() {
+        this._connection.close();
+    }
+
+    setOnDisconnect(f) {
+        this._onDisconnect = f;
+    }
+
+    setOnMessage(f) {
+        this._onMessage = f;
+    }
+
     setOnSendDataChannelOpen(f) {
         this._onSendDataChannelOpen = f;
     }
 
     setOnSendDataChannelClose(f) {
         this._onSendDataChannelClose = f;
-    }
-
-    setOnMessage(f) {
-        this._onMessage = f;
     }
 }
 

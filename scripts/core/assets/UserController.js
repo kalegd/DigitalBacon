@@ -10,6 +10,7 @@ import Avatar from '/scripts/core/assets/Avatar.js';
 import BasicMovement from '/scripts/core/assets/BasicMovement.js';
 import UserHand from '/scripts/core/assets/UserHand.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
+import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 
 import * as THREE from 'three';
 
@@ -20,7 +21,6 @@ class UserController {
         if(params == null) {
             params = {};
         }
-        this._sceneAssets = new Set();
         this._dynamicAssets = [];
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
@@ -36,13 +36,11 @@ class UserController {
                 'Focus Camera': true,
                 'URL': this._avatarUrl,
             });
-            this._sceneAssets.add(this._avatar);
         } else {
             this.hands = {};
             for(let hand of [Hands.RIGHT, Hands.LEFT]) {
                 let userHand = new UserHand(hand);
                 this.hands[hand] = userHand;
-                this._sceneAssets.add(userHand);
             }
         }
         let basicMovement = new BasicMovement({
@@ -69,15 +67,42 @@ class UserController {
         return leftPosition.distanceTo(rightPosition);
     }
 
+    getDataForRTC() {
+        let data = [];
+        if(global.deviceType == "XR") {
+            global.camera.getWorldPosition(vector3s[0]);
+            global.camera.getWorldQuaternion(quaternion);
+            quaternion.normalize();
+            euler.setFromQuaternion(quaternion);
+            data.push(...vector3s[0].toArray());
+            data.push(...euler.toArray());
+            //TODO: Push hand data as well
+        } else {
+            global.cameraFocus.getWorldPosition(vector3s[0]);
+            this._avatar.getObject().getWorldQuaternion(quaternion);
+            quaternion.normalize();
+            euler.setFromQuaternion(quaternion);
+            data.push(...vector3s[0].toArray());
+            data.push(...euler.toArray());
+        }
+        return Float32Array.from(data).buffer;
+    }
+
     addToScene(scene) {
-        for(let asset of this._sceneAssets) {
-            asset.addToScene(scene);
+        if(global.deviceType != "XR") {
+            this._avatar.addToScene(global.cameraFocus);
+        } else {
+            this.hands[Hands.RIGHT].addToScene(scene);
+            this.hands[Hands.LEFT].addToScene(scene);
         }
     }
 
     removeFromScene() {
-        for(let asset of this._sceneAssets) {
-            asset.removeFromScene();
+        if(global.deviceType != "XR") {
+            this._avatar.removeFromScene();
+        } else {
+            this.hands[Hands.RIGHT].removeFromScene();
+            this.hands[Hands.LEFT].removeFromScene();
         }
     }
 
