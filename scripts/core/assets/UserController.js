@@ -24,7 +24,7 @@ class UserController {
         this._dynamicAssets = [];
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
-        this._avatarURL = localStorage.getItem(AVATAR_KEY)
+        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
             || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
 
         this._setup();
@@ -34,7 +34,7 @@ class UserController {
         if(global.deviceType != "XR") {
             this._avatar = new Avatar({
                 'Focus Camera': true,
-                'URL': this._avatarURL,
+                'URL': this._avatarUrl,
             });
             this._sceneAssets.add(this._avatar);
         } else {
@@ -52,9 +52,13 @@ class UserController {
         this._dynamicAssets.push(basicMovement);
     }
 
+    getAvatarUrl() {
+        return this._avatarUrl;
+    }
+
     updateAvatar(url) {
         localStorage.setItem(AVATAR_KEY, url);
-        this._avatarURL = url;
+        this._avatarUrl = url;
         if(global.deviceType != "XR") this._avatar.updateSourceUrl(url);
     }
 

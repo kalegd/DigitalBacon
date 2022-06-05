@@ -10,6 +10,7 @@ import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
@@ -201,6 +202,7 @@ export default class Main {
             this._dynamicAssets.push(PointerInteractableHandler);
             this._dynamicAssets.push(PubSub);
             this._dynamicAssets.push(ThreeMeshUI);
+            this._dynamicAssets.push(PartyHandler);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "

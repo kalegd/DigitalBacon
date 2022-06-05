@@ -148,3 +148,43 @@ export const blobToHash = (blob) => {
         });
     });
 }
+
+//https://gist.github.com/72lions/4528834
+export const concatenateArrayBuffers = (buffers) => {
+    let length = 0;
+    for(let buffer of buffers) {
+        length += buffer.byteLength;
+    }
+    let array = new Uint8Array(length);
+    let index = 0;
+    for(let buffer of buffers) {
+        array.set(new Uint8Array(buffer), index);
+        index += buffer.byteLength;
+    }
+    return array.buffer;
+}
+
+//https://dmitripavlutin.com/javascript-queue/
+export class Queue {
+    constructor() {
+        this.items = {};
+        this.headIndex = 0;
+        this.tailIndex = 0;
+        this.length = 0;
+    }
+    enqueue(item) {
+        this.items[this.tailIndex] = item;
+        this.tailIndex++;
+        this.length++;
+    }
+    dequeue() {
+        const item = this.items[this.headIndex];
+        delete this.items[this.headIndex];
+        this.headIndex++;
+        this.length--;
+        return item;
+    }
+    peek() {
+        return this.items[this.headIndex];
+    }
+}

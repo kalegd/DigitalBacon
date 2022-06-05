@@ -5,8 +5,8 @@
  */
 
 import global from '/scripts/core/global.js';
-import Party from '/scripts/core/clients/Party.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -69,7 +69,7 @@ class HostPartyPage extends MenuPage {
 
     _hostParty() {
         console.log("TODO: Validate fields and then host party");
-        Party.host("testRoomId", () => { this._successCallback(); },
+        PartyHandler.host("testRoomId", () => { this._successCallback(); },
             () => { this._errorCallback(); });
     }
 
