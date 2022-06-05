@@ -251,6 +251,46 @@ const blobToHash = (blob) => {
     });
 };
 
+//https://gist.github.com/72lions/4528834
+const concatenateArrayBuffers = (buffers) => {
+    let length = 0;
+    for(let buffer of buffers) {
+        length += buffer.byteLength;
+    }
+    let array = new Uint8Array(length);
+    let index = 0;
+    for(let buffer of buffers) {
+        array.set(new Uint8Array(buffer), index);
+        index += buffer.byteLength;
+    }
+    return array.buffer;
+};
+
+//https://dmitripavlutin.com/javascript-queue/
+class Queue {
+    constructor() {
+        this.items = {};
+        this.headIndex = 0;
+        this.tailIndex = 0;
+        this.length = 0;
+    }
+    enqueue(item) {
+        this.items[this.tailIndex] = item;
+        this.tailIndex++;
+        this.length++;
+    }
+    dequeue() {
+        const item = this.items[this.headIndex];
+        delete this.items[this.headIndex];
+        this.headIndex++;
+        this.length--;
+        return item;
+    }
+    peek() {
+        return this.items[this.headIndex];
+    }
+}
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8073,7 +8113,7 @@ class Avatar {
                         }
                     });
                     hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(1);
+                    gltf.scene.position.setY(-0.7);
                 }
                 this._pivotPoint.add(gltf.scene);
                 this._dimensions = 3;
@@ -8141,6 +8181,10 @@ class Avatar {
             fullDispose(child, true);
         }
         this._createMesh(url);
+    }
+
+    getObject() {
+        return this._pivotPoint;
     }
 
     addToScene(scene) {
@@ -11689,11 +11733,10 @@ class UserController {
         if(params == null) {
             params = {};
         }
-        this._sceneAssets = new Set();
         this._dynamicAssets = [];
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
-        this._avatarURL = localStorage.getItem(AVATAR_KEY)
+        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
             || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
 
         this._setup();
@@ -11703,15 +11746,13 @@ class UserController {
         if(global$1.deviceType != "XR") {
             this._avatar = new Avatar({
                 'Focus Camera': true,
-                'URL': this._avatarURL,
+                'URL': this._avatarUrl,
             });
-            this._sceneAssets.add(this._avatar);
         } else {
             this.hands = {};
             for(let hand of [Hands.RIGHT, Hands.LEFT]) {
                 let userHand = new UserHand(hand);
                 this.hands[hand] = userHand;
-                this._sceneAssets.add(userHand);
             }
         }
         let basicMovement = new BasicMovement({
@@ -11721,9 +11762,13 @@ class UserController {
         this._dynamicAssets.push(basicMovement);
     }
 
+    getAvatarUrl() {
+        return this._avatarUrl;
+    }
+
     updateAvatar(url) {
         localStorage.setItem(AVATAR_KEY, url);
-        this._avatarURL = url;
+        this._avatarUrl = url;
         if(global$1.deviceType != "XR") this._avatar.updateSourceUrl(url);
     }
 
@@ -11734,15 +11779,42 @@ class UserController {
         return leftPosition.distanceTo(rightPosition);
     }
 
+    getDataForRTC() {
+        let data = [];
+        if(global$1.deviceType == "XR") {
+            global$1.camera.getWorldPosition(vector3s[0]);
+            global$1.camera.getWorldQuaternion(quaternion);
+            quaternion.normalize();
+            euler.setFromQuaternion(quaternion);
+            data.push(...vector3s[0].toArray());
+            data.push(...euler.toArray());
+            //TODO: Push hand data as well
+        } else {
+            global$1.cameraFocus.getWorldPosition(vector3s[0]);
+            this._avatar.getObject().getWorldQuaternion(quaternion);
+            quaternion.normalize();
+            euler.setFromQuaternion(quaternion);
+            data.push(...vector3s[0].toArray());
+            data.push(...euler.toArray());
+        }
+        return Float32Array.from(data).buffer;
+    }
+
     addToScene(scene) {
-        for(let asset of this._sceneAssets) {
-            asset.addToScene(scene);
+        if(global$1.deviceType != "XR") {
+            this._avatar.addToScene(global$1.cameraFocus);
+        } else {
+            this.hands[Hands.RIGHT].addToScene(scene);
+            this.hands[Hands.LEFT].addToScene(scene);
         }
     }
 
     removeFromScene() {
-        for(let asset of this._sceneAssets) {
-            asset.removeFromScene();
+        if(global$1.deviceType != "XR") {
+            this._avatar.removeFromScene();
+        } else {
+            this.hands[Hands.RIGHT].removeFromScene();
+            this.hands[Hands.LEFT].removeFromScene();
         }
     }
 
@@ -17860,7 +17932,6 @@ class HostOrJoinPartyPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const CONSTRAINTS = { audio: true, video: false };
 const ICE_SERVER_URLS = [
     'stun:stun1.l.google.com:19302',
     'stun:stun2.l.google.com:19302',
@@ -17868,12 +17939,194 @@ const ICE_SERVER_URLS = [
     'stun:stun4.l.google.com:19302'
 ];
 const CONFIGURATION = { iceServers: [{ urls: ICE_SERVER_URLS }] };
+const SIXTY_FOUR_KB = 1024 * 64;
+
+class RTCPeer {
+    constructor(peerId, polite, socket) {
+        this._peerId = peerId;
+        this._polite = polite;
+        this._socket = socket;
+        this._connection = new RTCPeerConnection(CONFIGURATION);
+        this._audio = createAudioElement$1();
+        this._makingOffer = false;
+        this._ignoreOffer = false;
+        this._isSettingRemoteAnswerPending = false;
+        this._hasConnected = false;
+        this._sendDataChannel = null;
+        this._receiveDataChannel = null;
+        this._setupConnection();
+        this._sendDataQueue = new Queue();
+    }
+
+    _setupConnection() {
+        this._connection.ontrack = (e) => {
+            e.track.onunmute = () => {
+                if(this._audio.srcObject) return;
+                this._audio.srcObject = e.streams[0];
+            };
+        };
+        this._connection.onicecandidate = (e) => {
+            this._socket.send(JSON.stringify({
+                topic: "candidate",
+                to: this._peerId,
+                candidate: e.candidate,
+            }));
+        };
+        this._connection.onnegotiationneeded = async () => {
+            try {
+                this._makingOffer = true;
+                await this._connection.setLocalDescription();
+                this._socket.send(JSON.stringify({
+                    topic: "description",
+                    to: this._peerId,
+                    description: this._connection.localDescription,
+                }));
+            } catch(error) {
+                console.error(error);
+            } finally {
+                this._makingOffer = false;
+            }
+        };
+        this._connection.ondatachannel = (e) => {
+            this._receiveDataChannel = e.channel;
+            this._receiveDataChannel.onmessage = (message) => {
+                if(this._onMessage) this._onMessage(message.data);
+            };
+        };
+        this._connection.onconnectionstatechange = (e) => {
+            let state = this._connection.connectionState;
+            if(state == "connected" && !this._hasConnected) {
+                this._hasConnected = true;
+                this._setupDataChannel();
+            } else if(state == "disconnected" || state == "failed") {
+                if(this._onDisconnect) this._onDisconnect(e);
+            }
+        };
+    }
+
+    _setupDataChannel() {
+        this._sendDataChannel = this._connection.createDataChannel(
+            this._peerId);
+        this._sendDataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+        this._sendDataChannel.onopen = (e) => {
+            if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
+        };
+        this._sendDataChannel.onclose = (e) => {
+            if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+        };
+    }
+
+    addAudioTrack(track, srcObject) {
+        this._connection.addTrack(track, srcObject);
+    }
+
+    close() {
+        this._connection.close();
+        this._audio.srcObject = null;
+        document.body.removeChild(this._audio);
+    }
+
+    getPeerId() {
+        return this._peerId;
+    }
+
+    handleCandidate(message) {
+        try {
+            this._connection.addIceCandidate(message.candidate);
+        } catch(error) {
+            if(!this._ignoreOffer) console.error(error);
+        }
+    }
+
+    async handleDescription(message) {
+        let description = message.description;
+        try {
+            let readyForOffer = !this._makingOffer
+                && (this._connection.signalingState == "stable"
+                    || this._isSettingRemoteAnswerPending);
+            let offerCollision = description.type == "offer" && !readyForOffer;
+            this._ignoreOffer = !this._polite && offerCollision;
+            if(this._ignoreOffer) return;
+
+            this._isSettingRemoteAnswerPending = description.type == "answer";
+            await this._connection.setRemoteDescription(description);
+            this._isSettingRemoteAnswerPending = false;
+            if(description.type == "offer") {
+                await this._connection.setLocalDescription();
+                this._socket.send(JSON.stringify({
+                    topic: "description",
+                    to: this._peerId,
+                    description: this._connection.localDescription,
+                }));
+            }
+        } catch(error) {
+            console.error(error);
+        }
+    }
+
+    isConnected() {
+        return this._hasConnected;
+    }
+
+    sendData(data) {
+        this._sendDataQueue.enqueue(data);
+        if(this._sendDataChannel.onbufferedamountlow) return;
+        if(this._sendDataQueue.length == 1) this._sendData();
+    }
+
+    _sendData() {
+        let channel = this._sendDataChannel;
+        while(channel.bufferedAmount <= channel.bufferedAmountLowThreshold) {
+            channel.send(this._sendDataQueue.dequeue());
+            if(this._sendDataQueue.length == 0) return;
+        }
+        channel.onbufferedamountlow = () => {
+            channel.onbufferedamountlow = null;
+            this._sendData();
+        };
+    }
+
+    close() {
+        this._connection.close();
+    }
+
+    setOnDisconnect(f) {
+        this._onDisconnect = f;
+    }
+
+    setOnMessage(f) {
+        this._onMessage = f;
+    }
+
+    setOnSendDataChannelOpen(f) {
+        this._onSendDataChannelOpen = f;
+    }
+
+    setOnSendDataChannelClose(f) {
+        this._onSendDataChannelClose = f;
+    }
+}
+
+function createAudioElement$1() {
+    let audioElement = document.createElement('audio');
+    audioElement.autoplay = true;
+    document.body.appendChild(audioElement);
+    return audioElement;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const CONSTRAINTS = { audio: true, video: false };
 
 class Party {
     constructor() {
         //this._id = uuidv4();
-        this._peerData = {};
-        this._userAudio = this._createAudioElement();
+        this._peers = {};
+        this._userAudio = createAudioElement();
         this._userAudio.defaultMuted = true;
         this._userAudio.muted = true;
     }
@@ -17907,13 +18160,19 @@ class Party {
         if(this._socket) this._socket.close();
         this._socket = null;
         this._isHost = false;
-        for(let peerId in this._peerData) {
-            let data = this._peerData[peerId];
-            data.connection.close();
-            data.audio.srcObject = null;
-            document.body.removeChild(data.audio);
+        for(let peerId in this._peers) {
+            this._peers[peerId].close();
         }
-        this._peerData = {};
+        this._peers = {};
+        if(this._onDisconnect) this._onDisconnect();
+    }
+
+    setOnSetupPeer(f) {
+        this._onSetupPeer = f;
+    }
+
+    setOnDisconnect(f) {
+        this._onDisconnect = f;
     }
 
     _setupUserMedia() {
@@ -17935,8 +18194,6 @@ class Party {
     }
 
     _onSocketOpen(e) {
-        console.log("TODO: _onSocketOpen()");
-        console.log(e);
         this._socket.send(JSON.stringify({
             topic: "identify",
             //id: this._id,
@@ -17951,16 +18208,14 @@ class Party {
     }
 
     _onSocketMessage(e) {
-        console.log("TODO: _onSocketMessage()");
-        console.log(e);
         let message = JSON.parse(e.data);
         let topic = message.topic;
         if(topic == "initiate") {
-            this._setupRTC(message);
+            this._setupRTCPeer(message);
         } else if(topic == "candidate") {
-            this._handleCandidate(message);
+            this._peers[message.from].handleCandidate(message);
         } else if(topic == "description") {
-            this._handleDescription(message);
+            this._peers[message.from].handleDescription(message);
         }
     }
 
@@ -17969,112 +18224,180 @@ class Party {
         console.log(e);
     }
 
-    _setupRTC(message) {
+    _setupRTCPeer(message) {
         let peerId = message.peerId;
-        let peerConnection = new RTCPeerConnection(CONFIGURATION);
-        let peerAudio = this._createAudioElement();
-        peerConnection.ontrack = (e) => {
-            e.track.onunmute = () => {
-                if(peerAudio.srcObject) return;
-                peerAudio.srcObject = e.streams[0];
-            };
-        };
-        this._peerData[peerId] = {
-            connection: peerConnection,
-            audio: peerAudio,
-            makingOffer: false,
-            ignoreOffer: false,
-            hasConnected: false,
-            isSettingRemoteAnswerPending: false,
-            polite: message.polite,
-        };
-        peerConnection.onicecandidate = (e) => {
-            this._socket.send(JSON.stringify({
-                topic: "candidate",
-                to: peerId,
-                //from: this._id,
-                candidate: e.candidate,
-            }));
-        };
-        peerConnection.onnegotiationneeded = async () => {
-            try {
-                this._peerData[peerId].makingOffer = true;
-                await peerConnection.setLocalDescription();
-                this._socket.send(JSON.stringify({
-                    topic: "description",
-                    to: peerId,
-                    //from: this._id,
-                    description: peerConnection.localDescription,
-                }));
-            } catch(error) {
-                console.error(error);
-            } finally {
-                this._peerData[peerId].makingOffer = false;
-            }
-        };
-        //peerConnection.onconnectionstatechange = (e) => {
-        //    let state = peerConnection.connectionState;
-        //    if(state == "connected" && !this._peerData[peerId].hasConnected) {
-        //        this._peerData[peerId].hasConnected = true;
-        //        //Do I need to do anything here?
-        //    } else if(state == "disconnected" || state == "failed") {
-        //        //TODO: handle disconnect
-        //    }
-        //}
+        let polite = message.polite;
+        this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket);
         this._userAudio.srcObject.getTracks().forEach((track) => {
-            peerConnection.addTrack(track, this._userAudio.srcObject);
+            this._peers[peerId].addAudioTrack(track, this._userAudio.srcObject);
         });
-    }
-
-    _handleCandidate(message) {
-        let peerId = message.from;
-        let peerConnection = this._peerData[peerId].connection;
-        try {
-            peerConnection.addIceCandidate(message.candidate);
-        } catch(error) {
-            if(!this._peerData[peerId].ignoreOffer) console.error(error);
-        }
-    }
-
-    async _handleDescription(message) {
-        let peerId = message.from;
-        let peerData = this._peerData[peerId];
-        let peerConnection = peerData.connection;
-        let description = message.description;
-        try {
-            let readyForOffer = !peerData.makingOffer
-                && (peerConnection.signalingState == "stable"
-                    || peerData.isSettingRemoteAnswerPending);
-            let offerCollision = description.type == "offer" && !readyForOffer;
-            peerData.ignoreOffer = !peerData.polite && offerCollision;
-            if(peerData.ignoreOffer) return;
-
-            peerData.isSettingRemoteAnswerPending = description.type =="answer";
-            await peerConnection.setRemoteDescription(description);
-            peerData.isSettingRemoteAnswerPending = false;
-            if(description.type == "offer") {
-                await peerConnection.setLocalDescription();
-                this._socket.send(JSON.stringify({
-                    topic: "description",
-                    to: peerId,
-                    //from: this._id,
-                    description: peerConnection.localDescription,
-                }));
-            }
-        } catch(error) {
-            console.error(error);
-        }
-    }
-
-    _createAudioElement() {
-        let audioElement = document.createElement('audio');
-        audioElement.autoplay = true;
-        document.body.appendChild(audioElement);
-        return audioElement;
+        if(this._onSetupPeer) this._onSetupPeer(this._peers[peerId]);
     }
 }
 
+function createAudioElement() {
+    let audioElement = document.createElement('audio');
+    audioElement.autoplay = true;
+    document.body.appendChild(audioElement);
+    return audioElement;
+}
+
 let party = new Party();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const SIXTEEN_KB = 1024 * 16;
+
+class PartyHandler {
+    constructor() {
+        this._peers = {};
+        this._avatars = {};
+        this._partyActive = false;
+        party.setOnSetupPeer((peer) => { this._registerPeer(peer); });
+        party.setOnDisconnect(() => { this._onDisconnect(); });
+    }
+
+    _onDisconnect() {
+        this._partyActive = false;
+        for(let peerId in this._peers) {
+            this._peers[peerId].close();
+        }
+        for(let peerId in this._avatars) {
+            this._avatars[peerId].removeFromScene();
+        }
+        this._peers = {};
+        this._avatars = {};
+    }
+
+    _registerPeer(peer) {
+        peer.setOnSendDataChannelOpen(() => {
+            this._peers[peer.getPeerId()] = peer;
+            peer.sendData(JSON.stringify({
+                "topic": "avatar",
+                "url": userController.getAvatarUrl(),
+            }));
+            if(this._isHost && global$1.isEditor) {
+                this._sendProject(peer);
+            }
+        });
+        peer.setOnSendDataChannelClose(() => {
+            delete this._peers[peer.getPeerId()];
+        });
+        peer.setOnDisconnect(() => {
+            delete this._peers[peer.getPeerId()];
+            this._avatars[peer.getPeerId()].removeFromScene();
+            delete this._avatars[peer.getPeerId()];
+        });
+        peer.setOnMessage((message) => {
+            if(typeof message == "string") {
+                this._handleJSON(peer, JSON.parse(message));
+            } else {
+                this._handleArrayBuffer(peer, message);
+            }
+        });
+    }
+
+    _handleJSON(peer, message) {
+        if(message.topic == "avatar") {
+            this._handleAvatar(peer, message);
+        } else if(message.topic == "project") {
+            this._handleProject(peer, message);
+        }
+    }
+
+    _handleArrayBuffer(peer, message) {
+        if(this._handleEventArrayBuffer) {
+            this._handleEventArrayBuffer(peer, message);
+            return;
+        }
+        let avatar = this._avatars[peer.getPeerId()];
+        if(!avatar) return;
+        let object = avatar.getObject();
+        let float32Array = new Float32Array(message);
+        object.position.fromArray(float32Array);
+        let rotation = float32Array.slice(3, 6);
+        object.rotation.fromArray(rotation);
+    }
+
+    _sendProject(peer, parts) {
+        if(!parts) {
+            let zip = projectHandler.exportProject();
+            zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
+                let parts = [];
+                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
+                for(let i = 0; i < n; i++) {
+                    let chunkStart = i * SIXTEEN_KB;
+                    let chunkEnd = (i + 1) * SIXTEEN_KB;
+                    parts.push(buffer.slice(chunkStart, chunkEnd));
+                }
+                this._sendProject(peer, parts);
+            });
+            return;
+        }
+        peer.sendData(JSON.stringify({
+            "topic": "project",
+            "parts": parts.length,
+        }));
+        for(let part of parts) {
+            peer.sendData(part);
+        }
+    }
+
+    _handleProject(peer, message) {
+        let partsLength = message.parts;
+        let parts = [];
+        this._handleEventArrayBuffer = (peer, message) => {
+            parts.push(message);
+            if(parts.length == partsLength) {
+                this._handleEventArrayBuffer = null;
+                let buffer = concatenateArrayBuffers(parts);
+                let zip = new JSZip();
+                zip.loadAsync(buffer).then((zip) => {
+                    projectHandler.loadZip(zip);
+                });
+            }
+        };
+    }
+
+    _handleAvatar(peer, message) {
+        let peerId = peer.getPeerId();
+        if(this._avatars[peerId]) {
+            this._avatars[peerId].updateSourceUrl(message.url);
+        } else {
+            this._avatars[peer.getPeerId()] = new Avatar({ URL: message.url });
+            this._avatars[peer.getPeerId()].addToScene(global$1.scene);
+        }
+    }
+
+    host(roomId, successCallback, errorCallback) {
+        this._isHost = true;
+        this._partyActive = true;
+        party.host(roomId, () => { this._successCallback(); },
+            () => { this._errorCallback(); });
+    }
+
+    join(roomId, successCallback, errorCallback) {
+        this._isHost = false;
+        this._partyActive = true;
+        party.join(roomId, () => { this._successCallback(); },
+            () => { this._errorCallback(); });
+    }
+
+    update() {
+        if(!this._partyActive) return;
+        if(global$1.renderer.info.render.frame % 2 == 0) return;
+        let buffer = userController.getDataForRTC();
+        for(let peerId in this._peers) {
+            this._peers[peerId].sendData(buffer);
+        }
+    }
+}
+
+let partyHandler = new PartyHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -18137,7 +18460,7 @@ class HostPartyPage extends MenuPage {
 
     _hostParty() {
         console.log("TODO: Validate fields and then host party");
-        party.host("testRoomId", () => { this._successCallback(); },
+        partyHandler.host("testRoomId", () => { this._successCallback(); },
             () => { this._errorCallback(); });
     }
 
@@ -18312,7 +18635,7 @@ class JoinPartyPage extends MenuPage {
 
     _joinParty() {
         console.log("TODO: Validate fields and then join party");
-        party.join("testRoomId", () => { this._successCallback(); },
+        partyHandler.join("testRoomId", () => { this._successCallback(); },
             () => { this._errorCallback(); });
     }
 
@@ -21132,6 +21455,7 @@ class Main {
             this._dynamicAssets.push(pointerInteractableHandler);
             this._dynamicAssets.push(pubSub);
             this._dynamicAssets.push(ThreeMeshUI);
+            this._dynamicAssets.push(partyHandler);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "
