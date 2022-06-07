@@ -187,7 +187,8 @@ class ProjectHandler {
             }
             delete this.project[assetId][id];
             instance.removeFromScene();
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_DELETED, {
+            let topic = PubSubTopics.INSTANCE_DELETED + ":" + instance.getId();
+            PubSub.publish(this._id, topic, {
                 instance: instance,
                 undoRedoAction: undoRedoAction,
             });

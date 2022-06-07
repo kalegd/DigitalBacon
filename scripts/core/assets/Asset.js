@@ -255,7 +255,6 @@ export default class Asset extends Entity {
         this._object.rotation.fromArray(params["rotation"]);
         this._object.scale.fromArray(params["scale"]);
         this._updateInteractable(params["enableInteractions"]);
-        PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
     }
 
     getMenuFields(fields) {

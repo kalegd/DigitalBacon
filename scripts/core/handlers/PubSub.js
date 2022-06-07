@@ -25,13 +25,28 @@ class PubSub {
     }
 
     publish(owner, topic, message, urgent) {
-        if(!topic in this._topics) {
-            return;
-        } else if(urgent) {
-            this._publish(owner, topic, message);
-        } else {
-            this._toPublish.push(() => { this._publish(owner, topic, message)});
+        let topics = this._splitTopic(topic);
+        for(let topic of topics) {
+            if(!topic in this._topics) {
+                continue;
+            } else if(urgent) {
+                this._publish(owner, topic, message);
+            } else {
+                this._toPublish.push(
+                    () => { this._publish(owner, topic, message)});
+            }
         }
+    }
+
+    _splitTopic(topic) {
+        let topicParts = topic.split(":");
+        let t = topicParts[0];
+        let topics = [t];
+        for(let i = 1; i < topicParts.length; i++) {
+            t += ":" + topicParts[i];
+            topics.push(t);
+        }
+        return topics;
     }
 
     _publish(owner, topic, message) {

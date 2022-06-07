@@ -73,8 +73,12 @@ class TransformControlsHandler {
             let postState = instance.exportParams();
             UndoRedoHandler.addAction(() => {
                 instance.setFromParams(preState);
+                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                    instance);
             }, () => {
                 instance.setFromParams(postState);
+                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                    instance);
             });
         });
         this._transformControls.addEventListener('objectChange', () => {
@@ -268,8 +272,12 @@ class TransformControlsHandler {
                     let postState = attachedAsset.exportParams();
                     UndoRedoHandler.addAction(() => {
                         attachedAsset.setFromParams(preState);
+                        PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                            attachedAsset);
                     }, () => {
                         attachedAsset.setFromParams(postState);
+                        PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                            attachedAsset);
                     });
                     return;
                 }
@@ -363,8 +371,12 @@ class TransformControlsHandler {
                 let postState = asset.exportParams();
                 UndoRedoHandler.addAction(() => {
                     asset.setFromParams(preState);
+                    PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                        asset);
                 }, () => {
                     asset.setFromParams(postState);
+                    PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                        asset);
                 });
             }
             if(Object.keys(this._attachedAssets).length == 1)

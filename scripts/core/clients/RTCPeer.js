@@ -26,8 +26,7 @@ export default class RTCPeer {
         this._ignoreOffer = false;
         this._isSettingRemoteAnswerPending = false;
         this._hasConnected = false;
-        this._sendDataChannel = null;
-        this._receiveDataChannel = null;
+        this._dataChannel = null;
         this._setupConnection();
         this._sendDataQueue = new Queue();
     }
@@ -62,8 +61,16 @@ export default class RTCPeer {
             }
         }
         this._connection.ondatachannel = (e) => {
-            this._receiveDataChannel = e.channel;
-            this._receiveDataChannel.onmessage = (message) => {
+            if(this._polite) return;
+            this._dataChannel = e.channel;
+            this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+            this._dataChannel.onopen = (e) => {
+                if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
+            }
+            this._dataChannel.onclose = (e) => {
+                if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+            }
+            this._dataChannel.onmessage = (message) => {
                 if(this._onMessage) this._onMessage(message.data);
             }
         }
@@ -71,7 +78,7 @@ export default class RTCPeer {
             let state = this._connection.connectionState;
             if(state == "connected" && !this._hasConnected) {
                 this._hasConnected = true;
-                this._setupDataChannel();
+                if(this._polite) this._setupDataChannel();
             } else if(state == "disconnected" || state == "failed") {
                 if(this._onDisconnect) this._onDisconnect(e);
             }
@@ -79,14 +86,17 @@ export default class RTCPeer {
     }
 
     _setupDataChannel() {
-        this._sendDataChannel = this._connection.createDataChannel(
+        this._dataChannel = this._connection.createDataChannel(
             this._peerId);
-        this._sendDataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
-        this._sendDataChannel.onopen = (e) => {
+        this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+        this._dataChannel.onopen = (e) => {
             if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
         }
-        this._sendDataChannel.onclose = (e) => {
+        this._dataChannel.onclose = (e) => {
             if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+        }
+        this._dataChannel.onmessage = (message) => {
+            if(this._onMessage) this._onMessage(message.data);
         }
     }
 
@@ -144,12 +154,12 @@ export default class RTCPeer {
 
     sendData(data) {
         this._sendDataQueue.enqueue(data);
-        if(this._sendDataChannel.onbufferedamountlow) return;
+        if(this._dataChannel.onbufferedamountlow) return;
         if(this._sendDataQueue.length == 1) this._sendData();
     }
 
     _sendData() {
-        let channel = this._sendDataChannel;
+        let channel = this._dataChannel;
         while(channel.bufferedAmount <= channel.bufferedAmountLowThreshold) {
             channel.send(this._sendDataQueue.dequeue());
             if(this._sendDataQueue.length == 0) return;

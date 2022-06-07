@@ -9,10 +9,8 @@ import Hands from '/scripts/core/enums/Hands.js';
 import Avatar from '/scripts/core/assets/Avatar.js';
 import BasicMovement from '/scripts/core/assets/BasicMovement.js';
 import UserHand from '/scripts/core/assets/UserHand.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
+import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-
-import * as THREE from 'three';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
   
@@ -43,11 +41,11 @@ class UserController {
                 this.hands[hand] = userHand;
             }
         }
-        let basicMovement = new BasicMovement({
+        this._basicMovement = new BasicMovement({
             'User Object': this._userObj,
             'Avatar': this._avatar,
         });
-        this._dynamicAssets.push(basicMovement);
+        this._dynamicAssets.push(this._basicMovement);
     }
 
     getAvatarUrl() {
@@ -68,6 +66,7 @@ class UserController {
     }
 
     getDataForRTC() {
+        let codes = 0;
         let data = [];
         if(global.deviceType == "XR") {
             global.camera.getWorldPosition(vector3s[0]);
@@ -76,16 +75,18 @@ class UserController {
             euler.setFromQuaternion(quaternion);
             data.push(...vector3s[0].toArray());
             data.push(...euler.toArray());
+            codes += UserMessageCodes.AVATAR;
             //TODO: Push hand data as well
-        } else {
-            global.cameraFocus.getWorldPosition(vector3s[0]);
-            this._avatar.getObject().getWorldQuaternion(quaternion);
-            quaternion.normalize();
-            euler.setFromQuaternion(quaternion);
-            data.push(...vector3s[0].toArray());
-            data.push(...euler.toArray());
         }
-        return Float32Array.from(data).buffer;
+        data.push(...this._basicMovement.getWorldVelocity().toArray());
+        codes += UserMessageCodes.USER_VELOCITY;
+        if(global.renderer.info.render.frame % 300 == 0) {
+            this._userObj.getWorldPosition(vector3s[0]);
+            data.push(...vector3s[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
     }
 
     addToScene(scene) {

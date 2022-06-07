@@ -15,23 +15,18 @@ export default class Avatar {
         if(params == null) {
             params = {};
         }
-        this._focusCamera = (params['Focus Camera'])
-            ? params['Focus Camera']
-            : false;
-        this._cameraFocalPoint = (params['Camera Focal Point'])
-            ? params['Camera Focal Point']
-            : [0,1.7,0];
-        this._xrViewPoint = (params['XR View Point'])
-            ? params['XR View Point']
-            : [0,1.7,0];
+        let verticalOffset = params['Vertical Offset'] || 0;
+        let focusCamera = params['Focus Camera'] || false;
+        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
         this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
         this._pivotPoint = new THREE.Object3D();
+        this._pivotPoint.position.setY(verticalOffset);
         this._createBoundingBox(params);
         //this._pivotPoint.position.setY(1.3);
 
         this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
-        if(this._focusCamera) {
-            global.cameraFocus.position.fromArray(this._cameraFocalPoint);
+        if(focusCamera) {
+            global.cameraFocus.position.fromArray(cameraFocalPoint);
         }
     }
 
@@ -149,7 +144,9 @@ export default class Avatar {
     }
 
     removeFromScene() {
-        this._pivotPoint.parent.remove(this._pivotPoint);
-        fullDispose(this._pivotPoint, true);
+        if(this._pivotPoint.parent) {
+            this._pivotPoint.parent.remove(this._pivotPoint);
+            fullDispose(this._pivotPoint, true);
+        }
     }
 }

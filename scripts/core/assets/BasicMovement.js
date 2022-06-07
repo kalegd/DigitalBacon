@@ -20,6 +20,7 @@ export default class BasicMovement {
         this._userObj = params['User Object'];
         this._velocity = new THREE.Vector3();
         this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
         this._snapRotationTriggered = false;
     }
 
@@ -38,25 +39,30 @@ export default class BasicMovement {
             () => { this._mobileDown = false; });
     }
 
-    _moveForward(distance) {
+    _moveForward(velocity, timeDelta) {
         // move forward parallel to the xz-plane
         // assumes camera.up is y-up
         vector3s[0].setFromMatrixColumn(global.camera.matrixWorld, 0);
         vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
         // not using addScaledVector because we use vector3s[0] later
-        vector3s[0].multiplyScalar(distance);
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
         this._userObj.position.add(vector3s[0]);
     };
 
-    _moveRight(distance) {
+    _moveRight(velocity, timeDelta) {
         vector3s[0].setFromMatrixColumn(global.camera.matrixWorld, 0);
         vector3s[0].y = 0;
-        vector3s[0].multiplyScalar(distance);
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
         this._userObj.position.add(vector3s[0]);
     };
 
-    _moveUp(distance) {
-        vector3s[0].fromArray([0,distance,0]);
+    _moveUp(velocity, timeDelta) {
+        this._worldVelocity.setY(velocity);
+        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
         this._userObj.position.add(vector3s[0]);
     }
 
@@ -66,6 +72,10 @@ export default class BasicMovement {
 
     _snapRight() {
         this._userObj.rotateY(-Math.PI/8);
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
     }
 
     update(timeDelta) {
@@ -83,28 +93,30 @@ export default class BasicMovement {
     }
 
     _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
         if(timeDelta > 1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
         // Decrease the velocity.
-        this._velocity.x -= this._velocity.x * 10.0 * timeDelta;
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
         if(flightEnabled)
-            this._verticalVelocity -= this._verticalVelocity * 10.0 * timeDelta;
-        this._velocity.z -= this._velocity.z * 10.0 * timeDelta;
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
 
         if(global.sessionActive && !global.keyboardLock) {
             if (InputHandler.isKeyCodePressed("ArrowUp")
                     || InputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += 1;
+                this._velocity.z += movementSpeed;
             if (InputHandler.isKeyCodePressed("ArrowDown")
                     || InputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= 1;
+                this._velocity.z -= movementSpeed;
             if (InputHandler.isKeyCodePressed("ArrowLeft")
                     || InputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= 1;
+                this._velocity.x -= movementSpeed;
             if (InputHandler.isKeyCodePressed("ArrowRight")
                     || InputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += 1;
+                this._velocity.x += movementSpeed;
             if (flightEnabled && InputHandler.isKeyCodePressed("Space")
                     != InputHandler.isKeyCodePressed("ShiftLeft")) {
                 this._verticalVelocity =
@@ -118,36 +130,37 @@ export default class BasicMovement {
             this._velocity.normalize().multiplyScalar(movementSpeed);
         }
         if(this._avatar) {
-            this._moveRight(this._velocity.x * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
             vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
             if(vector3s[1].length() > 0.001) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
-                this._moveUp(this._verticalVelocity * timeDelta);
+                this._moveUp(this._verticalVelocity, timeDelta);
             }
         } else {
-            this._moveRight(this._velocity.x * timeDelta);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         this._userObj.updateMatrixWorld(true);
     }
 
     _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
         this._velocity.x = 0;
         if(flightEnabled)
-            this._verticalVelocity -= this._verticalVelocity * 10.0 * timeDelta;
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
         this._velocity.z = 0;
         if(global.sessionActive && !global.keyboardLock) {
             let joystickAngle = InputHandler.getJoystickAngle();
             let joystickDistance = InputHandler.getJoystickDistance();
-            let movingDistance = movementSpeed * timeDelta
-                * joystickDistance;
+            let movingDistance = movementSpeed * joystickDistance;
             this._velocity.x = movingDistance * Math.cos(joystickAngle);
             this._velocity.z = movingDistance * Math.sin(joystickAngle);
             if(flightEnabled && this._mobileUp != this._mobileDown) {
@@ -161,25 +174,27 @@ export default class BasicMovement {
             this._velocity.normalize().multiplyScalar(movementSpeed);
         }
         if(this._avatar) {
-            this._moveRight(this._velocity.x);
+            this._moveRight(this._velocity.x, timeDelta);
             vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z);
+            this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
             if(vector3s[1].length() > 0.001) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
-                this._moveUp(this._verticalVelocity * timeDelta);
+                this._moveUp(this._verticalVelocity, timeDelta);
             }
         } else {
-            this._moveRight(this._velocity.x);
-            this._moveForward(this._velocity.z);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         this._userObj.updateMatrixWorld(true);
     }
 
     _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
         let movementGamepad;
@@ -191,7 +206,6 @@ export default class BasicMovement {
             movementGamepad = InputHandler.getXRGamepad(Hands.LEFT);
             rotationGamepad = InputHandler.getXRGamepad(Hands.RIGHT);
         }
-        //These two lines below add decceleration to the mix
         this._velocity.x = 0;
         this._velocity.y = 0;
         this._velocity.z = 0;
@@ -200,8 +214,8 @@ export default class BasicMovement {
             this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
             this._velocity.x = movementSpeed * axes[2];//Left/Right
 
-            this._moveRight(this._velocity.x * timeDelta);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         if(rotationGamepad) {
             let verticalForce = rotationGamepad.axes[3];
@@ -216,7 +230,7 @@ export default class BasicMovement {
             }
             if(flightEnabled && Math.abs(verticalForce) > 0.2) {
                 this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y * timeDelta);
+                this._moveUp(this._velocity.y, timeDelta);
             }
         } else {
             this._snapRotationTriggered = false;
