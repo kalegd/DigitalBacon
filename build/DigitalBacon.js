@@ -28,7 +28,7 @@ const FileTypes$2 = {
 };
 
 const PubSubTopics = {
-    ASSET_ADDED: "ASSED_ADDED",
+    ASSET_ADDED: "ASSET_ADDED",
     HAND_TOOLS_SWITCH: "HAND_TOOLS_SWITCH",
     INSTANCE_ADDED: "INSTANCE_ADDED",
     INSTANCE_DELETED: "INSTANCE_DELETED",
@@ -75,13 +75,28 @@ class PubSub {
     }
 
     publish(owner, topic, message, urgent) {
-        if(!topic in this._topics) {
-            return;
-        } else if(urgent) {
-            this._publish(owner, topic, message);
-        } else {
-            this._toPublish.push(() => { this._publish(owner, topic, message);});
+        let topics = this._splitTopic(topic);
+        for(let topic of topics) {
+            if(!topic in this._topics) {
+                continue;
+            } else if(urgent) {
+                this._publish(owner, topic, message);
+            } else {
+                this._toPublish.push(
+                    () => { this._publish(owner, topic, message);});
+            }
         }
+    }
+
+    _splitTopic(topic) {
+        let topicParts = topic.split(":");
+        let t = topicParts[0];
+        let topics = [t];
+        for(let i = 1; i < topicParts.length; i++) {
+            t += ":" + topicParts[i];
+            topics.push(t);
+        }
+        return topics;
     }
 
     _publish(owner, topic, message) {
@@ -8058,23 +8073,18 @@ class Avatar {
         if(params == null) {
             params = {};
         }
-        this._focusCamera = (params['Focus Camera'])
-            ? params['Focus Camera']
-            : false;
-        this._cameraFocalPoint = (params['Camera Focal Point'])
-            ? params['Camera Focal Point']
-            : [0,1.7,0];
-        this._xrViewPoint = (params['XR View Point'])
-            ? params['XR View Point']
-            : [0,1.7,0];
+        let verticalOffset = params['Vertical Offset'] || 0;
+        let focusCamera = params['Focus Camera'] || false;
+        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
         this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
         this._pivotPoint = new THREE.Object3D();
+        this._pivotPoint.position.setY(verticalOffset);
         this._createBoundingBox(params);
         //this._pivotPoint.position.setY(1.3);
 
         this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
-        if(this._focusCamera) {
-            global$1.cameraFocus.position.fromArray(this._cameraFocalPoint);
+        if(focusCamera) {
+            global$1.cameraFocus.position.fromArray(cameraFocalPoint);
         }
     }
 
@@ -8192,8 +8202,10 @@ class Avatar {
     }
 
     removeFromScene() {
-        this._pivotPoint.parent.remove(this._pivotPoint);
-        fullDispose(this._pivotPoint, true);
+        if(this._pivotPoint.parent) {
+            this._pivotPoint.parent.remove(this._pivotPoint);
+            fullDispose(this._pivotPoint, true);
+        }
     }
 }
 
@@ -8406,6 +8418,7 @@ class BasicMovement {
         this._userObj = params['User Object'];
         this._velocity = new THREE.Vector3();
         this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
         this._snapRotationTriggered = false;
     }
 
@@ -8424,25 +8437,30 @@ class BasicMovement {
             () => { this._mobileDown = false; });
     }
 
-    _moveForward(distance) {
+    _moveForward(velocity, timeDelta) {
         // move forward parallel to the xz-plane
         // assumes camera.up is y-up
         vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
         vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
         // not using addScaledVector because we use vector3s[0] later
-        vector3s[0].multiplyScalar(distance);
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
         this._userObj.position.add(vector3s[0]);
     };
 
-    _moveRight(distance) {
+    _moveRight(velocity, timeDelta) {
         vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
         vector3s[0].y = 0;
-        vector3s[0].multiplyScalar(distance);
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
         this._userObj.position.add(vector3s[0]);
     };
 
-    _moveUp(distance) {
-        vector3s[0].fromArray([0,distance,0]);
+    _moveUp(velocity, timeDelta) {
+        this._worldVelocity.setY(velocity);
+        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
         this._userObj.position.add(vector3s[0]);
     }
 
@@ -8452,6 +8470,10 @@ class BasicMovement {
 
     _snapRight() {
         this._userObj.rotateY(-Math.PI/8);
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
     }
 
     update(timeDelta) {
@@ -8469,28 +8491,30 @@ class BasicMovement {
     }
 
     _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
         if(timeDelta > 1) return;
         let movementSpeed = settingsHandler.getMovementSpeed();
         let flightEnabled = settingsHandler.isFlyingEnabled();
         // Decrease the velocity.
-        this._velocity.x -= this._velocity.x * 10.0 * timeDelta;
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
         if(flightEnabled)
-            this._verticalVelocity -= this._verticalVelocity * 10.0 * timeDelta;
-        this._velocity.z -= this._velocity.z * 10.0 * timeDelta;
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
 
         if(global$1.sessionActive && !global$1.keyboardLock) {
             if (inputHandler.isKeyCodePressed("ArrowUp")
                     || inputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += 1;
+                this._velocity.z += movementSpeed;
             if (inputHandler.isKeyCodePressed("ArrowDown")
                     || inputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= 1;
+                this._velocity.z -= movementSpeed;
             if (inputHandler.isKeyCodePressed("ArrowLeft")
                     || inputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= 1;
+                this._velocity.x -= movementSpeed;
             if (inputHandler.isKeyCodePressed("ArrowRight")
                     || inputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += 1;
+                this._velocity.x += movementSpeed;
             if (flightEnabled && inputHandler.isKeyCodePressed("Space")
                     != inputHandler.isKeyCodePressed("ShiftLeft")) {
                 this._verticalVelocity =
@@ -8504,36 +8528,37 @@ class BasicMovement {
             this._velocity.normalize().multiplyScalar(movementSpeed);
         }
         if(this._avatar) {
-            this._moveRight(this._velocity.x * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
             vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
             if(vector3s[1].length() > 0.001) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
-                this._moveUp(this._verticalVelocity * timeDelta);
+                this._moveUp(this._verticalVelocity, timeDelta);
             }
         } else {
-            this._moveRight(this._velocity.x * timeDelta);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         this._userObj.updateMatrixWorld(true);
     }
 
     _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
         let movementSpeed = settingsHandler.getMovementSpeed();
         let flightEnabled = settingsHandler.isFlyingEnabled();
         this._velocity.x = 0;
         if(flightEnabled)
-            this._verticalVelocity -= this._verticalVelocity * 10.0 * timeDelta;
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
         this._velocity.z = 0;
         if(global$1.sessionActive && !global$1.keyboardLock) {
             let joystickAngle = inputHandler.getJoystickAngle();
             let joystickDistance = inputHandler.getJoystickDistance();
-            let movingDistance = movementSpeed * timeDelta
-                * joystickDistance;
+            let movingDistance = movementSpeed * joystickDistance;
             this._velocity.x = movingDistance * Math.cos(joystickAngle);
             this._velocity.z = movingDistance * Math.sin(joystickAngle);
             if(flightEnabled && this._mobileUp != this._mobileDown) {
@@ -8547,25 +8572,27 @@ class BasicMovement {
             this._velocity.normalize().multiplyScalar(movementSpeed);
         }
         if(this._avatar) {
-            this._moveRight(this._velocity.x);
+            this._moveRight(this._velocity.x, timeDelta);
             vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z);
+            this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
             if(vector3s[1].length() > 0.001) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
-                this._moveUp(this._verticalVelocity * timeDelta);
+                this._moveUp(this._verticalVelocity, timeDelta);
             }
         } else {
-            this._moveRight(this._velocity.x);
-            this._moveForward(this._velocity.z);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         this._userObj.updateMatrixWorld(true);
     }
 
     _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
         let movementSpeed = settingsHandler.getMovementSpeed();
         let flightEnabled = settingsHandler.isFlyingEnabled();
         let movementGamepad;
@@ -8577,7 +8604,6 @@ class BasicMovement {
             movementGamepad = inputHandler.getXRGamepad(Hands.LEFT);
             rotationGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
         }
-        //These two lines below add decceleration to the mix
         this._velocity.x = 0;
         this._velocity.y = 0;
         this._velocity.z = 0;
@@ -8586,8 +8612,8 @@ class BasicMovement {
             this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
             this._velocity.x = movementSpeed * axes[2];//Left/Right
 
-            this._moveRight(this._velocity.x * timeDelta);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         if(rotationGamepad) {
             let verticalForce = rotationGamepad.axes[3];
@@ -8602,7 +8628,7 @@ class BasicMovement {
             }
             if(flightEnabled && Math.abs(verticalForce) > 0.2) {
                 this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y * timeDelta);
+                this._moveUp(this._velocity.y, timeDelta);
             }
         } else {
             this._snapRotationTriggered = false;
@@ -10920,8 +10946,12 @@ class TransformControlsHandler {
             let postState = instance.exportParams();
             undoRedoHandler.addAction(() => {
                 instance.setFromParams(preState);
+                pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                    instance);
             }, () => {
                 instance.setFromParams(postState);
+                pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                    instance);
             });
         });
         this._transformControls.addEventListener('objectChange', () => {
@@ -11115,8 +11145,12 @@ class TransformControlsHandler {
                     let postState = attachedAsset.exportParams();
                     undoRedoHandler.addAction(() => {
                         attachedAsset.setFromParams(preState);
+                        pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                            attachedAsset);
                     }, () => {
                         attachedAsset.setFromParams(postState);
+                        pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                            attachedAsset);
                     });
                     return;
                 }
@@ -11210,8 +11244,12 @@ class TransformControlsHandler {
                 let postState = asset.exportParams();
                 undoRedoHandler.addAction(() => {
                     asset.setFromParams(preState);
+                    pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                        asset);
                 }, () => {
                     asset.setFromParams(postState);
+                    pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
+                        asset);
                 });
             }
             if(Object.keys(this._attachedAssets).length == 1)
@@ -11720,6 +11758,12 @@ class UserHand {
 
 }
 
+const UserMessageCodes = {
+    AVATAR: 1,
+    USER_VELOCITY: 2,
+    USER_POSITION: 4,
+};
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -11755,11 +11799,11 @@ class UserController {
                 this.hands[hand] = userHand;
             }
         }
-        let basicMovement = new BasicMovement({
+        this._basicMovement = new BasicMovement({
             'User Object': this._userObj,
             'Avatar': this._avatar,
         });
-        this._dynamicAssets.push(basicMovement);
+        this._dynamicAssets.push(this._basicMovement);
     }
 
     getAvatarUrl() {
@@ -11780,6 +11824,7 @@ class UserController {
     }
 
     getDataForRTC() {
+        let codes = 0;
         let data = [];
         if(global$1.deviceType == "XR") {
             global$1.camera.getWorldPosition(vector3s[0]);
@@ -11788,16 +11833,18 @@ class UserController {
             euler.setFromQuaternion(quaternion);
             data.push(...vector3s[0].toArray());
             data.push(...euler.toArray());
+            codes += UserMessageCodes.AVATAR;
             //TODO: Push hand data as well
-        } else {
-            global$1.cameraFocus.getWorldPosition(vector3s[0]);
-            this._avatar.getObject().getWorldQuaternion(quaternion);
-            quaternion.normalize();
-            euler.setFromQuaternion(quaternion);
-            data.push(...vector3s[0].toArray());
-            data.push(...euler.toArray());
         }
-        return Float32Array.from(data).buffer;
+        data.push(...this._basicMovement.getWorldVelocity().toArray());
+        codes += UserMessageCodes.USER_VELOCITY;
+        if(global$1.renderer.info.render.frame % 300 == 0) {
+            this._userObj.getWorldPosition(vector3s[0]);
+            data.push(...vector3s[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
     }
 
     addToScene(scene) {
@@ -13274,7 +13321,6 @@ class Asset extends Entity {
         this._object.rotation.fromArray(params["rotation"]);
         this._object.scale.fromArray(params["scale"]);
         this._updateInteractable(params["enableInteractions"]);
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
     }
 
     getMenuFields(fields) {
@@ -16376,7 +16422,8 @@ class ProjectHandler {
             }
             delete this.project[assetId][id];
             instance.removeFromScene();
-            pubSub.publish(this._id, PubSubTopics.INSTANCE_DELETED, {
+            let topic = PubSubTopics.INSTANCE_DELETED + ":" + instance.getId();
+            pubSub.publish(this._id, topic, {
                 instance: instance,
                 undoRedoAction: undoRedoAction,
             });
@@ -17932,6 +17979,96 @@ class HostOrJoinPartyPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+class PeerController extends Entity {
+    constructor(avatarUrl) {
+        super();
+        this._velocity = new THREE.Vector3();
+        this._setup(avatarUrl);
+    }
+
+    _setup(avatarUrl) {
+        this._avatar = new Avatar({
+            'URL': avatarUrl,
+            'Vertical Offset': 1.7,
+        });
+    }
+
+    _updateAvatarData(float32Array, index) {
+        let object = this._avatar.getObject();
+        object.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        object.rotation.fromArray(rotation);
+    }
+
+    _updateVelocity(float32Array, index, isXR, timeDelta) {
+        this._velocity.fromArray(float32Array, index);
+        this._object.position.addScaledVector(this._velocity, timeDelta);
+        if(!isXR) {
+            vector3s[0].copy(this._velocity).setY(0);
+            if(vector3s[0].length() < 0.001) return;
+            vector3s[0].multiplyScalar(-1).add(this._object.position);
+            this._object.lookAt(vector3s[0]);
+        }
+    }
+
+    _updatePosition(float32Array, index) {
+        //TODO: Don't jump to the correct position, track the error and reduce
+        //      it over the next few calls
+        this._object.position.fromArray(float32Array, index);
+    }
+
+    updateAvatar(url) {
+        this._avatar.updateSourceUrl(url);
+    }
+
+    addToScene(scene) {
+        super.addToScene(scene);
+        this._avatar.addToScene(this._object);
+    }
+
+    removeFromScene() {
+        super.removeFromScene();
+        this._avatar.removeFromScene();
+    }
+
+    update(timeDelta, message) {
+        if(message) {
+            this._updateWithMessage(timeDelta, message);
+        } else {
+            this._updateWithoutMessage(timeDelta);
+        }
+    }
+
+    _updateWithMessage(timeDelta, message) {
+        let codes = new Uint8Array(message, 2, 3)[0];
+        let float32Array = new Float32Array(message.slice(3));
+        let index = 0;
+        let isXR = false;
+        if(UserMessageCodes.AVATAR & codes) {
+            this._updateAvatarData(float32Array, index);
+            index += 6;
+        }
+        if(UserMessageCodes.USER_VELOCITY & codes) {
+            this._updateVelocity(float32Array, index, isXR, timeDelta);
+            index += 3;
+        }
+        if(UserMessageCodes.USER_POSITION & codes) {
+            this._updatePosition(float32Array, index);
+            index += 3;
+        }
+    }
+
+    _updateWithoutMessage(timeDelta, message) {
+        this._object.position.addScaledVector(this._velocity, timeDelta);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ICE_SERVER_URLS = [
     'stun:stun1.l.google.com:19302',
     'stun:stun2.l.google.com:19302',
@@ -17952,8 +18089,7 @@ class RTCPeer {
         this._ignoreOffer = false;
         this._isSettingRemoteAnswerPending = false;
         this._hasConnected = false;
-        this._sendDataChannel = null;
-        this._receiveDataChannel = null;
+        this._dataChannel = null;
         this._setupConnection();
         this._sendDataQueue = new Queue();
     }
@@ -17988,8 +18124,16 @@ class RTCPeer {
             }
         };
         this._connection.ondatachannel = (e) => {
-            this._receiveDataChannel = e.channel;
-            this._receiveDataChannel.onmessage = (message) => {
+            if(this._polite) return;
+            this._dataChannel = e.channel;
+            this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+            this._dataChannel.onopen = (e) => {
+                if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
+            };
+            this._dataChannel.onclose = (e) => {
+                if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+            };
+            this._dataChannel.onmessage = (message) => {
                 if(this._onMessage) this._onMessage(message.data);
             };
         };
@@ -17997,7 +18141,7 @@ class RTCPeer {
             let state = this._connection.connectionState;
             if(state == "connected" && !this._hasConnected) {
                 this._hasConnected = true;
-                this._setupDataChannel();
+                if(this._polite) this._setupDataChannel();
             } else if(state == "disconnected" || state == "failed") {
                 if(this._onDisconnect) this._onDisconnect(e);
             }
@@ -18005,14 +18149,17 @@ class RTCPeer {
     }
 
     _setupDataChannel() {
-        this._sendDataChannel = this._connection.createDataChannel(
+        this._dataChannel = this._connection.createDataChannel(
             this._peerId);
-        this._sendDataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
-        this._sendDataChannel.onopen = (e) => {
+        this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+        this._dataChannel.onopen = (e) => {
             if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
         };
-        this._sendDataChannel.onclose = (e) => {
+        this._dataChannel.onclose = (e) => {
             if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+        };
+        this._dataChannel.onmessage = (message) => {
+            if(this._onMessage) this._onMessage(message.data);
         };
     }
 
@@ -18070,12 +18217,12 @@ class RTCPeer {
 
     sendData(data) {
         this._sendDataQueue.enqueue(data);
-        if(this._sendDataChannel.onbufferedamountlow) return;
+        if(this._dataChannel.onbufferedamountlow) return;
         if(this._sendDataQueue.length == 1) this._sendData();
     }
 
     _sendData() {
-        let channel = this._sendDataChannel;
+        let channel = this._dataChannel;
         while(channel.bufferedAmount <= channel.bufferedAmountLowThreshold) {
             channel.send(this._sendDataQueue.dequeue());
             if(this._sendDataQueue.length == 0) return;
@@ -18251,48 +18398,55 @@ let party = new Party();
  */
 
 const SIXTEEN_KB = 1024 * 16;
+const TWO_BYTE_MOD = 2 ** 16;
+const JITTER_DELAY = 50;
 
 class PartyHandler {
     constructor() {
+        this._id = uuidv4();
         this._peers = {};
-        this._avatars = {};
         this._partyActive = false;
-        party.setOnSetupPeer((peer) => { this._registerPeer(peer); });
+        this._messageHandlers = {
+            avatar: (p, m) => { this._handleAvatar(p, m); },
+            project: (p, m) => { this._handleProject(p, m); },
+            instance_updated: (p, m) => { this._handleInstanceUpdated(p, m); },
+        };
+        party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
         party.setOnDisconnect(() => { this._onDisconnect(); });
     }
 
     _onDisconnect() {
         this._partyActive = false;
+        this._removeSubscriptions();
         for(let peerId in this._peers) {
-            this._peers[peerId].close();
-        }
-        for(let peerId in this._avatars) {
-            this._avatars[peerId].removeFromScene();
+            let peer = this._peers[peerId];
+            if(peer.rtc) peer.rtc.close();
+            if(peer.controller) peer.controller.removeFromScene();
         }
         this._peers = {};
-        this._avatars = {};
     }
 
-    _registerPeer(peer) {
-        peer.setOnSendDataChannelOpen(() => {
-            this._peers[peer.getPeerId()] = peer;
-            peer.sendData(JSON.stringify({
+    _registerPeer(rtc) {
+        let peer = { id: rtc.getPeerId(), jitterBuffer: new Queue() };
+        this._peers[peer.id] = peer;
+        rtc.setOnSendDataChannelOpen(() => {
+            peer.rtc = rtc;
+            rtc.sendData(JSON.stringify({
                 "topic": "avatar",
                 "url": userController.getAvatarUrl(),
             }));
             if(this._isHost && global$1.isEditor) {
-                this._sendProject(peer);
+                this._sendProject(rtc);
             }
         });
-        peer.setOnSendDataChannelClose(() => {
-            delete this._peers[peer.getPeerId()];
+        rtc.setOnSendDataChannelClose(() => {
+            delete peer['rtc'];
         });
-        peer.setOnDisconnect(() => {
-            delete this._peers[peer.getPeerId()];
-            this._avatars[peer.getPeerId()].removeFromScene();
-            delete this._avatars[peer.getPeerId()];
+        rtc.setOnDisconnect(() => {
+            if(peer.controller) peer.controller.removeFromScene();
+            delete this._peers[peer.id];
         });
-        peer.setOnMessage((message) => {
+        rtc.setOnMessage((message) => {
             if(typeof message == "string") {
                 this._handleJSON(peer, JSON.parse(message));
             } else {
@@ -18302,11 +18456,8 @@ class PartyHandler {
     }
 
     _handleJSON(peer, message) {
-        if(message.topic == "avatar") {
-            this._handleAvatar(peer, message);
-        } else if(message.topic == "project") {
-            this._handleProject(peer, message);
-        }
+        if(message.topic in this._messageHandlers)
+            this._messageHandlers[message.topic](peer, message);
     }
 
     _handleArrayBuffer(peer, message) {
@@ -18314,16 +18465,36 @@ class PartyHandler {
             this._handleEventArrayBuffer(peer, message);
             return;
         }
-        let avatar = this._avatars[peer.getPeerId()];
-        if(!avatar) return;
-        let object = avatar.getObject();
-        let float32Array = new Float32Array(message);
-        object.position.fromArray(float32Array);
-        let rotation = float32Array.slice(3, 6);
-        object.rotation.fromArray(rotation);
+        peer.jitterBuffer.enqueue(message);
     }
 
-    _sendProject(peer, parts) {
+    _getNextJitterBufferMessage(jitterBuffer, timestamp) {
+        let message = jitterBuffer.peek();
+        if(!message) return null;
+        let messageTimestamp = this._getMessageTimestamp(message);
+        let timestampDiff = timestamp - messageTimestamp;
+        timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
+            % TWO_BYTE_MOD;
+        if(timestampDiff <= JITTER_DELAY) return null;
+        let nextMessage;
+        do {
+            message = jitterBuffer.dequeue();
+            nextMessage = jitterBuffer.peek();
+            if(!nextMessage) return message;
+            messageTimestamp = this._getMessageTimestamp(nextMessage);
+            timestampDiff = timestamp - messageTimestamp;
+            timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
+                % TWO_BYTE_MOD;
+        } while(timestampDiff > JITTER_DELAY)
+        return message;
+    }
+
+    _getMessageTimestamp(message) {
+        let uint16array = new Uint16Array(message, 0, 1);
+        return uint16array[0];
+    }
+
+    _sendProject(rtc, parts) {
         if(!parts) {
             let zip = projectHandler.exportProject();
             zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
@@ -18334,16 +18505,16 @@ class PartyHandler {
                     let chunkEnd = (i + 1) * SIXTEEN_KB;
                     parts.push(buffer.slice(chunkStart, chunkEnd));
                 }
-                this._sendProject(peer, parts);
+                this._sendProject(rtc, parts);
             });
             return;
         }
-        peer.sendData(JSON.stringify({
+        rtc.sendData(JSON.stringify({
             "topic": "project",
             "parts": parts.length,
         }));
         for(let part of parts) {
-            peer.sendData(part);
+            rtc.sendData(part);
         }
     }
 
@@ -18364,18 +18535,46 @@ class PartyHandler {
     }
 
     _handleAvatar(peer, message) {
-        let peerId = peer.getPeerId();
-        if(this._avatars[peerId]) {
-            this._avatars[peerId].updateSourceUrl(message.url);
+        if(peer.controller) {
+            peer.controller.updateAvatar(message.url);
         } else {
-            this._avatars[peer.getPeerId()] = new Avatar({ URL: message.url });
-            this._avatars[peer.getPeerId()].addToScene(global$1.scene);
+            peer.controller = new PeerController({ URL: message.url });
+            peer.controller.addToScene(global$1.scene);
+        }
+    }
+
+    _handleInstanceUpdated(peer, message) {
+        let params = message.instance;
+        let instance = projectHandler.project[params.assetId][params.id];
+        if(instance) {
+            instance.setFromParams(params);
+            pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
+        }
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
+            this._sendToAllPeers(JSON.stringify({
+                "topic": "instance_updated",
+                "instance": instance.exportParams(),
+            }));
+        });
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
+    }
+
+    _sendToAllPeers(data) {
+        for(let peerId in this._peers) {
+            this._peers[peerId].sendData(data);
         }
     }
 
     host(roomId, successCallback, errorCallback) {
         this._isHost = true;
         this._partyActive = true;
+        this._addSubscriptions();
         party.host(roomId, () => { this._successCallback(); },
             () => { this._errorCallback(); });
     }
@@ -18383,16 +18582,25 @@ class PartyHandler {
     join(roomId, successCallback, errorCallback) {
         this._isHost = false;
         this._partyActive = true;
+        this._addSubscriptions();
         party.join(roomId, () => { this._successCallback(); },
             () => { this._errorCallback(); });
     }
 
-    update() {
+    update(timeDelta) {
         if(!this._partyActive) return;
-        if(global$1.renderer.info.render.frame % 2 == 0) return;
-        let buffer = userController.getDataForRTC();
+        let timestamp = new Date().getTime() % TWO_BYTE_MOD;
+        let buffer = new Uint16Array([timestamp]).buffer;
+        buffer = concatenateArrayBuffers(
+            [buffer, ...userController.getDataForRTC()]);
         for(let peerId in this._peers) {
-            this._peers[peerId].sendData(buffer);
+            let peer = this._peers[peerId];
+            if(peer.controller) {
+                let message = this._getNextJitterBufferMessage(
+                    peer.jitterBuffer, timestamp);
+                peer.controller.update(timeDelta, message);
+            }
+            if(peer.rtc) peer.rtc.sendData(buffer);
         }
     }
 }
