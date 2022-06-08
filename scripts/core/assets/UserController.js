@@ -78,8 +78,11 @@ class UserController {
             codes += UserMessageCodes.AVATAR;
             //TODO: Push hand data as well
         }
-        data.push(...this._basicMovement.getWorldVelocity().toArray());
-        codes += UserMessageCodes.USER_VELOCITY;
+        let worldVelocity = this._basicMovement.getWorldVelocity();
+        if(worldVelocity.length() >= 0.00001) {
+            data.push(...this._basicMovement.getWorldVelocity().toArray());
+            codes += UserMessageCodes.USER_VELOCITY;
+        }
         if(global.renderer.info.render.frame % 300 == 0) {
             this._userObj.getWorldPosition(vector3s[0]);
             data.push(...vector3s[0].toArray());

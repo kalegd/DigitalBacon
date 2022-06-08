@@ -11,10 +11,15 @@ import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import * as THREE from 'three';
 
+const ERROR_FIX_FRAMES = 30;
+const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
+
 export default class PeerController extends Entity {
     constructor(avatarUrl) {
         super();
         this._velocity = new THREE.Vector3();
+        this._positionError = new THREE.Vector3();
+        this._errorFixFrame = ERROR_FIX_FRAMES;
         this._setup(avatarUrl);
     }
 
@@ -44,9 +49,9 @@ export default class PeerController extends Entity {
     }
 
     _updatePosition(float32Array, index) {
-        //TODO: Don't jump to the correct position, track the error and reduce
-        //      it over the next few calls
-        this._object.position.fromArray(float32Array, index);
+        this._positionError.fromArray(float32Array, index)
+            .sub(this._object.position)
+        this._errorFixFrame = 0;
     }
 
     updateAvatar(url) {
@@ -69,10 +74,15 @@ export default class PeerController extends Entity {
         } else {
             this._updateWithoutMessage(timeDelta);
         }
+        if(this._errorFixFrame < ERROR_FIX_FRAMES) {
+            this._object.position.addScaledVector(this._positionError,
+                ERROR_FACTOR);
+            this._errorFixFrame++;
+        }
     }
 
     _updateWithMessage(timeDelta, message) {
-        let codes = new Uint8Array(message, 2, 3)[0];
+        let codes = new Uint8Array(message.slice(2, 3))[0];
         let float32Array = new Float32Array(message.slice(3));
         let index = 0;
         let isXR = false;
@@ -83,6 +93,8 @@ export default class PeerController extends Entity {
         if(UserMessageCodes.USER_VELOCITY & codes) {
             this._updateVelocity(float32Array, index, isXR, timeDelta);
             index += 3;
+        } else {
+            this._velocity.set(0, 0, 0);
         }
         if(UserMessageCodes.USER_POSITION & codes) {
             this._updatePosition(float32Array, index);
