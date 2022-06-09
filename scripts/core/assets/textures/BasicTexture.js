@@ -71,8 +71,10 @@ export default class BasicTexture extends Texture {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateImage(oldValue, true, ignorePublish);
+                this._updateMenuField('image');
             }, () => {
                 this._updateImage(newValue, true, ignorePublish);
+                this._updateMenuField('image');
             });
         }
     }
@@ -91,8 +93,10 @@ export default class BasicTexture extends Texture {
         {
             UndoRedoHandler.addAction(() => {
                 this._updateVector2(param, null, oldValue, true, ignorePublish);
+                this._updateMenuField(param);
             }, () => {
                 this._updateVector2(param, null, newValue, true, ignorePublish);
+                this._updateMenuField(param);
             });
         }
     }
@@ -135,13 +139,16 @@ export default class BasicTexture extends Texture {
             } else if(field.type == Vector2Input) {
                 menuFieldsMap[field.parameter] = new Vector2Input({
                     'title': field.name,
-                    'vector2': this._texture[field.parameter],
+                    'initialValue': this._texture[field.parameter].toArray(),
                     'onBlur': (oldValue, newValue) => {
                         this._updateVector2(field.parameter, oldValue,newValue);
                     },
                     'onUpdate': (newValue) => {
                         this._updateVector2(field.parameter,
                             this._texture[field.parameter], newValue, true);
+                    },
+                    'getFromSource': () => {
+                        return this._texture[field.parameter].toArray();
                     },
                 });
             } else if(field.type == EnumInput) {

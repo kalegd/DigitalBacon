@@ -68,24 +68,31 @@ export const disposeMaterial = (material, textures) => {
 //https://stackoverflow.com/questions/21711600/javascript-number-precision-without-converting-to-string
 export const roundWithPrecision = (num, p) => {
     let precision = p || 9;
-    let multiplier = Math.pow(10, precision);
-    return Math.round( num * multiplier ) / multiplier;
+    return Number(num.toFixed(p));
 }
 
 THREE.Vector3.prototype.roundWithPrecision = function(p) {
     let precision = p || 9;
+    let oldValues = [this.x, this.y, this.z];
     this.setX(roundWithPrecision(this.x, precision));
     this.setY(roundWithPrecision(this.y, precision));
     this.setZ(roundWithPrecision(this.z, precision));
+    return this.x != oldValues[0]
+        || this.y != oldValues[1]
+        || this.z != oldValues[2];
 }
 
 THREE.Euler.prototype.roundWithPrecision = function(p) {
     let precision = p || 9;
+    let oldValues = [this.x, this.y, this.z];
     this.set(
         roundWithPrecision(this.x, precision),
         roundWithPrecision(this.y, precision),
         roundWithPrecision(this.z, precision)
     );
+    return this.x != oldValues[0]
+        || this.y != oldValues[1]
+        || this.z != oldValues[2];
 }
 
 export const cartesianToPolar = (x, y) => {

@@ -22,6 +22,11 @@ import { TransformControls } from '/node_modules/three/examples/jsm/controls/Tra
 import * as THREE from 'three';
 
 const MODES = ['translate', 'rotate', 'scale'];
+const MODE_TO_OBJECT_PARAM = {
+    translate: 'position',
+    rotate: 'rotation',
+    scale: 'scale'
+};
 
 class TransformControlsHandler {
     init(canvas, camera, scene) {
@@ -62,24 +67,16 @@ class TransformControlsHandler {
         this._transformControls.addEventListener('mouseDown', () => {
             SessionHandler.disableOrbit();
             this._preTransformStates[global.deviceType]
-                = this._attachedAssets[global.deviceType].exportParams();
+                = this._attachedAssets[global.deviceType]
+                    .getObjectTransformation();
         });
         this._transformControls.addEventListener('mouseUp', () => {
             SessionHandler.enableOrbit();
             let instance = this._attachedAssets[global.deviceType];
-            instance.roundAttributes();
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
+            instance.roundAttributes(true);
             let preState = this._preTransformStates[global.deviceType];
-            let postState = instance.exportParams();
-            UndoRedoHandler.addAction(() => {
-                instance.setFromParams(preState);
-                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                    instance);
-            }, () => {
-                instance.setFromParams(postState);
-                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                    instance);
-            });
+            let postState = instance.getObjectTransformation();
+            instance.setObjectTransformation(preState, postState);
         });
         this._transformControls.addEventListener('objectChange', () => {
             if(global.renderer.info.render.frame % 6 == 0) {
@@ -163,7 +160,7 @@ class TransformControlsHandler {
         let instances = ProjectHandler.getInstancesForAssetId(assetId);
         let instance = instances[instanceId];
         //Maybe we should store parameters in case object has been deleted so we
-        //can still paste it back?
+        //can still paste it back? Definitily! But later...
         if(instance) {
             let clone = instance.clone();
             if(!this._isDragging(instance)) this._offsetClone(clone);
@@ -225,8 +222,7 @@ class TransformControlsHandler {
         object.worldToLocal(vector3s[1]);
         object.position.add(vector3s[1]);
 
-        instance.roundAttributes();
-        PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
+        instance.roundAttributes(true);
     }
 
     _delete(option) {
@@ -262,24 +258,15 @@ class TransformControlsHandler {
                             attachedAsset.getObject());
                         this._placingObject[option] = false;
                     }
-                    let preState = attachedAsset.exportParams();
+                    let preState = attachedAsset.getObjectTransformation();
                     attachedAsset.place(intersections[0]);
                     if(global.deviceType == 'XR') this.detach(option);
-                    attachedAsset.roundAttributes();
+                    attachedAsset.roundAttributes(true);
                     PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
                         attachedAsset);
                     if(global.deviceType == "XR") return;
-                    let postState = attachedAsset.exportParams();
-                    UndoRedoHandler.addAction(() => {
-                        attachedAsset.setFromParams(preState);
-                        PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                            attachedAsset);
-                    }, () => {
-                        attachedAsset.setFromParams(postState);
-                        PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                            attachedAsset);
-                    });
-                    return;
+                    let postState = attachedAsset.getObjectTransformation();
+                    attachedAsset.setObjectTransformation(preState, postState);
                 }
             }
         }
@@ -335,7 +322,8 @@ class TransformControlsHandler {
                     UserController.getDistanceBetweenHands();
                 this._initialScalingValues = asset.getObject().scale.clone();
             } else {
-                this._preTransformStates[asset.getId()] = asset.exportParams();
+                this._preTransformStates[asset.getId()]
+                    = asset.getObjectTransformation();
                 UserController.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
@@ -365,19 +353,11 @@ class TransformControlsHandler {
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
-                asset.roundAttributes();
+                asset.roundAttributes(true);
                 PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, asset);
                 let preState = this._preTransformStates[asset.getId()];
-                let postState = asset.exportParams();
-                UndoRedoHandler.addAction(() => {
-                    asset.setFromParams(preState);
-                    PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                        asset);
-                }, () => {
-                    asset.setFromParams(postState);
-                    PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                        asset);
-                });
+                let postState = asset.getObjectTransformation();
+                asset.setObjectTransformation(preState, postState);
             }
             if(Object.keys(this._attachedAssets).length == 1)
                 UndoRedoHandler.enable(this._id);

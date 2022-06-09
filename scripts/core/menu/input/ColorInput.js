@@ -63,7 +63,7 @@ class ColorInput extends PointerInteractableEntity {
         this._object.add(this._colorBlock);
         let interactable = new PointerInteractable(this._colorBlock, () => {
             let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);
-            colorPage.setContent(this._color,
+            colorPage.setContent(this._id, this._color,
                 (color) => {
                     this._color.setHex(color);
                     if(this._onUpdate) this._onUpdate(color);
@@ -100,6 +100,8 @@ class ColorInput extends PointerInteractableEntity {
         if(this._getFromSource) {
             this._lastValue = this._getFromSource();
             this._color.setHex(this._lastValue);
+            let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);
+            colorPage.updateColor(this._id, this._color);
         }
     }
 }

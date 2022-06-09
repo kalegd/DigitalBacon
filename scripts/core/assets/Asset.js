@@ -34,6 +34,7 @@ const INTERACTABLE_KEYS = [
     HandTools.COPY_PASTE,
     HandTools.DELETE,
 ];
+const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const FIELDS = [
     { "parameter": "position", "name": "Position", "type": Vector3Input },
     { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
@@ -64,7 +65,7 @@ export default class Asset extends Entity {
         this._object.position.fromArray(position);
         this._object.rotation.fromArray(rotation);
         this._object.scale.fromArray(scale);
-        this.roundAttributes();
+        this.roundAttributes(true);
 
         this._createInteractables();
     }
@@ -169,22 +170,22 @@ export default class Asset extends Entity {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateVisualEdit(!isVisualEdit, true, ignorePublish);
+                this._updateMenuField('visualEdit');
             }, () => {
                 this._updateVisualEdit(isVisualEdit, true, ignorePublish);
+                this._updateMenuField('visualEdit');
             });
         }
     }
 
     _updateObjectEuler(param, oldValue, newValue, ignoreUndoRedo,
-                       ignorePublish)
-    {
+                       ignorePublish) {
         this._updateObjectVector3(param, oldValue, newValue, ignoreUndoRedo,
             ignorePublish);
     }
 
     _updateObjectVector3(param, oldValue, newValue, ignoreUndoRedo,
-                         ignorePublish)
-    {
+                         ignorePublish) {
         let currentValue = this._object[param].toArray();
         if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
             this._object[param].fromArray(newValue);
@@ -197,11 +198,67 @@ export default class Asset extends Entity {
             UndoRedoHandler.addAction(() => {
                 this._updateObjectVector3(param, null, oldValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             }, () => {
                 this._updateObjectVector3(param, null, newValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             });
         }
+    }
+
+    _updateMenuField(param) {
+        if(!this._menuFields) return;
+        let menuField = this._menuFieldsMap[param];
+        if(menuField) menuField.updateFromSource();
+    }
+
+    getObjectTransformation() {
+        return {
+            "position": this._object.position.toArray(),
+            "rotation": this._object.rotation.toArray(),
+            "scale": this._object.scale.toArray(),
+        };
+    }
+
+    setObjectTransformation(oldValues, newValues, ignoreUndoRedo,
+                            ignorePublish) {
+        let updated = [];
+        for(let param of OBJECT_TRANSFORM_PARAMS) {
+            let oldValue = (oldValues)
+                ? oldValues[param]
+                : this._object[param].toArray();
+            let newValue = newValues[param];
+            if(oldValue.reduce((a,v,i) => a && newValue[i] == v,true)) continue;
+            this._object[param].fromArray(newValue);
+            this._updateMenuField(param);
+            updated.push(param);
+        }
+        if(updated.length == 0) return;
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this.setObjectTransformation(null, oldValues, true,
+                    ignorePublish);
+            }, () => {
+                this.setObjectTransformation(null, newValues, true,
+                    ignorePublish);
+            });
+        }
+    }
+
+    roundAttributes(ignorePublish) {
+        let updated = [];
+        for(let param of OBJECT_TRANSFORM_PARAMS) {
+            if(this._object[param].roundWithPrecision(5)) {
+                updated.push(param);
+                this._updateMenuField(param);
+            }
+        }
+        if(updated.length == 0) return;
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
     }
 
     makeTranslucent() {
@@ -248,12 +305,6 @@ export default class Asset extends Entity {
         });
     }
 
-    roundAttributes() {
-        this._object.position.roundWithPrecision(5);
-        this._object.rotation.roundWithPrecision(5);
-        this._object.scale.roundWithPrecision(5);
-    }
-
     _fetchCloneParams(visualEditOverride) {
         let params = this.exportParams();
         let visualEdit = (visualEditOverride != null)
@@ -289,20 +340,14 @@ export default class Asset extends Entity {
         };
     }
 
-    setFromParams(params) {
-        this._object.position.fromArray(params["position"]);
-        this._object.rotation.fromArray(params["rotation"]);
-        this._object.scale.fromArray(params["scale"]);
-    }
-
     getMenuFields(fields) {
         if(this._menuFields) return this._menuFields;
 
-        let menuFieldsMap = this._getMenuFieldsMap();
+        this._menuFieldsMap = this._getMenuFieldsMap();
         let menuFields = [];
         for(let field of fields) {
-            if(field.parameter in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.parameter]);
+            if(field.parameter in this._menuFieldsMap) {
+                menuFields.push(this._menuFieldsMap[field.parameter]);
             }
         }
         this._menuFields = menuFields;
@@ -348,7 +393,7 @@ export default class Asset extends Entity {
     place(intersection) {
         let point = intersection.point;
         this._object.position.copy(point);
-        this.roundAttributes();
+        this.roundAttributes(true);
     }
 
     addToScene(scene) {

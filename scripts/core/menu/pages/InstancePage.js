@@ -68,14 +68,11 @@ class InstancePage extends DynamicFieldsPage {
                 this._controller.popPagesPast(MenuPages.INSTANCE);
             }
         });
-        //PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
-        //    if(instance == this._instance) {
-        //        for(let field of this._fields) {
-        //            field.updateFromSource();
-        //        }
-        //        this._titleField.setContent(instance.getName());
-        //    }
-        //});
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
+            if(instance == this._instance) {
+                this._titleField.setContent(instance.getName());
+            }
+        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (params) => {
             let id = params.instance.getId();
             if(id == this._instance.getId()) {
@@ -86,7 +83,7 @@ class InstancePage extends DynamicFieldsPage {
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
-        //PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
     }
 

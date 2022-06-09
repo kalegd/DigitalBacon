@@ -23,8 +23,8 @@ class Vector2Input extends PointerInteractableEntity {
         super();
         this._onBlur = params['onBlur'];
         this._onUpdate = params['onUpdate'];
-        this._vector2 = params['vector2'];
-        this._lastValue = this._vector2.toArray();
+        this._getFromSource = params['getFromSource'];
+        this._lastValue = params['initialValue'] || [0, 0];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
     }
@@ -60,7 +60,7 @@ class Vector2Input extends PointerInteractableEntity {
             'textAlign': 'left',
         });
         this._xField = new NumberField({
-            'initialText': String(this._vector2.x),
+            'initialText': String(this._lastValue[0]),
             'fontSize': FontSizes.body,
             'height': FIELD_HEIGHT,
             'width': FIELD_WIDTH,
@@ -70,7 +70,7 @@ class Vector2Input extends PointerInteractableEntity {
             'onUpdate': () => { this._update(0); },
         });
         this._yField = new NumberField({
-            'initialText': String(this._vector2.y),
+            'initialText': String(this._lastValue[1]),
             'fontSize': FontSizes.body,
             'height': FIELD_HEIGHT,
             'width': FIELD_WIDTH,
@@ -129,9 +129,13 @@ class Vector2Input extends PointerInteractableEntity {
     }
 
     updateFromSource() {
-        this._xField.setContent(String(this._vector2.x));
-        this._yField.setContent(String(this._vector2.y));
-        this._lastValue = this._vector2.toArray();
+        if(!this._getFromSource) return;
+        let value = this._getFromSource();
+        if(value[0] != this._lastValue[0] || value[1] != this._lastValue[1]) {
+            this._lastValue = value;
+            this._xField.setContent(String(value[0]));
+            this._yField.setContent(String(value[1]));
+        }
     }
 }
 

@@ -56,8 +56,10 @@ export default class ClampedTexturePlane extends Asset {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateDoubleSided(oldValue, true, ignorePublish);
+                this._updateMenuField('doubleSided');
             }, () => {
                 this._updateDoubleSided(newValue, true, ignorePublish);
+                this._updateMenuField('doubleSided');
             });
         }
     }
@@ -82,7 +84,7 @@ export default class ClampedTexturePlane extends Asset {
             .clampLength(0, 0.001)
             .add(point);
         this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes();
+        this.roundAttributes(true);
     }
 
     clone(visualEditOverride) {

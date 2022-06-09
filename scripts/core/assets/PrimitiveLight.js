@@ -33,9 +33,11 @@ export default class PrimitiveLight extends Asset {
             UndoRedoHandler.addAction(() => {
                 this._updateColorParameter(param, null, oldValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             }, () => {
                 this._updateColorParameter(param, null, newValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             });
         }
     }
@@ -54,9 +56,11 @@ export default class PrimitiveLight extends Asset {
             UndoRedoHandler.addAction(() => {
                 this._updateLightParameter(param, null, oldValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             }, () => {
                 this._updateLightParameter(param, null, newValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             });
         }
     }
@@ -73,8 +77,7 @@ export default class PrimitiveLight extends Asset {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        let instance = new this.constructor(params);
-        return ProjectHandler.addPrimitive(instance);
+        return ProjectHandler.addLight(params, this._assetId);
     }
 
     exportParams() {

@@ -159,13 +159,15 @@ class ColorWheelPage extends MenuPage {
         this._lightnessCursor.position.setY(vector3s[0].y);
     }
 
-    setContent(color, onUpdate, onEnter) {
-        this.updateColor(color);
+    setContent(requesterId, color, onUpdate, onEnter) {
+        this._requesterId = requesterId;
+        this.updateColor(requesterId, color);
         this._onUpdate = onUpdate;
         this._onEnter = onEnter;
     }
 
-    updateColor(color) {
+    updateColor(requesterId, color) {
+        if(!this._object.parent || this._requesterId != requesterId) return;
         ColorWheel.setFromHSL(color.getHSL(HSL));
         this._updateColorCursor();
         this._updateLightnessCursor();

@@ -106,8 +106,10 @@ export default class CubeTexture extends Texture {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateImage(side, oldValue, true, ignorePublish);
+                this._updateMenuField('images');
             }, () => {
                 this._updateImage(side, newValue, true, ignorePublish);
+                this._updateMenuField('images');
             });
         }
     }

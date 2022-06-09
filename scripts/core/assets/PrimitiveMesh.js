@@ -49,8 +49,10 @@ export default class PrimitiveMesh extends Asset {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateMaterial(oldValue, true, ignorePublish);
+                this._updateMenuField('material');
             }, () => {
                 this._updateMaterial(newValue, true, ignorePublish);
+                this._updateMenuField('material');
             });
         }
     }
@@ -67,9 +69,11 @@ export default class PrimitiveMesh extends Asset {
             UndoRedoHandler.addAction(() => {
                 this._updateGeometryParameter(param, null, oldValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             }, () => {
                 this._updateGeometryParameter(param, null, newValue, true,
                     ignorePublish);
+                this._updateMenuField(param);
             });
         }
     }
@@ -80,8 +84,7 @@ export default class PrimitiveMesh extends Asset {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        let instance = new this.constructor(params);
-        return ProjectHandler.addPrimitive(instance);
+        return ProjectHandler.addShape(params, this._assetId);
     }
 
     exportParams() {

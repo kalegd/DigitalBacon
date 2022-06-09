@@ -73,7 +73,7 @@ export default class PrimitiveRing extends PrimitiveMesh {
             .clampLength(0, 0.001)
             .add(point);
         this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes();
+        this.roundAttributes(true);
     }
 
     exportParams() {

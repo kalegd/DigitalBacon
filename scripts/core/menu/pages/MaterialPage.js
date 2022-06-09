@@ -68,19 +68,16 @@ class MaterialPage extends DynamicFieldsPage {
                 this._controller.popPagesPast(MenuPages.MATERIAL);
             }
         });
-        //PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (material)=> {
-        //    if(material == this._material) {
-        //        for(let field of this._fields) {
-        //            field.updateFromSource();
-        //        }
-        //        this._titleField.setContent(material.getName());
-        //    }
-        //});
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (material)=> {
+            if(material == this._material) {
+                this._titleField.setContent(material.getName());
+            }
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
-        //PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
     }
 
     back() {

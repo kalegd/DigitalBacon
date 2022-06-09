@@ -44,10 +44,18 @@ export default class Texture {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateEnum(param, oldValue, true, ignorePublish);
+                this._updateMenuField(param);
             }, () => {
                 this._updateEnum(param, newValue, true, ignorePublish);
+                this._updateMenuField(param);
             });
         }
+    }
+
+    _updateMenuField(param) {
+        if(!this._menuFields) return;
+        let menuField = this._menuFieldsMap[param];
+        if(menuField) menuField.updateFromSource();
     }
 
     exportParams() {
@@ -65,11 +73,11 @@ export default class Texture {
     getMenuFields(fields) {
         if(this._menuFields) return this._menuFields;
 
-        let menuFieldsMap = this._getMenuFieldsMap();
+        this._menuFieldsMap = this._getMenuFieldsMap();
         let menuFields = [];
         for(let field of fields) {
-            if(field.parameter in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.parameter]);
+            if(field.parameter in this._menuFieldsMap) {
+                menuFields.push(this._menuFieldsMap[field.parameter]);
             }
         }
         this._menuFields = menuFields;
