@@ -68,19 +68,19 @@ class TexturePage extends DynamicFieldsPage {
                 this._controller.popPagesPast(MenuPages.TEXTURE);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (texture)=> {
-            if(texture == this._texture) {
-                for(let field of this._fields) {
-                    field.updateFromSource();
-                }
-                this._titleField.setContent(texture.getName());
-            }
-        });
+        //PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (texture)=> {
+        //    if(texture == this._texture) {
+        //        for(let field of this._fields) {
+        //            field.updateFromSource();
+        //        }
+        //        this._titleField.setContent(texture.getName());
+        //    }
+        //});
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
-        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
+        //PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
     }
 
     back() {

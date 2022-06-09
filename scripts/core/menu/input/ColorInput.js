@@ -9,11 +9,10 @@ import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableE
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
 import ThreeMeshUI from 'three-mesh-ui';
 import * as THREE from 'three';
 
@@ -27,9 +26,11 @@ class ColorInput extends PointerInteractableEntity {
     constructor(params) {
         super();
         let title = params['title'] || 'Missing Field Name...';
-        this._color = params['initialValue'] || new THREE.Color("#2abbd5");
-        this._lastValue = this._color.getHex();
-        this._onUpdate = params['onUpdate'] || (() => {});
+        this._lastValue = numberOr(params['initialValue'], 0x2abbd5);
+        this._color = new THREE.Color(this._lastValue);
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
         this._createInputs(title);
     }
 
@@ -63,35 +64,24 @@ class ColorInput extends PointerInteractableEntity {
         let interactable = new PointerInteractable(this._colorBlock, () => {
             let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);
             colorPage.setContent(this._color,
-                (color) => { this._onUpdate(color); },
-                ()      => {
+                (color) => {
+                    this._color.setHex(color);
+                    if(this._onUpdate) this._onUpdate(color);
+                }, ()   => {
                     if(colorPage.isDraggingCursors()) return;
                     let oldColor = this._lastValue;
                     let newColor = this._color.getHex();
-                    this._onUpdate(newColor);
+                    if(this._onBlur) this._onBlur(oldColor, newColor);
                     this._lastValue = newColor;
-                    UndoRedoHandler.addAction(() => {
-                        this._onUpdate(oldColor);
-                        colorPage.updateColor(this._color);
-                        this._lastValue = oldColor;
-                    }, () => {
-                        this._onUpdate(newColor);
-                        colorPage.updateColor(this._color);
-                        this._lastValue = newColor;
-                    });
+                    this._color.setHex(this._lastValue);
                 });
             global.menuController.pushPage(MenuPages.COLOR_WHEEL);
-            //this._onUpdate();
             PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
                 'id': this._id,
                 'targetOnlyMenu': true,
             });
         });
         this._pointerInteractable.addChild(interactable);
-    }
-
-    setLastValue(color) {
-        this._lastValue = color;
     }
 
     getWidth() {
@@ -107,7 +97,10 @@ class ColorInput extends PointerInteractableEntity {
     }
 
     updateFromSource() {
-        //Required method
+        if(this._getFromSource) {
+            this._lastValue = this._getFromSource();
+            this._color.setHex(this._lastValue);
+        }
     }
 }
 

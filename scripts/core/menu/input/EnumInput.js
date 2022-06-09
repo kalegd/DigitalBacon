@@ -9,7 +9,6 @@ import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableE
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -28,7 +27,7 @@ class EnumInput extends PointerInteractableEntity {
     constructor(params) {
         super();
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
+        this._onUpdate = params['onUpdate'];
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
         let options = params['options'] || [];
@@ -97,20 +96,14 @@ class EnumInput extends PointerInteractableEntity {
     }
 
     _handleSelection(option) {
-        let preValue = this._lastValue;
-        this._setToSource(option);
-        this._updateOption(option);
-        UndoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateOption(preValue);
-        }, () => {
-            this._setToSource(option);
+        if(this._lastValue != option) {
+            if(this._onUpdate) this._onUpdate(option);
             this._updateOption(option);
-        });
-        PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id,
-            'targetOnlyMenu': true,
-        });
+            PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+                'id': this._id,
+                'targetOnlyMenu': true,
+            });
+        }
         this.deactivate();
     }
 
@@ -130,13 +123,14 @@ class EnumInput extends PointerInteractableEntity {
     }
 
     deactivate() {
-        //Required method
         this._optionSelection.remove(this._optionsContainer);
         this._selectionInteractable.removeChild(this._optionsInteractable);
     }
 
     updateFromSource() {
-        //Required method
+        if(!this._getFromSource) return;
+        let newValue = this._getFromSource();
+        if(newValue != this._lastValue) this._updateOption(newValue);
     }
 }
 

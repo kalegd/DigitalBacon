@@ -6,38 +6,39 @@
 
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
 const ASSET_NAME = 'Torus';
 const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Radius", "parameter": "_radius", "min": 0,
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "radius", "name": "Radius", "min": 0,
         "type": NumberInput },
-    { "name": "Tube Radius", "parameter": "_tube", "min": 0,
+    { "parameter": "tube", "name": "Tube Radius", "min": 0,
         "type": NumberInput },
-    { "name": "Radial Sides", "parameter": "_radialSegments", "min": 2,
+    { "parameter": "radialSegments", "name": "Radial Sides", "min": 2,
         "type": NumberInput },
-    { "name": "Tubular Sides", "parameter": "_tubularSegments", "min": 3,
+    { "parameter": "tubularSegments", "name": "Tubular Sides", "min": 3,
         "type": NumberInput },
-    { "name": "Degrees", "parameter": "_arc", "min": 0, "max": 360,
+    { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class PrimitiveTorus extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._radius = params['radius'] || 0.1;
-        this._tube = params['tube'] || 0.05;
+        this._radius = numberOr(params['radius'], 0.1);
+        this._tube = numberOr(params['tube'], 0.05);
         this._radialSegments = params['radialSegments'] || 16;
         this._tubularSegments = params['tubularSegments'] || 32;
-        this._arc = params['arc'] || 360;
+        this._arc = numberOr(params['arc'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
     }
@@ -81,20 +82,11 @@ export default class PrimitiveTorus extends PrimitiveMesh {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+                menuFieldsMap[field.parameter] =
+                    this._createGeometryNumberInput(field);
             }
         }
         return menuFieldsMap;

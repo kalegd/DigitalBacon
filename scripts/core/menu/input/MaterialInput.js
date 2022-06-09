@@ -11,7 +11,6 @@ import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 
@@ -37,7 +36,7 @@ class MaterialInput extends PointerInteractableEntity {
     constructor(params) {
         super();
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
+        this._onUpdate = params['onUpdate'];
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
@@ -128,21 +127,14 @@ class MaterialInput extends PointerInteractableEntity {
 
     _handleMaterialSelection(materialId) {
         if(materialId == "null\n") materialId = null;
-        let preValue = this._lastValue;
-        this._setToSource(materialId);
-        this._updateMaterial(materialId);
+        if(this._lastValue != materialId) {
+            if(this._onUpdate) this._onUpdate(materialId);
+            this._updateMaterial(materialId);
+        }
         global.menuController.back();
         PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
-        });
-        if(preValue == materialId) return;
-        UndoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateMaterial(preValue);
-        }, () => {
-            this._setToSource(materialId);
-            this._updateMaterial(materialId);
         });
     }
 

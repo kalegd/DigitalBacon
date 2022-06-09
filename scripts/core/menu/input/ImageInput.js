@@ -37,7 +37,7 @@ class ImageInput extends PointerInteractableEntity {
     constructor(params) {
         super();
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
+        this._onUpdate = params['onUpdate'];
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
@@ -104,21 +104,14 @@ class ImageInput extends PointerInteractableEntity {
 
     _handleAssetSelection(assetId) {
         if(assetId == "null\n") assetId = null;
-        let preValue = this._lastValue;
-        this._setToSource(assetId);
-        this._updateImage(assetId);
+        if(this._lastValue != assetId) {
+            if(this._onUpdate) this._onUpdate(assetId);
+            this._updateImage(assetId);
+        }
         global.menuController.back();
         PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
-        });
-        if(preValue == assetId) return;
-        UndoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateImage(preValue);
-        }, () => {
-            this._setToSource(assetId);
-            this._updateImage(assetId);
         });
     }
 

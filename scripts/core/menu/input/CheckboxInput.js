@@ -7,7 +7,6 @@
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
@@ -23,8 +22,8 @@ const CHECKBOX_HEIGHT = 0.04;
 class CheckboxInput extends PointerInteractableEntity {
     constructor(params) {
         super();
+        this._onUpdate = params['onUpdate'];
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
         let initialValue = params['initialValue'] || false;
         let title = params['title'] || 'Missing Field Name...';
         this._suppressMenuFocusEvent = params['suppressMenuFocusEvent'];
@@ -60,20 +59,7 @@ class CheckboxInput extends PointerInteractableEntity {
         this._object.add(this._selectBox);
         let interactable = new PointerInteractable(this._selectBox, () => {
             let value = this._selectBox.toggle();
-            this._setToSource(Boolean(value));
-            UndoRedoHandler.addAction(() => {
-                this._setToSource(!value);
-                if(this._selectBox.getIsChecked() == value) {
-                    this._selectBox.toggle();
-                    this._selectBox.update(false, true, false);
-                }
-            }, () => {
-                this._setToSource(Boolean(value));
-                if(this._selectBox.getIsChecked() != value) {
-                    this._selectBox.toggle();
-                    this._selectBox.update(false, true, false);
-                }
-            });
+            if(this._onUpdate) this._onUpdate(Boolean(value));
             PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
                 'id': this._id,
                 'targetOnlyMenu': this._suppressMenuFocusEvent,
@@ -95,7 +81,9 @@ class CheckboxInput extends PointerInteractableEntity {
     }
 
     updateFromSource() {
-        //Required method
+        if(!this._getFromSource) return;
+        if(this._getFromSource() != this._selectBox.getIsChecked())
+            this._selectBox.toggle();
     }
 }
 

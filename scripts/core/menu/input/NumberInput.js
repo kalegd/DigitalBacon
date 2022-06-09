@@ -5,7 +5,6 @@
  */
 
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import NumberField from '/scripts/core/menu/input/NumberField.js';
@@ -23,8 +22,9 @@ const FIELD_MAX_LENGTH = 13;
 class NumberInput extends PointerInteractableEntity {
     constructor(params) {
         super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
         this._minValue = numberOr(params['minValue'], -Infinity);
         this._maxValue = numberOr(params['maxValue'], Infinity);
         this._lastValue = params['initialValue'] || 0;
@@ -60,35 +60,23 @@ class NumberInput extends PointerInteractableEntity {
             'maxLength': FIELD_MAX_LENGTH,
             'minValue': this._minValue,
             'maxValue': this._maxValue,
-            'onBlur': () => { this._onBlur(); },
-            'onUpdate': () => { this._onUpdate(); },
+            'onBlur': () => { this._blur(); },
+            'onUpdate': () => { this._update(); },
         });
         this._object.add(titleBlock);
         this._numberField.addToScene(this._object, this._pointerInteractable);
     }
 
-    _onUpdate() {
-        if(this._setToSource && this._validate()) {
-            this._setToSource(this.getValue());
+    _update() {
+        if(this._onUpdate && this._validate()) {
+            this._onUpdate(this.getValue());
         }
     }
 
-    _onBlur() {
-        if(this._setToSource && this._validate()) {
-            let preValue = this._lastValue;
-            let postValue = this.getValue();
-            if(preValue != postValue) {
-                UndoRedoHandler.addAction(() => {
-                    this._setToSource(preValue);
-                    this.updateFromSource();
-                }, () => {
-                    this._setToSource(postValue);
-                    this.updateFromSource();
-                });
-                this._lastValue = postValue;
-            }
-            this._setToSource(postValue);
-        }
+    _blur() {
+        let newValue = this.getValue();
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
     }
 
     _validate() {

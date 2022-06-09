@@ -6,35 +6,36 @@
 
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
 
 const ASSET_ID = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
 const ASSET_NAME = 'Box';
 const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
-    { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },
-    { "name": "Depth", "parameter": "_depth", "min": 0, "type": NumberInput },
-    { "name": "Width Segments", "parameter": "_widthSegments", "min": 1,
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
+    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
+    { "parameter": "depth", "name": "Depth", "min": 0, "type": NumberInput },
+    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
         "type": NumberInput },
-    { "name": "Height Segments", "parameter": "_heightSegments", "min": 1,
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
         "type": NumberInput },
-    { "name": "Depth Segments", "parameter": "_depthSegments", "min": 1,
+    { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
         "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class PrimitiveBox extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._width = params['width'] || 0.1;
-        this._height = params['height'] || 0.1;
-        this._depth = params['depth'] || 0.1;
+        this._width = numberOr(params['width'], 0.1);
+        this._height = numberOr(params['height'], 0.1);
+        this._depth = numberOr(params['depth'], 0.1);
         this._widthSegments = params['widthSegments'] || 1;
         this._heightSegments = params['heightSegments'] || 1;
         this._depthSegments = params['depthSegments'] || 1;
@@ -82,20 +83,11 @@ export default class PrimitiveBox extends PrimitiveMesh {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+                menuFieldsMap[field.parameter] =
+                    this._createGeometryNumberInput(field);
             }
         }
         return menuFieldsMap;

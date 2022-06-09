@@ -31,6 +31,25 @@ export default class Texture {
         return;
     }
 
+    _updateEnum(param, newValue, ignoreUndoRedo, ignorePublish) {
+        let oldValue = this._texture[param];
+        if(oldValue == newValue) return;
+
+        this._texture[param] = newValue;
+        this['_' + param] = newValue;
+        this._updateTexture();
+
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._updateEnum(param, oldValue, true, ignorePublish);
+            }, () => {
+                this._updateEnum(param, newValue, true, ignorePublish);
+            });
+        }
+    }
+
     exportParams() {
         return {
             "id": this._id,
@@ -49,8 +68,8 @@ export default class Texture {
         let menuFieldsMap = this._getMenuFieldsMap();
         let menuFields = [];
         for(let field of fields) {
-            if(field.name in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.name]);
+            if(field.parameter in menuFieldsMap) {
+                menuFields.push(menuFieldsMap[field.parameter]);
             }
         }
         this._menuFields = menuFields;
@@ -62,25 +81,12 @@ export default class Texture {
         return menuFieldsMap;
     }
 
-    _updateEnum(parameter, option, map) {
-        let val;
-        if(map) {
-            val = map[option];
-        } else {
-            val = option;
-        }
-        this._texture[parameter] = val;
-        this['_' + parameter] = val;
-        this._updateTexture();
-    }
-
     _updateTexture() {
         let oldTexture = this._texture;
         this._createTexture();
         setTimeout(() => {
             oldTexture.dispose();
         }, 20);
-        PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
     }
 
     dispose() {

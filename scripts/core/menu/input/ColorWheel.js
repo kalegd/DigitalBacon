@@ -176,7 +176,7 @@ class ColorWheel {
         this._updateLightnessBar();
         //this._colorTexture.needsUpdate = true;
         this._lightnessTexture.needsUpdate = true;
-        return "#" + rgbToHex(red) + rgbToHex(green) + rgbToHex(blue);
+        return rgbToHex(red, green, blue);
     }
 
     selectLightnessFromXY(height, x, y) {
@@ -189,7 +189,7 @@ class ColorWheel {
         this._lightness = lightness;
         this._updateColorWheel();
         this._colorTexture.needsUpdate = true;
-        return "#" + rgbToHex(red) + rgbToHex(green) + rgbToHex(blue);
+        return rgbToHex(red, green, blue);
     }
 }
 

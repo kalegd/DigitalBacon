@@ -70,7 +70,7 @@ class AssetPage extends PaginatedPage {
                 assetId: this._assetId,
                 position: position,
                 rotation: rotation,
-                enableInteractions: true,
+                visualEdit: true,
             };
             let type = LibraryHandler.getType(this._assetId);
             if(type == AssetTypes.IMAGE) {

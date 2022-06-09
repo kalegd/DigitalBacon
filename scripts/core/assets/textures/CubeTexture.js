@@ -10,14 +10,15 @@ import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Textures, MAPPING_MAP, REVERSE_MAPPING_MAP } from '/scripts/core/helpers/constants.js';
 import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import * as THREE from 'three';
 
 const FIELDS = [
-    { "name": "Images", "type": CubeImageInput },
-    { "name": "Mapping", "parameter": "mapping", "type": EnumInput,
+    { "parameter": "images", "name": "Images", "type": CubeImageInput },
+    { "parameter": "mapping", "name": "Mapping", "type": EnumInput,
         "options": [ "Reflection", "Refraction" ], "map": MAPPING_MAP,
         "reverseMap": REVERSE_MAPPING_MAP },
 ];
@@ -89,16 +90,26 @@ export default class CubeTexture extends Texture {
         return isValid;
     }
 
-    _updateImage(side, assetId) {
-        if(assetId == this._images[side]) return;
+    _updateImage(side, newValue, ignoreUndoRedo, ignorePublish) {
+        let oldValue = this._images[side];
+        if(newValue == oldValue) return;
         this._wrapS = this._texture.wrapS;
         this._wrapT = this._texture.wrapT;
         this._repeatX = this._texture.repeat.x;
         this._repeatY = this._texture.repeat.y;
         this._offsetX = this._texture.offset.x;
         this._offsetY = this._texture.offset.y;
-        this._images[side] = assetId;
+        this._images[side] = newValue;
         this._updateTexture();
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._updateImage(side, oldValue, true, ignorePublish);
+            }, () => {
+                this._updateImage(side, newValue, true, ignorePublish);
+            });
+        }
     }
 
     getPreviewTexture() {
@@ -133,16 +144,16 @@ export default class CubeTexture extends Texture {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == CubeImageInput) {
-                menuFieldsMap[field.name] = new CubeImageInput({
+                menuFieldsMap[field.parameter] = new CubeImageInput({
                     'initialValue': this._images,
                     'getFromSource': () => { return this._images; },
-                    'setToSource': (s, v) => { this._updateImage(s, v); },
+                    'onUpdate': (s, v) => { this._updateImage(s, v); },
                 });
             } else if(field.type == EnumInput) {
-                menuFieldsMap[field.name] = new EnumInput({
+                menuFieldsMap[field.parameter] = new EnumInput({
                     'title': field.name,
                     'options': field.options,
                     'initialValue':
@@ -151,9 +162,8 @@ export default class CubeTexture extends Texture {
                         return field.reverseMap[this._texture[
                             field.parameter]];
                     },
-                    'setToSource': (v) => {
-                        this._updateEnum(field.parameter, v, field.map);
-                        this._updateTexture();
+                    'onUpdate': (v) => {
+                        this._updateEnum(field.parameter, field.map[v]);
                     },
                 });
             }

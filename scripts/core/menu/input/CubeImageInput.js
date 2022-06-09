@@ -46,7 +46,7 @@ class CubeImageInput extends PointerInteractableEntity {
     constructor(params) {
         super();
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
+        this._onUpdate = params['onUpdate'];
         this._lastValues =  params['initialValue'] || {};
         this._title = params['title'] || null;
         this._buttons = [];
@@ -154,21 +154,14 @@ class CubeImageInput extends PointerInteractableEntity {
 
     _handleAssetSelection(side, assetId) {
         if(assetId == "null\n") assetId = null;
-        let preValue = this._lastValues[side];
-        this._setToSource(side, assetId);
-        this._updateImage(side, assetId);
+        if(this._lastValues[side] != assetId) {
+            if(this._onUpdate) this._onUpdate(side, assetId);
+            this._updateImage(side, assetId);
+        }
         global.menuController.back();
         PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
-        });
-        if(preValue == assetId) return;
-        UndoRedoHandler.addAction(() => {
-            this._setToSource(side, preValue);
-            this._updateImage(side, preValue);
-        }, () => {
-            this._setToSource(side, assetId);
-            this._updateImage(side, assetId);
         });
     }
 

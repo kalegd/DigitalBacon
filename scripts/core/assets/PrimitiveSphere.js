@@ -6,38 +6,39 @@
 
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '423c9506-52f4-4725-b848-69913cce2b00';
 const ASSET_NAME = 'Sphere';
 const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Radius", "parameter": "_radius", "min": 0,
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "radius", "name": "Radius", "min": 0,
         "type": NumberInput },
-    { "name": "Horizontal Sides", "parameter": "_widthSegments", "min": 3,
+    { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,
         "type": NumberInput },
-    { "name": "Vertical Sides", "parameter": "_heightSegments", "min": 2,
+    { "parameter": "heightSegments", "name": "Vertical Sides", "min": 2,
         "type": NumberInput },
-    { "name": "Horizontal Degrees", "parameter": "_phiLength", "min": 0,
+    { "parameter": "phiLength", "name": "Horizontal Degrees", "min": 0,
         "max": 360, "type": NumberInput },
-    { "name": "Vertical Degrees", "parameter": "_thetaLength", "min": 0,
+    { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
         "max": 180, "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class PrimitiveSphere extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._radius = params['radius'] || 0.1;
+        this._radius = numberOr(params['radius'], 0.1);
         this._widthSegments = params['widthSegments'] || 32;
         this._heightSegments = params['heightSegments'] || 16;
-        this._phiLength = params['phiLength'] || 360;
-        this._thetaLength = params['thetaLength'] || 180;
+        this._phiLength = numberOr(params['phiLength'], 360);
+        this._thetaLength = numberOr(params['thetaLength'], 180);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
     }
@@ -85,20 +86,11 @@ export default class PrimitiveSphere extends PrimitiveMesh {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+                menuFieldsMap[field.parameter] =
+                    this._createGeometryNumberInput(field);
             }
         }
         return menuFieldsMap;

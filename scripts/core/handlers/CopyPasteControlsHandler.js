@@ -37,7 +37,7 @@ class CopyPasteControlsHandler {
 
     _paste() {
         let clonedAsset = this._previewAsset.clone(
-            this._copiedAsset.enableInteractables);
+            this._copiedAsset.visualEdit);
         this._assetAlreadyPastedByGrip = true;
     }
 

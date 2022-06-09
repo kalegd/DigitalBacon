@@ -9,28 +9,24 @@ import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Textures, WRAP_MAP, REVERSE_WRAP_MAP } from '/scripts/core/helpers/constants.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import ImageInput from '/scripts/core/menu/input/ImageInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
 import * as THREE from 'three';
 
 const FIELDS = [
-    { "name": "Image", "type": ImageInput },
-    { "name": "Horizontal Wrapping", "parameter": "wrapS", "type": EnumInput,
+    { "parameter": "image", "name": "Image", "type": ImageInput },
+    { "parameter": "wrapS", "name": "Horizontal Wrapping", "type": EnumInput,
         "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
         "reverseMap": REVERSE_WRAP_MAP },
-    { "name": "Vertical Wrapping", "parameter": "wrapT", "type": EnumInput,
+    { "parameter": "wrapT", "name": "Vertical Wrapping", "type": EnumInput,
         "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
         "reverseMap": REVERSE_WRAP_MAP },
-    { "name": "Horizontal Repeat", "parameter": "repeat", "parameter2": "x",
-        "type": NumberInput },
-    { "name": "Vertical Repeat", "parameter": "repeat", "parameter2": "y",
-        "type": NumberInput },
-    { "name": "Horizontal Offset", "parameter": "offset", "parameter2": "x",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Vertical Offset", "parameter": "offset", "parameter2": "y",
-        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "repeat", "name": "Repeat", "type": Vector2Input },
+    { "parameter": "offset", "name": "Offset", "type": Vector2Input },
 ];
 
 export default class BasicTexture extends Texture {
@@ -39,10 +35,8 @@ export default class BasicTexture extends Texture {
         this._image = params['image'];
         this._wrapS = params['wrapS'] || THREE.ClampToEdgeWrapping;
         this._wrapT = params['wrapT'] || THREE.ClampToEdgeWrapping;
-        this._repeatX = params['repeatX'] || 1;
-        this._repeatY = params['repeatY'] || 1;
-        this._offsetX = params['offsetX'] || 0;
-        this._offsetY = params['offsetY'] || 0;
+        this._repeat = params['repeat'] || [1, 1];
+        this._offset = params['offset'] || [0, 0];
         this._createTexture();
     }
 
@@ -58,23 +52,49 @@ export default class BasicTexture extends Texture {
         }
         this._texture.wrapS = this._wrapS;
         this._texture.wrapT = this._wrapT;
-        this._texture.repeat.x = this._repeatX;
-        this._texture.repeat.y = this._repeatY;
-        this._texture.offset.x = this._offsetX;
-        this._texture.offset.y = this._offsetY;
+        this._texture.repeat.fromArray(this._repeat);
+        this._texture.offset.fromArray(this._offset);
         this._texture.needsUpdate = true;
     }
 
-    _updateImage(assetId) {
-        if(assetId == this._image) return;
+    _updateImage(newValue, ignoreUndoRedo, ignorePublish) {
+        let oldValue = this._image;
+        if(oldValue == newValue) return;
         this._wrapS = this._texture.wrapS;
         this._wrapT = this._texture.wrapT;
-        this._repeatX = this._texture.repeat.x;
-        this._repeatY = this._texture.repeat.y;
-        this._offsetX = this._texture.offset.x;
-        this._offsetY = this._texture.offset.y;
-        this._image = assetId;
+        this._texture.repeat.fromArray(this._repeat);
+        this._texture.offset.fromArray(this._offset);
+        this._image = newValue;
         this._updateTexture();
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._updateImage(oldValue, true, ignorePublish);
+            }, () => {
+                this._updateImage(newValue, true, ignorePublish);
+            });
+        }
+    }
+
+    _updateVector2(param, oldValue, newValue, ignoreUndoRedo, ignorePublish)
+    {
+        let currentValue = this['_' + param];
+        if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
+            this._texture[param].fromArray(newValue);
+            this['_' + param] = newValue;
+            if(!ignorePublish)
+                PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
+        }
+        if(!ignoreUndoRedo && !oldValue
+                .reduce((a,v,i) => a && newValue[i] == v,true))
+        {
+            UndoRedoHandler.addAction(() => {
+                this._updateVector2(param, null, oldValue, true, ignorePublish);
+            }, () => {
+                this._updateVector2(param, null, newValue, true, ignorePublish);
+            });
+        }
     }
 
     getAssetIds() {
@@ -91,10 +111,8 @@ export default class BasicTexture extends Texture {
         params['image'] = this._image;
         params['wrapS'] = this._texture.wrapS;
         params['wrapT'] = this._texture.wrapT;
-        params['repeatX'] = this._texture.repeat.x;
-        params['repeatY'] = this._texture.repeat.y;
-        params['offsetX'] = this._texture.offset.x;
-        params['offsetY'] = this._texture.offset.y;
+        params['repeat'] = this._texture.repeat.toArray();
+        params['offset'] = this._texture.offset.toArray();
         return params;
     }
 
@@ -105,41 +123,37 @@ export default class BasicTexture extends Texture {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == ImageInput) {
-                menuFieldsMap[field.name] = new ImageInput({
+                menuFieldsMap[field.parameter] = new ImageInput({
                     'title': field.name,
                     'initialValue': this._image,
                     'getFromSource': () => { return this._image; },
-                    'setToSource': (v) => { this._updateImage(v); },
+                    'onUpdate': (v) => { this._updateImage(v); },
                 });
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
+            } else if(field.type == Vector2Input) {
+                menuFieldsMap[field.parameter] = new Vector2Input({
                     'title': field.name,
-                    'initialValue':
-                        this._texture[field.parameter][field.parameter2],
-                    'getFromSource': () => {
-                        return this._texture[field.parameter][field.parameter2];
+                    'vector2': this._texture[field.parameter],
+                    'onBlur': (oldValue, newValue) => {
+                        this._updateVector2(field.parameter, oldValue,newValue);
                     },
-                    'setToSource': (v) => {
-                        this._texture[field.parameter][field.parameter2] = v;
-                        this['_' + field.parameter +
-                            field.parameter2.toUpperCase()] = v
+                    'onUpdate': (newValue) => {
+                        this._updateVector2(field.parameter,
+                            this._texture[field.parameter], newValue, true);
                     },
-                    'minValue': field.min,
-                    'maxValue': field.max,
                 });
             } else if(field.type == EnumInput) {
-                menuFieldsMap[field.name] = new EnumInput({
+                menuFieldsMap[field.parameter] = new EnumInput({
                     'title': field.name,
                     'initialValue':
                         field.reverseMap[this._texture[field.parameter]],
                     'getFromSource': () => {
                         return field.reverseMap[this._texture[field.parameter]];
                     },
-                    'setToSource': (v) => {
-                        this._updateEnum(field.parameter, v, field.map);
+                    'onUpdate': (v) => {
+                        this._updateEnum(field.parameter, field.map[v]);
                     },
                     'options': field.options,
                 });

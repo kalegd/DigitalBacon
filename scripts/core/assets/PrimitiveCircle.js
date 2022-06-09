@@ -6,31 +6,32 @@
 
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
 const ASSET_NAME = 'Circle';
 const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Radius", "parameter": "_radius", "min": 0, "type": NumberInput },
-    { "name": "Sides", "parameter": "_segments", "min": 3,
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "radius", "name": "Radius", "min": 0, "type": NumberInput },
+    { "parameter": "segments", "name": "Sides", "min": 3,
         "type": NumberInput },
-    { "name": "Degrees", "parameter": "_thetaLength", "min": 0, "max": 360,
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class PrimitiveCircle extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._radius = params['radius'] || 0.1;
+        this._radius = numberOr(params['radius'], 0.1);
         this._segments = params['segments'] || 32;
-        this._thetaLength = params['thetaLength'] || 360;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
     }
@@ -81,20 +82,11 @@ export default class PrimitiveCircle extends PrimitiveMesh {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+                menuFieldsMap[field.parameter] =
+                    this._createGeometryNumberInput(field);
             }
         }
         return menuFieldsMap;

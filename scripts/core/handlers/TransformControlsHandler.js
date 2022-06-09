@@ -192,14 +192,14 @@ class TransformControlsHandler {
                         "rotation": rotation,
                         "doubleSided": true,
                         "transparent": true,
-                        "enableInteractions": true,
+                        "visualEdit": true,
                     });
                 } else if(type == AssetTypes.MODEL) {
                     ProjectHandler.addGLTF({
                         "assetId": assetId,
                         "position": position,
                         "rotation": rotation,
-                        "enableInteractions": true,
+                        "visualEdit": true,
                     });
                 }
             }

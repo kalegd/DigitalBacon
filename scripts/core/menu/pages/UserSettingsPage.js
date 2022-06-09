@@ -32,7 +32,7 @@ class UserSettingsPage extends DynamicFieldsPage {
             'title': 'Movement Speed',
             'minValue': 0,
             'initialValue': 4,
-            'setToSource': (value) => {
+            'onUpdate': (value) => {
                 SettingsHandler.setUserSetting('Movement Speed', value);
             },
             'getFromSource': () => {
@@ -42,7 +42,7 @@ class UserSettingsPage extends DynamicFieldsPage {
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
-            'setToSource': (value) => {
+            'onUpdate': (value) => {
                 SettingsHandler.setUserSetting('Enable Flying', value);
             },
             'getFromSource': () => {

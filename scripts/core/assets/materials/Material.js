@@ -10,7 +10,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Textures, SIDE_MAP, REVERSE_SIDE_MAP } from '/scripts/core/helpers/constants.js';
-import { uuidv4, disposeMaterial } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, numberOr, disposeMaterial } from '/scripts/core/helpers/utils.module.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
@@ -19,10 +19,10 @@ import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import * as THREE from 'three';
 
 const FIELDS = [
-    { "name": "Transparent", "parameter": "transparent", "type": CheckboxInput},
-    { "name": "Opacity", "parameter": "opacity", "min": 0, "max": 1,
+    { "parameter": "transparent", "name": "Transparent", "type": CheckboxInput},
+    { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
         "type": NumberInput },
-    { "name": "Display", "parameter": "side", "type": EnumInput,
+    { "parameter": "side", "name": "Display", "type": EnumInput,
         "options": [ "Front Side", "Back Side", "Both Sides" ],
         "map": SIDE_MAP, "reverseMap": REVERSE_SIDE_MAP },
 ];
@@ -34,7 +34,7 @@ export default class Material {
             ? params['name']
             : this._getDefaultName();
         this._transparent = params['transparent'] || false;
-        this._opacity = params['opacity'] || 1;
+        this._opacity = numberOr(params['opacity'], 1);
         this._side = params['display'] || THREE.FrontSide;
         this._addSubscriptions();
     }
@@ -47,6 +47,74 @@ export default class Material {
     _createMaterial() {
         console.error("Material._createMaterial() should be overridden");
         return;
+    }
+
+    _updateColorParameter(param, oldValue, newValue, ignoreUndoRedo, ignorePublish) {
+        let currentValue = this._material[param].getHex();
+        if(currentValue != newValue) {
+            this._material[param].setHex(newValue);
+            if(!ignorePublish)
+                PubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, this);
+        }
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._updateColorParameter(param, null, oldValue, true,
+                    ignorePublish);
+            }, () => {
+                this._updateColorParameter(param, null, newValue, true,
+                    ignorePublish);
+            });
+        }
+    }
+
+    _updateMaterialParameter(needsUpdate, param, oldValue, newValue,
+                             ignoreUndoRedo, ignorePublish)
+    {
+        let currentValue = this._material[param];
+        if(currentValue != newValue) {
+            this._material[param] = newValue;
+            this['_' + param] = newValue;
+            if(needsUpdate) this._material.needsUpdate = true;
+            if(!ignorePublish)
+                PubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, this);
+        }
+        if(!ignoreUndoRedo && oldValue != newValue) {
+            UndoRedoHandler.addAction(() => {
+                this._updateMaterialParameter(needsUpdate, param, null,
+                    oldValue, true, ignorePublish);
+            }, () => {
+                this._updateMaterialParameter(needsUpdate, param, null,
+                    newValue, true, ignorePublish);
+            });
+        }
+    }
+
+    _updateMaterialTexture(param, newValue, ignoreUndoRedo, ignorePublish) {
+        let oldValue = this['_' + param];
+        if(oldValue == newValue) return;
+
+        this._updateTexture(param, newValue);
+
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, this);
+        if(!ignoreUndoRedo && oldValue != newValue) {
+            UndoRedoHandler.addAction(() => {
+                this._updateMaterialTexture(param, oldValue, true,
+                    ignorePublish);
+            }, () => {
+                this._updateMaterialTexture(param, newValue, true,
+                    ignorePublish);
+            });
+        }
+    }
+
+    _updateTexture(param, newValue) {
+        this['_' + param] = newValue;
+        let texture = TexturesHandler.getTexture(newValue);
+        this._material[param] = (texture)
+            ? texture.getTexture()
+            : null;
+        this._material.needsUpdate = true;
     }
 
     exportParams() {
@@ -73,8 +141,8 @@ export default class Material {
         let menuFieldsMap = this._getMenuFieldsMap();
         let menuFields = [];
         for(let field of fields) {
-            if(field.name in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.name]);
+            if(field.parameter in menuFieldsMap) {
+                menuFields.push(menuFieldsMap[field.parameter]);
             }
         }
         this._menuFields = menuFields;
@@ -85,7 +153,7 @@ export default class Material {
         let menuFieldsMap = {};
         for(let field of FIELDS) {
             let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
+            if(menuField) menuFieldsMap[field.parameter] = menuField;
         }
         return menuFieldsMap;
     }
@@ -97,18 +165,26 @@ export default class Material {
                 'initialValue': this._material[field.parameter],
                 'getFromSource': () => {
                     return this._material[field.parameter]; },
-                'setToSource': (v) => {
-                    this._material[field.parameter] = v;
-                    this._material.needsUpdate = true;
-                    this['_' + field.parameter] = v;
+                'onUpdate': (newValue) => {
+                    this._updateMaterialParameter(true, field.parameter,
+                        this._material[field.parameter], newValue);
                 },
             });
         } else if(field.type == ColorInput) {
             return new ColorInput({
                 'title': field.name,
-                'initialValue': this._material[field.parameter],
-                'onUpdate': (color) => {
-                    this._material[field.parameter].set(color);
+                'initialValue': this._material[field.parameter].getHex(),
+                'onBlur': (oldValue, newValue) => {
+                    this._updateColorParameter(field.parameter, oldValue,
+                        newValue);
+                },
+                'onUpdate': (newValue) => {
+                    this._updateColorParameter(field.parameter,
+                        this._material[field.parameter].getHex(), newValue,
+                        true);
+                },
+                'getFromSource': () => {
+                    return this._material[field.parameter].getHex();
                 },
             });
         } else if(field.type == EnumInput) {
@@ -121,8 +197,10 @@ export default class Material {
                     return field.reverseMap[this._material[
                         field.parameter]];
                 },
-                'setToSource': (v) => {
-                    this._updateEnum(field.parameter, v, field.map);
+                'onUpdate': (v) => {
+                    this._updateMaterialParameter(true, field.parameter,
+                        this._material[field.parameter],
+                        field.map[v]);
                 },
             });
         } else if(field.type == NumberInput) {
@@ -133,9 +211,13 @@ export default class Material {
                 'initialValue': this._material[field.parameter],
                 'getFromSource': () => {
                     return this._material[field.parameter]; },
-                'setToSource': (v) => {
-                    this._material[field.parameter] = v;
-                    this['_' + field.parameter] = v;
+                'onBlur': (oldValue, newValue) => {
+                    this._updateMaterialParameter(false, field.parameter,
+                        oldValue, newValue);
+                },
+                'onUpdate': (newValue) => {
+                    this._updateMaterialParameter(false, field.parameter,
+                        this._material[field.parameter], newValue, true);
                 },
             });
         } else if(field.type == TextureInput) {
@@ -145,22 +227,11 @@ export default class Material {
                 'filter': field.filter,
                 'getFromSource': () => {
                     return this['_' + field.parameter]; },
-                'setToSource': (v) => {
-                    this._updateTexture(field.parameter, v);
+                'onUpdate': (newValue) => {
+                    this._updateMaterialTexture(field.parameter, newValue);
                 },
             });
         }
-    }
-
-    _updateEnum(parameter, option, map) {
-        if(map) {
-            this._material[parameter] = map[option];
-            this['_' + parameter] = map[option];
-        } else {
-            this._material[parameter] = option;
-            this['_' + parameter] = option;
-        }
-        this._material.needsUpdate = true;
     }
 
     _addSubscriptions() {
@@ -169,7 +240,7 @@ export default class Material {
             let updatedMaps = [];
             for(let map of maps) {
                 if(this['_' + map] == e.texture.getId()) {
-                    this._updateTexture(map, null);
+                    this._updateTexture(map);
                     updatedMaps.push(map);
                 }
             }
@@ -205,17 +276,6 @@ export default class Material {
                 if(texture) params[map] = texture.getTexture();
             }
         }
-    }
-
-    _updateTexture(parameter, textureId) {
-        this['_' + parameter] = textureId;
-        let texture = TexturesHandler.getTexture(textureId);
-
-        this._material[parameter] = (texture)
-            ? texture.getTexture()
-            : null;
-        this._material.needsUpdate = true;
-        PubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, this);
     }
 
     dispose() {

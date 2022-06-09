@@ -5,7 +5,6 @@
  */
 
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { roundWithPrecision } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -24,8 +23,10 @@ const FIELD_MAX_LENGTH = 13;
 class EulerInput extends PointerInteractableEntity {
     constructor(params) {
         super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
         this._euler = params['euler'];
-        this._lastValues = this._euler.toArray();
+        this._lastValue = this._euler.toArray();
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
     }
@@ -67,8 +68,8 @@ class EulerInput extends PointerInteractableEntity {
             'width': FIELD_WIDTH,
             'margin': FIELD_MARGIN,
             'maxLength': FIELD_MAX_LENGTH,
-            'onBlur': () => { this._onBlur(0); },
-            'onUpdate': () => { this._onUpdate(0); },
+            'onBlur': () => { this._blur(0); },
+            'onUpdate': () => { this._update(0); },
         });
         this._yField = new NumberField({
             'initialText': toDegrees(this._euler.y),
@@ -77,8 +78,8 @@ class EulerInput extends PointerInteractableEntity {
             'width': FIELD_WIDTH,
             'margin': FIELD_MARGIN,
             'maxLength': FIELD_MAX_LENGTH,
-            'onBlur': () => { this._onBlur(1); },
-            'onUpdate': () => { this._onUpdate(1); },
+            'onBlur': () => { this._blur(1); },
+            'onUpdate': () => { this._update(1); },
         });
         this._zField = new NumberField({
             'initialText': toDegrees(this._euler.z),
@@ -87,8 +88,8 @@ class EulerInput extends PointerInteractableEntity {
             'width': FIELD_WIDTH,
             'margin': FIELD_MARGIN,
             'maxLength': FIELD_MAX_LENGTH,
-            'onBlur': () => { this._onBlur(2); },
-            'onUpdate': () => { this._onUpdate(2); },
+            'onBlur': () => { this._blur(2); },
+            'onUpdate': () => { this._update(2); },
         });
         let xRow = createLabelRow("X:");
         let yRow = createLabelRow("Y:");
@@ -103,59 +104,19 @@ class EulerInput extends PointerInteractableEntity {
         columnBlock.add(zRow);
     }
 
-    _onUpdate(index) {
-        if(index == 0) {
-            let number = this.getX();
-            if(!isNaN(number)) {
-                this._euler.x = MathUtils.degToRad(number);
-            }
-        } else if(index == 1) {
-            let number = this.getY();
-            if(!isNaN(number)) {
-                this._euler.y = MathUtils.degToRad(number);
-            }
-        } else if(index == 2) {
-            let number = this.getZ();
-            if(!isNaN(number)) {
-                this._euler.z = MathUtils.degToRad(number);
-            }
+    _update(index) {
+        let newValue = [this.getX(), this.getY(), this.getZ()];
+        if(!isNaN(newValue[index])) {
+            newValue.forEach((v, i) => newValue[i] = MathUtils.degToRad(v));
+            if(this._onUpdate) this._onUpdate(newValue);
         }
     }
 
-    _onBlur(index) {
-        this._onUpdate(index);
-        let preValue = this._lastValues[index];
-        let postValue = this._getComponent(index);
-        if(preValue != postValue) {
-            UndoRedoHandler.addAction(() => {
-                this._setComponent(index, preValue);
-                this.updateFromSource();
-            }, () => {
-                this._setComponent(index, postValue);
-                this.updateFromSource();
-            });
-            this._lastValues[index] = this._getComponent(index);
-        }
-    }
-
-    _getComponent(index) {
-        if(index == 0) {
-            return this._euler.x;
-        } else if(index == 1) {
-            return this._euler.y;
-        } else {
-            return this._euler.z;
-        }
-    }
-
-    _setComponent(index, value) {
-        if(index == 0) {
-            this._euler.x = value;
-        } else if(index == 1) {
-            this._euler.y = value;
-        } else {
-            this._euler.z = value;
-        }
+    _blur(index) {
+        let newValue = [this.getX(), this.getY(), this.getZ()];
+        newValue.forEach((v, i) => newValue[i] = MathUtils.degToRad(v));
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
     }
 
     getX() {
@@ -194,7 +155,7 @@ class EulerInput extends PointerInteractableEntity {
         this._xField.setContent(toDegrees(this._euler.x));
         this._yField.setContent(toDegrees(this._euler.y));
         this._zField.setContent(toDegrees(this._euler.z));
-        this._lastValues = this._euler.toArray();
+        this._lastValue = this._euler.toArray();
     }
 }
 

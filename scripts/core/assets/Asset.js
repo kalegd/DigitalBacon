@@ -35,10 +35,11 @@ const INTERACTABLE_KEYS = [
     HandTools.DELETE,
 ];
 const FIELDS = [
-    { "name": "Position", "objParam": "position", "type": Vector3Input },
-    { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
-    { "name": "Scale", "objParam": "scale", "type": Vector3Input },
-    { "name": "Visually Edit", "type": CheckboxInput },
+    { "parameter": "position", "name": "Position", "type": Vector3Input },
+    { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
+    { "parameter": "scale", "name": "Scale", "type": Vector3Input },
+    { "parameter": "visualEdit", "name": "Visually Edit",
+        "type": CheckboxInput },
 ];
 
 export default class Asset extends Entity {
@@ -59,7 +60,7 @@ export default class Asset extends Entity {
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
-        this.enableInteractables = params['enableInteractions'] || false;
+        this.visualEdit = params['visualEdit'] || false;
         this._object.position.fromArray(position);
         this._object.rotation.fromArray(rotation);
         this._object.scale.fromArray(scale);
@@ -141,10 +142,10 @@ export default class Asset extends Entity {
         }
     }
 
-    _updateInteractable(isInteractable) {
-        if(isInteractable == this.enableInteractables) return;
-        this.enableInteractables = isInteractable;
-        if(isInteractable) {
+    _updateVisualEdit(isVisualEdit, ignoreUndoRedo, ignorePublish) {
+        if(isVisualEdit == this.visualEdit) return;
+        this.visualEdit = isVisualEdit;
+        if(isVisualEdit) {
             if(this._object.parent) {
                 for(let key of INTERACTABLE_KEYS) {
                     let tool = (key != TOOL_AGNOSTIC) ? key : null;
@@ -162,6 +163,44 @@ export default class Asset extends Entity {
                 PointerInteractableHandler.removeInteractables(
                     this._pointerInteractables[key], tool);
             }
+        }
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._updateVisualEdit(!isVisualEdit, true, ignorePublish);
+            }, () => {
+                this._updateVisualEdit(isVisualEdit, true, ignorePublish);
+            });
+        }
+    }
+
+    _updateObjectEuler(param, oldValue, newValue, ignoreUndoRedo,
+                       ignorePublish)
+    {
+        this._updateObjectVector3(param, oldValue, newValue, ignoreUndoRedo,
+            ignorePublish);
+    }
+
+    _updateObjectVector3(param, oldValue, newValue, ignoreUndoRedo,
+                         ignorePublish)
+    {
+        let currentValue = this._object[param].toArray();
+        if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
+            this._object[param].fromArray(newValue);
+            if(!ignorePublish)
+                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
+        }
+        if(!ignoreUndoRedo && !oldValue
+                .reduce((a,v,i) => a && newValue[i] == v,true))
+        {
+            UndoRedoHandler.addAction(() => {
+                this._updateObjectVector3(param, null, oldValue, true,
+                    ignorePublish);
+            }, () => {
+                this._updateObjectVector3(param, null, newValue, true,
+                    ignorePublish);
+            });
         }
     }
 
@@ -215,15 +254,15 @@ export default class Asset extends Entity {
         this._object.scale.roundWithPrecision(5);
     }
 
-    _fetchCloneParams(enableInteractablesOverride) {
+    _fetchCloneParams(visualEditOverride) {
         let params = this.exportParams();
-        let enableInteractables = (enableInteractablesOverride != null)
-            ? enableInteractablesOverride
-            : this.enableInteractables;
+        let visualEdit = (visualEditOverride != null)
+            ? visualEditOverride
+            : this.visualEdit;
         let position = this._object.getWorldPosition(vector3s[0]).toArray();
         let rotation = euler.setFromQuaternion(
             this._object.getWorldQuaternion(quaternion)).toArray();
-        params['enableInteractions'] = enableInteractables;
+        params['visualEdit'] = visualEdit;
         params['position'] = position;
         params['rotation'] = rotation;
         delete params['id'];
@@ -232,7 +271,7 @@ export default class Asset extends Entity {
 
     preview() {
         let params = this.exportParams();
-        params['enableInteractions'] = false;
+        params['visualEdit'] = false;
         params['isPreview'] = true;
         delete params['id'];
         return new this.constructor(params);
@@ -246,7 +285,7 @@ export default class Asset extends Entity {
             "position": this._object.position.toArray(),
             "rotation": this._object.rotation.toArray(),
             "scale": this._object.scale.toArray(),
-            "enableInteractions": this.enableInteractables,
+            "visualEdit": this.visualEdit,
         };
     }
 
@@ -254,7 +293,6 @@ export default class Asset extends Entity {
         this._object.position.fromArray(params["position"]);
         this._object.rotation.fromArray(params["rotation"]);
         this._object.scale.fromArray(params["scale"]);
-        this._updateInteractable(params["enableInteractions"]);
     }
 
     getMenuFields(fields) {
@@ -263,8 +301,8 @@ export default class Asset extends Entity {
         let menuFieldsMap = this._getMenuFieldsMap();
         let menuFields = [];
         for(let field of fields) {
-            if(field.name in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.name]);
+            if(field.parameter in menuFieldsMap) {
+                menuFields.push(menuFieldsMap[field.parameter]);
             }
         }
         this._menuFields = menuFields;
@@ -275,21 +313,34 @@ export default class Asset extends Entity {
         let menuFieldsMap = {};
         for(let field of FIELDS) {
             let params = {};
+            params['title'] = field.name;
             if(field.type == CheckboxInput) {
-                params['title'] = field.name;
-                params['initialValue'] = this.enableInteractables;
+                params['initialValue'] = this.visualEdit;
                 params['getFromSource'] =
-                    () => { return this.enableInteractables; };
-                params['setToSource'] = (v) => { this._updateInteractable(v); };
+                    () => { return this.visualEdit; };
+                params['onUpdate'] = (v) => { this._updateVisualEdit(v); };
             } else if(field.type == EulerInput) {
-                params['title'] = field.name;
-                params['euler'] = this._object[field.objParam];
+                params['euler'] = this._object[field.parameter];
+                params['onBlur'] = (oldValue, newValue) => {
+                    this._updateObjectEuler(field.parameter, oldValue,newValue);
+                };
+                params['onUpdate'] = (newValue) => {
+                    this._updateObjectEuler(field.parameter,
+                        this._object[field.parameter].toArray(), newValue,true);
+                };
             } else if(field.type == Vector3Input) {
-                params['title'] = field.name;
-                params['vector3'] = this._object[field.objParam];
+                params['vector3'] = this._object[field.parameter];
+                params['onBlur'] = (oldValue, newValue) => {
+                    this._updateObjectVector3(field.parameter, oldValue,
+                        newValue);
+                };
+                params['onUpdate'] = (newValue) => {
+                    this._updateObjectVector3(field.parameter,
+                        this._object[field.parameter].toArray(), newValue,true);
+                };
             }
             let menuField = new field.type(params)
-            menuFieldsMap[field.name] = menuField;
+            menuFieldsMap[field.parameter] = menuField;
         }
         return menuFieldsMap;
     }
@@ -302,7 +353,7 @@ export default class Asset extends Entity {
 
     addToScene(scene) {
         scene.add(this._object);
-        if(!this.enableInteractables) return;
+        if(!this.visualEdit) return;
         for(let key of INTERACTABLE_KEYS) {
             let tool = (key != TOOL_AGNOSTIC) ? key : null;
             GripInteractableHandler.addInteractables(

@@ -36,7 +36,7 @@ class TextureInput extends PointerInteractableEntity {
     constructor(params) {
         super();
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
+        this._onUpdate = params['onUpdate'];
         this._lastValue =  params['initialValue'];
         this._filter =  params['filter'];
         let title = params['title'] || 'Missing Field Name...';
@@ -140,21 +140,14 @@ class TextureInput extends PointerInteractableEntity {
 
     _handleTextureSelection(textureId) {
         if(textureId == "null\n") textureId = null;
-        let preValue = this._lastValue;
-        this._setToSource(textureId);
-        this._updateTexture(textureId);
+        if(this._lastValue != textureId) {
+            if(this._onUpdate) this._onUpdate(textureId);
+            this._updateTexture(textureId);
+        }
         global.menuController.back();
         PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
-        });
-        if(preValue == textureId) return;
-        UndoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateTexture(preValue);
-        }, () => {
-            this._setToSource(textureId);
-            this._updateTexture(textureId);
         });
     }
 

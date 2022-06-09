@@ -10,7 +10,7 @@ import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import NumberField from '/scripts/core/menu/input/NumberField.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
-const HEIGHT = 0.11;
+const HEIGHT = 0.085;
 const WIDTH = 0.31;
 const TITLE_WIDTH = 0.09;
 const FIELD_HEIGHT = 0.03;
@@ -18,13 +18,13 @@ const FIELD_WIDTH = 0.17;
 const FIELD_MARGIN = 0.0025;
 const FIELD_MAX_LENGTH = 13;
 
-class Vector3Input extends PointerInteractableEntity {
+class Vector2Input extends PointerInteractableEntity {
     constructor(params) {
         super();
         this._onBlur = params['onBlur'];
         this._onUpdate = params['onUpdate'];
-        this._vector3 = params['vector3'];
-        this._lastValue = this._vector3.toArray();
+        this._vector2 = params['vector2'];
+        this._lastValue = this._vector2.toArray();
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
     }
@@ -60,7 +60,7 @@ class Vector3Input extends PointerInteractableEntity {
             'textAlign': 'left',
         });
         this._xField = new NumberField({
-            'initialText': String(this._vector3.x),
+            'initialText': String(this._vector2.x),
             'fontSize': FontSizes.body,
             'height': FIELD_HEIGHT,
             'width': FIELD_WIDTH,
@@ -70,7 +70,7 @@ class Vector3Input extends PointerInteractableEntity {
             'onUpdate': () => { this._update(0); },
         });
         this._yField = new NumberField({
-            'initialText': String(this._vector3.y),
+            'initialText': String(this._vector2.y),
             'fontSize': FontSizes.body,
             'height': FIELD_HEIGHT,
             'width': FIELD_WIDTH,
@@ -79,38 +79,25 @@ class Vector3Input extends PointerInteractableEntity {
             'onBlur': () => { this._blur(1); },
             'onUpdate': () => { this._update(1); },
         });
-        this._zField = new NumberField({
-            'initialText': String(this._vector3.z),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT,
-            'width': FIELD_WIDTH,
-            'margin': FIELD_MARGIN,
-            'maxLength': FIELD_MAX_LENGTH,
-            'onBlur': () => { this._blur(2); },
-            'onUpdate': () => { this._update(2); },
-        });
         let xRow = createLabelRow("X:");
         let yRow = createLabelRow("Y:");
-        let zRow = createLabelRow("Z:");
         this._xField.addToScene(xRow, this._pointerInteractable);
         this._yField.addToScene(yRow, this._pointerInteractable);
-        this._zField.addToScene(zRow, this._pointerInteractable);
         this._object.add(titleBlock);
         this._object.add(columnBlock);
         columnBlock.add(xRow);
         columnBlock.add(yRow);
-        columnBlock.add(zRow);
     }
 
     _update(index) {
-        let newValue = [this.getX(), this.getY(), this.getZ()];
+        let newValue = [this.getX(), this.getY()];
         if(!isNaN(newValue[index])) {
             if(this._onUpdate) this._onUpdate(newValue);
         }
     }
 
     _blur(index) {
-        let newValue = [this.getX(), this.getY(), this.getZ()];
+        let newValue = [this.getX(), this.getY()];
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
         this._lastValue = newValue;
     }
@@ -121,10 +108,6 @@ class Vector3Input extends PointerInteractableEntity {
 
     getY() {
         return Number.parseFloat(this._yField.content);
-    }
-
-    getZ() {
-        return Number.parseFloat(this._zField.content);
     }
 
     getWidth() {
@@ -138,24 +121,21 @@ class Vector3Input extends PointerInteractableEntity {
     deactivate() {
         this._xField.deactivate();
         this._yField.deactivate();
-        this._zField.deactivate();
     }
 
     reset() {
         this._xField.reset();
         this._yField.reset();
-        this._zField.reset();
     }
 
     updateFromSource() {
-        this._xField.setContent(String(this._vector3.x));
-        this._yField.setContent(String(this._vector3.y));
-        this._zField.setContent(String(this._vector3.z));
-        this._lastValue = this._vector3.toArray();
+        this._xField.setContent(String(this._vector2.x));
+        this._yField.setContent(String(this._vector2.y));
+        this._lastValue = this._vector2.toArray();
     }
 }
 
-export default Vector3Input;
+export default Vector2Input;
 
 ////////////////////////////
 

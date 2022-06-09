@@ -5,18 +5,22 @@
  */
 
 import Asset from '/scripts/core/assets/Asset.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
+import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import * as THREE from 'three';
 
 const DEFAULT_SIZE = 1;
 const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Double Sided", "type": CheckboxInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "visualEdit" },
+    { "parameter": "doubleSided", "name": "Double Sided",
+        "type": CheckboxInput },
+    { "parameter": "Position" },
+    { "parameter": "Rotation" },
+    { "parameter": "Scale" },
 ];
 
 export default class ClampedTexturePlane extends Asset {
@@ -35,15 +39,27 @@ export default class ClampedTexturePlane extends Asset {
         this._object.add(this._mesh);
     }
 
-    _updateDoubleSided(isDoubleSided) {
+    _updateDoubleSided(newValue, ignoreUndoRedo, ignorePublish) {
+        let oldValue = this._doubleSided;
+        if(oldValue == newValue) return;
         if(!this._materialAlreadyCloned) {
             this._mesh.material = this._mesh.material.clone();
             this._materialAlreadyCloned = true;
         }
-        this._mesh.material.side = (isDoubleSided)
+        this._mesh.material.side = (newValue)
             ? THREE.DoubleSide
             : THREE.FrontSide;
-        this._doubleSided = isDoubleSided;
+        this._doubleSided = newValue;
+
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._updateDoubleSided(oldValue, true, ignorePublish);
+            }, () => {
+                this._updateDoubleSided(newValue, true, ignorePublish);
+            });
+        }
     }
 
     _updateTransparent(isTransparent) {
@@ -69,8 +85,8 @@ export default class ClampedTexturePlane extends Asset {
         this.roundAttributes();
     }
 
-    clone(enableInteractablesOverride) {
-        let params = this._fetchCloneParams(enableInteractablesOverride);
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
         return ProjectHandler.addImage(params);
     }
 
@@ -88,7 +104,7 @@ export default class ClampedTexturePlane extends Asset {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.name == "Double Sided") {
                 let params = {};
@@ -97,10 +113,10 @@ export default class ClampedTexturePlane extends Asset {
                     this._mesh.material.side == THREE.DoubleSide;
                 params['getFromSource'] = () => {
                     return this._mesh.material.side == THREE.DoubleSide; };
-                params['setToSource'] = (v) => { this._updateDoubleSided(v); };
+                params['onUpdate'] = (v) => { this._updateDoubleSided(v); };
                 params['suppressMenuFocusEvent'] = true;
                 let menuField = new field.type(params)
-                menuFieldsMap[field.name] = menuField;
+                menuFieldsMap[field.parameter] = menuField;
             }
         }
         return menuFieldsMap;

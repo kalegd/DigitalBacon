@@ -33,7 +33,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'title': 'Movement Speed',
             'minValue': 0,
             'initialValue': 4,
-            'setToSource': (value) => {
+            'onUpdate': (value) => {
                 SettingsHandler.setEditorSetting('Movement Speed', value);
             },
             'getFromSource': () => {
@@ -43,7 +43,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
-            'setToSource': (value) => {
+            'onUpdate': (value) => {
                 SettingsHandler.setEditorSetting('Enable Flying', value);
             },
             'getFromSource': () => {
@@ -54,9 +54,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
             fields.push(new CheckboxInput({
                 'title': 'Swap Joysticks',
                 'initialValue': false,
-                'setToSource': (value) => {
-                    SettingsHandler.setEditorSetting('Swap Joysticks',
-                        value);
+                'onUpdate': (value) => {
+                    SettingsHandler.setEditorSetting('Swap Joysticks', value);
                 },
                 'getFromSource': () => {
                     let settings = SettingsHandler.getEditorSettings();

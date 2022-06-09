@@ -6,38 +6,39 @@
 
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '534f29c3-1e85-4510-bb84-459011de6722';
 const ASSET_NAME = 'Ring';
 const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Inner Radius", "parameter": "_innerRadius", "min": 0,
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
         "type": NumberInput },
-    { "name": "Outer Radius", "parameter": "_outerRadius", "min": 0,
+    { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,
         "type": NumberInput },
-    { "name": "Sides", "parameter": "_thetaSegments", "min": 3,
+    { "parameter": "thetaSegments", "name": "Sides", "min": 3,
         "type": NumberInput },
-    { "name": "Radius Segments", "parameter": "_phiSegments", "min": 1,
+    { "parameter": "phiSegments", "name": "Radius Segments", "min": 1,
         "type": NumberInput },
-    { "name": "Degrees", "parameter": "_thetaLength", "min": 0, "max": 360,
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class PrimitiveRing extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._innerRadius = params['innerRadius'] || 0.05;
-        this._outerRadius = params['outerRadius'] || 0.1;
+        this._innerRadius = numberOr(params['innerRadius'], 0.05);
+        this._outerRadius = numberOr(params['outerRadius'], 0.1);
         this._thetaSegments = params['thetaSegments'] || 32;
         this._phiSegments = params['phiSegments'] || 1;
-        this._thetaLength = params['thetaLength'] || 360;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
     }
@@ -92,20 +93,11 @@ export default class PrimitiveRing extends PrimitiveMesh {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+                menuFieldsMap[field.parameter] =
+                    this._createGeometryNumberInput(field);
             }
         }
         return menuFieldsMap;

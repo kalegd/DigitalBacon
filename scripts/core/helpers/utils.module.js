@@ -128,12 +128,16 @@ export const hslToRGB = (h, s, l) => {
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-export const rgbToHex = (rgb) => {
-  var hex = Number(rgb).toString(16);
-  if (hex.length < 2) {
-       hex = "0" + hex;
-  }
-  return hex;
+export const rgbToHex = (r, g, b) => {
+    return r << 16 ^ g << 8 ^ b << 0;
+}
+
+export const rgbToHexColorString = (r, g, b) => {
+    var hex = Number(rgb).toString(16);
+    if (hex.length < 2) {
+         hex = '0' + hex;
+    }
+    return '#' + hex;
 }
 
 export const blobToHash = (blob) => {

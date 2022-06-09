@@ -6,6 +6,7 @@
 
 import States from '/scripts/core/enums/InteractableStates.js';
 import { Colors, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -33,7 +34,7 @@ export default class ThreeMeshUIHelper {
         let textAlign = params['textAlign'] || 'center';
         let height = (params['height']) ? params['height'] : 0.05;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let textBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -82,12 +83,12 @@ export default class ThreeMeshUIHelper {
             || Colors.defaultHovered;
         let selectedBackgroundColor = params['selectedBackgroundColor']
             || Colors.defaultHovered;
-        let idleOpacity = numberOrDefault(params['idleOpacity'], 0.7);
-        let hoveredOpacity = numberOrDefault(params['hoveredOpacity'], 0.8);
-        let selectedOpacity = numberOrDefault(params['selectedOpacity'], 0.8);
+        let idleOpacity = numberOr(params['idleOpacity'], 0.7);
+        let hoveredOpacity = numberOr(params['hoveredOpacity'], 0.8);
+        let selectedOpacity = numberOr(params['selectedOpacity'], 0.8);
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -175,12 +176,12 @@ export default class ThreeMeshUIHelper {
             || Colors.defaultHovered;
         let selectedBackgroundColor = params['selectedBackgroundColor']
             || Colors.defaultHovered;
-        let idleOpacity = numberOrDefault(params['idleOpacity'], 0.7);
-        let hoveredOpacity = numberOrDefault(params['hoveredOpacity'], 0.8);
-        let selectedOpacity = numberOrDefault(params['selectedOpacity'], 0.8);
+        let idleOpacity = numberOr(params['idleOpacity'], 0.7);
+        let hoveredOpacity = numberOr(params['hoveredOpacity'], 0.8);
+        let selectedOpacity = numberOr(params['selectedOpacity'], 0.8);
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -232,7 +233,7 @@ export default class ThreeMeshUIHelper {
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
         let initialValue = params['initialValue'] || 0;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -295,7 +296,7 @@ export default class ThreeMeshUIHelper {
             : Colors.yellow;
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -329,8 +330,4 @@ export default class ThreeMeshUIHelper {
         buttonBlock.setState(States.IDLE);
         return buttonBlock;
     }
-}
-
-function numberOrDefault(n, d) {
-    return (typeof n === 'number') ? n : d;
 }

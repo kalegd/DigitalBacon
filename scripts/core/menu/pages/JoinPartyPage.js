@@ -40,7 +40,7 @@ class JoinPartyPage extends MenuPage {
             'height': 0.03,
             'width': 0.4,
             'text': 'Party Name',
-            'onEnter': () => { this._textField.deactivate(); },
+            'onEnter': () => { this._joinParty(); },
         });
         this._textField.addToScene(columnBlock,
             this._containerInteractable);
@@ -57,14 +57,6 @@ class JoinPartyPage extends MenuPage {
         });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
-    }
-
-    clearContent() {
-        this._textField.reset();
-    }
-
-    _inputConfirmed(textField) {
-        this._textField.deactivate();
     }
 
     _joinParty() {

@@ -131,7 +131,7 @@ export default class Main {
             });
         } else {
             let ambientLight = new PrimitiveAmbientLight({
-                'enableInteractions': false,
+                'visualEdit': false,
             });
             ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
         }

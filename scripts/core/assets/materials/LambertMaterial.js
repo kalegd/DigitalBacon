@@ -17,28 +17,28 @@ import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import * as THREE from 'three';
 
 const FIELDS = [
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Texture Map", "parameter": "map",
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "map","name": "Texture Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Alpha Map", "parameter": "alphaMap",
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "alphaMap","name": "Alpha Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Emissive Color", "parameter": "emissive", "type": ColorInput },
-    { "name": "Emissive Map", "parameter": "emissiveMap",
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
+    { "parameter": "emissiveMap","name": "Emissive Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Emissive Intensity", "parameter": "emissiveIntensity",
+    { "parameter": "emissiveIntensity","name": "Emissive Intensity", 
         "min": 0, "type": NumberInput },
-    { "name": "Environment Map", "parameter": "envMap",
+    { "parameter": "envMap","name": "Environment Map", 
         "filter": TextureTypes.CUBE, "type": TextureInput },
-    { "name": "Color & Environment Blend", "parameter": "combine",
+    { "parameter": "combine","name": "Color & Environment Blend", 
         "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
         "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
-    { "name": "Reflectivity", "parameter": "reflectivity",
+    { "parameter": "reflectivity","name": "Reflectivity", 
         "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Refraction Ratio", "parameter": "refractionRatio",
+    { "parameter": "refractionRatio","name": "Refraction Ratio", 
         "min": 0, "max": 1, "type": NumberInput },
 ];
 
@@ -47,7 +47,7 @@ const MAPS = ["map", "alphaMap", "emissiveMap", "envMap", "specularMap"];
 export default class LambertMaterial extends Material {
     constructor(params = {}) {
         super(params);
-        this._color = new THREE.Color(params['color'] || 0x3d9970);
+        this._color = new THREE.Color(numberOr(params['color'], 0x3d9970));
         this._wireframe = params['wireframe'] || false;
         this._map = params['map'];
         this._alphaMap = params['alphaMap'];
@@ -120,9 +120,9 @@ export default class LambertMaterial extends Material {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) continue;
+            if(field.parameter in menuFieldsMap) continue;
             let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
+            if(menuField) menuFieldsMap[field.parameter] = menuField;
         }
         return menuFieldsMap;
     }

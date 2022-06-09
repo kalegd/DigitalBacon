@@ -17,36 +17,36 @@ import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import * as THREE from 'three';
 
 const FIELDS = [
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Texture Map", "parameter": "map",
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "map","name": "Texture Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Alpha Map", "parameter": "alphaMap",
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "alphaMap","name": "Alpha Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Bump Map", "parameter": "bumpMap",
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "bumpMap","name": "Bump Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Bump Scale", "parameter": "bumpScale",
+    { "parameter": "bumpScale","name": "Bump Scale", 
         "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Displacement Map", "parameter": "displacementMap",
+    { "parameter": "displacementMap","name": "Displacement Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Displacement Scale", "parameter": "displacementScale",
+    { "parameter": "displacementScale","name": "Displacement Scale", 
         "type": NumberInput },
-    { "name": "Displacement Bias", "parameter": "displacementBias",
+    { "parameter": "displacementBias","name": "Displacement Bias", 
         "type": NumberInput },
-    { "name": "Emissive Color", "parameter": "emissive", "type": ColorInput },
-    { "name": "Emissive Map", "parameter": "emissiveMap",
+    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
+    { "parameter": "emissiveMap","name": "Emissive Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Emissive Intensity", "parameter": "emissiveIntensity",
+    { "parameter": "emissiveIntensity","name": "Emissive Intensity", 
         "min": 0, "type": NumberInput },
-    { "name": "Normal Map", "parameter": "normalMap",
+    { "parameter": "normalMap","name": "Normal Map", 
         "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Normal Type", "parameter": "normalMapType",
+    { "parameter": "normalMapType","name": "Normal Type", 
         "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
         "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
-    //{ "name": "Normal Scale", "parameter": "normalScale",
+    //{ "parameter": "normalScale","name": "Normal Scale", 
     //    "min": 0, "max": 1, "type": Vector2Input },
 ];
 
@@ -55,7 +55,7 @@ const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "n
 export default class ToonMaterial extends Material {
     constructor(params = {}) {
         super(params);
-        this._color = new THREE.Color(params['color'] || 0x3d9970);
+        this._color = new THREE.Color(numberOr(params['color'], 0x3d9970));
         this._wireframe = params['wireframe'] || false;
         this._map = params['map'];
         this._alphaMap = params['alphaMap'];
@@ -136,9 +136,9 @@ export default class ToonMaterial extends Material {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) continue;
+            if(field.parameter in menuFieldsMap) continue;
             let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
+            if(menuField) menuFieldsMap[field.parameter] = menuField;
         }
         return menuFieldsMap;
     }

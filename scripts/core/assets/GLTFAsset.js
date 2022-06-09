@@ -7,16 +7,13 @@
 import Asset from '/scripts/core/assets/Asset.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EulerInput from '/scripts/core/menu/input/EulerInput.js';
-import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 import * as THREE from 'three';
 
 const FIELDS = [
-    { "name": "Visually Edit", "type": CheckboxInput },
-    { "name": "Position", "objParam": "position", "type": Vector3Input },
-    { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
-    { "name": "Scale", "objParam": "scale", "type": Vector3Input },
+    { "parameter": "visualEdit" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class GLTFAsset extends Asset {
@@ -36,8 +33,8 @@ export default class GLTFAsset extends Asset {
         super.place(intersection);
     }
 
-    clone(enableInteractablesOverride) {
-        let params = this._fetchCloneParams(enableInteractablesOverride);
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
         return ProjectHandler.addGLTF(params);
     }
 

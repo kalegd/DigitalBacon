@@ -6,6 +6,7 @@
 
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
@@ -13,33 +14,33 @@ import * as THREE from 'three';
 const ASSET_ID = '42779f01-e2cc-495a-a4b3-b286197fa762';
 const ASSET_NAME = 'Cone';
 const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Height", "parameter": "_height", "min": 0,
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "height", "name": "Height", "min": 0,
         "type": NumberInput },
-    { "name": "Radius", "parameter": "_radius", "min": 0,
+    { "parameter": "radius", "name": "Radius", "min": 0,
         "type": NumberInput },
-    { "name": "Sides", "parameter": "_radialSegments", "min": 3,
+    { "parameter": "radialSegments", "name": "Sides", "min": 3,
         "type": NumberInput },
-    { "name": "Height Segments", "parameter": "_heightSegments", "min": 1,
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
         "type": NumberInput },
-    { "name": "Degrees", "parameter": "_thetaLength", "min": 0, "max": 360,
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
-    { "name": "Open Ended", "parameter": "_openEnded", "type": CheckboxInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "openEnded", "name": "Open Ended", "type": CheckboxInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class PrimitiveCone extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._height = params['height'] || 0.2;
-        this._radius = params['radius'] || 0.1;
+        this._height = numberOr(params['height'], 0.2);
+        this._radius = numberOr(params['radius'], 0.1);
         this._radialSegments = params['radialSegments'] || 32;
         this._heightSegments = params['heightSegments'] || 1;
-        this._thetaLength = params['thetaLength'] || 360;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
         this._openEnded = params['openEnded'] || false;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
@@ -87,31 +88,14 @@ export default class PrimitiveCone extends PrimitiveMesh {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
             } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+                menuFieldsMap[field.parameter] =
+                    this._createGeometryNumberInput(field);
             } else if(field.type == CheckboxInput) {
-                let update = (value) => {
-                    this[field.parameter] = value;
-                    this._updateGeometry();
-                };
-                menuFieldsMap[field.name] = new CheckboxInput({
-                    'title': field.name,
-                    'initialValue': this[field.parameter],
-                    'setToSource': update,
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+                menuFieldsMap[field.parameter] =
+                    this._createGeometryCheckboxInput(field);
             }
         }
         return menuFieldsMap;
