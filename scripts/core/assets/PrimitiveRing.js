@@ -7,28 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveRingHelper from '/scripts/core/helpers/editor/PrimitiveRingHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '534f29c3-1e85-4510-bb84-459011de6722';
 const ASSET_NAME = 'Ring';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "thetaSegments", "name": "Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "phiSegments", "name": "Radius Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveRing extends PrimitiveMesh {
     constructor(params = {}) {
@@ -41,6 +24,10 @@ export default class PrimitiveRing extends PrimitiveMesh {
         this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveRingHelper(this);
     }
 
     _createMesh() {
@@ -62,20 +49,6 @@ export default class PrimitiveRing extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        let face = intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes(true);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['innerRadius'] = this._innerRadius;
@@ -86,23 +59,55 @@ export default class PrimitiveRing extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getInnerRadius() {
+        return this._innerRadius;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getOuterRadius() {
+        return this._outeRadius;
     }
 
+    getThetaSegments() {
+        return this._thetaSegments;
+    }
+
+    getPhiSegments() {
+        return this._phiSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setInnerRadius(innerRadius) {
+        if(this._innerRadius == innerRadius) return;
+        this._innerRadius = innerRadius;
+        this._updateGeometry();
+    }
+
+    setOuterRadius(outeRadius) {
+        if(this._outeRadius == outeRadius) return;
+        this._outeRadius = outeRadius;
+        this._updateGeometry();
+    }
+
+    setThetaSegments(thetaSegments) {
+        if(this._thetaSegments == thetaSegments) return;
+        this._thetaSegments = thetaSegments;
+        this._updateGeometry();
+    }
+
+    setPhiSegments(phiSegments) {
+        if(this._phiSegments == phiSegments) return;
+        this._phiSegments = phiSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
 }
 
 ProjectHandler.registerShape(PrimitiveRing, ASSET_ID, ASSET_NAME);

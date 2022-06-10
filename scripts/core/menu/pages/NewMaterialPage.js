@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { FontSizes, vector3s } from '/scripts/core/helpers/constants.js';
@@ -11,12 +12,12 @@ import PointerInteractable from '/scripts/core/interactables/PointerInteractable
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
 const PAGES = [
-    { "title": "Basic", "handlerFunction": "addBasicMaterial" },
-    { "title": "Lambert", "handlerFunction": "addLambertMaterial" },
-    { "title": "Normal", "handlerFunction": "addNormalMaterial" },
-    { "title": "Phong", "handlerFunction": "addPhongMaterial" },
-    { "title": "Standard", "handlerFunction": "addStandardMaterial" },
-    { "title": "Toon", "handlerFunction": "addToonMaterial" },
+    { "title": "Basic", "materialType": MaterialTypes.BASIC },
+    { "title": "Lambert", "materialType": MaterialTypes.LAMBERT },
+    { "title": "Normal", "materialType": MaterialTypes.NORMAL },
+    { "title": "Phong", "materialType": MaterialTypes.PHONG },
+    { "title": "Standard", "materialType": MaterialTypes.STANDARD },
+    { "title": "Toon", "materialType": MaterialTypes.TOON },
 ];
 
 class NewMaterialPage extends PaginatedPage {
@@ -43,7 +44,7 @@ class NewMaterialPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let material = MaterialsHandler[item.handlerFunction]();
+        let material = MaterialsHandler.addMaterial(item.materialType);
         this.back();
         if(this._additionalAction) this._additionalAction(material);
     }

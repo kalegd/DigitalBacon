@@ -7,27 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveBoxHelper from '/scripts/core/helpers/editor/PrimitiveBoxHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
 const ASSET_NAME = 'Box';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
-    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
-    { "parameter": "depth", "name": "Depth", "min": 0, "type": NumberInput },
-    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveBox extends PrimitiveMesh {
     constructor(params = {}) {
@@ -41,6 +25,10 @@ export default class PrimitiveBox extends PrimitiveMesh {
         this._depthSegments = params['depthSegments'] || 1;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveBoxHelper(this);
     }
 
     _createMesh() {
@@ -60,11 +48,6 @@ export default class PrimitiveBox extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['width'] = this._width;
@@ -76,23 +59,65 @@ export default class PrimitiveBox extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getDepth() {
+        return this._depth;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getHeight() {
+        return this._height;
     }
 
+    getWidth() {
+        return this._width;
+    }
+
+    getDepthSegments() {
+        return this._depthSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getWidthSegments() {
+        return this._widthSegments;
+    }
+
+    setDepth(depth) {
+        if(this._depth == depth) return;
+        this._depth = depth;
+        this._updateGeometry();
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setWidth(width) {
+        if(this._width == width) return;
+        this._width = width;
+        this._updateGeometry();
+    }
+
+    setDepthSegments(depthSegments) {
+        if(this._depthSegments == depthSegments) return;
+        this._depthSegments = depthSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
 }
 
 ProjectHandler.registerShape(PrimitiveBox, ASSET_ID, ASSET_NAME);

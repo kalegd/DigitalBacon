@@ -6,97 +6,46 @@
 
 import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import TextureTypes from '/scripts/core/enums/TextureTypes.js';
-import { COMBINE_MAP, REVERSE_COMBINE_MAP, NORMAL_TYPE_MAP, REVERSE_NORMAL_TYPE_MAP } from '/scripts/core/helpers/constants.js';
+import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import ColorInput from '/scripts/core/menu/input/ColorInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import TextureInput from '/scripts/core/menu/input/TextureInput.js';
+import PhongMaterialHelper from '/scripts/core/helpers/editor/PhongMaterialHelper.js';
 import * as THREE from 'three';
-
-const FIELDS = [
-    { "parameter": "color", "name": "Color", "type": ColorInput },
-    { "parameter": "map","name": "Texture Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "side" },
-    { "parameter": "transparent" },
-    { "parameter": "opacity" },
-    { "parameter": "alphaMap","name": "Alpha Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "flatShading","name": "Flat Shading", 
-        "type": CheckboxInput },
-    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
-    { "parameter": "bumpMap","name": "Bump Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "bumpScale","name": "Bump Scale", 
-        "min": 0, "max": 1, "type": NumberInput },
-    { "parameter": "displacementMap","name": "Displacement Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "displacementScale","name": "Displacement Scale", 
-        "type": NumberInput },
-    { "parameter": "displacementBias","name": "Displacement Bias", 
-        "type": NumberInput },
-    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
-    { "parameter": "emissiveMap","name": "Emissive Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "emissiveIntensity","name": "Emissive Intensity", 
-        "min": 0, "type": NumberInput },
-    { "parameter": "envMap","name": "Environment Map", 
-        "filter": TextureTypes.CUBE, "type": TextureInput },
-    { "parameter": "combine","name": "Environment-Color Blend", 
-        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
-        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
-    { "parameter": "reflectivity","name": "Reflectivity", 
-        "min": 0, "max": 1, "type": NumberInput },
-    { "parameter": "refractionRatio","name": "Refraction Ratio", 
-        "min": 0, "max": 1, "type": NumberInput },
-    { "parameter": "normalMap","name": "Normal Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "normalMapType","name": "Normal Type", 
-        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
-        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
-    //{ "parameter": "normalScale","name": "Normal Scale", 
-    //    "min": 0, "max": 1, "type": Vector2Input },
-    { "parameter": "shininess", "name": "Shininess", "min": 0,
-        "type": NumberInput },
-    { "parameter": "specular", "name": "Specular Color", "type": ColorInput },
-    { "parameter": "specularMap","name": "Specular Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-];
 
 const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "normalMap", "specularMap"];
 
 export default class PhongMaterial extends Material {
     constructor(params = {}) {
         super(params);
-        this._color = new THREE.Color(numberOr(params['color'], 0x3d9970));
-        this._wireframe = params['wireframe'] || false;
-        this._flatShading = params['flatShading'] || false;
-        this._map = params['map'];
         this._alphaMap = params['alphaMap'];
         this._bumpMap = params['bumpMap'];
         this._bumpScale = numberOr(params['bumpScale'], 1);
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._combine = params['combine']
+            || THREE.MultiplyOperation;
         this._displacementMap = params['displacementMap'];
         this._displacementScale = numberOr(params['displacementScale'], 1);
         this._displacementBias = numberOr(params['displacementBias'], 0);
-        this._emissive = new THREE.Color(params['emissive'] || 0x000000);
-        this._emissiveMap = params['emissiveMap'];
+        this._emissive = params['emissive'] || 0x000000;
         this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
+        this._emissiveMap = params['emissiveMap'];
         this._envMap = params['envMap'];
-        this._combine = params['combine']
-            || THREE.MultiplyOperation;
-        this._reflectivity = numberOr(params['reflectivity'], 1);
-        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
+        this._flatShading = params['flatShading'] || false;
+        this._map = params['map'];
         this._normalMap = params['normalMap'];
         this._normalMapType = params['normalMapType']
             || THREE.TangentSpaceNormalMap;
-        //this._normalScale = params['normalScale'] || [1,1];
+        this._normalScale = params['normalScale'] || [1,1];
+        this._reflectivity = numberOr(params['reflectivity'], 1);
+        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
         this._shininess = numberOr(params['shininess'], 30);
-        this._specular = new THREE.Color(numberOr(params['specular'],0x111111));
+        this._specular = numberOr(params['specular'], 0x111111);
         this._specularMap = params['specularMap'];
+        this._wireframe = params['wireframe'] || false;
         this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PhongMaterialHelper(this);
     }
 
     _getDefaultName() {
@@ -105,30 +54,30 @@ export default class PhongMaterial extends Material {
 
     _createMaterial() {
         let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
             "color": this._color,
-            "wireframe": this._wireframe,
-            "flatShading": this._flatShading,
             "bumpScale": this._bumpScale,
+            "combine": this._combine,
             "displacementScale": this._displacementScale,
             "displacementBias": this._displacementBias,
             "emissive": this._emissive,
             "emissiveIntensity": this._emissiveIntensity,
-            "combine": this._combine,
+            "flatShading": this._flatShading,
+            "normalMapType": this._normalMapType,
+            "normalScale": this._normalScale,
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
             "reflectivity": this._reflectivity,
             "refractionRatio": this._refractionRatio,
-            "normalMapType": this._normalMapType,
-            //"normalScale": this._normalScale,
             "shininess": this._shininess,
             "specular": this._specular,
+            "wireframe": this._wireframe,
         };
         this._updateMaterialParamsWithMaps(materialParams, MAPS);
         this._material = new THREE.MeshPhongMaterial(materialParams);
     }
 
-    _getMaps() {
+    getMaps() {
         return MAPS;
     }
 
@@ -140,45 +89,259 @@ export default class PhongMaterial extends Material {
         return this._material.map;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
     exportParams() {
         let params = super.exportParams();
-        params['color'] = this._material.color.getHex();
-        params['wireframe'] = this._wireframe;
-        params['flatShading'] = this._flatShading;
-        params['map'] = this._map;
         params['alphaMap'] = this._alphaMap;
         params['bumpMap'] = this._bumpMap;
         params['bumpScale'] = this._bumpScale;
+        params['color'] = this._color;
+        params['combine'] = this._combine;
         params['displacementMap'] = this._displacementMap;
         params['displacementScale'] = this._displacementScale;
         params['displacementBias'] = this._displacementBias;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
+        params['emissive'] = this._emissive;
         params['emissiveIntensity'] = this._emissiveIntensity;
+        params['emissiveMap'] = this._emissiveMap;
         params['envMap'] = this._envMap;
-        params['combine'] = this._combine;
-        params['reflectivity'] = this._reflectivity;
-        params['refractionRatio'] = this._refractionRatio;
+        params['flatShading'] = this._flatShading;
+        params['map'] = this._map;
         params['normalMap'] = this._normalMap;
         params['normalMapType'] = this._normalMapType;
-        //params['normalScale'] = this._normalScale;
+        params['normalScale'] = this._normalScale;
+        params['reflectivity'] = this._reflectivity;
+        params['refractionRatio'] = this._refractionRatio;
         params['shininess'] = this._shininess;
-        params['specular'] = this._material.specular.getHex();
+        params['specular'] = this._specular;
         params['specularMap'] = this._specularMap;
+        params['wireframe'] = this._wireframe;
         return params;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.parameter] = menuField;
-        }
-        return menuFieldsMap;
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getCombine() {
+        return this._combine;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getFlatShading() {
+        return this._flatShading;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getReflectivity() {
+        return this._reflectivity;
+    }
+
+    getRefractionRatio() {
+        return this._refractionRatio;
+    }
+
+    getShininess() {
+        return this._shininess;
+    }
+
+    getSpecular() {
+        return this._specular;
+    }
+
+    getSpecularMap() {
+        return this._specularMap;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setCombine(combine) {
+        if(this._combine == combine) return;
+        this._combine = combine;
+        this._material.combine = combine;
+        this._material.needsUpdate = true;
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setFlatShading(flatShading) {
+        if(this._flatShading == flatShading) return;
+        this._flatShading = flatShading;
+        this._material.flatShading = flatShading;
+        this._material.needsUpdate = true;
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        if(this._normalScale == normalScale) return;
+        this._normalScale = normalScale;
+        this._material.normalScale = normalScale;
+    }
+
+    setReflectivity(reflectivity) {
+        if(this._reflectivity == reflectivity) return;
+        this._reflectivity = reflectivity;
+        this._material.reflectivity = reflectivity;
+    }
+
+    setRefractionRatio(refractionRatio) {
+        if(this._refractionRatio == refractionRatio) return;
+        this._refractionRatio = refractionRatio;
+        this._material.refractionRatio = refractionRatio;
+    }
+
+    setShininess(shininess) {
+        if(this._shininess == shininess) return;
+        this._shininess = shininess;
+        this._material.shininess = shininess;
+    }
+
+    setSpecular(specular) {
+        if(this._specular == specular) return;
+        this._specular = specular;
+        this._material.specular.setHex(specular);
+    }
+
+    setSpecularMap(specularMap) {
+        if(this._specularMap == specularMap) return;
+        this._setTexture('specularMap', specularMap);
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
     }
 }
+
+MaterialsHandler.registerMaterial(PhongMaterial, MaterialTypes.PHONG);

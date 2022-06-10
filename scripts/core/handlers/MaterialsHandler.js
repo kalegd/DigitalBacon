@@ -4,64 +4,20 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import BasicMaterial from '/scripts/core/assets/materials/BasicMaterial.js';
-import LambertMaterial from '/scripts/core/assets/materials/LambertMaterial.js';
-import NormalMaterial from '/scripts/core/assets/materials/NormalMaterial.js';
-import PhongMaterial from '/scripts/core/assets/materials/PhongMaterial.js';
-import StandardMaterial from '/scripts/core/assets/materials/StandardMaterial.js';
-import ToonMaterial from '/scripts/core/assets/materials/ToonMaterial.js';
-import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const MATERIAL_TYPE_TO_ADD_FUNCTION = {};
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.BASIC] = "addBasicMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.LAMBERT] = "addLambertMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.NORMAL] = "addNormalMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.PHONG] = "addPhongMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.STANDARD] = "addStandardMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.TOON] = "addToonMaterial";
-
 class MaterialsHandler {
     constructor() {
         this._materials = {};
+        this._materialClassMap = {};
     }
 
-    addBasicMaterial(params, ignoreUndoRedo) {
-        let material = new BasicMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addLambertMaterial(params, ignoreUndoRedo) {
-        let material = new LambertMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addNormalMaterial(params, ignoreUndoRedo) {
-        let material = new NormalMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addPhongMaterial(params, ignoreUndoRedo) {
-        let material = new PhongMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addStandardMaterial(params, ignoreUndoRedo) {
-        let material = new StandardMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addToonMaterial(params, ignoreUndoRedo) {
-        let material = new ToonMaterial(params);
+    addMaterial(type, params, ignoreUndoRedo) {
+        let material = new this._materialClassMap[type](params);
         this._addMaterial(material, ignoreUndoRedo);
         return material;
     }
@@ -74,9 +30,8 @@ class MaterialsHandler {
             }, () => {
                 this._addMaterial(material, true);
             });
-        } else {
-            material.undoDispose();
         }
+        material.undoDispose();
         PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
     }
 
@@ -100,14 +55,18 @@ class MaterialsHandler {
     load(materials) {
         if(!materials) return;
         for(let materialType in materials) {
-            if(!(materialType in MATERIAL_TYPE_TO_ADD_FUNCTION)) {
+            if(!(materialType in this._materialClassMap)) {
                 console.error("Unrecognized material found");
                 continue;
             }
             for(let params of materials[materialType]) {
-                this[MATERIAL_TYPE_TO_ADD_FUNCTION[materialType]](params, true);
+                this.addMaterial(materialType, params, true);
             }
         }
+    }
+
+    registerMaterial(materialClass, materialType) {
+        this._materialClassMap[materialType] = materialClass;
     }
 
     getMaterials() {

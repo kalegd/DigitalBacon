@@ -5,23 +5,10 @@
  */
 
 import Asset from '/scripts/core/assets/Asset.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
+import ClampedTexturePlaneHelper from '/scripts/core/helpers/editor/ClampedTexturePlaneHelper.js';
 import * as THREE from 'three';
-
-const DEFAULT_SIZE = 1;
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "doubleSided", "name": "Double Sided",
-        "type": CheckboxInput },
-    { "parameter": "Position" },
-    { "parameter": "Rotation" },
-    { "parameter": "Scale" },
-];
 
 export default class ClampedTexturePlane extends Asset {
     constructor(params = {}) {
@@ -34,34 +21,13 @@ export default class ClampedTexturePlane extends Asset {
         if(params['isPreview']) this.makeTranslucent();
     }
 
+    _createEditorHelper() {
+        this._editorHelper = new ClampedTexturePlaneHelper(this);
+    }
+
     _createMesh(assetId) {
         this._mesh = LibraryHandler.cloneMesh(assetId);
         this._object.add(this._mesh);
-    }
-
-    _updateDoubleSided(newValue, ignoreUndoRedo, ignorePublish) {
-        let oldValue = this._doubleSided;
-        if(oldValue == newValue) return;
-        if(!this._materialAlreadyCloned) {
-            this._mesh.material = this._mesh.material.clone();
-            this._materialAlreadyCloned = true;
-        }
-        this._mesh.material.side = (newValue)
-            ? THREE.DoubleSide
-            : THREE.FrontSide;
-        this._doubleSided = newValue;
-
-        if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-        if(!ignoreUndoRedo) {
-            UndoRedoHandler.addAction(() => {
-                this._updateDoubleSided(oldValue, true, ignorePublish);
-                this._updateMenuField('doubleSided');
-            }, () => {
-                this._updateDoubleSided(newValue, true, ignorePublish);
-                this._updateMenuField('doubleSided');
-            });
-        }
     }
 
     _updateTransparent(isTransparent) {
@@ -72,20 +38,6 @@ export default class ClampedTexturePlane extends Asset {
         this._mesh.material.transparent = isTransparent;
         this._transparent = isTransparent;
      }
-
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        let face = intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes(true);
-    }
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
@@ -99,28 +51,19 @@ export default class ClampedTexturePlane extends Asset {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getDoubleSided() {
+        return this._mesh.material.side == THREE.DoubleSide;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.name == "Double Sided") {
-                let params = {};
-                params['title'] = field.name;
-                params['initialValue'] =
-                    this._mesh.material.side == THREE.DoubleSide;
-                params['getFromSource'] = () => {
-                    return this._mesh.material.side == THREE.DoubleSide; };
-                params['onUpdate'] = (v) => { this._updateDoubleSided(v); };
-                params['suppressMenuFocusEvent'] = true;
-                let menuField = new field.type(params)
-                menuFieldsMap[field.parameter] = menuField;
-            }
+    setDoubleSided(doubleSided) {
+        if(doubleSided == this._doubleSided) return;
+        if(!this._materialAlreadyCloned) {
+            this._mesh.material = this._mesh.material.clone();
+            this._materialAlreadyCloned = true;
         }
-        return menuFieldsMap;
+        this._mesh.material.side = (doubleSided)
+            ? THREE.DoubleSide
+            : THREE.FrontSide;
+        this._doubleSided = doubleSided;
     }
 }

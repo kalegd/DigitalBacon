@@ -7,32 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveCylinderHelper from '/scripts/core/helpers/editor/PrimitiveCylinderHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
 const ASSET_NAME = 'Cylinder';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "height", "name": "Height", "min": 0,
-        "type": NumberInput },
-    { "parameter": "radiusTop", "name": "Top Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "radiusBottom", "name": "Bottom Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "radialSegments", "name": "Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "parameter": "openEnded", "name": "Open Ended", "type": CheckboxInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveCylinder extends PrimitiveMesh {
     constructor(params = {}) {
@@ -47,6 +26,10 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
         this._openEnded = params['openEnded'] || false;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveCylinderHelper(this);
     }
 
     _createMesh() {
@@ -85,24 +68,74 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getHeight() {
+        return this._height;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            } else if(field.type == CheckboxInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryCheckboxInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getRadiusTop() {
+        return this._radiusTop;
+    }
+
+    getRadiusBottom() {
+        return this._radiusBottom;
+    }
+
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    getOpenEnded() {
+        return this._openEnded;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setRadiusTop(radiusTop) {
+        if(this._radiusTop == radiusTop) return;
+        this._radiusTop = radiusTop;
+        this._updateGeometry();
+    }
+
+    setRadiusBottom(radiusBottom) {
+        if(this._radiusBottom == radiusBottom) return;
+        this._radiusBottom = radiusBottom;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    setOpenEnded(openEnded) {
+        if(this._openEnded == openEnded) return;
+        this._openEnded = openEnded;
+        this._updateGeometry();
     }
 
 }

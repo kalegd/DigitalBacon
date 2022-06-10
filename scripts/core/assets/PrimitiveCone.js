@@ -7,30 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveConeHelper from '/scripts/core/helpers/editor/PrimitiveConeHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '42779f01-e2cc-495a-a4b3-b286197fa762';
 const ASSET_NAME = 'Cone';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "height", "name": "Height", "min": 0,
-        "type": NumberInput },
-    { "parameter": "radius", "name": "Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "radialSegments", "name": "Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "parameter": "openEnded", "name": "Open Ended", "type": CheckboxInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveCone extends PrimitiveMesh {
     constructor(params = {}) {
@@ -44,6 +25,10 @@ export default class PrimitiveCone extends PrimitiveMesh {
         this._openEnded = params['openEnded'] || false;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveConeHelper(this);
     }
 
     _createMesh() {
@@ -65,11 +50,6 @@ export default class PrimitiveCone extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['height'] = this._height;
@@ -81,26 +61,65 @@ export default class PrimitiveCone extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getHeight() {
+        return this._height;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            } else if(field.type == CheckboxInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryCheckboxInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getRadius() {
+        return this._radius;
     }
 
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    getOpenEnded() {
+        return this._openEnded;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    setOpenEnded(openEnded) {
+        if(this._openEnded == openEnded) return;
+        this._openEnded = openEnded;
+        this._updateGeometry();
+    }
 }
 
 ProjectHandler.registerShape(PrimitiveCone, ASSET_ID, ASSET_NAME);

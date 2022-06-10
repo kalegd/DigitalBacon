@@ -5,13 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import * as THREE from 'three';
-
-const FIELDS = [];
 
 export default class Texture {
     constructor(params = {}) {
@@ -19,6 +13,12 @@ export default class Texture {
         this._name = ('name' in params)
             ? params['name']
             : this._getDefaultName();
+        if(global.isEditor) this._createEditorHelper();
+    }
+
+    _createEditorHelper() {
+        console.error("Texture._createEditorHelper() should be overridden");
+        return;
     }
 
     _getDefaultName() {
@@ -52,12 +52,6 @@ export default class Texture {
         }
     }
 
-    _updateMenuField(param) {
-        if(!this._menuFields) return;
-        let menuField = this._menuFieldsMap[param];
-        if(menuField) menuField.updateFromSource();
-    }
-
     exportParams() {
         return {
             "id": this._id,
@@ -68,25 +62,6 @@ export default class Texture {
     setFromParams(params) {
         console.warn("Unexpectedly trying to setFromParams() for Texture...");
         //PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
-    }
-
-    getMenuFields(fields) {
-        if(this._menuFields) return this._menuFields;
-
-        this._menuFieldsMap = this._getMenuFieldsMap();
-        let menuFields = [];
-        for(let field of fields) {
-            if(field.parameter in this._menuFieldsMap) {
-                menuFields.push(this._menuFieldsMap[field.parameter]);
-            }
-        }
-        this._menuFields = menuFields;
-        return menuFields;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = {};
-        return menuFieldsMap;
     }
 
     _updateTexture() {
@@ -125,21 +100,16 @@ export default class Texture {
         return this._id;
     }
 
+    getEditorHelper() {
+        return this._editorHelper;
+    }
+
     getName() {
         return this._name;
     }
 
-    setName(newName, isUndoRedo) {
-        if(!newName || this._name == newName) return;
-        let oldName = this._name;
-        this._name = newName;
-        PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
-        if(!isUndoRedo) {
-            UndoRedoHandler.addAction(() => {
-                this.setName(oldName, true);
-            }, () => {
-                this.setName(newName, true);
-            });
-        }
+    setName(name) {
+        if(name == null || this._name == name) return;
+        this._name = name;
     }
 }

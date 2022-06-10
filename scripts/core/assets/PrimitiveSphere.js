@@ -7,28 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveSphereHelper from '/scripts/core/helpers/editor/PrimitiveSphereHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '423c9506-52f4-4725-b848-69913cce2b00';
 const ASSET_NAME = 'Sphere';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "radius", "name": "Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Vertical Sides", "min": 2,
-        "type": NumberInput },
-    { "parameter": "phiLength", "name": "Horizontal Degrees", "min": 0,
-        "max": 360, "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
-        "max": 180, "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveSphere extends PrimitiveMesh {
     constructor(params = {}) {
@@ -41,6 +24,10 @@ export default class PrimitiveSphere extends PrimitiveMesh {
         this._thetaLength = numberOr(params['thetaLength'], 180);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveSphereHelper(this);
     }
 
     _createMesh() {
@@ -64,11 +51,6 @@ export default class PrimitiveSphere extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['radius'] = this._radius;
@@ -79,23 +61,55 @@ export default class PrimitiveSphere extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getRadius() {
+        return this._radius;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getWidthSegments() {
+        return this._widthSegments;
     }
 
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getPhiLength() {
+        return this._phiLength;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setPhiLength(phiLength) {
+        if(this._phiLength == phiLength) return;
+        this._phiLength = phiLength;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
 }
 
 ProjectHandler.registerShape(PrimitiveSphere, ASSET_ID, ASSET_NAME);

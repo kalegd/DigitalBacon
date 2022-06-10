@@ -7,7 +7,7 @@
 import Asset from '/scripts/core/assets/Asset.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import * as THREE from 'three';
+import GLTFAssetHelper from '/scripts/core/helpers/editor/GLTFAssetHelper.js';
 
 const FIELDS = [
     { "parameter": "visualEdit" },
@@ -23,14 +23,13 @@ export default class GLTFAsset extends Asset {
         if(params['isPreview']) this.makeTranslucent();
     }
 
+    _createEditorHelper() {
+        this._editorHelper = new GLTFAssetHelper(this);
+    }
+
     _createMesh(assetId) {
         this._mesh = LibraryHandler.cloneMesh(assetId);
         this._object.add(this._mesh);
-    }
-
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
     }
 
     clone(visualEditOverride) {

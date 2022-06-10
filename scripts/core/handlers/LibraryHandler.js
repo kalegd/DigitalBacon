@@ -68,6 +68,7 @@ class LibraryHandler {
                 loadPromises.push(promise);
             }
             Promise.all(loadPromises).then(successCallback).catch(error => {
+                console.log(error);
                 if(errorCallback) errorCallback();
             });
         } catch(error) {

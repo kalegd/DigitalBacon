@@ -172,9 +172,7 @@ class ColorWheel {
         let [red, green, blue] = hslToRGB(hue, saturation, lightness);
         this._hue = hue;
         this._saturation = saturation;
-        //this._updateColorWheel();
         this._updateLightnessBar();
-        //this._colorTexture.needsUpdate = true;
         this._lightnessTexture.needsUpdate = true;
         return rgbToHex(red, green, blue);
     }

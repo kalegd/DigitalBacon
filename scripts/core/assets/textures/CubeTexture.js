@@ -7,21 +7,11 @@
 import Texture from '/scripts/core/assets/textures/Texture.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import TextureTypes from '/scripts/core/enums/TextureTypes.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import { Textures, MAPPING_MAP, REVERSE_MAPPING_MAP } from '/scripts/core/helpers/constants.js';
-import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
+import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
+import { Textures } from '/scripts/core/helpers/constants.js';
+import CubeTextureHelper from '/scripts/core/helpers/editor/CubeTextureHelper.js';
 import * as THREE from 'three';
-
-const FIELDS = [
-    { "parameter": "images", "name": "Images", "type": CubeImageInput },
-    { "parameter": "mapping", "name": "Mapping", "type": EnumInput,
-        "options": [ "Reflection", "Refraction" ], "map": MAPPING_MAP,
-        "reverseMap": REVERSE_MAPPING_MAP },
-];
 
 export default class CubeTexture extends Texture {
     constructor(params = {}) {
@@ -29,6 +19,10 @@ export default class CubeTexture extends Texture {
         this._images = params['images'] || {};
         this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
         this._createTexture();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new CubeTextureHelper(this);
     }
 
     _getDefaultName() {
@@ -139,42 +133,42 @@ export default class CubeTexture extends Texture {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getImages() {
+        return this._images;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == CubeImageInput) {
-                menuFieldsMap[field.parameter] = new CubeImageInput({
-                    'initialValue': this._images,
-                    'getFromSource': () => { return this._images; },
-                    'onUpdate': (s, v) => { this._updateImage(s, v); },
-                });
-            } else if(field.type == EnumInput) {
-                menuFieldsMap[field.parameter] = new EnumInput({
-                    'title': field.name,
-                    'options': field.options,
-                    'initialValue':
-                        field.reverseMap[this._texture[field.parameter]],
-                    'getFromSource': () => {
-                        return field.reverseMap[this._texture[
-                            field.parameter]];
-                    },
-                    'onUpdate': (v) => {
-                        this._updateEnum(field.parameter, field.map[v]);
-                    },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getMapping() {
+        return this._mapping;
     }
+
+    setImages(images, side) {
+        if(side) {
+            if(this._images[side] == images) return;
+            this._images[side] = images;
+            this._updateTexture();
+        } else {
+            let hasDiff = false;
+            for(let s in this._images) {
+                if(this._images[s] != images[s]) {
+                    this._images[s] = images[s];
+                    hasDiff = true;
+                }
+            }
+            if(hasDiff) this._updateTexture();
+        }
+    }
+
+    setMapping(mapping) {
+        if(this._mapping == mapping) return;
+        this._mapping = mapping;
+        this._updateTexture();
+    }
+
 }
 
 //https://stackoverflow.com/a/30924333
 function powerOf2(v) {
     return v && !(v & (v - 1));
 }
+
+TexturesHandler.registerTexture(CubeTexture, TextureTypes.CUBE);

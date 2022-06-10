@@ -6,12 +6,8 @@
 
 import Asset from '/scripts/core/assets/Asset.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import ColorInput from '/scripts/core/menu/input/ColorInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import { Colors } from '/scripts/core/helpers/constants.js';
-import { numberOr, fullDispose } from '/scripts/core/helpers/utils.module.js';
-import * as THREE from 'three';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import PrimitiveLightHelper from '/scripts/core/helpers/editor/PrimitiveLightHelper.js';
 
 export default class PrimitiveLight extends Asset {
     constructor(params = {}) {
@@ -20,59 +16,8 @@ export default class PrimitiveLight extends Asset {
         this._intensity = numberOr(params['intensity'], 1);
     }
 
-    _updateColorParameter(param, oldValue, newValue, ignoreUndoRedo,
-                          ignorePublish)
-    {
-        let currentValue = this._light[param].getHex();
-        if(currentValue != newValue) {
-            this._light[param].setHex(newValue);
-            if(!ignorePublish)
-                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-        }
-        if(!ignoreUndoRedo && oldValue != newValue) {
-            UndoRedoHandler.addAction(() => {
-                this._updateColorParameter(param, null, oldValue, true,
-                    ignorePublish);
-                this._updateMenuField(param);
-            }, () => {
-                this._updateColorParameter(param, null, newValue, true,
-                    ignorePublish);
-                this._updateMenuField(param);
-            });
-        }
-    }
-
-    _updateLightParameter(param, oldValue, newValue, ignoreUndoRedo,
-                          ignorePublish)
-    {
-        let currentValue = this['_' + param];
-        if(currentValue != newValue) {
-            this['_' + param] = newValue;
-            this._light[param] = newValue;
-            if(!ignorePublish)
-                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-        }
-        if(!ignoreUndoRedo && oldValue != newValue) {
-            UndoRedoHandler.addAction(() => {
-                this._updateLightParameter(param, null, oldValue, true,
-                    ignorePublish);
-                this._updateMenuField(param);
-            }, () => {
-                this._updateLightParameter(param, null, newValue, true,
-                    ignorePublish);
-                this._updateMenuField(param);
-            });
-        }
-    }
-
-    _updateVisualEdit(isVisualEdit) {
-        if(isVisualEdit) {
-            this._object.add(this._mesh);
-        } else {
-            this._object.remove(this._mesh);
-            fullDispose(this._mesh);
-        }
-        super._updateVisualEdit(isVisualEdit);
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveLightHelper(this);
     }
 
     clone(visualEditOverride) {
@@ -87,43 +32,23 @@ export default class PrimitiveLight extends Asset {
         return params;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        menuFieldsMap['color'] = new ColorInput({
-            'title': 'Color',
-            'initialValue': this._light.color.getHex(),
-            'onBlur': (oldValue, newValue) => {
-                this._updateColorParameter('color', oldValue, newValue);
-            },
-            'onUpdate': (newValue) => {
-                this._updateColorParameter('color', this._light.color.getHex(),
-                    newValue, true);
-            },
-            'getFromSource': () => { return this._light.color.getHex(); },
-        });
-        menuFieldsMap['intensity'] = this._createLightNumberInput({
-            'name': 'Intensity',
-            'parameter': 'intensity',
-            'min': 0,
-        });
-        return menuFieldsMap;
+    getColor() {
+        return this._color;
     }
 
-    _createLightNumberInput(field) {
-        return new NumberInput({
-            'title': field.name,
-            'minValue': field.min,
-            'maxValue': field.max,
-            'initialValue': this['_' + field.parameter],
-            'onBlur': (oldValue, newValue) => {
-                this._updateLightParameter(field.parameter, oldValue, newValue);
-            },
-            'onUpdate': (newValue) => {
-                this._updateLightParameter(field.parameter,
-                    this['_' + field.parameter], newValue, true);
-            },
-            'getFromSource': () => { return this['_' + field.parameter]; },
-        });
+    getIntensity() {
+        return this._intensity;
     }
 
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._light.color.setHex(color);
+    }
+
+    setIntensity(intensity) {
+        if(this._intensity == intensity) return;
+        this._intensity = intensity;
+        this._light.intensity = intensity;
+    }
 }

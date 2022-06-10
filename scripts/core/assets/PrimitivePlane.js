@@ -7,25 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveBoxHelper from '/scripts/core/helpers/editor/PrimitiveBoxHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
 const ASSET_NAME = 'Plane';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
-    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
-    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitivePlane extends PrimitiveMesh {
     constructor(params = {}) {
@@ -37,6 +23,10 @@ export default class PrimitivePlane extends PrimitiveMesh {
         this._heightSegments = params['heightSegments'] || 1;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveBoxHelper(this);
     }
 
     _createMesh() {
@@ -54,20 +44,6 @@ export default class PrimitivePlane extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        let face = intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes(true);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['width'] = this._width;
@@ -77,23 +53,45 @@ export default class PrimitivePlane extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getHeight() {
+        return this._height;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getWidth() {
+        return this._width;
     }
 
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getWidthSegments() {
+        return this._widthSegments;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setWidth(width) {
+        if(this._width == width) return;
+        this._width = width;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
 }
 
 ProjectHandler.registerShape(PrimitivePlane, ASSET_ID, ASSET_NAME);

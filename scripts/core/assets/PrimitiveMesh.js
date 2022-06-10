@@ -5,22 +5,23 @@
  */
 
 import Asset from '/scripts/core/assets/Asset.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Materials } from '/scripts/core/helpers/constants.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import MaterialInput from '/scripts/core/menu/input/MaterialInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import * as THREE from 'three';
+import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
 
 export default class PrimitiveMesh extends Asset {
     constructor(params = {}) {
         super(params);
         this._material = params['material'];
-        this._addSubscriptions();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveMeshHelper(this);
+    }
+
+    _updateGeometry() {
+        console.error("PrimitiveMesh._updateGeometry() should be overridden");
     }
 
     _getMaterial() {
@@ -29,57 +30,6 @@ export default class PrimitiveMesh extends Asset {
         } else {
             return Materials.defaultMeshMaterial;
         }
-    }
-
-    _updateMaterial(newValue, ignoreUndoRedo, ignorePublish) {
-        let oldValue = this._material;
-        if(oldValue == newValue) return;
-        let wasTranslucent = this._mesh.material.userData['oldMaterial'];
-        if(wasTranslucent) this.returnTransparency();
-
-        this._material = newValue;
-        let oldMaterial = this._mesh.material;
-        let material = this._getMaterial();
-        this._mesh.material = material;
-        oldMaterial.dispose();
-
-        if(wasTranslucent) this.makeTranslucent();
-        if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-        if(!ignoreUndoRedo) {
-            UndoRedoHandler.addAction(() => {
-                this._updateMaterial(oldValue, true, ignorePublish);
-                this._updateMenuField('material');
-            }, () => {
-                this._updateMaterial(newValue, true, ignorePublish);
-                this._updateMenuField('material');
-            });
-        }
-    }
-
-    _updateGeometryParameter(param, oldValue, newValue, ignoreUndoRedo, ignorePublish) {
-        let currentValue = this['_' + param];
-        if(currentValue != newValue) {
-            this['_' + param] = newValue;
-            this._updateGeometry();
-            if(!ignorePublish)
-                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-        }
-        if(!ignoreUndoRedo && oldValue != newValue) {
-            UndoRedoHandler.addAction(() => {
-                this._updateGeometryParameter(param, null, oldValue, true,
-                    ignorePublish);
-                this._updateMenuField(param);
-            }, () => {
-                this._updateGeometryParameter(param, null, newValue, true,
-                    ignorePublish);
-                this._updateMenuField(param);
-            });
-        }
-    }
-
-    _updateGeometry() {
-        console.error("PrimitiveMesh._updateGeometry() should be overridden");
     }
 
     clone(visualEditOverride) {
@@ -93,69 +43,21 @@ export default class PrimitiveMesh extends Asset {
         return params;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        menuFieldsMap['material'] = new MaterialInput({
-            'title': 'Material',
-            'initialValue': this._material,
-            'getFromSource': () => { return this._material; },
-            'onUpdate': (v) => { this._updateMaterial(v); },
-        });
-        return menuFieldsMap;
+    getMaterial() {
+        return this._material;
     }
 
-    _createGeometryCheckboxInput(field) {
-        return new CheckboxInput({
-            'title': field.name,
-            'initialValue': this['_' + field.parameter],
-            'onUpdate': (newValue) => {
-                this._updateGeometryParameter(field.parameter,
-                    this['_' + field.parameter], newValue);
-            },
-            'getFromSource': () => { return this['_' + field.parameter]; },
-        });
-    }
+    setMaterial(newValue) {
+        if(newValue == this._material) return;
+        let wasTranslucent = this._mesh.material.userData['oldMaterial'];
+        if(wasTranslucent) this.returnTransparency();
 
-    _createGeometryNumberInput(field) {
-        return new NumberInput({
-            'title': field.name,
-            'minValue': field.min,
-            'maxValue': field.max,
-            'initialValue': this['_' + field.parameter],
-            'onBlur': (oldValue, newValue) => {
-                this._updateGeometryParameter(field.parameter, oldValue,
-                    newValue);
-            },
-            'onUpdate': (newValue) => {
-                this._updateGeometryParameter(field.parameter,
-                    this['_' + field.parameter], newValue, true);
-            },
-            'getFromSource': () => { return this['_' + field.parameter]; },
-        });
-    }
+        this._material = newValue;
+        let oldMaterial = this._mesh.material;
+        let material = this._getMaterial();
+        this._mesh.material = material;
+        oldMaterial.dispose();
 
-    _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
-            if(this._material == e.material.getId()) {
-                this._updateMaterial(null, true);
-                if(e.undoRedoAction) {
-                    let undo = e.undoRedoAction.undo;
-                    e.undoRedoAction.undo = () => {
-                        undo();
-                        this._updateMaterial(e.material.getId(), true);
-                    }
-                }
-            }
-        });
+        if(wasTranslucent) this.makeTranslucent();
     }
-
-    _removeSubscriptions() {
-        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
-    }
-
-    dispose() {
-        this._removeSubscriptions();
-        super.dispose();
-    }
-
 }

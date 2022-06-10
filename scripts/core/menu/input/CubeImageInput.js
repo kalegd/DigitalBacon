@@ -47,7 +47,12 @@ class CubeImageInput extends PointerInteractableEntity {
         super();
         this._getFromSource = params['getFromSource'];
         this._onUpdate = params['onUpdate'];
-        this._lastValues =  params['initialValue'] || {};
+        this._lastValues = {};
+        if(params['initialValue']) {
+            for(let key in params['initialValue']) {
+                this._lastValues[key] = params['initialValue'][key];
+            }
+        }
         this._title = params['title'] || null;
         this._buttons = [];
         this._createInputs();

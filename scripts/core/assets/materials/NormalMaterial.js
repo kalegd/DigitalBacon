@@ -6,58 +6,32 @@
 
 import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import TextureTypes from '/scripts/core/enums/TextureTypes.js';
-import { NORMAL_TYPE_MAP, REVERSE_NORMAL_TYPE_MAP } from '/scripts/core/helpers/constants.js';
+import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import TextureInput from '/scripts/core/menu/input/TextureInput.js';
+import NormalMaterialHelper from '/scripts/core/helpers/editor/NormalMaterialHelper.js';
 import * as THREE from 'three';
-
-const FIELDS = [
-    { "parameter": "side" },
-    { "parameter": "transparent" },
-    { "parameter": "opacity" },
-    { "parameter": "flatShading","name": "Flat Shading", 
-        "type": CheckboxInput },
-    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
-    { "parameter": "bumpMap","name": "Bump Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "bumpScale","name": "Bump Scale", 
-        "min": 0, "max": 1, "type": NumberInput },
-    { "parameter": "displacementMap","name": "Displacement Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "displacementScale","name": "Displacement Scale", 
-        "type": NumberInput },
-    { "parameter": "displacementBias","name": "Displacement Bias", 
-        "type": NumberInput },
-    { "parameter": "normalMap","name": "Normal Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "normalMapType","name": "Normal Type", 
-        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
-        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
-    //{ "parameter": "normalScale","name": "Normal Scale", 
-    //    "min": 0, "max": 1, "type": Vector2Input },
-];
 
 const MAPS = ["bumpMap", "displacementMap", "normalMap"];
 
 export default class NormalMaterial extends Material {
     constructor(params = {}) {
         super(params);
-        this._wireframe = params['wireframe'] || false;
-        this._flatShading = params['flatShading'] || false;
         this._bumpMap = params['bumpMap'];
         this._bumpScale = numberOr(params['bumpScale'], 1);
         this._displacementMap = params['displacementMap'];
         this._displacementScale = numberOr(params['displacementScale'], 1);
         this._displacementBias = numberOr(params['displacementBias'], 0);
+        this._flatShading = params['flatShading'] || false;
         this._normalMap = params['normalMap'];
         this._normalMapType = params['normalMapType']
             || THREE.TangentSpaceNormalMap;
-        //this._normalScale = params['normalScale'] || [1,1];
+        this._normalScale = params['normalScale'] || [1,1];
+        this._wireframe = params['wireframe'] || false;
         this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new NormalMaterialHelper(this);
     }
 
     _getDefaultName() {
@@ -66,22 +40,22 @@ export default class NormalMaterial extends Material {
 
     _createMaterial() {
         let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
-            "wireframe": this._wireframe,
-            "flatShading": this._flatShading,
             "bumpScale": this._bumpScale,
             "displacementScale": this._displacementScale,
             "displacementBias": this._displacementBias,
+            "flatShading": this._flatShading,
             "normalMapType": this._normalMapType,
-            //"normalScale": this._normalScale,
+            "normalScale": this._normalScale,
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
+            "wireframe": this._wireframe,
         };
         this._updateMaterialParamsWithMaps(materialParams, MAPS);
         this._material = new THREE.MeshNormalMaterial(materialParams);
     }
 
-    _getMaps() {
+    getMaps() {
         return MAPS;
     }
 
@@ -93,32 +67,120 @@ export default class NormalMaterial extends Material {
         return this._material.map;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
     exportParams() {
         let params = super.exportParams();
-        params['wireframe'] = this._wireframe;
-        params['flatShading'] = this._flatShading;
         params['bumpMap'] = this._bumpMap;
         params['bumpScale'] = this._bumpScale;
+        params['displacementBias'] = this._displacementBias;
         params['displacementMap'] = this._displacementMap;
         params['displacementScale'] = this._displacementScale;
-        params['displacementBias'] = this._displacementBias;
+        params['flatShading'] = this._flatShading;
         params['normalMap'] = this._normalMap;
         params['normalMapType'] = this._normalMapType;
-        //params['normalScale'] = this._normalScale;
+        params['normalScale'] = this._normalScale;
+        params['wireframe'] = this._wireframe;
         return params;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.parameter] = menuField;
-        }
-        return menuFieldsMap;
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getFlatShading() {
+        return this._flatShading;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setFlatShading(flatShading) {
+        if(this._flatShading == flatShading) return;
+        this._flatShading = flatShading;
+        this._material.flatShading = flatShading;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        if(this._normalScale == normalScale) return;
+        this._normalScale = normalScale;
+        this._material.normalScale = normalScale;
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
     }
 }
+
+MaterialsHandler.registerMaterial(NormalMaterial, MaterialTypes.NORMAL);

@@ -36,7 +36,8 @@ class InstancePage extends DynamicFieldsPage {
             'fontSize': FontSizes.header,
             'margin': 0,
             'onBlur': () => {
-                this._instance.setName(this._titleField.content);
+                this._instance.getEditorHelper()
+                    .updateName(this._titleField.content);
             },
         });
         let deleteButton = ThreeMeshUIHelper.createButtonBlock({
@@ -59,7 +60,7 @@ class InstancePage extends DynamicFieldsPage {
         this._instance = instance;
         let name = instance.getName();
         this._titleField.setContent(name);
-        this._setFields(instance.getMenuFields());
+        this._setFields(instance.getEditorHelper().getMenuFields());
     }
 
     _addSubscriptions() {

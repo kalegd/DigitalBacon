@@ -17,10 +17,18 @@ export const numberOr = (number, defaultValue) => {
         : defaultValue;
 }
 
+export const compareLists = (list1, list2) => {
+    return list1.length == list2.length
+        && list1.reduce((a, v, i) => a && list2[i] == v, true);
+}
 export const stringWithMaxLength = (string, maxLength) => {
     return (string.length > maxLength)
         ? string.substring(0, maxLength) + "..."
         : string;
+}
+
+export const capitalizeFirstLetter = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 export const fullDispose = (object3d, textures) => {

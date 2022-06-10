@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
@@ -11,8 +12,8 @@ import PointerInteractable from '/scripts/core/interactables/PointerInteractable
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
 const PAGES = [
-    { "title": "Basic", "handlerFunction": "addBasicTexture" },
-    { "title": "Cube", "handlerFunction": "addCubeTexture" },
+    { "title": "Basic", "textureType": TextureTypes.BASIC },
+    { "title": "Cube", "textureType": TextureTypes.CUBE },
 ];
 
 class NewTexturePage extends PaginatedPage {
@@ -39,7 +40,7 @@ class NewTexturePage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let texture = TexturesHandler[item.handlerFunction]();
+        let texture = TexturesHandler.addTexture(item.textureType);
         this.back();
         if(this._additionalAction) this._additionalAction(texture);
     }

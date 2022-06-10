@@ -10,41 +10,28 @@ import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
+import PrimitiveAmbientLightHelper from '/scripts/core/helpers/editor/PrimitiveAmbientLightHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '7605bff2-8ca3-4a47-b6f7-311d745507de';
 const ASSET_NAME = 'Ambient Light';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "color" },
-    { "parameter": "intensity" },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveAmbientLight extends PrimitiveLight {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._createMesh();
+        this._createLight();
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createMesh() {
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveAmbientLightHelper(this);
+    }
+
+    _createLight() {
         this._light = new THREE.AmbientLight(this._color, this._intensity);
         this._object.add(this._light);
-
-        let geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-        let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
-        this._mesh = new THREE.Mesh(geometry, material);
-        if(this.visualEdit) this._object.add(this._mesh);
     }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
 }
 
 ProjectHandler.registerLight(PrimitiveAmbientLight, ASSET_ID, ASSET_NAME);

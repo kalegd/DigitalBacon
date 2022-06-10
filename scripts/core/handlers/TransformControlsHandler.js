@@ -67,22 +67,22 @@ class TransformControlsHandler {
         this._transformControls.addEventListener('mouseDown', () => {
             SessionHandler.disableOrbit();
             this._preTransformStates[global.deviceType]
-                = this._attachedAssets[global.deviceType]
+                = this._attachedAssets[global.deviceType].getEditorHelper()
                     .getObjectTransformation();
         });
         this._transformControls.addEventListener('mouseUp', () => {
             SessionHandler.enableOrbit();
             let instance = this._attachedAssets[global.deviceType];
-            instance.roundAttributes(true);
+            let instanceHelper = instance.getEditorHelper();
+            instanceHelper.roundAttributes(true);
             let preState = this._preTransformStates[global.deviceType];
-            let postState = instance.getObjectTransformation();
-            instance.setObjectTransformation(preState, postState);
+            let postState = instanceHelper.getObjectTransformation();
+            instanceHelper.setObjectTransformation(preState, postState);
         });
         this._transformControls.addEventListener('objectChange', () => {
             if(global.renderer.info.render.frame % 6 == 0) {
-                this._attachedAssets[global.deviceType].roundAttributes();
-                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                    this._attachedAssets[global.deviceType]);
+                this._attachedAssets[global.deviceType].getEditorHelper()
+                    .roundAttributes();
             }
         });
 
@@ -222,7 +222,7 @@ class TransformControlsHandler {
         object.worldToLocal(vector3s[1]);
         object.position.add(vector3s[1]);
 
-        instance.roundAttributes(true);
+        instance.getEditorHelper().roundAttributes(true);
     }
 
     _delete(option) {
@@ -258,15 +258,16 @@ class TransformControlsHandler {
                             attachedAsset.getObject());
                         this._placingObject[option] = false;
                     }
-                    let preState = attachedAsset.getObjectTransformation();
-                    attachedAsset.place(intersections[0]);
-                    if(global.deviceType == 'XR') this.detach(option);
-                    attachedAsset.roundAttributes(true);
-                    PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                        attachedAsset);
-                    if(global.deviceType == "XR") return;
-                    let postState = attachedAsset.getObjectTransformation();
-                    attachedAsset.setObjectTransformation(preState, postState);
+                    let assetHelper = attachedAsset.getEditorHelper();
+                    let preState = assetHelper.getObjectTransformation();
+                    assetHelper.place(intersections[0]);
+                    if(global.deviceType == 'XR') {
+                        this.detach(option);
+                        return;
+                    }
+                    assetHelper.roundAttributes(true);
+                    let postState = assetHelper.getObjectTransformation();
+                    assetHelper.setObjectTransformation(preState, postState);
                 }
             }
         }
@@ -323,7 +324,7 @@ class TransformControlsHandler {
                 this._initialScalingValues = asset.getObject().scale.clone();
             } else {
                 this._preTransformStates[asset.getId()]
-                    = asset.getObjectTransformation();
+                    = asset.getEditorHelper().getObjectTransformation();
                 UserController.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
@@ -354,10 +355,10 @@ class TransformControlsHandler {
             } else {
                 asset.returnTransparency();
                 asset.roundAttributes(true);
-                PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, asset);
+                let assetHelper = asset.getEditorHelper();
                 let preState = this._preTransformStates[asset.getId()];
-                let postState = asset.getObjectTransformation();
-                asset.setObjectTransformation(preState, postState);
+                let postState = assetHelper.getObjectTransformation();
+                assetHelper.setObjectTransformation(preState, postState);
             }
             if(Object.keys(this._attachedAssets).length == 1)
                 UndoRedoHandler.enable(this._id);

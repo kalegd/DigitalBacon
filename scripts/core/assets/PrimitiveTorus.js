@@ -7,28 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveTorusHelper from '/scripts/core/helpers/editor/PrimitiveTorusHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
 const ASSET_NAME = 'Torus';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "radius", "name": "Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "tube", "name": "Tube Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "radialSegments", "name": "Radial Sides", "min": 2,
-        "type": NumberInput },
-    { "parameter": "tubularSegments", "name": "Tubular Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveTorus extends PrimitiveMesh {
     constructor(params = {}) {
@@ -41,6 +24,10 @@ export default class PrimitiveTorus extends PrimitiveMesh {
         this._arc = numberOr(params['arc'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveTorusHelper(this);
     }
 
     _createMesh() {
@@ -60,11 +47,6 @@ export default class PrimitiveTorus extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['radius'] = this._radius;
@@ -75,21 +57,54 @@ export default class PrimitiveTorus extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getRadius() {
+        return this._radius;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getTube() {
+        return this._tube;
+    }
+
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getTubularSegments() {
+        return this._tubularSegments;
+    }
+
+    getArc() {
+        return this._arc;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setTube(tube) {
+        if(this._tube == tube) return;
+        this._tube = tube;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setTubularSegments(tubularSegments) {
+        if(this._tubularSegments == tubularSegments) return;
+        this._tubularSegments = tubularSegments;
+        this._updateGeometry();
+    }
+
+    setArc(arc) {
+        if(this._arc == arc) return;
+        this._arc = arc;
+        this._updateGeometry();
     }
 
 }

@@ -6,62 +6,32 @@
 
 import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import TextureTypes from '/scripts/core/enums/TextureTypes.js';
-import { COMBINE_MAP, REVERSE_COMBINE_MAP } from '/scripts/core/helpers/constants.js';
+import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import ColorInput from '/scripts/core/menu/input/ColorInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import TextureInput from '/scripts/core/menu/input/TextureInput.js';
+import LambertMaterialHelper from '/scripts/core/helpers/editor/LambertMaterialHelper.js';
 import * as THREE from 'three';
-
-const FIELDS = [
-    { "parameter": "color", "name": "Color", "type": ColorInput },
-    { "parameter": "map","name": "Texture Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "side" },
-    { "parameter": "transparent" },
-    { "parameter": "opacity" },
-    { "parameter": "alphaMap","name": "Alpha Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
-    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
-    { "parameter": "emissiveMap","name": "Emissive Map", 
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "parameter": "emissiveIntensity","name": "Emissive Intensity", 
-        "min": 0, "type": NumberInput },
-    { "parameter": "envMap","name": "Environment Map", 
-        "filter": TextureTypes.CUBE, "type": TextureInput },
-    { "parameter": "combine","name": "Color & Environment Blend", 
-        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
-        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
-    { "parameter": "reflectivity","name": "Reflectivity", 
-        "min": 0, "max": 1, "type": NumberInput },
-    { "parameter": "refractionRatio","name": "Refraction Ratio", 
-        "min": 0, "max": 1, "type": NumberInput },
-];
 
 const MAPS = ["map", "alphaMap", "emissiveMap", "envMap", "specularMap"];
 
 export default class LambertMaterial extends Material {
     constructor(params = {}) {
         super(params);
-        this._color = new THREE.Color(numberOr(params['color'], 0x3d9970));
-        this._wireframe = params['wireframe'] || false;
-        this._map = params['map'];
         this._alphaMap = params['alphaMap'];
-        this._emissive = new THREE.Color(params['emissive']
-            || 0x000000);
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._combine = params['combine'] || THREE.MultiplyOperation;
+        this._emissive = params['emissive'] || 0x000000;
+        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
         this._emissiveMap = params['emissiveMap'];
-        this._emissiveIntensity = numberOr(params['emissiveIntensity'],
-            1);
         this._envMap = params['envMap'];
-        this._combine = params['combine']
-            || THREE.MultiplyOperation;
+        this._map = params['map'];
         this._reflectivity = numberOr(params['reflectivity'], 1);
-        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
+        this._refractionRatio = numberOr(params['refractionRatio'], 0.98);
+        this._wireframe = params['wireframe'] || false;
         this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new LambertMaterialHelper(this);
     }
 
     _getDefaultName() {
@@ -70,22 +40,22 @@ export default class LambertMaterial extends Material {
 
     _createMaterial() {
         let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
             "color": this._color,
-            "wireframe": this._wireframe,
+            "combine": this._combine,
             "emissive": this._emissive,
             "emissiveIntensity": this._emissiveIntensity,
-            "combine": this._combine,
+            "opacity": this._opacity,
             "reflectivity": this._reflectivity,
             "refractionRatio": this._refractionRatio,
+            "side": this._side,
+            "transparent": this._transparent,
+            "wireframe": this._wireframe,
         };
         this._updateMaterialParamsWithMaps(materialParams, MAPS);
         this._material = new THREE.MeshLambertMaterial(materialParams);
     }
 
-    _getMaps() {
+    getMaps() {
         return MAPS;
     }
 
@@ -97,33 +67,129 @@ export default class LambertMaterial extends Material {
         return this._material.map;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
     exportParams() {
         let params = super.exportParams();
-        params['color'] = this._material.color.getHex();
-        params['wireframe'] = this._wireframe;
-        params['map'] = this._map;
         params['alphaMap'] = this._alphaMap;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
-        params['emissiveIntensity'] = this._emissiveIntensity;
-        params['envMap'] = this._envMap;
+        params['color'] = this._color;
         params['combine'] = this._combine;
+        params['emissive'] = this._emissive;
+        params['emissiveIntensity'] = this._emissiveIntensity;
+        params['emissiveMap'] = this._emissiveMap;
+        params['envMap'] = this._envMap;
+        params['map'] = this._map;
         params['reflectivity'] = this._reflectivity;
         params['refractionRatio'] = this._refractionRatio;
+        params['wireframe'] = this._wireframe;
         return params;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.parameter] = menuField;
-        }
-        return menuFieldsMap;
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getCombine() {
+        return this._combine;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getReflectivity() {
+        return this._reflectivity;
+    }
+
+    getRefractionRatio() {
+        return this._refractionRatio;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setCombine(combine) {
+        if(this._combine == combine) return;
+        this._combine = combine;
+        this._material.combine = combine;
+        this._material.needsUpdate = true;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setReflectivity(reflectivity) {
+        if(this._reflectivity == reflectivity) return;
+        this._reflectivity = reflectivity;
+        this._material.reflectivity = reflectivity;
+    }
+
+    setRefractionRatio(refractionRatio) {
+        if(this._refractionRatio == refractionRatio) return;
+        this._refractionRatio = refractionRatio;
+        this._material.refractionRatio = refractionRatio;
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
     }
 }
+
+MaterialsHandler.registerMaterial(LambertMaterial, MaterialTypes.LAMBERT);

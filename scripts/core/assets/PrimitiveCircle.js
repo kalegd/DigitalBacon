@@ -7,23 +7,11 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import PrimitiveCircleHelper from '/scripts/core/helpers/editor/PrimitiveCircleHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
 const ASSET_NAME = 'Circle';
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "radius", "name": "Radius", "min": 0, "type": NumberInput },
-    { "parameter": "segments", "name": "Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
 
 export default class PrimitiveCircle extends PrimitiveMesh {
     constructor(params = {}) {
@@ -34,6 +22,10 @@ export default class PrimitiveCircle extends PrimitiveMesh {
         this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveCircleHelper(this);
     }
 
     _createMesh() {
@@ -53,20 +45,6 @@ export default class PrimitiveCircle extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        let face = intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes(true);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['radius'] = this._radius;
@@ -75,21 +53,34 @@ export default class PrimitiveCircle extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
+    getRadius() {
+        return this._radius;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.parameter] =
-                    this._createGeometryNumberInput(field);
-            }
-        }
-        return menuFieldsMap;
+    getSegments() {
+        return this._segments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setSegments(segments) {
+        if(this._segments == segments) return;
+        this._segments = segments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
     }
 }
 

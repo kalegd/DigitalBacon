@@ -4,32 +4,20 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import TextureTypes from '/scripts/core/enums/TextureTypes.js';
-import BasicTexture from '/scripts/core/assets/textures/BasicTexture.js';
-import CubeTexture from '/scripts/core/assets/textures/CubeTexture.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const TEXTURE_TYPE_TO_ADD_FUNCTION = {};
-TEXTURE_TYPE_TO_ADD_FUNCTION[TextureTypes.BASIC] = "addBasicTexture";
-TEXTURE_TYPE_TO_ADD_FUNCTION[TextureTypes.CUBE] = "addCubeTexture";
-
 class TexturesHandler {
     constructor() {
         this._textures = {};
+        this._textureClassMap = {};
     }
 
-    addBasicTexture(params, ignoreUndoRedo) {
-        let texture = new BasicTexture(params);
-        this._addTexture(texture, ignoreUndoRedo);
-        return texture;
-    }
-
-    addCubeTexture(params, ignoreUndoRedo) {
-        let texture = new CubeTexture(params);
+    addTexture(type, params, ignoreUndoRedo) {
+        let texture = new this._textureClassMap[type](params);
         this._addTexture(texture, ignoreUndoRedo);
         return texture;
     }
@@ -66,14 +54,18 @@ class TexturesHandler {
     load(textures) {
         if(!textures) return;
         for(let textureType in textures) {
-            if(!(textureType in TEXTURE_TYPE_TO_ADD_FUNCTION)) {
+            if(!(textureType in this._textureClassMap)) {
                 console.error("Unrecognized texture found");
                 continue;
             }
             for(let params of textures[textureType]) {
-                this[TEXTURE_TYPE_TO_ADD_FUNCTION[textureType]](params, true);
+                this.addTexture(textureType, params, true);
             }
         }
+    }
+
+    registerTexture(textureClass, textureType) {
+        this._textureClassMap[textureType] = textureClass;
     }
 
     getTextures() {
