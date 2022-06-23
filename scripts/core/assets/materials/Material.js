@@ -18,7 +18,7 @@ export default class Material {
             ? params['name']
             : this._getDefaultName();
         this._opacity = numberOr(params['opacity'], 1);
-        this._side = params['display'] || THREE.FrontSide;
+        this._side = params['side'] || THREE.FrontSide;
         this._transparent = params['transparent'] || false;
         if(global.isEditor) this._createEditorHelper();
     }

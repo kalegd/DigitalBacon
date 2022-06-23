@@ -45,7 +45,7 @@ export default class NormalMaterial extends Material {
             "displacementBias": this._displacementBias,
             "flatShading": this._flatShading,
             "normalMapType": this._normalMapType,
-            "normalScale": this._normalScale,
+            "normalScale": new THREE.Vector2().fromArray(this._normalScale),
             "opacity": this._opacity,
             "side": this._side,
             "transparent": this._transparent,
@@ -172,7 +172,7 @@ export default class NormalMaterial extends Material {
     setNormalScale(normalScale) {
         if(this._normalScale == normalScale) return;
         this._normalScale = normalScale;
-        this._material.normalScale = normalScale;
+        this._material.normalScale.fromArray(normalScale);
     }
 
     setWireframe(wireframe) {

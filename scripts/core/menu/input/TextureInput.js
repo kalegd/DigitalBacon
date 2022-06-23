@@ -116,9 +116,7 @@ class TextureInput extends PointerInteractableEntity {
 
     _selectNewTexture() {
         if(this._filter) {
-            let texture = (this._filter == TextureTypes.BASIC)
-                ? TexturesHandler.addBasicTexture()
-                : TexturesHandler.addCubeTexture();
+            let texture = TexturesHandler.addTexture(this._filter)
             this._handleTextureSelection(texture.getId());
             let texturePage = global.menuController.getPage(
                 MenuPages.TEXTURE);

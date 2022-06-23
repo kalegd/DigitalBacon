@@ -354,8 +354,8 @@ class TransformControlsHandler {
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
-                asset.roundAttributes(true);
                 let assetHelper = asset.getEditorHelper();
+                assetHelper.roundAttributes(true);
                 let preState = this._preTransformStates[asset.getId()];
                 let postState = assetHelper.getObjectTransformation();
                 assetHelper.setObjectTransformation(preState, postState);
