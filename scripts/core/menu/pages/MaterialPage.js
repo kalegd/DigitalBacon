@@ -69,9 +69,9 @@ class MaterialPage extends DynamicFieldsPage {
                 this._controller.popPagesPast(MenuPages.MATERIAL);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (material)=> {
-            if(material == this._material) {
-                this._titleField.setContent(material.getName());
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
+            if(message.asset == this._material) {
+                this._titleField.setContent(message.asset.getName());
             }
         });
     }

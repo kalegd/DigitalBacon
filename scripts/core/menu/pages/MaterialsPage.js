@@ -87,7 +87,7 @@ class MaterialsPage extends PaginatedPage {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (instance)=> {
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
             this._refreshItems();
             this._updateItemsGUI();
         });

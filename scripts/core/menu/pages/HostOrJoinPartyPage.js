@@ -49,8 +49,6 @@ class HostOrJoinPartyPage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
-                let menuPage = this._controller.getPage(page.menuPage);
-                menuPage.clearContent();
                 this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);

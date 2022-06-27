@@ -69,9 +69,9 @@ class InstancePage extends DynamicFieldsPage {
                 this._controller.popPagesPast(MenuPages.INSTANCE);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
-            if(instance == this._instance) {
-                this._titleField.setContent(instance.getName());
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
+            if(message.asset == this._instance) {
+                this._titleField.setContent(message.asset.getName());
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (params) => {

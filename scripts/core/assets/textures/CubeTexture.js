@@ -84,30 +84,6 @@ export default class CubeTexture extends Texture {
         return isValid;
     }
 
-    _updateImage(side, newValue, ignoreUndoRedo, ignorePublish) {
-        let oldValue = this._images[side];
-        if(newValue == oldValue) return;
-        this._wrapS = this._texture.wrapS;
-        this._wrapT = this._texture.wrapT;
-        this._repeatX = this._texture.repeat.x;
-        this._repeatY = this._texture.repeat.y;
-        this._offsetX = this._texture.offset.x;
-        this._offsetY = this._texture.offset.y;
-        this._images[side] = newValue;
-        this._updateTexture();
-        if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
-        if(!ignoreUndoRedo) {
-            UndoRedoHandler.addAction(() => {
-                this._updateImage(side, oldValue, true, ignorePublish);
-                this._updateMenuField('images');
-            }, () => {
-                this._updateImage(side, newValue, true, ignorePublish);
-                this._updateMenuField('images');
-            });
-        }
-    }
-
     getPreviewTexture() {
         let imageId = this._images[CubeSides.FRONT];
         if(imageId) return LibraryHandler.getTexture(imageId);

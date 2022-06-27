@@ -87,7 +87,7 @@ class TexturesPage extends PaginatedPage {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (instance)=> {
+        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
             this._refreshItems();
             this._updateItemsGUI();
         });

@@ -31,27 +31,6 @@ export default class Texture {
         return;
     }
 
-    _updateEnum(param, newValue, ignoreUndoRedo, ignorePublish) {
-        let oldValue = this._texture[param];
-        if(oldValue == newValue) return;
-
-        this._texture[param] = newValue;
-        this['_' + param] = newValue;
-        this._updateTexture();
-
-        if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
-        if(!ignoreUndoRedo) {
-            UndoRedoHandler.addAction(() => {
-                this._updateEnum(param, oldValue, true, ignorePublish);
-                this._updateMenuField(param);
-            }, () => {
-                this._updateEnum(param, newValue, true, ignorePublish);
-                this._updateMenuField(param);
-            });
-        }
-    }
-
     exportParams() {
         return {
             "id": this._id,
@@ -61,7 +40,6 @@ export default class Texture {
 
     setFromParams(params) {
         console.warn("Unexpectedly trying to setFromParams() for Texture...");
-        //PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
     }
 
     _updateTexture() {

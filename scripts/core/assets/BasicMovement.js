@@ -107,16 +107,16 @@ export default class BasicMovement {
         if(global.sessionActive && !global.keyboardLock) {
             if (InputHandler.isKeyCodePressed("ArrowUp")
                     || InputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += movementSpeed;
+                this._velocity.z += movementSpeed / 4;
             if (InputHandler.isKeyCodePressed("ArrowDown")
                     || InputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= movementSpeed;
+                this._velocity.z -= movementSpeed / 4;
             if (InputHandler.isKeyCodePressed("ArrowLeft")
                     || InputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= movementSpeed;
+                this._velocity.x -= movementSpeed / 4;
             if (InputHandler.isKeyCodePressed("ArrowRight")
                     || InputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += movementSpeed;
+                this._velocity.x += movementSpeed / 4;
             if (flightEnabled && InputHandler.isKeyCodePressed("Space")
                     != InputHandler.isKeyCodePressed("ShiftLeft")) {
                 this._verticalVelocity =

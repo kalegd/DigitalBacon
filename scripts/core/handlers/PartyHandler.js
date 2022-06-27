@@ -11,7 +11,7 @@ import Party from '/scripts/core/clients/Party.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { uuidv4, concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, capitalizeFirstLetter, concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
 const TWO_BYTE_MOD = 2 ** 16;
@@ -163,16 +163,28 @@ class PartyHandler {
         let params = message.instance;
         let instance = ProjectHandler.project[params.assetId][params.id];
         if(instance) {
-            instance.setFromParams(params);
+            for(let param in params) {
+                if(param == 'id' || param == 'assetId') continue;
+                let capitalizedParam = capitalizeFirstLetter(param);
+                if(('set' + capitalizedParam) in instance)
+                    instance['set' + capitalizedParam](params[param]);
+            }
             PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
         }
     }
 
     _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
+            let instance = {};
+            instance['id'] = message.asset.getId();
+            instance['assetId'] = message.asset.getAssetId();
+            for(let param of message.fields) {
+                let capitalizedParam = capitalizeFirstLetter(param);
+                instance[param] = message.asset['get' + capitalizedParam]();
+            }
             this._sendToAllPeers(JSON.stringify({
                 "topic": "instance_updated",
-                "instance": instance.exportParams(),
+                "instance": instance,
             }));
         });
     }
@@ -183,7 +195,8 @@ class PartyHandler {
 
     _sendToAllPeers(data) {
         for(let peerId in this._peers) {
-            this._peers[peerId].sendData(data);
+            let rtc = this._peers[peerId].rtc;
+            if(rtc) rtc.sendData(data);
         }
     }
 

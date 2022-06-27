@@ -118,8 +118,8 @@ class AssetPage extends PaginatedPage {
                 this._updateItemsGUI();
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
-            if(instance.getAssetId() == this._assetId) {
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
+            if(message.asset.getAssetId() == this._assetId) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }

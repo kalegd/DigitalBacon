@@ -148,8 +148,7 @@ export default class AssetHelper extends EditorHelper {
             }
         }
         if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                this._asset);
+            this._publish(['visualEdit']);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateVisualEdit(!isVisualEdit, true, ignorePublish);
@@ -184,7 +183,7 @@ export default class AssetHelper extends EditorHelper {
         }
         if(updated.length == 0) return;
         if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,this._asset);
+            this._publish(updated);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.setObjectTransformation(null, oldValues, true,
@@ -206,7 +205,7 @@ export default class AssetHelper extends EditorHelper {
         }
         if(updated.length == 0) return;
         if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,this._asset);
+            this._publish(updated);
     }
 
     place(intersection) {

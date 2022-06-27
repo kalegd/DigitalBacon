@@ -69,9 +69,9 @@ class TexturePage extends DynamicFieldsPage {
                 this._controller.popPagesPast(MenuPages.TEXTURE);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (texture)=> {
-            if(texture == this._texture) {
-                this._titleField.setContent(texture.getName());
+        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
+            if(message.asset == this._texture) {
+                this._titleField.setContent(message.asset.getName());
             }
         });
     }

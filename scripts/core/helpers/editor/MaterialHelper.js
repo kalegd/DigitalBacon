@@ -63,8 +63,8 @@ export default class MaterialHelper extends EditorHelper {
                 }
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (texture) => {
-            let textureId = texture.getId();
+        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
+            let textureId = message.asset.getId();
             for(let map of maps) {
                 let capitalizedMap = capitalizeFirstLetter(map);
                 if(this._asset['get' + capitalizedMap]() == textureId) {

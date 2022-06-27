@@ -182,8 +182,9 @@ class MaterialInput extends PointerInteractableEntity {
     }
 
     _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (material) =>{
-            if(this._lastValue == material.getId()) this.updateFromSource();
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
+            if(this._lastValue == message.asset.getId())
+                this.updateFromSource();
         });
     }
 

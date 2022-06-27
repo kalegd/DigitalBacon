@@ -40,6 +40,11 @@ export default class EditorHelper {
         this._updatedTopic = updatedTopic;
     }
 
+    _publish(params) {
+        let message = { asset: this._asset, fields: params };
+        PubSub.publish(this._id, this._updatedTopic, message);
+    }
+
     _updateCubeImage(param, side, newValue, ignoreUndoRedo, ignorePublish,
                      oldValue) {
         let capitalizedParam = capitalizeFirstLetter(param);
@@ -47,7 +52,7 @@ export default class EditorHelper {
         if(currentValue != newValue) {
             this._asset['set' + capitalizedParam](newValue, side);
             if(!ignorePublish)
-                PubSub.publish(this._id, this._updatedTopic, this._asset);
+                this._publish([param]);
         }
         if(!oldValue) oldValue = currentValue;
         if(!ignoreUndoRedo && oldValue != newValue) {
@@ -79,7 +84,7 @@ export default class EditorHelper {
         if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
             this._asset['set' + capitalizedParam](newValue);
             if(!ignorePublish)
-                PubSub.publish(this._id, this._updatedTopic, this._asset);
+                this._publish([param]);
         }
         if(!oldValue) oldValue = currentValue;
         if(!ignoreUndoRedo && !oldValue
@@ -101,7 +106,7 @@ export default class EditorHelper {
         if(currentValue != newValue) {
             this._asset['set' + capitalizedParam](newValue);
             if(!ignorePublish)
-                PubSub.publish(this._id, this._updatedTopic, this._asset);
+                this._publish([param]);
         }
         if(oldValue == null) oldValue = currentValue;
         if(!ignoreUndoRedo && oldValue != newValue) {
@@ -125,7 +130,7 @@ export default class EditorHelper {
         let oldName = this._asset.getName();
         if(oldName == newName) return;
         this._asset.setName(newName);
-        PubSub.publish(this._id, this._updatedTopic, this._asset);
+        this._publish(['name']);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.updateName(oldName, true);
