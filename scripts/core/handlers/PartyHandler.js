@@ -164,20 +164,27 @@ class PartyHandler {
     }
 
     _handleAssetUpdate(asset, params, topic) {
+        let updatedParams = [];
         for(let param in params) {
             if(param == 'id' || param == 'assetId') continue;
+            updatedParams.push(param);
             let capitalizedParam = capitalizeFirstLetter(param);
             if(('set' + capitalizedParam) in asset)
                 asset['set' + capitalizedParam](params[param]);
         }
+        let message = {
+            asset: asset,
+            fields: updatedParams,
+        };
+        PubSub.publish(this._id, topic, message);
     }
 
     _handleInstanceUpdated(peer, message) {
         let params = message.instance;
         let instance = ProjectHandler.project[params.assetId][params.id];
         if(instance) {
-            this._handleAssetUpdate(instance, params);
-            PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
+            this._handleAssetUpdate(instance, params,
+                PubSubTopics.INSTANCE_UPDATED);
         }
     }
 
@@ -185,8 +192,8 @@ class PartyHandler {
         let params = message.material;
         let material = MaterialsHandler.getMaterial(params.id);
         if(material) {
-            this._handleAssetUpdate(material, params);
-            PubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, material);
+            this._handleAssetUpdate(material, params,
+                PubSubTopics.MATERIAL_UPDATED);
         }
     }
 
@@ -194,8 +201,8 @@ class PartyHandler {
         let params = message.texture;
         let texture = TexturesHandler.getTexture(params.id);
         if(texture) {
-            this._handleAssetUpdate(texture, params);
-            PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, texture);
+            this._handleAssetUpdate(texture, params,
+                PubSubTopics.TEXTURE_UPDATED);
         }
     }
 
