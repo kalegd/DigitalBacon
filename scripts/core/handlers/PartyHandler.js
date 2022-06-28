@@ -9,7 +9,9 @@ import PeerController from '/scripts/core/assets/PeerController.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import Party from '/scripts/core/clients/Party.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4, capitalizeFirstLetter, concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
 
@@ -26,6 +28,8 @@ class PartyHandler {
             avatar: (p, m) => { this._handleAvatar(p, m); },
             project: (p, m) => { this._handleProject(p, m); },
             instance_updated: (p, m) => { this._handleInstanceUpdated(p, m); },
+            material_updated: (p, m) => { this._handleMaterialUpdated(p, m); },
+            texture_updated: (p, m) => { this._handleTextureUpdated(p, m); },
         };
         Party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
         Party.setOnDisconnect(() => { this._onDisconnect(); });
@@ -159,38 +163,72 @@ class PartyHandler {
         }
     }
 
+    _handleAssetUpdate(asset, params, topic) {
+        for(let param in params) {
+            if(param == 'id' || param == 'assetId') continue;
+            let capitalizedParam = capitalizeFirstLetter(param);
+            if(('set' + capitalizedParam) in asset)
+                asset['set' + capitalizedParam](params[param]);
+        }
+    }
+
     _handleInstanceUpdated(peer, message) {
         let params = message.instance;
         let instance = ProjectHandler.project[params.assetId][params.id];
         if(instance) {
-            for(let param in params) {
-                if(param == 'id' || param == 'assetId') continue;
-                let capitalizedParam = capitalizeFirstLetter(param);
-                if(('set' + capitalizedParam) in instance)
-                    instance['set' + capitalizedParam](params[param]);
-            }
+            this._handleAssetUpdate(instance, params);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
         }
     }
 
+    _handleMaterialUpdated(peer, message) {
+        let params = message.material;
+        let material = MaterialsHandler.getMaterial(params.id);
+        if(material) {
+            this._handleAssetUpdate(material, params);
+            PubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, material);
+        }
+    }
+
+    _handleTextureUpdated(peer, message) {
+        let params = message.texture;
+        let texture = TexturesHandler.getTexture(params.id);
+        if(texture) {
+            this._handleAssetUpdate(texture, params);
+            PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, texture);
+        }
+    }
+
+    _publishAssetUpdate(updateMessage, type) {
+        let asset = {};
+        asset['id'] = updateMessage.asset.getId();
+        if(updateMessage.asset.getAssetId)
+            asset['assetId'] = updateMessage.asset.getAssetId();
+        for(let param of updateMessage.fields) {
+            let capitalizedParam = capitalizeFirstLetter(param);
+            asset[param] = updateMessage.asset['get' + capitalizedParam]();
+        }
+        let peerMessage = { "topic": type + "_updated" };
+        peerMessage[type] = asset;
+        this._sendToAllPeers(JSON.stringify(peerMessage));
+    }
+
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
-            let instance = {};
-            instance['id'] = message.asset.getId();
-            instance['assetId'] = message.asset.getAssetId();
-            for(let param of message.fields) {
-                let capitalizedParam = capitalizeFirstLetter(param);
-                instance[param] = message.asset['get' + capitalizedParam]();
-            }
-            this._sendToAllPeers(JSON.stringify({
-                "topic": "instance_updated",
-                "instance": instance,
-            }));
+            this._publishAssetUpdate(message, "instance")
+        });
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
+            this._publishAssetUpdate(message, "material")
+        });
+        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
+            this._publishAssetUpdate(message, "texture")
         });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
     }
 
     _sendToAllPeers(data) {
