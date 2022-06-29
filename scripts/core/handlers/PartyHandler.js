@@ -27,6 +27,8 @@ class PartyHandler {
         this._messageHandlers = {
             avatar: (p, m) => { this._handleAvatar(p, m); },
             project: (p, m) => { this._handleProject(p, m); },
+            instance_added: (p, m) => { this._handleInstanceAdded(p, m); },
+            instance_deleted: (p, m) => { this._handleInstanceDeleted(p, m); },
             instance_updated: (p, m) => { this._handleInstanceUpdated(p, m); },
             material_updated: (p, m) => { this._handleMaterialUpdated(p, m); },
             texture_updated: (p, m) => { this._handleTextureUpdated(p, m); },
@@ -163,10 +165,34 @@ class PartyHandler {
         }
     }
 
+    _handleInstanceAdded(peer, message) {
+        let instance = ProjectHandler.getSessionInstance(message.instance.id);
+        if(instance) {
+            instance.addToScene(global.scene);
+            ProjectHandler.addAsset(instance, true, true);
+        } else {
+            instance = ProjectHandler.addInstance(message.instance, true, true);
+        }
+        PubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
+    }
+
+    _handleInstanceDeleted(peer, peerMessage) {
+        let assets = ProjectHandler.getInstancesForAssetId(peerMessage.assetId);
+        let instance = assets[peerMessage.id];
+        if(instance) {
+            ProjectHandler.deleteAssetInstance(instance, true, true);
+            let topic = PubSubTopics.INSTANCE_DELETED + ":" + peerMessage.id;
+            let message = { instance: instance };
+            PubSub.publish(this._id, topic, message);
+        } else {
+            console.error("Instance to delete does not exist");
+        }
+    }
+
     _handleAssetUpdate(asset, params, topic) {
         let updatedParams = [];
         for(let param in params) {
-            if(param == 'id' || param == 'assetId') continue;
+            if(param == 'id') continue;
             updatedParams.push(param);
             let capitalizedParam = capitalizeFirstLetter(param);
             if(('set' + capitalizedParam) in asset)
@@ -181,7 +207,7 @@ class PartyHandler {
 
     _handleInstanceUpdated(peer, message) {
         let params = message.instance;
-        let instance = ProjectHandler.project[params.assetId][params.id];
+        let instance = ProjectHandler.getSessionInstance(params.id);
         if(instance) {
             this._handleAssetUpdate(instance, params,
                 PubSubTopics.INSTANCE_UPDATED);
@@ -206,11 +232,26 @@ class PartyHandler {
         }
     }
 
+    _publishInstanceAdded(instance) {
+        let message = {
+            topic: "instance_added",
+            instance: instance.exportParams(),
+        };
+        this._sendToAllPeers(JSON.stringify(message));
+    }
+
+    _publishInstanceDeleted(instance) {
+        let message = {
+            topic: "instance_deleted",
+            id: instance.getId(),
+            assetId: instance.getAssetId(),
+        };
+        this._sendToAllPeers(JSON.stringify(message));
+    }
+
     _publishAssetUpdate(updateMessage, type) {
         let asset = {};
         asset['id'] = updateMessage.asset.getId();
-        if(updateMessage.asset.getAssetId)
-            asset['assetId'] = updateMessage.asset.getAssetId();
         for(let param of updateMessage.fields) {
             let capitalizedParam = capitalizeFirstLetter(param);
             asset[param] = updateMessage.asset['get' + capitalizedParam]();
@@ -221,14 +262,20 @@ class PartyHandler {
     }
 
     _addSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
+            this._publishInstanceAdded(instance);
+        });
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (message) => {
+            this._publishInstanceDeleted(message.instance);
+        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "instance")
+            this._publishAssetUpdate(message, "instance");
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "material")
+            this._publishAssetUpdate(message, "material");
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "texture")
+            this._publishAssetUpdate(message, "texture");
         });
     }
 

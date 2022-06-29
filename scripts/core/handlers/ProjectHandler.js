@@ -28,6 +28,7 @@ class ProjectHandler {
         this._scene = scene;
         this._id = uuidv4();
         this._objects = [];
+        this._sessionInstances = {};
         this.project = {};
         SettingsHandler.init(scene);
     }
@@ -71,13 +72,13 @@ class ProjectHandler {
                             let instances = projectDetails['assets'][assetId];
                             let type = LibraryHandler.getType(assetId);
                             if(type == AssetTypes.IMAGE) {
-                                this._addImages(instances, true);
+                                this._addImages(instances, true, true);
                             } else if(type == AssetTypes.MODEL) {
-                                this._addGLTFs(instances, true);
+                                this._addGLTFs(instances, true, true);
                             } else if(type == AssetTypes.LIGHT) {
-                                this._addLights(instances, assetId, true);
+                                this._addLights(instances, assetId, true, true);
                             } else if(type == AssetTypes.SHAPE) {
-                                this._addShapes(instances, assetId, true);
+                                this._addShapes(instances, assetId, true, true);
                             }
                         }
                     } catch(error) {
@@ -96,42 +97,60 @@ class ProjectHandler {
         if(errorCallback) errorCallback();
     }
 
-    _addImages(instancesParams, ignoreUndoRedo) {
+    addInstance(params, ignoreUndoRedo, ignorePublish) {
+        let assetId = params.assetId;
+        let type = LibraryHandler.getType(assetId);
+        let instance;
+        if(type == AssetTypes.IMAGE) {
+            instance = this.addImage(params, ignoreUndoRedo, ignorePublish);
+        } else if(type == AssetTypes.MODEL) {
+            instance = this.addGLTF(params, ignoreUndoRedo, ignorePublish);
+        } else if(type == AssetTypes.LIGHT) {
+            instance = this.addLight(params, assetId, ignoreUndoRedo,
+                                        ignorePublish);
+        } else if(type == AssetTypes.SHAPE) {
+            instance = this.addShape(params, assetId, ignoreUndoRedo,
+                                        ignorePublish);
+        }
+        return instance;
+    }
+
+    _addImages(instancesParams, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addImage(params, ignoreUndoRedo);
+            this.addImage(params, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addImage(params, ignoreUndoRedo) {
+    addImage(params, ignoreUndoRedo, ignorePublish) {
         let image = new ClampedTexturePlane(params);
         image.addToScene(this._scene);
-        this._addAsset(image, ignoreUndoRedo);
+        this.addAsset(image, ignoreUndoRedo, ignorePublish);
         return image;
     }
 
-    _addGLTFs(instancesParams, ignoreUndoRedo) {
+    _addGLTFs(instancesParams, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addGLTF(params, ignoreUndoRedo);
+            this.addGLTF(params, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addGLTF(params, ignoreUndoRedo) {
+    addGLTF(params, ignoreUndoRedo, ignorePublish) {
         let gltf = new GLTFAsset(params);
         gltf.addToScene(this._scene);
-        this._addAsset(gltf, ignoreUndoRedo);
+        this.addAsset(gltf, ignoreUndoRedo, ignorePublish);
         return gltf;
     }
 
-    _addLights(instancesParams, assetId, ignoreUndoRedo) {
+    _addLights(instancesParams, assetId, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addLight(params, assetId, ignoreUndoRedo);
+            this.addLight(params, assetId, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addLight(params, assetId, ignoreUndoRedo) {
+    addLight(params, assetId, ignoreUndoRedo, ignorePublish) {
         let instance = new this._lightClassMap[assetId](params);
         instance.addToScene(this._scene);
-        this._addAsset(instance, ignoreUndoRedo);
+        this.addAsset(instance, ignoreUndoRedo, ignorePublish);
         return instance;
     }
 
@@ -140,16 +159,16 @@ class ProjectHandler {
         LibraryHandler.loadLight(assetId, assetName);
     }
 
-    _addShapes(instancesParams, assetId, ignoreUndoRedo) {
+    _addShapes(instancesParams, assetId, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addShape(params, assetId, ignoreUndoRedo);
+            this.addShape(params, assetId, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addShape(params, assetId, ignoreUndoRedo) {
+    addShape(params, assetId, ignoreUndoRedo, ignorePublish) {
         let instance = new this._shapeClassMap[assetId](params);
         instance.addToScene(this._scene);
-        this._addAsset(instance, ignoreUndoRedo);
+        this.addAsset(instance, ignoreUndoRedo, ignorePublish);
         return instance;
     }
 
@@ -166,12 +185,16 @@ class ProjectHandler {
         return this.project[assetId] || {};
     }
 
-    deleteAssetInstance(instance, ignoreUndoRedo) {
+    getSessionInstance(id) {
+        return this._sessionInstances[id];
+    }
+
+    deleteAssetInstance(instance, ignoreUndoRedo, ignorePublish) {
         let undoRedoAction;
         if(!ignoreUndoRedo) {
             undoRedoAction = UndoRedoHandler.addAction(() => {
                 instance.addToScene(this._scene);
-                this._addAsset(instance, true);
+                this.addAsset(instance, true);
             }, () => {
                 this.deleteAssetInstance(instance, true);
             });
@@ -187,6 +210,7 @@ class ProjectHandler {
             }
             delete this.project[assetId][id];
             instance.removeFromScene();
+            if(ignorePublish) return;
             let topic = PubSubTopics.INSTANCE_DELETED + ":" + instance.getId();
             PubSub.publish(this._id, topic, {
                 instance: instance,
@@ -195,29 +219,34 @@ class ProjectHandler {
         }
     }
 
-    _addAsset(instance, ignoreUndoRedo) {
+    addAsset(instance, ignoreUndoRedo, ignorePublish) {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this.deleteAssetInstance(instance, true);
+                this.deleteAssetInstance(instance, true, ignorePublish);
             }, () => {
                 instance.addToScene(this._scene);
-                this._addAsset(instance, true);
+                this.addAsset(instance, true, ignorePublish);
             });
         }
         let assetId = instance.getAssetId();
         let id = instance.getId();
         if(!(assetId in this.project)) this.project[assetId] = {};
+        if(this.project[assetId][id]) return; //Prevent multi-user collisions
+                                              //caused by undo/redo
         this.project[assetId][id] = instance;
-
         this._objects.push(instance.getObject());
-        PubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
+        this._sessionInstances[id] = instance;
+
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
     }
 
     reset() {
+        this._sessionInstances = {};
         for(let assetId in this.project) {
             let instances = this.project[assetId];
             for(let instanceId in instances) {
-                this.deleteAssetInstance(instances[instanceId], true);
+                this.deleteAssetInstance(instances[instanceId], true, true);
             }
         }
         if(!global.disableImmersion) UndoRedoHandler.reset();
