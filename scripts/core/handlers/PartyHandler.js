@@ -5,15 +5,11 @@
  */
 
 import global from '/scripts/core/global.js';
-import PeerController from '/scripts/core/assets/PeerController.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import Party from '/scripts/core/clients/Party.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import { uuidv4, capitalizeFirstLetter, concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
+import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
+import { concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
 const TWO_BYTE_MOD = 2 ** 16;
@@ -21,25 +17,19 @@ const JITTER_DELAY = 50;
 
 class PartyHandler {
     constructor() {
-        this._id = uuidv4();
         this._peers = {};
         this._partyActive = false;
         this._messageHandlers = {
-            avatar: (p, m) => { this._handleAvatar(p, m); },
             project: (p, m) => { this._handleProject(p, m); },
-            instance_added: (p, m) => { this._handleInstanceAdded(p, m); },
-            instance_deleted: (p, m) => { this._handleInstanceDeleted(p, m); },
-            instance_updated: (p, m) => { this._handleInstanceUpdated(p, m); },
-            material_updated: (p, m) => { this._handleMaterialUpdated(p, m); },
-            texture_updated: (p, m) => { this._handleTextureUpdated(p, m); },
         };
+        PartyMessageHelper.init(this);
         Party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
         Party.setOnDisconnect(() => { this._onDisconnect(); });
     }
 
     _onDisconnect() {
         this._partyActive = false;
-        this._removeSubscriptions();
+        PartyMessageHelper.removeSubscriptions();
         for(let peerId in this._peers) {
             let peer = this._peers[peerId];
             if(peer.rtc) peer.rtc.close();
@@ -156,146 +146,16 @@ class PartyHandler {
         }
     }
 
-    _handleAvatar(peer, message) {
-        if(peer.controller) {
-            peer.controller.updateAvatar(message.url);
-        } else {
-            peer.controller = new PeerController({ URL: message.url });
-            peer.controller.addToScene(global.scene);
-        }
-    }
-
-    _handleInstanceAdded(peer, message) {
-        let instance = ProjectHandler.getSessionInstance(message.instance.id);
-        if(instance) {
-            instance.addToScene(global.scene);
-            ProjectHandler.addAsset(instance, true, true);
-        } else {
-            instance = ProjectHandler.addInstance(message.instance, true, true);
-        }
-        PubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
-    }
-
-    _handleInstanceDeleted(peer, peerMessage) {
-        let assets = ProjectHandler.getInstancesForAssetId(peerMessage.assetId);
-        let instance = assets[peerMessage.id];
-        if(instance) {
-            ProjectHandler.deleteAssetInstance(instance, true, true);
-            let topic = PubSubTopics.INSTANCE_DELETED + ":" + peerMessage.id;
-            let message = { instance: instance };
-            PubSub.publish(this._id, topic, message);
-        } else {
-            console.error("Instance to delete does not exist");
-        }
-    }
-
-    _handleAssetUpdate(asset, params, topic) {
-        let updatedParams = [];
-        for(let param in params) {
-            if(param == 'id') continue;
-            updatedParams.push(param);
-            let capitalizedParam = capitalizeFirstLetter(param);
-            if(('set' + capitalizedParam) in asset)
-                asset['set' + capitalizedParam](params[param]);
-        }
-        let message = {
-            asset: asset,
-            fields: updatedParams,
-        };
-        PubSub.publish(this._id, topic, message);
-    }
-
-    _handleInstanceUpdated(peer, message) {
-        let params = message.instance;
-        let instance = ProjectHandler.getSessionInstance(params.id);
-        if(instance) {
-            this._handleAssetUpdate(instance, params,
-                PubSubTopics.INSTANCE_UPDATED);
-        }
-    }
-
-    _handleMaterialUpdated(peer, message) {
-        let params = message.material;
-        let material = MaterialsHandler.getMaterial(params.id);
-        if(material) {
-            this._handleAssetUpdate(material, params,
-                PubSubTopics.MATERIAL_UPDATED);
-        }
-    }
-
-    _handleTextureUpdated(peer, message) {
-        let params = message.texture;
-        let texture = TexturesHandler.getTexture(params.id);
-        if(texture) {
-            this._handleAssetUpdate(texture, params,
-                PubSubTopics.TEXTURE_UPDATED);
-        }
-    }
-
-    _publishInstanceAdded(instance) {
-        let message = {
-            topic: "instance_added",
-            instance: instance.exportParams(),
-        };
-        this._sendToAllPeers(JSON.stringify(message));
-    }
-
-    _publishInstanceDeleted(instance) {
-        let message = {
-            topic: "instance_deleted",
-            id: instance.getId(),
-            assetId: instance.getAssetId(),
-        };
-        this._sendToAllPeers(JSON.stringify(message));
-    }
-
-    _publishAssetUpdate(updateMessage, type) {
-        let asset = {};
-        asset['id'] = updateMessage.asset.getId();
-        for(let param of updateMessage.fields) {
-            let capitalizedParam = capitalizeFirstLetter(param);
-            asset[param] = updateMessage.asset['get' + capitalizedParam]();
-        }
-        let peerMessage = { "topic": type + "_updated" };
-        peerMessage[type] = asset;
-        this._sendToAllPeers(JSON.stringify(peerMessage));
-    }
-
-    _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
-            this._publishInstanceAdded(instance);
-        });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (message) => {
-            this._publishInstanceDeleted(message.instance);
-        });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "instance");
-        });
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "material");
-        });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "texture");
-        });
-    }
-
-    _removeSubscriptions() {
-        PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
-        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
-        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
-    }
-
-    _sendToAllPeers(data) {
-        for(let peerId in this._peers) {
-            let rtc = this._peers[peerId].rtc;
-            if(rtc) rtc.sendData(data);
+    addMessageHandlers(messageHandlers) {
+        for(let key in messageHandlers) {
+            this._messageHandlers[key] = messageHandlers[key];
         }
     }
 
     host(roomId, successCallback, errorCallback) {
         this._isHost = true;
         this._partyActive = true;
-        this._addSubscriptions();
+        PartyMessageHelper.addSubscriptions();
         Party.host(roomId, () => { this._successCallback(); },
             () => { this._errorCallback(); });
     }
@@ -303,9 +163,16 @@ class PartyHandler {
     join(roomId, successCallback, errorCallback) {
         this._isHost = false;
         this._partyActive = true;
-        this._addSubscriptions();
+        PartyMessageHelper.addSubscriptions();
         Party.join(roomId, () => { this._successCallback(); },
             () => { this._errorCallback(); });
+    }
+
+    sendToAllPeers(data) {
+        for(let peerId in this._peers) {
+            let rtc = this._peers[peerId].rtc;
+            if(rtc) rtc.sendData(data);
+        }
     }
 
     update(timeDelta) {
