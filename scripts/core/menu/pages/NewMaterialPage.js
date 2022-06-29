@@ -44,7 +44,7 @@ class NewMaterialPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let material = MaterialsHandler.addMaterial(item.materialType);
+        let material = MaterialsHandler.addNewMaterial(item.materialType);
         this.back();
         if(this._additionalAction) this._additionalAction(material);
     }

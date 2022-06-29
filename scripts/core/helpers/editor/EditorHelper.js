@@ -59,11 +59,11 @@ export default class EditorHelper {
             UndoRedoHandler.addAction(() => {
                 this._updateCubeImage(param, side, oldValue, true,
                                       ignorePublish);
-                this._updateMenuField(param);
+                this.updateMenuField(param);
             }, () => {
                 this._updateCubeImage(param, side, newValue, true,
                                       ignorePublish);
-                this._updateMenuField(param);
+                this.updateMenuField(param);
             });
         }
     }
@@ -92,10 +92,10 @@ export default class EditorHelper {
         {
             UndoRedoHandler.addAction(() => {
                 this._updateVector3(param, oldValue, true, ignorePublish);
-                this._updateMenuField(param);
+                this.updateMenuField(param);
             }, () => {
                 this._updateVector3(param, newValue, true, ignorePublish);
-                this._updateMenuField(param);
+                this.updateMenuField(param);
             });
         }
     }
@@ -112,15 +112,15 @@ export default class EditorHelper {
         if(!ignoreUndoRedo && oldValue != newValue) {
             UndoRedoHandler.addAction(() => {
                 this._updateParameter(param, oldValue, true, ignorePublish);
-                this._updateMenuField(param);
+                this.updateMenuField(param);
             }, () => {
                 this._updateParameter(param, newValue, true, ignorePublish);
-                this._updateMenuField(param);
+                this.updateMenuField(param);
             });
         }
     }
 
-    _updateMenuField(param) {
+    updateMenuField(param) {
         if(!this._menuFields) return;
         let menuField = this._menuFieldsMap[param];
         if(menuField) menuField.updateFromSource();

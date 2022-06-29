@@ -152,10 +152,10 @@ export default class AssetHelper extends EditorHelper {
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this._updateVisualEdit(!isVisualEdit, true, ignorePublish);
-                this._updateMenuField('visualEdit');
+                this.updateMenuField('visualEdit');
             }, () => {
                 this._updateVisualEdit(isVisualEdit, true, ignorePublish);
-                this._updateMenuField('visualEdit');
+                this.updateMenuField('visualEdit');
             });
         }
     }
@@ -178,7 +178,7 @@ export default class AssetHelper extends EditorHelper {
             let newValue = newValues[param];
             if(oldValue.reduce((a,v,i) => a && newValue[i] == v,true)) continue;
             this._object[param].fromArray(newValue);
-            this._updateMenuField(param);
+            this.updateMenuField(param);
             updated.push(param);
         }
         if(updated.length == 0) return;
@@ -200,7 +200,7 @@ export default class AssetHelper extends EditorHelper {
         for(let param of OBJECT_TRANSFORM_PARAMS) {
             if(this._object[param].roundWithPrecision(5)) {
                 updated.push(param);
-                this._updateMenuField(param);
+                this.updateMenuField(param);
             }
         }
         if(updated.length == 0) return;

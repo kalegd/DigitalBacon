@@ -26,6 +26,8 @@ class PartyMessageHelper {
             instance_added: (p, m) => { this._handleInstanceAdded(p, m); },
             instance_deleted: (p, m) => { this._handleInstanceDeleted(p, m); },
             instance_updated: (p, m) => { this._handleInstanceUpdated(p, m); },
+            material_added: (p, m) => { this._handleMaterialAdded(p, m); },
+            material_deleted: (p, m) => { this._handleMaterialDeleted(p, m); },
             material_updated: (p, m) => { this._handleMaterialUpdated(p, m); },
             texture_updated: (p, m) => { this._handleTextureUpdated(p, m); },
         });
@@ -51,6 +53,17 @@ class PartyMessageHelper {
         PubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
     }
 
+    _handleMaterialAdded(peer, message) {
+        let material = MaterialsHandler.getSessionMaterial(message.material.id);
+        if(material) {
+            MaterialsHandler.addMaterial(material, true, true);
+        } else {
+            material = MaterialsHandler.addNewMaterial(message.type,
+                        message.material, true, true);
+        }
+        PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
+    }
+
     _handleInstanceDeleted(peer, peerMessage) {
         let assets = ProjectHandler.getInstancesForAssetId(peerMessage.assetId);
         let instance = assets[peerMessage.id];
@@ -58,9 +71,21 @@ class PartyMessageHelper {
             ProjectHandler.deleteAssetInstance(instance, true, true);
             let topic = PubSubTopics.INSTANCE_DELETED + ":" + peerMessage.id;
             let message = { instance: instance };
-            PubSub.publish(this._id, topic, message);
+            PubSub.publish(this._id, topic, message, true);
         } else {
             console.error("Instance to delete does not exist");
+        }
+    }
+
+    _handleMaterialDeleted(peer, peerMessage) {
+        let material = MaterialsHandler.getMaterial(peerMessage.id);
+        if(material) {
+            MaterialsHandler.deleteMaterial(material, true, true);
+            let topic = PubSubTopics.MATERIAL_DELETED + ":" + peerMessage.id;
+            let message = { material: material };
+            PubSub.publish(this._id, topic, message, true);
+        } else {
+            console.error("Material to delete does not exist");
         }
     }
 
@@ -72,6 +97,7 @@ class PartyMessageHelper {
             let capitalizedParam = capitalizeFirstLetter(param);
             if(('set' + capitalizedParam) in asset)
                 asset['set' + capitalizedParam](params[param]);
+            if(global.isEditor) asset.getEditorHelper().updateMenuField(param);
         }
         let message = {
             asset: asset,
@@ -124,6 +150,23 @@ class PartyMessageHelper {
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
     }
 
+    _publishMaterialAdded(material) {
+        let message = {
+            topic: "material_added",
+            material: material.exportParams(),
+            type: material.getMaterialType(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+    }
+
+    _publishMaterialDeleted(material) {
+        let message = {
+            topic: "material_deleted",
+            id: material.getId(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+    }
+
     _publishAssetUpdate(updateMessage, type) {
         let asset = {};
         asset['id'] = updateMessage.asset.getId();
@@ -133,7 +176,8 @@ class PartyMessageHelper {
         }
         let peerMessage = { "topic": type + "_updated" };
         peerMessage[type] = asset;
-        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+        this._partyHandler.sendToAllPeers(
+            JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
     }
 
     addSubscriptions() {
@@ -145,6 +189,12 @@ class PartyMessageHelper {
         });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
             this._publishAssetUpdate(message, "instance");
+        });
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (material) => {
+            this._publishMaterialAdded(material);
+        });
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (message) => {
+            this._publishMaterialDeleted(message.material);
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
             this._publishAssetUpdate(message, "material");

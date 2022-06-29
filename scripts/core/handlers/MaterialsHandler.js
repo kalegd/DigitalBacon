@@ -14,38 +14,43 @@ class MaterialsHandler {
     constructor() {
         this._materials = {};
         this._materialClassMap = {};
+        this._sessionMaterials = {};
     }
 
-    addMaterial(type, params, ignoreUndoRedo) {
+    addNewMaterial(type, params, ignoreUndoRedo, ignorePublish) {
         let material = new this._materialClassMap[type](params);
-        this._addMaterial(material, ignoreUndoRedo);
+        this.addMaterial(material, ignoreUndoRedo, ignorePublish);
         return material;
     }
 
-    _addMaterial(material, ignoreUndoRedo) {
+    addMaterial(material, ignoreUndoRedo, ignorePublish) {
+        if(this._materials[material.getId()]) return;
         this._materials[material.getId()] = material;
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this.deleteMaterial(material, true);
+                this.deleteMaterial(material, true, ignorePublish);
             }, () => {
-                this._addMaterial(material, true);
+                this.addMaterial(material, true, ignorePublish);
             });
         }
         material.undoDispose();
-        PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
     }
 
-    deleteMaterial(material, ignoreUndoRedo) {
+    deleteMaterial(material, ignoreUndoRedo, ignorePublish) {
+        if(!(material.getId() in this._materials)) return;
         let undoRedoAction;
         if(!ignoreUndoRedo) {
             undoRedoAction = UndoRedoHandler.addAction(() => {
-                this._addMaterial(material, true);
+                this.addMaterial(material, true, ignorePublish);
             }, () => {
-                this.deleteMaterial(material, true);
+                this.deleteMaterial(material, true, ignorePublish);
             });
         }
         material.dispose();
         delete this._materials[material.getId()];
+        if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.MATERIAL_DELETED, {
             material: material,
             undoRedoAction: undoRedoAction,
@@ -60,7 +65,7 @@ class MaterialsHandler {
                 continue;
             }
             for(let params of materials[materialType]) {
-                this.addMaterial(materialType, params, true);
+                this.addNewMaterial(materialType, params, true, true);
             }
         }
     }
@@ -77,12 +82,17 @@ class MaterialsHandler {
         return this._materials[materialId];
     }
 
+    getSessionMaterial(id) {
+        return this._sessionMaterials[id];
+    }
+
     getType(materialId) {
         return this._materials[materialId].getMaterialType();
     }
 
     reset() {
         this._materials = {};
+        this._sessionMaterials = {};
     }
 
     getMaterialsAssetIds() {
