@@ -51,19 +51,7 @@ class LibraryHandler {
                 }
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('blob').then((blob)=>{
-                    return blobToHash(blob).then((hash) => {
-                        if(hash in this._blobHashMap) {
-                            console.warn("Unreachable statement reached...");
-                            return;
-                        }
-                        this._blobHashMap[hash] = assetId;
-                        this.library[assetId] = {
-                            'Blob': blob,
-                            'Name': assetDetails['Name'],
-                            'Type': assetDetails['Type'],
-                        }
-                        return this._loadMesh(assetId, blob);
-                    });
+                    return this.loadLibraryAsset(assetId, assetDetails, blob);
                 });
                 loadPromises.push(promise);
             }
@@ -75,6 +63,22 @@ class LibraryHandler {
             console.error(error);
             if(errorCallback) errorCallback();
         }
+    }
+
+    loadLibraryAsset(assetId, assetDetails, blob) {
+        return blobToHash(blob).then((hash) => {
+            if(hash in this._blobHashMap) {
+                console.warn("Unreachable statement reached...");
+                return;
+            }
+            this._blobHashMap[hash] = assetId;
+            this.library[assetId] = {
+                'Blob': blob,
+                'Name': assetDetails['Name'],
+                'Type': assetDetails['Type'],
+            }
+            return this._loadMesh(assetId, blob, true);
+        });
     }
 
     loadAsset(filepath, callback) {
@@ -120,27 +124,28 @@ class LibraryHandler {
         }
     }
 
-    _loadMesh(assetId, blob) {
+    _loadMesh(assetId, blob, ignorePublish) {
         if(this.library[assetId]['Type'] == AssetTypes.MODEL) {
-            return this._loadGLB(assetId, blob);
+            return this._loadGLB(assetId, blob, ignorePublish);
         } else if(this.library[assetId]['Type'] == AssetTypes.IMAGE) {
-            return this._loadImage(assetId, blob);
+            return this._loadImage(assetId, blob, ignorePublish);
         }
     }
 
-    _loadGLB(assetId, blob) {
+    _loadGLB(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
-                PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                if(!ignorePublish)
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                 resolve();
             });
         });
     }
 
-    _loadImage(assetId, blob) {
+    _loadImage(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
             new THREE.TextureLoader().load(objectURL,
@@ -162,7 +167,10 @@ class LibraryHandler {
                     });
                     let mesh = new THREE.Mesh( geometry, material );
                     this.library[assetId]['Mesh'] = mesh;
-                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                    if(!ignorePublish) {
+                        PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                            assetId);
+                    }
                     resolve();
                 }
             );

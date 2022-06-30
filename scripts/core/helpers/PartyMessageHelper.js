@@ -7,32 +7,45 @@
 import global from '/scripts/core/global.js';
 import PeerController from '/scripts/core/assets/PeerController.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
-import { uuidv4, capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, capitalizeFirstLetter, Queue } from '/scripts/core/helpers/utils.module.js';
 
+const SIXTEEN_KB = 1024 * 16;
+const BLOCKABLE_HANDLERS_MAP = {
+    instance_added: '_handleInstanceAdded',
+    instance_deleted: '_handleInstanceDeleted',
+    instance_updated: '_handleInstanceUpdated',
+    material_added: '_handleMaterialAdded',
+    material_deleted: '_handleMaterialDeleted',
+    material_updated: '_handleMaterialUpdated',
+    texture_added: '_handleTextureAdded',
+    texture_deleted: '_handleTextureDeleted',
+    texture_updated: '_handleTextureUpdated',
+};
 
 class PartyMessageHelper {
     constructor() {
         this._id = uuidv4();
+        this._handlingLocks = new Set();
+        this._handleQueue = new Queue();
+        this._publishQueue = new Queue();
     }
 
     init(PartyHandler) {
         this._partyHandler = PartyHandler;
-        this._partyHandler.addMessageHandlers({
+        let handlers = {
             avatar: (p, m) => { this._handleAvatar(p, m); },
-            instance_added: (p, m) => { this._handleInstanceAdded(p, m); },
-            instance_deleted: (p, m) => { this._handleInstanceDeleted(p, m); },
-            instance_updated: (p, m) => { this._handleInstanceUpdated(p, m); },
-            material_added: (p, m) => { this._handleMaterialAdded(p, m); },
-            material_deleted: (p, m) => { this._handleMaterialDeleted(p, m); },
-            material_updated: (p, m) => { this._handleMaterialUpdated(p, m); },
-            texture_added: (p, m) => { this._handleTextureAdded(p, m); },
-            texture_deleted: (p, m) => { this._handleTextureDeleted(p, m); },
-            texture_updated: (p, m) => { this._handleTextureUpdated(p, m); },
-        });
+            asset_added: (p, m) => { this._handleAssetAdded(p, m); },
+        };
+        for(let topic in BLOCKABLE_HANDLERS_MAP) {
+            let handler = BLOCKABLE_HANDLERS_MAP[topic];
+            handlers[topic] = (p, m) => { this._handleBlockable(handler,p,m); };
+        }
+        this._partyHandler.addMessageHandlers(handlers);
     }
 
     _handleAvatar(peer, message) {
@@ -42,6 +55,43 @@ class PartyMessageHelper {
             peer.controller = new PeerController({ URL: message.url });
             peer.controller.addToScene(global.scene);
         }
+    }
+
+    _handleAssetAdded(peer, message) {
+        let lock = uuidv4();
+        this._handlingLocks.add(lock);
+        let partsLength = message.parts;
+        let assetId = message.assetId;
+        let name = message.name;
+        let type = message.type;
+        let parts = [];
+        this._partyHandler.setEventBufferHandler(peer, (peer, message) => {
+            parts.push(message);
+            if(parts.length == partsLength) {
+                this._partyHandler.setEventBufferHandler(peer);
+                let blob = new Blob(parts);
+                let assetDetails = {
+                    Name: name,
+                    Type: type,
+                };
+                LibraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
+                    .then(() => {
+                        PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                            assetId);
+                        this._removeHandlingLock(lock);
+                    });
+            }
+        });
+    }
+
+    _handleBlockable(handler, peer, message) {
+        if(this._handlingLocks.size > 0) {
+            this._handleQueue.enqueue(() => {
+                this[handler](peer, message)
+            });
+            return;
+        }
+        this[handler](peer, message);
     }
 
     _handleInstanceAdded(peer, message) {
@@ -158,55 +208,95 @@ class PartyMessageHelper {
         PubSub.publish(this._id, topic, message);
     }
 
+    _removeHandlingLock(lock) {
+        this._handlingLocks.delete(lock);
+        while(this._handleQueue.length > 0 && this._handlingLocks.size == 0) {
+            this._handleQueue.dequeue()();
+        }
+    }
+
+    _publishAssetAdded(assetId) {
+        return new Promise((resolve) => {
+            let libraryDetails = LibraryHandler.getLibrary()[assetId];
+            let blob = libraryDetails['Blob'];
+            blob.arrayBuffer().then((buffer) => {
+                let parts = [];
+                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
+                for(let i = 0; i < n; i++) {
+                    let chunkStart = i * SIXTEEN_KB;
+                    let chunkEnd = (i + 1) * SIXTEEN_KB;
+                    parts.push(buffer.slice(chunkStart, chunkEnd));
+                }
+                this._partyHandler.sendToAllPeers(JSON.stringify({
+                    topic: 'asset_added',
+                    assetId: assetId,
+                    name: libraryDetails['Name'],
+                    type: libraryDetails['Type'],
+                    parts: parts.length,
+                }));
+                for(let part of parts) {
+                    this._partyHandler.sendToAllPeers(part);
+                }
+                resolve();
+            });
+        });
+    }
+
     _publishInstanceAdded(instance) {
         let message = {
-            topic: "instance_added",
+            topic: 'instance_added',
             instance: instance.exportParams(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
     }
 
     _publishInstanceDeleted(instance) {
         let message = {
-            topic: "instance_deleted",
+            topic: 'instance_deleted',
             id: instance.getId(),
             assetId: instance.getAssetId(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
     }
 
     _publishMaterialAdded(material) {
         let message = {
-            topic: "material_added",
+            topic: 'material_added',
             material: material.exportParams(),
             type: material.getMaterialType(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
     }
 
     _publishMaterialDeleted(material) {
         let message = {
-            topic: "material_deleted",
+            topic: 'material_deleted',
             id: material.getId(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
     }
 
     _publishTextureAdded(texture) {
         let message = {
-            topic: "texture_added",
+            topic: 'texture_added',
             texture: texture.exportParams(),
             type: texture.getTextureType(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
     }
 
     _publishTextureDeleted(texture) {
         let message = {
-            topic: "texture_deleted",
+            topic: 'texture_deleted',
             id: texture.getId(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
     }
 
     _publishAssetUpdate(updateMessage, type) {
@@ -220,39 +310,64 @@ class PartyMessageHelper {
         peerMessage[type] = asset;
         this._partyHandler.sendToAllPeers(
             JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
+        return Promise.resolve();
     }
 
     addSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetAdded(assetId);
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
-            this._publishInstanceAdded(instance);
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceAdded(instance);
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (message) => {
-            this._publishInstanceDeleted(message.instance);
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceDeleted(message.instance);
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "instance");
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "instance");
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (material) => {
-            this._publishMaterialAdded(material);
+            this._publishQueue.enqueue(() => {
+                return this._publishMaterialAdded(material);
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (message) => {
-            this._publishMaterialDeleted(message.material);
+            this._publishQueue.enqueue(() => {
+                return this._publishMaterialDeleted(message.material);
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "material");
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "material");
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_ADDED, (texture) => {
-            this._publishTextureAdded(texture);
+            this._publishQueue.enqueue(() => {
+                return this._publishTextureAdded(texture);
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (message) => {
-            this._publishTextureDeleted(message.texture);
+            this._publishQueue.enqueue(() => {
+                return this._publishTextureDeleted(message.texture);
+            });
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
-            this._publishAssetUpdate(message, "texture");
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "texture");
+            });
         });
     }
 
     removeSubscriptions() {
+        PubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
@@ -262,6 +377,12 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
+    }
+
+    update() {
+        if(this._isPublishing || this._publishQueue.length == 0) return;
+        this._isPublishing = true;
+        this._publishQueue.dequeue()().then(() => this._isPublishing = false);
     }
 }
 

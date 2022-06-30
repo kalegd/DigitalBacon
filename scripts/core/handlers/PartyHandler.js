@@ -73,8 +73,8 @@ class PartyHandler {
     }
 
     _handleArrayBuffer(peer, message) {
-        if(this._handleEventArrayBuffer) {
-            this._handleEventArrayBuffer(peer, message);
+        if(peer.handleEventArrayBuffer) {
+            peer.handleEventArrayBuffer(peer, message);
             return;
         }
         peer.jitterBuffer.enqueue(message);
@@ -133,10 +133,10 @@ class PartyHandler {
     _handleProject(peer, message) {
         let partsLength = message.parts;
         let parts = [];
-        this._handleEventArrayBuffer = (peer, message) => {
+        peer.handleEventArrayBuffer = (peer, message) => {
             parts.push(message);
             if(parts.length == partsLength) {
-                this._handleEventArrayBuffer = null;
+                peer.handleEventArrayBuffer = null;
                 let buffer = concatenateArrayBuffers(parts);
                 let zip = new JSZip();
                 zip.loadAsync(buffer).then((zip) => {
@@ -175,6 +175,10 @@ class PartyHandler {
         }
     }
 
+    setEventBufferHandler(peer, handler) {
+        peer.handleEventArrayBuffer = handler;
+    }
+
     update(timeDelta) {
         if(!this._partyActive) return;
         let timestamp = new Date().getTime() % TWO_BYTE_MOD;
@@ -190,6 +194,7 @@ class PartyHandler {
             }
             if(peer.rtc) peer.rtc.sendData(buffer);
         }
+        PartyMessageHelper.update();
     }
 }
 
