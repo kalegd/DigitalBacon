@@ -8,8 +8,10 @@ import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -136,9 +138,25 @@ class SkyboxPage extends MenuPage {
         }
     }
 
+    _addSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+            this._setTextures();
+        });
+    }
+
+    _removeSubscriptions() {
+        PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
+    }
+
     addToScene(scene, parentInteractable) {
         super.addToScene(scene, parentInteractable);
         this._setTextures();
+        this._addSubscriptions();
+    }
+
+    removeFromScene() {
+        super.removeFromScene();
+        this._removeSubscriptions();
     }
 
 }

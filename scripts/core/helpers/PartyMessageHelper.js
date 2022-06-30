@@ -11,6 +11,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { uuidv4, capitalizeFirstLetter, Queue } from '/scripts/core/helpers/utils.module.js';
 
@@ -22,6 +23,7 @@ const BLOCKABLE_HANDLERS_MAP = {
     material_added: '_handleMaterialAdded',
     material_deleted: '_handleMaterialDeleted',
     material_updated: '_handleMaterialUpdated',
+    settings_updated: '_handleSettingsUpdated',
     texture_added: '_handleTextureAdded',
     texture_deleted: '_handleTextureDeleted',
     texture_updated: '_handleTextureUpdated',
@@ -159,6 +161,26 @@ class PartyMessageHelper {
         }
     }
 
+    _handleSettingsUpdated(peer, message) {
+        let settings = message.settings;
+        for(let setting in settings) {
+            let handler;
+            if(setting == 'User Settings') {
+                handler = 'setUserSetting';
+            } else if(setting == 'Skybox') {
+                handler = 'setSkyboxSide';
+            } else {
+                console.error("Unknown setting updated: " + setting);
+                return;
+            }
+            for(let key in settings[setting]) {
+                SettingsHandler[handler](key, settings[setting][key], true);
+            }
+        }
+        PubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED,
+            { settings: settings });
+    }
+
     _handleTextureAdded(peer, message) {
         let texture = TexturesHandler.getSessionTexture(message.texture.id);
         if(texture) {
@@ -280,6 +302,19 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishSettingsUpdate(updateMessage) {
+        let settings = updateMessage.settings;
+        let keys = updateMessage.keys;
+        let peerMessage = {
+            topic: 'settings_updated',
+            settings: {},
+        };
+        peerMessage.settings[keys[0]] = {};
+        peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
+        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+        return Promise.resolve();
+    }
+
     _publishTextureAdded(texture) {
         let message = {
             topic: 'texture_added',
@@ -349,6 +384,11 @@ class PartyMessageHelper {
                 return this._publishAssetUpdate(message, "material");
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishSettingsUpdate(message);
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_ADDED, (texture) => {
             this._publishQueue.enqueue(() => {
                 return this._publishTextureAdded(texture);
@@ -374,6 +414,7 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);

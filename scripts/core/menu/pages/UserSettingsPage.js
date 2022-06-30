@@ -4,6 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -31,9 +33,10 @@ class UserSettingsPage extends DynamicFieldsPage {
         fields.push(new NumberInput({
             'title': 'Movement Speed',
             'minValue': 0,
+            'maxValue': 1000,
             'initialValue': 4,
-            'onUpdate': (value) => {
-                SettingsHandler.setUserSetting('Movement Speed', value);
+            'onBlur': (oldValue, newValue) => {
+                SettingsHandler.setUserSetting('Movement Speed', newValue);
             },
             'getFromSource': () => {
                 return SettingsHandler.getUserSettings()['Movement Speed'];
@@ -52,7 +55,20 @@ class UserSettingsPage extends DynamicFieldsPage {
         this._setFields(fields);
     }
 
+    _addSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+            for(let field of this._fields) {
+                field.updateFromSource();
+            }
+        });
+    }
+
+    _removeSubscriptions() {
+        PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
+    }
+
     addToScene(scene, parentInteractable) {
+        this._addSubscriptions();
         for(let field of this._fields) {
             field.updateFromSource();
         }
@@ -60,6 +76,7 @@ class UserSettingsPage extends DynamicFieldsPage {
     }
 
     removeFromScene() {
+        this._removeSubscriptions();
         super.removeFromScene();
     }
 

@@ -7,7 +7,9 @@
 import global from '/scripts/core/global.js';
 import Skybox from '/scripts/core/assets/Skybox.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
 
 class SettingsHandler {
@@ -73,10 +75,15 @@ class SettingsHandler {
         return textures;
     }
 
-    setSkyboxSide(side, assetId) {
+    setSkyboxSide(side, assetId, ignorePublish) {
         //Should validate image size is square before setting Skybox side
         this.settings['Skybox'][side] = assetId;
         Skybox.setSide(side, assetId);
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['Skybox', side],
+            });
     }
 
     getEditorSettings() {
@@ -91,9 +98,15 @@ class SettingsHandler {
         return this.settings['User Settings'];
     }
 
-    setUserSetting(key, value) {
-        if(key in this.settings['User Settings'])
-            this.settings['User Settings'][key] = value;
+    setUserSetting(key, value, ignorePublish) {
+        if(!(key in this.settings['User Settings'])) return;
+
+        this.settings['User Settings'][key] = value;
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['User Settings', key],
+            });
     }
 
     getMovementSpeed() {

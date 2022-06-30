@@ -32,9 +32,10 @@ class EditorSettingsPage extends DynamicFieldsPage {
         fields.push(new NumberInput({
             'title': 'Movement Speed',
             'minValue': 0,
+            'maxValue': 1000,
             'initialValue': 4,
-            'onUpdate': (value) => {
-                SettingsHandler.setEditorSetting('Movement Speed', value);
+            'onBlur': (oldValue, newValue) => {
+                SettingsHandler.setEditorSetting('Movement Speed', newValue);
             },
             'getFromSource': () => {
                 return SettingsHandler.getEditorSettings()['Movement Speed'];
