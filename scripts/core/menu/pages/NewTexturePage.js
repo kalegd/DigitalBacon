@@ -40,7 +40,7 @@ class NewTexturePage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let texture = TexturesHandler.addTexture(item.textureType);
+        let texture = TexturesHandler.addNewTexture(item.textureType);
         this.back();
         if(this._additionalAction) this._additionalAction(texture);
     }

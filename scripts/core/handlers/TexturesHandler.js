@@ -14,37 +14,43 @@ class TexturesHandler {
     constructor() {
         this._textures = {};
         this._textureClassMap = {};
+        this._sessionTextures = {};
     }
 
-    addTexture(type, params, ignoreUndoRedo) {
+    addNewTexture(type, params, ignoreUndoRedo, ignorePublish) {
         let texture = new this._textureClassMap[type](params);
-        this._addTexture(texture, ignoreUndoRedo);
+        this.addTexture(texture, ignoreUndoRedo, ignorePublish);
         return texture;
     }
 
-    _addTexture(texture, ignoreUndoRedo) {
+    addTexture(texture, ignoreUndoRedo, ignorePublish) {
+        if(this._textures[texture.getId()]) return;
         this._textures[texture.getId()] = texture;
+        this._sessionTextures[texture.getId()] = texture;
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this.deleteTexture(texture, true);
+                this.deleteTexture(texture, true, ignorePublish);
             }, () => {
-                this._addTexture(texture, true);
+                this.addTexture(texture, true, ignorePublish);
             });
         }
-        PubSub.publish(this._id, PubSubTopics.TEXTURE_ADDED, texture);
+        if(!ignorePublish)
+            PubSub.publish(this._id, PubSubTopics.TEXTURE_ADDED, texture);
     }
 
-    deleteTexture(texture, ignoreUndoRedo) {
+    deleteTexture(texture, ignoreUndoRedo, ignorePublish) {
+        if(!(texture.getId() in this._textures)) return;
         let undoRedoAction;
         if(!ignoreUndoRedo) {
             undoRedoAction = UndoRedoHandler.addAction(() => {
-                this._addTexture(texture, true);
+                this.addTexture(texture, true, ignorePublish);
             }, () => {
-                this.deleteTexture(texture, true);
+                this.deleteTexture(texture, true, ignorePublish);
             });
         }
         texture.dispose();
         delete this._textures[texture.getId()];
+        if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.TEXTURE_DELETED, {
             texture: texture,
             undoRedoAction: undoRedoAction,
@@ -59,7 +65,7 @@ class TexturesHandler {
                 continue;
             }
             for(let params of textures[textureType]) {
-                this.addTexture(textureType, params, true);
+                this.addNewTexture(textureType, params, true, true);
             }
         }
     }
@@ -76,6 +82,10 @@ class TexturesHandler {
         return this._textures[textureId];
     }
 
+    getSessionTexture(id) {
+        return this._sessionTextures[id];
+    }
+
     getTextureName(textureId) {
         if(textureId in this._textures)
             return this._textures[textureId].getName();
@@ -88,6 +98,7 @@ class TexturesHandler {
 
     reset() {
         this._textures = {};
+        this._sessionTextures = {};
     }
 
     getTexturesAssetIds() {

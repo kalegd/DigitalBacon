@@ -29,6 +29,8 @@ class PartyMessageHelper {
             material_added: (p, m) => { this._handleMaterialAdded(p, m); },
             material_deleted: (p, m) => { this._handleMaterialDeleted(p, m); },
             material_updated: (p, m) => { this._handleMaterialUpdated(p, m); },
+            texture_added: (p, m) => { this._handleTextureAdded(p, m); },
+            texture_deleted: (p, m) => { this._handleTextureDeleted(p, m); },
             texture_updated: (p, m) => { this._handleTextureUpdated(p, m); },
         });
     }
@@ -53,17 +55,6 @@ class PartyMessageHelper {
         PubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
     }
 
-    _handleMaterialAdded(peer, message) {
-        let material = MaterialsHandler.getSessionMaterial(message.material.id);
-        if(material) {
-            MaterialsHandler.addMaterial(material, true, true);
-        } else {
-            material = MaterialsHandler.addNewMaterial(message.type,
-                        message.material, true, true);
-        }
-        PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
-    }
-
     _handleInstanceDeleted(peer, peerMessage) {
         let assets = ProjectHandler.getInstancesForAssetId(peerMessage.assetId);
         let instance = assets[peerMessage.id];
@@ -77,6 +68,26 @@ class PartyMessageHelper {
         }
     }
 
+    _handleInstanceUpdated(peer, message) {
+        let params = message.instance;
+        let instance = ProjectHandler.getSessionInstance(params.id);
+        if(instance) {
+            this._handleAssetUpdate(instance, params,
+                PubSubTopics.INSTANCE_UPDATED);
+        }
+    }
+
+    _handleMaterialAdded(peer, message) {
+        let material = MaterialsHandler.getSessionMaterial(message.material.id);
+        if(material) {
+            MaterialsHandler.addMaterial(material, true, true);
+        } else {
+            material = MaterialsHandler.addNewMaterial(message.type,
+                        message.material, true, true);
+        }
+        PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
+    }
+
     _handleMaterialDeleted(peer, peerMessage) {
         let material = MaterialsHandler.getMaterial(peerMessage.id);
         if(material) {
@@ -86,6 +97,47 @@ class PartyMessageHelper {
             PubSub.publish(this._id, topic, message, true);
         } else {
             console.error("Material to delete does not exist");
+        }
+    }
+
+    _handleMaterialUpdated(peer, message) {
+        let params = message.material;
+        let material = MaterialsHandler.getSessionMaterial(params.id);
+        if(material) {
+            this._handleAssetUpdate(material, params,
+                PubSubTopics.MATERIAL_UPDATED);
+        }
+    }
+
+    _handleTextureAdded(peer, message) {
+        let texture = TexturesHandler.getSessionTexture(message.texture.id);
+        if(texture) {
+            TexturesHandler.addTexture(texture, true, true);
+        } else {
+            texture = TexturesHandler.addNewTexture(message.type,
+                        message.texture, true, true);
+        }
+        PubSub.publish(this._id, PubSubTopics.TEXTURE_ADDED, texture);
+    }
+
+    _handleTextureDeleted(peer, peerMessage) {
+        let texture = TexturesHandler.getTexture(peerMessage.id);
+        if(texture) {
+            TexturesHandler.deleteTexture(texture, true, true);
+            let topic = PubSubTopics.TEXTURE_DELETED + ":" + peerMessage.id;
+            let message = { texture: texture };
+            PubSub.publish(this._id, topic, message, true);
+        } else {
+            console.error("Texture to delete does not exist");
+        }
+    }
+
+    _handleTextureUpdated(peer, message) {
+        let params = message.texture;
+        let texture = TexturesHandler.getSessionTexture(params.id);
+        if(texture) {
+            this._handleAssetUpdate(texture, params,
+                PubSubTopics.TEXTURE_UPDATED);
         }
     }
 
@@ -104,33 +156,6 @@ class PartyMessageHelper {
             fields: updatedParams,
         };
         PubSub.publish(this._id, topic, message);
-    }
-
-    _handleInstanceUpdated(peer, message) {
-        let params = message.instance;
-        let instance = ProjectHandler.getSessionInstance(params.id);
-        if(instance) {
-            this._handleAssetUpdate(instance, params,
-                PubSubTopics.INSTANCE_UPDATED);
-        }
-    }
-
-    _handleMaterialUpdated(peer, message) {
-        let params = message.material;
-        let material = MaterialsHandler.getMaterial(params.id);
-        if(material) {
-            this._handleAssetUpdate(material, params,
-                PubSubTopics.MATERIAL_UPDATED);
-        }
-    }
-
-    _handleTextureUpdated(peer, message) {
-        let params = message.texture;
-        let texture = TexturesHandler.getTexture(params.id);
-        if(texture) {
-            this._handleAssetUpdate(texture, params,
-                PubSubTopics.TEXTURE_UPDATED);
-        }
     }
 
     _publishInstanceAdded(instance) {
@@ -167,6 +192,23 @@ class PartyMessageHelper {
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
     }
 
+    _publishTextureAdded(texture) {
+        let message = {
+            topic: "texture_added",
+            texture: texture.exportParams(),
+            type: texture.getTextureType(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+    }
+
+    _publishTextureDeleted(texture) {
+        let message = {
+            topic: "texture_deleted",
+            id: texture.getId(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+    }
+
     _publishAssetUpdate(updateMessage, type) {
         let asset = {};
         asset['id'] = updateMessage.asset.getId();
@@ -199,6 +241,12 @@ class PartyMessageHelper {
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
             this._publishAssetUpdate(message, "material");
         });
+        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_ADDED, (texture) => {
+            this._publishTextureAdded(texture);
+        });
+        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (message) => {
+            this._publishTextureDeleted(message.texture);
+        });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
             this._publishAssetUpdate(message, "texture");
         });
@@ -208,7 +256,11 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
     }
 }

@@ -48,7 +48,8 @@ export default class MaterialHelper extends EditorHelper {
             for(let map of maps) {
                 let capitalizedMap = capitalizeFirstLetter(map);
                 if(this._asset['get' + capitalizedMap]() == e.texture.getId()) {
-                    this._asset['set' + capitalizedMap]();
+                    this._updateParameter(map, null, true);
+                    this.updateMenuField(map);
                     updatedMaps.push(map);
                 }
             }
@@ -57,8 +58,8 @@ export default class MaterialHelper extends EditorHelper {
                 e.undoRedoAction.undo = () => {
                     undo();
                     for(let map of updatedMaps) {
-                        let capitalizedMap = capitalizeFirstLetter(map);
-                        this._asset['set' + capitalizedMap](e.texture.getId());
+                        this._updateParameter(map, e.texture.getId(), true);
+                        this.updateMenuField(map);
                     }
                 }
             }
@@ -69,6 +70,7 @@ export default class MaterialHelper extends EditorHelper {
                 let capitalizedMap = capitalizeFirstLetter(map);
                 if(this._asset['get' + capitalizedMap]() == textureId) {
                     this._asset._setTexture(map, textureId);
+                    this.updateMenuField(map);
                 }
             }
         });

@@ -26,6 +26,7 @@ class MaterialsHandler {
     addMaterial(material, ignoreUndoRedo, ignorePublish) {
         if(this._materials[material.getId()]) return;
         this._materials[material.getId()] = material;
+        this._sessionMaterials[material.getId()] = material;
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.deleteMaterial(material, true, ignorePublish);
