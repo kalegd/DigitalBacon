@@ -42,6 +42,7 @@ class PartyHandler {
         let peer = { id: rtc.getPeerId(), jitterBuffer: new Queue() };
         this._peers[peer.id] = peer;
         rtc.setOnSendDataChannelOpen(() => {
+            if(this._successCallback) this._successCallback();
             peer.rtc = rtc;
             rtc.sendData(JSON.stringify({
                 "topic": "avatar",
@@ -154,18 +155,20 @@ class PartyHandler {
 
     host(roomId, successCallback, errorCallback) {
         this._isHost = true;
-        this._partyActive = true;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        Party.host(roomId, successCallback, errorCallback);
         PartyMessageHelper.addSubscriptions();
-        Party.host(roomId, () => { this._successCallback(); },
-            () => { this._errorCallback(); });
+        this._partyActive = true;
     }
 
     join(roomId, successCallback, errorCallback) {
         this._isHost = false;
-        this._partyActive = true;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        Party.join(roomId, successCallback, errorCallback);
         PartyMessageHelper.addSubscriptions();
-        Party.join(roomId, () => { this._successCallback(); },
-            () => { this._errorCallback(); });
+        this._partyActive = true;
     }
 
     sendToAllPeers(data) {

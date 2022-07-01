@@ -7,13 +7,13 @@
 import Entity from '/scripts/core/assets/Entity.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
+import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUI from 'three-mesh-ui';
 import { Object3D } from 'three';
 
-const BACKGROUND_OPACITY = 0.5;
+const BACKGROUND_OPACITY = 0.8;
 const FONT_OPACITY = 1;
 const FADE_TIME = 1;
 const SUSTAIN_TIME = 3;
@@ -48,7 +48,7 @@ class NotificationHub extends Entity {
         this._textComponent = new ThreeMeshUI.Text({
             content: 'Notificaton Placeholder',
             fontColor: Colors.white,
-            fontSize: 0.025,
+            fontSize: FontSizes.body,
             fontOpacity: FONT_OPACITY,
             offset: 0,
         });

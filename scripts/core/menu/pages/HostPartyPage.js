@@ -6,8 +6,10 @@
 
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
+import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
@@ -29,7 +31,7 @@ class HostPartyPage extends MenuPage {
         });
         this._container.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
+        this._contentBlock = new ThreeMeshUI.Block({
             'height': 0.2,
             'width': 0.45,
             'contentDirection': 'column',
@@ -42,7 +44,7 @@ class HostPartyPage extends MenuPage {
             'text': 'Party Name',
             'onEnter': () => { this._hostParty(); },
         });
-        this._textField.addToScene(columnBlock,
+        this._textField.addToScene(this._contentBlock,
             this._containerInteractable);
         let button = ThreeMeshUIHelper.createButtonBlock({
             'text': "Submit",
@@ -51,26 +53,70 @@ class HostPartyPage extends MenuPage {
             'width': 0.2,
             'margin': 0.002,
         });
-        columnBlock.add(button);
+        this._contentBlock.add(button);
         let interactable = new PointerInteractable(button, () => {
             this._hostParty();
         });
         this._containerInteractable.addChild(interactable);
-        this._container.add(columnBlock);
+        this._container.add(this._contentBlock);
+
+        this._connectingBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Connecting...',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
     }
 
     _hostParty() {
-        console.log("TODO: Validate fields and then host party");
-        PartyHandler.host("testRoomId", () => { this._successCallback(); },
-            () => { this._errorCallback(); });
+        let roomId = this._textField.content;
+        if(roomId.length == 0) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Missing Party Name',
+            });
+            return;
+        }
+        this._container.remove(this._contentBlock);
+        this._container.add(this._connectingBlock);
+        this._pointerInteractable.removeChild(this._containerInteractable);
+        this._isConnecting = true;
+        PartyHandler.host(roomId, () => { this._successCallback(); },
+            (m) => { this._errorCallback(m); });
     }
 
     _successCallback() {
-        console.log("TODO: Handle success callback");
+        if(!this._isConnecting) return;
+        this._isConnecting = false;
+        this._pointerInteractable.addChild(this._containerInteractable);
+        this._container.remove(this._connectingBlock);
+        this._container.add(this._contentBlock);
+        this._container.update(false, false, true);
+        if(this._object.parent) this._controller.back();
     }
 
-    _errorCallback() {
-        console.log("TODO: Handle error callback");
+    _errorCallback(message) {
+        this._isConnecting = false;
+        let topic = message.topic;
+        if(topic == '409-room') {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Party Name Already Taken',
+            });
+        } else if(topic == 'error') {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Unexpected Error',
+            });
+        } else {
+            console.error('Unexpected error message topic: ' + topic);
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Unexpected Error',
+            });
+        }
+        this._pointerInteractable.addChild(this._containerInteractable);
+        this._container.remove(this._connectingBlock);
+        this._container.add(this._contentBlock);
+        this._container.update(false, false, true);
     }
 
 }

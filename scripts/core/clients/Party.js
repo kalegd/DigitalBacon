@@ -104,12 +104,18 @@ class Party {
             this._peers[message.from].handleCandidate(message);
         } else if(topic == "description") {
             this._peers[message.from].handleDescription(message);
+        } else if(topic == "hosting") {
+            if(this._successCallback) this._successCallback();
+        } else {
+            if(this._errorCallback) this._errorCallback(message);
         }
     }
 
     _onSocketError(e) {
         console.log("TODO: _onSocketError()");
         console.log(e);
+        this.disconnect();
+        if(this._errorCallback) this._errorCallback(e);
     }
 
     _setupRTCPeer(message) {
