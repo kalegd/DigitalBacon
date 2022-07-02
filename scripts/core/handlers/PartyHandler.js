@@ -46,6 +46,7 @@ class PartyHandler {
         rtc.setOnSendDataChannelOpen(() => {
             if(this._successCallback) this._successCallback();
             peer.rtc = rtc;
+            PartyMessageHelper.handlePeerConnected(peer);
             rtc.sendData(JSON.stringify({
                 "topic": "avatar",
                 "url": UserController.getAvatarUrl(),
@@ -73,7 +74,6 @@ class PartyHandler {
                 this._handleArrayBuffer(peer, message);
             }
         });
-        PartyMessageHelper.handlePeerConnected(peer);
     }
 
     _handleJSON(peer, message) {
@@ -175,6 +175,10 @@ class PartyHandler {
             topic: 'username',
             username: username,
         }));
+    }
+
+    isHost() {
+        return this._isHost;
     }
 
     isPartyActive() {

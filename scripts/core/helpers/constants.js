@@ -10,7 +10,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'hamburger', 'image', 'lightbulb', 'material', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global.loadingLocks.add(blackPixelLock);
@@ -31,6 +31,10 @@ export const Textures = {
         'images/icons/hamburger_icon_white.png',
         function(texture) { global.loadingLocks.delete(locks['hamburger']); },
     ),
+    "headphonesIcon": new THREE.TextureLoader().load(
+        'images/icons/headphones_icon_white.png',
+        function(texture) { global.loadingLocks.delete(locks['headphones']); },
+    ),
     "imageIcon": new THREE.TextureLoader().load(
         'images/icons/image_icon_white.png',
         function(texture) { global.loadingLocks.delete(locks['image']); },
@@ -42,6 +46,10 @@ export const Textures = {
     "materialIcon": new THREE.TextureLoader().load(
         'images/icons/material_icon_white.png',
         function(texture) { global.loadingLocks.delete(locks['material']); },
+    ),
+    "microphoneIcon": new THREE.TextureLoader().load(
+        'images/icons/microphone_icon_white.png',
+        function(texture) { global.loadingLocks.delete(locks['microphone']); },
     ),
     "objectIcon": new THREE.TextureLoader().load(
         'images/icons/object_icon_white.png',
@@ -94,6 +102,8 @@ export const Materials = {
 
 export const Colors = {
     "black": new THREE.Color(0x000000),
+    "green": new THREE.Color(0x00ff00),
+    "red": new THREE.Color(0xff0000),
     "white": new THREE.Color(0xffffff),
     "yellow": new THREE.Color(0xffff00),
     "defaultIdle": new THREE.Color(0x969696),

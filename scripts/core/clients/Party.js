@@ -123,9 +123,9 @@ class Party {
         let peerId = message.peerId;
         let polite = message.polite;
         this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket);
-        this._userAudio.srcObject.getTracks().forEach((track) => {
-            this._peers[peerId].addAudioTrack(track, this._userAudio.srcObject);
-        });
+        let streamClone = this._userAudio.srcObject.clone();
+        this._peers[peerId].addAudioTrack(streamClone.getAudioTracks()[0],
+            streamClone);
         if(this._onSetupPeer) this._onSetupPeer(this._peers[peerId]);
     }
 }
