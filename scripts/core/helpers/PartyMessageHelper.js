@@ -55,7 +55,7 @@ class PartyMessageHelper {
         if(peer.controller) {
             peer.controller.updateAvatar(message.url);
         } else {
-            peer.controller = new PeerController({ URL: message.url });
+            peer.controller = new PeerController(message.url);
             peer.controller.addToScene(global.scene);
         }
     }
@@ -290,6 +290,14 @@ class PartyMessageHelper {
         });
     }
 
+    _publishAvatarUpdated(url) {
+        this._partyHandler.sendToAllPeers(JSON.stringify({
+            "topic": "avatar",
+            "url": url,
+        }));
+        return Promise.resolve();
+    }
+
     _publishInstanceAdded(instance) {
         let message = {
             topic: 'instance_added',
@@ -380,6 +388,11 @@ class PartyMessageHelper {
                 return this._publishAssetAdded(assetId);
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.AVATAR_UPDATED, (url) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAvatarUpdated(url);
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
             this._publishQueue.enqueue(() => {
                 return this._publishInstanceAdded(instance);
@@ -434,6 +447,7 @@ class PartyMessageHelper {
 
     removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.AVATAR_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);

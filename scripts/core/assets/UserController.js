@@ -5,11 +5,13 @@
  */
 
 import global from '/scripts/core/global.js';
-import Hands from '/scripts/core/enums/Hands.js';
 import Avatar from '/scripts/core/assets/Avatar.js';
 import BasicMovement from '/scripts/core/assets/BasicMovement.js';
+import Hands from '/scripts/core/enums/Hands.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserHand from '/scripts/core/assets/UserHand.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
@@ -56,6 +58,7 @@ class UserController {
         localStorage.setItem(AVATAR_KEY, url);
         this._avatarUrl = url;
         if(global.deviceType != "XR") this._avatar.updateSourceUrl(url);
+        PubSub.publish(this._id, PubSubTopics.AVATAR_UPDATED, this._avatarUrl);
     }
 
     getDistanceBetweenHands() {

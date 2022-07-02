@@ -119,6 +119,15 @@ class JoinPartyPage extends MenuPage {
         this._container.update(false, false, true);
     }
 
+    addToScene(scene, interactableParent) {
+        if(this._isConnecting && !PartyHandler.isPartyActive()) {
+            this._pointerInteractable.addChild(this._containerInteractable);
+            this._container.remove(this._connectingBlock);
+            this._container.add(this._contentBlock);
+            this._container.update(false, false, true);
+        }
+        super.addToScene(scene, interactableParent);
+    }
 }
 
 export default JoinPartyPage;
