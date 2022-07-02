@@ -19,6 +19,7 @@ class PartyHandler {
     constructor() {
         this._peers = {};
         this._partyActive = false;
+        this._displayingUsernames = false;
         this._username = generateRandomUsername();
         this._messageHandlers = {
             project: (p, m) => { this._handleProject(p, m); },
@@ -161,12 +162,26 @@ class PartyHandler {
         }
     }
 
+    getDisplayingUsernames() {
+        return this._displayingUsernames;
+    }
+
     getPeers() {
         return this._peers;
     }
 
     getUsername() {
         return this._username;
+    }
+
+    setDisplayingUsernames(displayingUsernames) {
+        if(this._displayingUsernames == displayingUsernames) return;
+        this._displayingUsernames = !this._displayingUsernames;
+        for(let peerId in this._peers) {
+            let controller = this._peers[peerId].controller;
+            if(controller)
+                controller.setDisplayingUsername(this._displayingUsernames);
+        }
     }
 
     setUsername(username) {

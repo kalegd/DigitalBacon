@@ -119,6 +119,8 @@ class JoinPartyPage extends MenuPage {
         this._container.update(false, false, true);
     }
 
+    //TODO: Instead of this, we should just call errorCallback if connecting
+    //      hangs in Party.js
     addToScene(scene, interactableParent) {
         if(this._isConnecting && !PartyHandler.isPartyActive()) {
             this._pointerInteractable.addChild(this._containerInteractable);

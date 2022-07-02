@@ -8,18 +8,22 @@ import global from '/scripts/core/global.js';
 import Avatar from '/scripts/core/assets/Avatar.js';
 import Entity from '/scripts/core/assets/Entity.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
-import { vector3s } from '/scripts/core/helpers/constants.js';
+import { vector3s, Fonts } from '/scripts/core/helpers/constants.js';
+import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
+import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import * as THREE from 'three';
 
 const ERROR_FIX_FRAMES = 30;
 const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
 
 export default class PeerController extends Entity {
-    constructor(avatarUrl) {
+    constructor(avatarUrl, username, displayingUsername) {
         super();
         this._velocity = new THREE.Vector3();
         this._positionError = new THREE.Vector3();
         this._errorFixFrame = ERROR_FIX_FRAMES;
+        this._username = username || '...';
+        this._displayingUsername = displayingUsername;
         this._setup(avatarUrl);
     }
 
@@ -28,6 +32,26 @@ export default class PeerController extends Entity {
             'URL': avatarUrl,
             'Vertical Offset': 1.7,
         });
+        let usernameParams = {
+            'text': this._username, 
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'fontSize': 0.06,
+            'height': 0.04,
+            'width': 0.5,
+            'offset': 0,
+            'margin': 0,
+        };
+        this._usernameBlock = new THREE.Object3D();
+        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        usernameFront.rotateY(Math.PI);
+        this._usernameBlock.position.setY(1.85);
+        this._usernameBlock.add(usernameFront);
+        this._usernameBlock.add(usernameBack);
+        if(this._displayingUsername) {
+            this._object.add(this._usernameBlock);
+        }
     }
 
     _updateAvatarData(float32Array, index) {
@@ -56,6 +80,25 @@ export default class PeerController extends Entity {
 
     updateAvatar(url) {
         this._avatar.updateSourceUrl(url);
+    }
+
+    setDisplayingUsername(displayingUsername) {
+        if(this._displayingUsername == displayingUsername) return;
+        this._displayingUsername = !this._displayingUsername;
+        if(this._displayingUsername) {
+            this._object.add(this._usernameBlock);
+        } else {
+            this._object.remove(this._usernameBlock);
+        }
+    }
+
+    updateUsername(username) {
+        if(this._username == username) return;
+        this._username = username;
+        let shortName = username = stringWithMaxLength(username || '...', 17);
+        this._usernameBlock.children.forEach((block) => {
+            block.children[1].set({ content: shortName });
+        });
     }
 
     addToScene(scene) {

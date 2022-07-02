@@ -55,7 +55,8 @@ class PartyMessageHelper {
         if(peer.controller) {
             peer.controller.updateAvatar(message.url);
         } else {
-            peer.controller = new PeerController(message.url);
+            peer.controller = new PeerController(message.url, peer.username,
+                this._partyHandler.getDisplayingUsernames());
             peer.controller.addToScene(global.scene);
         }
     }
@@ -235,6 +236,7 @@ class PartyMessageHelper {
         let username = message.username;
         if(peer.username == username) return;
         peer.username = username;
+        if(peer.controller) peer.controller.updateUsername(username);
         PubSub.publish(this._id, PubSubTopics.PEER_USERNAME_UPDATED, {
             peer: peer,
         });

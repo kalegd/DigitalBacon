@@ -24,10 +24,11 @@ const pages = [
 ];
 
 const connectedOptions = [
+    { "title": "Display Usernames", "handler": "_handleDisplayUsernames" },
     { "title": "Update Username", "handler": "_handleUpdateUsername" },
-    { "title": "Disconnect", "handler": "_handleDisconnect" },
     { "title": "Mute Myself", "handler": "_handleMuteMyself" },
     { "title": "Mute Friends", "handler": "_handleMuteFriends" },
+    { "title": "Disconnect", "handler": "_handleDisconnect" },
     { "title": "Users", "type": "label" },
 ];
 
@@ -35,6 +36,7 @@ class PartyPage extends DynamicFieldsPage {
     constructor(controller) {
         super(controller);
         this._connected = false;
+        this._displayingUsernames = false;
         this._mutedMyself = false;
         this._mutedPeers = false;
         this._fieldsContainer.set({ justifyContent: 'start' });
@@ -75,6 +77,17 @@ class PartyPage extends DynamicFieldsPage {
         this._setFields(this._disconnectedFields);
     }
 
+    _handleDisplayUsernames() {
+        this._displayingUsernames = !this._displayingUsernames;
+        let block = this._connectedFields[0].getObject();
+        if(this._displayingUsernames) {
+            block.children[1].set({ content: 'Hide Usernames' });
+        } else {
+            block.children[1].set({ content: 'Display Usernames' });
+        }
+        PartyHandler.setDisplayingUsernames(this._displayingUsernames);
+    }
+
     _handleUpdateUsername() {
         let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
         let username = PartyHandler.getUsername();
@@ -101,7 +114,6 @@ class PartyPage extends DynamicFieldsPage {
     }
 
     _handleMuteMyself() {
-        let handler;
         this._mutedMyself = !this._mutedMyself;
         let block = this._connectedFields[2].getObject();
         if(this._mutedMyself) {
@@ -115,7 +127,6 @@ class PartyPage extends DynamicFieldsPage {
     }
 
     _handleMuteFriends() {
-        let handler;
         this._mutedPeers = !this._mutedPeers;
         let block = this._connectedFields[3].getObject();
         if(this._mutedPeers) {
@@ -272,6 +283,7 @@ class TextEntity extends MenuEntity {
             'height': 0.035,
             'width': 0.3,
             'offset': 0,
+            'margin': 0.002,
         });
     }
 
@@ -295,6 +307,7 @@ class PeerEntity extends MenuEntity {
             'justifyContent': 'start',
             'backgroundOpacity': 0,
             'offset': 0,
+            'margin': 0.002,
         });
         this._addContent(username);
     }
