@@ -107,6 +107,7 @@ class Party {
         } else if(topic == "hosting") {
             if(this._successCallback) this._successCallback();
         } else {
+            this.disconnect();
             if(this._errorCallback) this._errorCallback(message);
         }
     }

@@ -17,7 +17,8 @@ class DynamicFieldsPage extends MenuPage {
     constructor(controller) {
         super(controller, false, true);
         this._firstItemIndex = 0;
-        this._lastItemIndex = 0;
+        this._lastItemIndex = -1;
+        this._fields = [];
         this._addPageContent();
     }
 
@@ -84,6 +85,7 @@ class DynamicFieldsPage extends MenuPage {
     }
 
     _setFields(fields) {
+        this._removeCurrentFields();
         this._firstItemIndex = 0;
         this._lastItemIndex = -1;
         this._fields = fields;
@@ -91,6 +93,28 @@ class DynamicFieldsPage extends MenuPage {
 
         for(let field of fields) {
             field.updateFromSource();
+        }
+    }
+
+    _removeField(field) {
+        let index = this._fields.indexOf(field);
+        field.deactivate();
+        field.removeFromScene();
+        this._fields.splice(index, 1);
+        if(index <= this._lastItemIndex) {
+            if(index < this._firstItemIndex) {
+                this._firstItemIndex--;
+            }
+            this._lastItemIndex--;
+            if(this._firstItemIndex == this._fields.length) {
+                this._loadPrevPage();
+            } else {
+                this._removeCurrentFields();
+                this._lastItemIndex = this._firstItemIndex - 1;
+                this._loadNextPage();
+            }
+        } else if(this._fields.length == this._lastItemIndex + 1) {
+            this._updateNavButtons();
         }
     }
 
@@ -165,7 +189,6 @@ class DynamicFieldsPage extends MenuPage {
             this._fields[i].deactivate();
         }
     }
-
 }
 
 export default DynamicFieldsPage;

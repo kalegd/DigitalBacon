@@ -19,6 +19,7 @@ class PartyHandler {
     constructor() {
         this._peers = {};
         this._partyActive = false;
+        this._username = generateRandomUsername();
         this._messageHandlers = {
             project: (p, m) => { this._handleProject(p, m); },
         };
@@ -36,6 +37,7 @@ class PartyHandler {
             if(peer.controller) peer.controller.removeFromScene();
         }
         this._peers = {};
+        PartyMessageHelper.handlePartyEnded();
     }
 
     _registerPeer(rtc) {
@@ -48,6 +50,10 @@ class PartyHandler {
                 "topic": "avatar",
                 "url": UserController.getAvatarUrl(),
             }));
+            rtc.sendData(JSON.stringify({
+                topic: 'username',
+                username: this._username,
+            }));
             if(this._isHost && global.isEditor) {
                 this._sendProject(rtc);
             }
@@ -58,6 +64,7 @@ class PartyHandler {
         rtc.setOnDisconnect(() => {
             if(peer.controller) peer.controller.removeFromScene();
             delete this._peers[peer.id];
+            PartyMessageHelper.handlePeerDisconnected(peer);
         });
         rtc.setOnMessage((message) => {
             if(typeof message == "string") {
@@ -66,6 +73,7 @@ class PartyHandler {
                 this._handleArrayBuffer(peer, message);
             }
         });
+        PartyMessageHelper.handlePeerConnected(peer);
     }
 
     _handleJSON(peer, message) {
@@ -153,6 +161,26 @@ class PartyHandler {
         }
     }
 
+    getPeers() {
+        return this._peers;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    setUsername(username) {
+        this._username = username;
+        this.sendToAllPeers(JSON.stringify({
+            topic: 'username',
+            username: username,
+        }));
+    }
+
+    isPartyActive() {
+        return this._partyActive;
+    }
+
     host(roomId, successCallback, errorCallback) {
         this._isHost = true;
         this._successCallback = successCallback;
@@ -160,6 +188,7 @@ class PartyHandler {
         Party.host(roomId, successCallback, errorCallback);
         PartyMessageHelper.addSubscriptions();
         this._partyActive = true;
+        PartyMessageHelper.handlePartyStarted();
     }
 
     join(roomId, successCallback, errorCallback) {
@@ -169,6 +198,7 @@ class PartyHandler {
         Party.join(roomId, successCallback, errorCallback);
         PartyMessageHelper.addSubscriptions();
         this._partyActive = true;
+        PartyMessageHelper.handlePartyStarted();
     }
 
     sendToAllPeers(data) {
@@ -199,6 +229,11 @@ class PartyHandler {
         }
         PartyMessageHelper.update();
     }
+}
+
+function generateRandomUsername() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
 }
 
 let partyHandler = new PartyHandler();

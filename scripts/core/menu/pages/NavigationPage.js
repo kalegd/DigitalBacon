@@ -17,7 +17,7 @@ const pages = [
     { "title": "Library", "menuPage": MenuPages.LIBRARY },
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
     { "title": "Project File", "menuPage": MenuPages.PROJECT },
-    { "title": "Connect with Peers", "menuPage": MenuPages.HOST_OR_JOIN_PARTY },
+    { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
 ];
 
 class NavigationPage extends MenuPage {
@@ -54,7 +54,7 @@ class NavigationPage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
-                this._controller.setPage(page.menuPage);
+                this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);
         }

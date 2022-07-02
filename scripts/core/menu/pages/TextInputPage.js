@@ -67,6 +67,13 @@ class TextInputPage extends MenuPage {
         this._textField.reset();
     }
 
+    setContentWithInitialValue(title, content, buttonText, action) {
+        this._titleBlock.children[1].set({ content: title });
+        this._button.children[1].set({ content: buttonText });
+        this._action = action;
+        this._textField.setContent(content);
+    }
+
     back() {
         this._textField.deactivate();
         super.back();

@@ -22,7 +22,7 @@ const pages = [
 
 class SettingsPage extends MenuPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
         this._addPageContent();
     }
 

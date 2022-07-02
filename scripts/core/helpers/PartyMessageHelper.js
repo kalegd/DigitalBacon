@@ -42,6 +42,7 @@ class PartyMessageHelper {
         let handlers = {
             avatar: (p, m) => { this._handleAvatar(p, m); },
             asset_added: (p, m) => { this._handleAssetAdded(p, m); },
+            username: (p, m) => { this._handleUsername(p, m); },
         };
         for(let topic in BLOCKABLE_HANDLERS_MAP) {
             let handler = BLOCKABLE_HANDLERS_MAP[topic];
@@ -228,6 +229,31 @@ class PartyMessageHelper {
             fields: updatedParams,
         };
         PubSub.publish(this._id, topic, message);
+    }
+
+    _handleUsername(peer, message) {
+        let username = message.username;
+        if(peer.username == username) return;
+        peer.username = username;
+        PubSub.publish(this._id, PubSubTopics.PEER_USERNAME_UPDATED, {
+            peer: peer,
+        });
+    }
+
+    handlePartyStarted() {
+        PubSub.publish(this._id, PubSubTopics.PARTY_ENDED);
+    }
+
+    handlePartyEnded() {
+        PubSub.publish(this._id, PubSubTopics.PARTY_ENDED);
+    }
+
+    handlePeerConnected(peer) {
+        PubSub.publish(this._id, PubSubTopics.PEER_CONNECTED, { peer: peer });
+    }
+
+    handlePeerDisconnected(peer) {
+        PubSub.publish(this._id, PubSubTopics.PEER_DISCONNECTED,{ peer: peer });
     }
 
     _removeHandlingLock(lock) {

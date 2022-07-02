@@ -28,7 +28,7 @@ const OPTIONS = {
 
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
         this._items = Object.keys(OPTIONS).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
