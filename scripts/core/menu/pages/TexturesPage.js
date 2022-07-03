@@ -95,12 +95,18 @@ class TexturesPage extends PaginatedPage {
             this._refreshItems();
             this._updateItemsGUI();
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
+        PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {

@@ -9,6 +9,7 @@ import PrimitiveAmbientLight from '/scripts/core/assets/PrimitiveAmbientLight.js
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
@@ -72,12 +73,21 @@ class ProjectPage extends PaginatedPage {
     }
 
     _newProject() {
+        if(PartyHandler.isPartyActive() && !PartyHandler.isHost()) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        }
         ProjectHandler.reset();
         let ambientLight = new PrimitiveAmbientLight({
             'visualEdit': false,
         });
         ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
         GoogleDrive.clearActiveFile();
+        if(PartyHandler.isPartyActive() && PartyHandler.isHost()) {
+            PartyHandler.sendProject();
+        }
     }
 
     _localSave() {
@@ -99,6 +109,12 @@ class ProjectPage extends PaginatedPage {
     }
 
     _localLoad() {
+        if(PartyHandler.isPartyActive() && !PartyHandler.isHost()) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        }
         UploadHandler.triggerUpload();
     }
 
@@ -135,7 +151,12 @@ class ProjectPage extends PaginatedPage {
     }
 
     _googleDriveLoad() {
-        if(GoogleDrive.isSignedIn()) {
+        if(PartyHandler.isPartyActive() && !PartyHandler.isHost()) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        } else if(GoogleDrive.isSignedIn()) {
             let instancePage = this._controller.getPage(
                 MenuPages.LOAD_GDRIVE);
             instancePage.loadProjects();
@@ -169,6 +190,9 @@ class ProjectPage extends PaginatedPage {
             ProjectHandler.loadZip(jsZip, () => {
                 PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
                     { text: 'Project Loaded', });
+                if(PartyHandler.isPartyActive() && PartyHandler.isHost()) {
+                    PartyHandler.sendProject();
+                }
             }, () => {
                 this._loadErrorCallback();
             });

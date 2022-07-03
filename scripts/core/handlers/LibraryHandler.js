@@ -206,7 +206,8 @@ class LibraryHandler {
     }
 
     getType(assetId) {
-        return this.library[assetId]['Type'];
+        if(assetId in this.library) return this.library[assetId]['Type'];
+        return null;
     }
 
     getAssetName(assetId) {

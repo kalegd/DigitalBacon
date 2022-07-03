@@ -74,11 +74,19 @@ class TexturePage extends DynamicFieldsPage {
                 this._titleField.setContent(message.asset.getName());
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._removeSubscriptions();
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            this._controller.setPage(MenuPages.NAVIGATION);
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
     back() {

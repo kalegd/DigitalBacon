@@ -125,7 +125,7 @@ export default class AssetHelper extends EditorHelper {
         }
     }
 
-    _updateVisualEdit(isVisualEdit, ignoreUndoRedo, ignorePublish) {
+    updateVisualEdit(isVisualEdit, ignoreUndoRedo, ignorePublish) {
         if(isVisualEdit == this._asset.visualEdit) return;
         this._asset.visualEdit = isVisualEdit;
         if(isVisualEdit) {
@@ -151,10 +151,10 @@ export default class AssetHelper extends EditorHelper {
             this._publish(['visualEdit']);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this._updateVisualEdit(!isVisualEdit, true, ignorePublish);
+                this.updateVisualEdit(!isVisualEdit, true, ignorePublish);
                 this.updateMenuField('visualEdit');
             }, () => {
-                this._updateVisualEdit(isVisualEdit, true, ignorePublish);
+                this.updateVisualEdit(isVisualEdit, true, ignorePublish);
                 this.updateMenuField('visualEdit');
             });
         }
@@ -223,7 +223,7 @@ export default class AssetHelper extends EditorHelper {
                     title: field.name,
                     initialValue: this._asset.visualEdit,
                     getFromSource: () => { return this._asset.visualEdit; },
-                    onUpdate: (v) => { this._updateVisualEdit(v); },
+                    onUpdate: (v) => { this.updateVisualEdit(v); },
                 });
             } else {
                 let input = this._createStandardInput(field);

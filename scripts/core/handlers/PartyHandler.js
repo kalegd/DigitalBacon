@@ -57,7 +57,7 @@ class PartyHandler {
                 username: this._username,
             }));
             if(this._isHost && global.isEditor) {
-                this._sendProject(rtc);
+                this._sendProject([rtc]);
             }
         });
         rtc.setOnSendDataChannelClose(() => {
@@ -116,7 +116,7 @@ class PartyHandler {
         return uint16array[0];
     }
 
-    _sendProject(rtc, parts) {
+    _sendProject(rtcs, parts) {
         if(!parts) {
             let zip = ProjectHandler.exportProject();
             zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
@@ -127,16 +127,16 @@ class PartyHandler {
                     let chunkEnd = (i + 1) * SIXTEEN_KB;
                     parts.push(buffer.slice(chunkStart, chunkEnd));
                 }
-                this._sendProject(rtc, parts);
+                this._sendProject(rtcs, parts);
             });
             return;
         }
-        rtc.sendData(JSON.stringify({
+        rtcs.forEach((rtc) => rtc.sendData(JSON.stringify({
             "topic": "project",
             "parts": parts.length,
-        }));
+        })));
         for(let part of parts) {
-            rtc.sendData(part);
+            rtcs.forEach((rtc) => rtc.sendData(part));
         }
     }
 
@@ -172,6 +172,14 @@ class PartyHandler {
 
     getUsername() {
         return this._username;
+    }
+
+    sendProject() {
+        let rtcs = [];
+        for(let peerId in this._peers) {
+            if(this._peers[peerId].rtc) rtcs.push(this._peers[peerId].rtc);
+        }
+        this._sendProject(rtcs);
     }
 
     setDisplayingUsernames(displayingUsernames) {

@@ -104,10 +104,16 @@ class LightsPage extends PaginatedPage {
                 this._updateItemsGUI();
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {

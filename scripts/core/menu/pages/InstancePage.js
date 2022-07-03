@@ -80,12 +80,20 @@ class InstancePage extends DynamicFieldsPage {
                 this._unfocusFields();
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._removeSubscriptions();
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            this._controller.setPage(MenuPages.NAVIGATION);
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
+        PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
     back() {

@@ -131,12 +131,18 @@ class AssetPage extends PaginatedPage {
                 this._updateItemsGUI();
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._controller.back();
+            this._controller.back();
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
+        PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {

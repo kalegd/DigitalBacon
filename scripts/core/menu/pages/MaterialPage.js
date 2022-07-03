@@ -74,11 +74,19 @@ class MaterialPage extends DynamicFieldsPage {
                 this._titleField.setContent(message.asset.getName());
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._removeSubscriptions();
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            this._controller.setPage(MenuPages.NAVIGATION);
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
     back() {

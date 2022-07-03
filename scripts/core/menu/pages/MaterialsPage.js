@@ -95,12 +95,18 @@ class MaterialsPage extends PaginatedPage {
             this._refreshItems();
             this._updateItemsGUI();
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
+        PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {

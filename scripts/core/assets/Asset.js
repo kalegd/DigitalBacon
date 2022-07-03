@@ -138,6 +138,10 @@ export default class Asset extends Entity {
         return this._object.scale.toArray();
     }
 
+    getVisualEdit() {
+        return this.visualEdit;
+    }
+
     setPosition(position) {
         this._object.position.fromArray(position);
     }
@@ -148,6 +152,14 @@ export default class Asset extends Entity {
 
     setScale(scale) {
         this._object.scale.fromArray(scale);
+    }
+
+    setVisualEdit(visualEdit) {
+        if(this._editorHelper) {
+            this._editorHelper.updateVisualEdit(visualEdit, true, true);
+        } else {
+            this.visualEdit = visualEdit;
+        }
     }
 
     setName(name) {

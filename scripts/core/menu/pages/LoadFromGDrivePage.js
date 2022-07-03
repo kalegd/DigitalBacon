@@ -7,6 +7,7 @@
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
@@ -64,6 +65,9 @@ class LoadFromGDrivePage extends PaginatedPage {
         ProjectHandler.loadZip(jsZip, () => {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
                 { text: 'Project Loaded', });
+            if(PartyHandler.isPartyActive() && PartyHandler.isHost()) {
+                PartyHandler.sendProject();
+            }
         }, () => {
             this._loadErrorCallback();
         });
