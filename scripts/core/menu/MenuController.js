@@ -28,6 +28,7 @@ import NavigationPage from '/scripts/core/menu/pages/NavigationPage.js';
 import NewMaterialPage from '/scripts/core/menu/pages/NewMaterialPage.js';
 import NewTexturePage from '/scripts/core/menu/pages/NewTexturePage.js';
 import PartyPage from '/scripts/core/menu/pages/PartyPage.js';
+import PeerPage from '/scripts/core/menu/pages/PeerPage.js';
 import ProjectPage from '/scripts/core/menu/pages/ProjectPage.js';
 import SettingsPage from '/scripts/core/menu/pages/SettingsPage.js';
 import SkyboxPage from '/scripts/core/menu/pages/SkyboxPage.js';
@@ -67,6 +68,7 @@ export default class MenuController extends PointerInteractableEntity {
         this._pages[MenuPages.NEW_MATERIAL] = new NewMaterialPage(this);
         this._pages[MenuPages.NEW_TEXTURE] = new NewTexturePage(this);
         this._pages[MenuPages.PARTY] = new PartyPage(this);
+        this._pages[MenuPages.PEER] = new PeerPage(this);
         this._pages[MenuPages.PROJECT] = new ProjectPage(this);
         this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
         this._pages[MenuPages.SKYBOX] = new SkyboxPage(this);

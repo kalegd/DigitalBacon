@@ -395,6 +395,12 @@ class PartyMessageHelper {
                 return this._publishAvatarUpdated(url);
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.BECOME_PARTY_HOST, () => {
+            this._partyHandler.setIsHost(true);
+        });
+        PubSub.subscribe(this._id, PubSubTopics.BOOT_PEER, (peerId) => {
+            this._partyHandler.bootPeer(peerId);
+        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
             this._publishQueue.enqueue(() => {
                 return this._publishInstanceAdded(instance);
@@ -450,6 +456,8 @@ class PartyMessageHelper {
     removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.AVATAR_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.BECOME_PARTY_HOST);
+        PubSub.unsubscribe(this._id, PubSubTopics.BOOT_PEER);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);

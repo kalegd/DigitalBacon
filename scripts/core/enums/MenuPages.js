@@ -17,6 +17,7 @@ const MenuPages = {
     NEW_MATERIAL: "NEW_MATERIAL",
     NEW_TEXTURE: "NEW_TEXTURE",
     PARTY: "PARTY",
+    PEER: "PEER",
     PROJECT: "PROJECT",
     SETTINGS: "SETTINGS",
     SKYBOX: "SKYBOX",

@@ -65,8 +65,10 @@ class PartyHandler {
         });
         rtc.setOnDisconnect(() => {
             if(peer.controller) peer.controller.removeFromScene();
-            delete this._peers[peer.id];
-            PartyMessageHelper.handlePeerDisconnected(peer);
+            if(peer.id in this._peers) {
+                delete this._peers[peer.id];
+                PartyMessageHelper.handlePeerDisconnected(peer);
+            }
         });
         rtc.setOnMessage((message) => {
             if(typeof message == "string") {
@@ -162,6 +164,15 @@ class PartyHandler {
         }
     }
 
+    bootPeer(peerId) {
+        let peer = this._peers[peerId];
+        if(peer && peer.rtc) {
+            peer.rtc.close();
+        } else {
+            console.error("Error: couldn't boot peer. Maybe a race condition?");
+        }
+    }
+
     getDisplayingUsernames() {
         return this._displayingUsernames;
     }
@@ -190,6 +201,10 @@ class PartyHandler {
             if(controller)
                 controller.setDisplayingUsername(this._displayingUsernames);
         }
+    }
+
+    setIsHost(isHost) {
+        this._isHost = isHost;
     }
 
     setUsername(username) {

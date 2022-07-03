@@ -83,7 +83,7 @@ export default class RTCPeer {
                 this._hasConnected = true;
                 if(this._polite) this._setupDataChannel();
             } else if(state == "disconnected" || state == "failed") {
-                if(this._onDisconnect) this._onDisconnect(e);
+                if(this._onDisconnect) this._onDisconnect();
             }
         }
     }
@@ -119,7 +119,8 @@ export default class RTCPeer {
     close() {
         this._connection.close();
         this._audio.srcObject = null;
-        document.body.removeChild(this._audio);
+        if(this._audio.parentNode) document.body.removeChild(this._audio);
+        if(this._onDisconnect) this._onDisconnect();
     }
 
     getPeerId() {
@@ -180,10 +181,6 @@ export default class RTCPeer {
             channel.onbufferedamountlow = null;
             this._sendData();
         }
-    }
-
-    close() {
-        this._connection.close();
     }
 
     setOnDisconnect(f) {

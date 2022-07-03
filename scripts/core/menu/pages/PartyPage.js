@@ -146,6 +146,9 @@ class PartyPage extends DynamicFieldsPage {
                 Object.values(this._peerFields)));
             this._connected = true;
         } else {
+            for(let peerId in this._peerFields) {
+                delete this._peerFields[peerId];
+            }
             this._setFields(this._disconnectedFields);
             this._connected = false;
         }
@@ -157,7 +160,8 @@ class PartyPage extends DynamicFieldsPage {
         for(let peerId in peers) {
             if(!(peerId in this._peerFields) && peers[peerId].rtc) {
                 let peer = peers[peerId];
-                this._peerFields[peerId] = new PeerEntity(peer, peer.username);
+                this._peerFields[peerId] = new PeerEntity(peer, peer.username,
+                    this._controller, (peerId) => this._abdicateHost(peerId));
                 if(this._mutedMyself)
                     this._peerFields[peerId].toggleMyselfMuted(true);
                 if(this._mutedPeers)
@@ -170,12 +174,40 @@ class PartyPage extends DynamicFieldsPage {
                 this._peerFields[peerId].removeFromScene();
                 delete this._peerFields[peerId];
                 different = true;
+            } else {
+                this._peerFields[peerId].setUsername(peers[peerId].username);
             }
         }
         return different;
     }
 
+    _abdicateHost(peerId) {
+        for(let peerId in this._peerFields) {
+            this._peerFields[peerId].toggleHost(false);
+        }
+    }
+
+    _handlePeerConnected(message) {
+        if(!this._connected) return;
+        let peer = message.peer;
+        let peerEntity = new PeerEntity(peer, peer.username,
+            this._controller, (peerId) => this._abdicateHost(peerId));
+        if(this._mutedMyself) peerEntity.toggleMyselfMuted(true);
+        if(this._mutedPeers) peerEntity.togglePeerMuted(true);
+        this._peerFields[peer.id] = peerEntity;
+        this._fields.push(peerEntity);
+        if(this._fields.length != this._lastItemIndex + 2) return;
+        this._removeCurrentFields();
+        this._lastItemIndex = this._firstItemIndex - 1;
+        this._loadNextPage();
+    }
+
     _addSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.BECOME_PARTY_HOST, () => {
+            for(let peerId in this._peerFields) {
+                this._peerFields[peerId].toggleHost(true);
+            }
+        });
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             if(!this._connected) this._updateFields();
         });
@@ -183,17 +215,7 @@ class PartyPage extends DynamicFieldsPage {
             if(this._connected) this._updateFields();
         });
         PubSub.subscribe(this._id, PubSubTopics.PEER_CONNECTED, (message) => {
-            if(!this._connected) return;
-            let peer = message.peer;
-            let peerEntity = new PeerEntity(peer);
-            if(this._mutedMyself) peerEntity.toggleMyselfMuted(true);
-            if(this._mutedPeers) peerEntity.togglePeerMuted(true);
-            this._peerFields[peer.id] = peerEntity;
-            this._fields.push(peerEntity);
-            if(this._fields.length != this._lastItemIndex + 2) return;
-            this._removeCurrentFields();
-            this._lastItemIndex = this._firstItemIndex - 1;
-            this._loadNextPage();
+            this._handlePeerConnected(message);
         });
         PubSub.subscribe(this._id, PubSubTopics.PEER_DISCONNECTED, (message) =>{
             if(!this._connected) return;
@@ -218,11 +240,6 @@ class PartyPage extends DynamicFieldsPage {
         PubSub.unsubscribe(this._id, PubSubTopics.PEER_CONNECTED);
         PubSub.unsubscribe(this._id, PubSubTopics.PEER_DISCONNECTED);
         PubSub.unsubscribe(this._id, PubSubTopics.PEER_USERNAME_UPDATED);
-    }
-
-    back() {
-        this._removeSubscriptions();
-        super.back();
     }
 
     addToScene(scene, parentInteractable) {
@@ -293,9 +310,11 @@ class TextEntity extends MenuEntity {
 }
 
 class PeerEntity extends MenuEntity {
-    constructor(peer, username) {
+    constructor(peer, username, controller, designateHostCallback) {
         super();
         this._peer = peer;
+        this._controller = controller;
+        this._designateHostCallback = designateHostCallback;
         this._mutedMyself = false;
         this._mutedPeer = false;
         this._object = new ThreeMeshUI.Block({
@@ -348,7 +367,9 @@ class PeerEntity extends MenuEntity {
     _addInteractables() {
         this._usernameInteractable = new PointerInteractable(
             this._usernameBlock, () => {
-                console.log("TODO: Open page to access host-only options");
+                let peerPage = this._controller.getPage(MenuPages.PEER);
+                peerPage.setContent(this._peer, this._designateHostCallback);
+                this._controller.pushPage(MenuPages.PEER);
             });
         this._muteMyselfInteractable = new PointerInteractable(
             this._muteMyselfButton, () => { this.toggleMyselfMuted(); });

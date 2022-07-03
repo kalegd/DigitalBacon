@@ -6,6 +6,8 @@
 
 import global from '/scripts/core/global.js';
 import RTCPeer from '/scripts/core/clients/RTCPeer.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 const CONSTRAINTS = { audio: true, video: false };
@@ -53,6 +55,20 @@ class Party {
         }
         this._peers = {};
         if(this._onDisconnect) this._onDisconnect();
+    }
+
+    bootPeer(peerId) {
+        this._socket.send(JSON.stringify({
+            topic: "boot-peer",
+            peerId: peerId,
+        }));
+    }
+
+    designateHost(peerId) {
+        this._socket.send(JSON.stringify({
+            topic: "designate-host",
+            peerId: peerId,
+        }));
     }
 
     setOnSetupPeer(f) {
@@ -106,6 +122,21 @@ class Party {
             this._peers[message.from].handleDescription(message);
         } else if(topic == "hosting") {
             if(this._successCallback) this._successCallback();
+        } else if(topic == "designate-host") {
+            PubSub.publish(this._id, PubSubTopics.BECOME_PARTY_HOST);
+        } else if(topic == "boot-peer") {
+            PubSub.publish(this._id, PubSubTopics.BOOT_PEER, message.peerId);
+        } else if(topic == "disconnect") {
+            this.disconnect();
+        } else if(topic == "error" && message.requestTopic == "boot-peer") {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: "Error: Couldn't kick out user",
+            });
+        } else if(topic == "error" && message.requestTopic == "designate-host"){
+            PubSub.publish(this._id, PubSubTopics.BECOME_PARTY_HOST);
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: "Error: Couldn't make user host",
+            });
         } else {
             this.disconnect();
             if(this._errorCallback) this._errorCallback(message);
