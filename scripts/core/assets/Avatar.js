@@ -95,7 +95,7 @@ export default class Avatar {
                     side: THREE.DoubleSide,
                     transparent: true,
                 });
-                let geometry = new THREE.PlaneBufferGeometry(width, height);
+                let geometry = new THREE.PlaneGeometry(width, height);
                 geometry.rotateY(Math.PI);
                 let mesh = new THREE.Mesh(geometry, material);
                 this._pivotPoint.add(mesh);

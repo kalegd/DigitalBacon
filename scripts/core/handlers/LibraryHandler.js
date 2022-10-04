@@ -159,7 +159,7 @@ class LibraryHandler {
                         width *= defaultImageSize / height;
                         height = defaultImageSize;
                     }
-                    let geometry = new THREE.PlaneBufferGeometry(width, height);
+                    let geometry = new THREE.PlaneGeometry(width, height);
                     let material = new THREE.MeshBasicMaterial({
                         map: texture,
                         side: THREE.DoubleSide,

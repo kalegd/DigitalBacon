@@ -40,8 +40,8 @@ export const fullDispose = (object3d, textures) => {
 
             if (node.material) {
 
-                if (node.material instanceof THREE.MeshFaceMaterial || node.material instanceof THREE.MultiMaterial) {
-                    node.material.materials.forEach((mtrl, idx) => {
+                if (Array.isArray(node.material)) {
+                    node.material.forEach((mtrl) => {
                         disposeMaterial(mtrl, textures);
                     });
                 }
