@@ -107,8 +107,7 @@ class Party {
     }
 
     _onSocketClose(e) {
-        console.log("TODO: _onSocketClose()");
-        console.log(e);
+        if(this._socket) this.disconnect();
     }
 
     _onSocketMessage(e) {
@@ -144,8 +143,6 @@ class Party {
     }
 
     _onSocketError(e) {
-        console.log("TODO: _onSocketError()");
-        console.log(e);
         this.disconnect();
         if(this._errorCallback) this._errorCallback(e);
     }

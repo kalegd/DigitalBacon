@@ -9,6 +9,7 @@ import PrimitiveAmbientLight from '/scripts/core/assets/PrimitiveAmbientLight.js
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import DelayedClickEventHandler from '/scripts/core/handlers/DelayedClickEventHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -144,9 +145,7 @@ class ProjectPage extends PaginatedPage {
             );
             this._controller.pushPage(MenuPages.TEXT_INPUT);
         } else {
-            if(global.deviceType == 'XR') SessionHandler.exitXRSession();
-            GoogleDrive.handleAuthButton(
-                () => { this._handleGoogleAuthResponse(); });
+            this._googleDriveSignin();
         }
     }
 
@@ -162,9 +161,17 @@ class ProjectPage extends PaginatedPage {
             instancePage.loadProjects();
             this._controller.pushPage(MenuPages.LOAD_GDRIVE);
         } else {
-            if(global.deviceType == 'XR') SessionHandler.exitXRSession();
+            this._googleDriveSignin();
+        }
+    }
+
+    _googleDriveSignin() {
+        if(global.deviceType == 'XR') {
+            SessionHandler.exitXRSession();
             GoogleDrive.handleAuthButton(
                 () => { this._handleGoogleAuthResponse(); });
+        } else {
+            DelayedClickEventHandler.triggerEvent();
         }
     }
 
@@ -255,6 +262,10 @@ class ProjectPage extends PaginatedPage {
     }
 
     addToScene(scene, parentInteractable) {
+        DelayedClickEventHandler.listenForClick(() => {
+            GoogleDrive.handleAuthButton(
+                () => { this._handleGoogleAuthResponse(); });
+        });
         UploadHandler.listenForProjectFile((file) => {
             this._handleLocalFile(file);
         });
@@ -262,6 +273,7 @@ class ProjectPage extends PaginatedPage {
     }
 
     removeFromScene() {
+        DelayedClickEventHandler.stopListening();
         UploadHandler.stopListening();
         super.removeFromScene();
     }

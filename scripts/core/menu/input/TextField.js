@@ -145,7 +145,7 @@ class TextField extends PointerInteractableEntity {
             global.keyboardLock = true;
         } else if (global.deviceType == "MOBILE") {
             let content = prompt("Enter Value", this.content);
-            if(content) {
+            if(content || content == '') {
                 this.setContent(content);
                 if(this._onBlur) this._onBlur();
                 if(this._onEnter) this._onEnter();
