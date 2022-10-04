@@ -35,13 +35,14 @@ export default class Asset extends Entity {
         this._object.traverse(function (node) {
             if (node instanceof THREE.Mesh) {
                 if (node.material) {
-                    if (node.material instanceof THREE.MeshFaceMaterial || node.material instanceof THREE.MultiMaterial) {
-                        node.material.materials.forEach(function (mtrl, idx) {
+                    if (Array.isArray(node.material)) {
+                        for(let i = 0; i < node.material.length; i++) {
+                            let mtrl = node.material[i];
                             let newMaterial = mtrl.clone();
                             makeMaterialTranslucent(newMaterial);
                             newMaterial.userData['oldMaterial'] = mtrl;
-                            node.material.materials[idx] = newMaterial;
-                        });
+                            node.material[i] = newMaterial;
+                        }
                     }
                     else {
                         let newMaterial = node.material.clone();
@@ -58,12 +59,13 @@ export default class Asset extends Entity {
         this._object.traverse(function (node) {
             if (node instanceof THREE.Mesh) {
                 if (node.material) {
-                    if (node.material instanceof THREE.MeshFaceMaterial || node.material instanceof THREE.MultiMaterial) {
-                        node.material.materials.forEach(function (mtrl, idx) {
-                            node.material.materials[idx] =
+                    if (Array.isArray(node.material)) {
+                        for(let i = 0; i < node.material.length; i++) {
+                            let mtrl = node.material[i];
+                            node.material[i] =
                                 mtrl.userData['oldMaterial'];
                             disposeMaterial(mtrl);
-                        });
+                        }
                     }
                     else {
                         let oldMaterial = node.material;
