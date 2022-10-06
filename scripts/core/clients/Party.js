@@ -11,6 +11,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 const CONSTRAINTS = { audio: true, video: false };
+const NINE_MINUTES = 60000 * 9;
 
 class Party {
     constructor() {
@@ -19,6 +20,7 @@ class Party {
         this._userAudio = createAudioElement();
         this._userAudio.defaultMuted = true;
         this._userAudio.muted = true;
+        this._pingIntervalId = null;
     }
 
     host(roomId, successCallback, errorCallback) {
@@ -48,6 +50,10 @@ class Party {
 
     disconnect() {
         if(this._socket) this._socket.close();
+        if(this._pingIntervalId) {
+            clearInterval(this._pingIntervalId);
+            this._pingIntervalId = null;
+        }
         this._socket = null;
         this._isHost = false;
         for(let peerId in this._peers) {
@@ -104,6 +110,10 @@ class Party {
             roomId: this._roomId,
             isHost: this._isHost,
         }));
+        this._pingIntervalId = setInterval(() => {
+            console.log("Pinging webserver");
+            this._socket.send(JSON.stringify({ topic: "ping" }));
+        }, NINE_MINUTES);
     }
 
     _onSocketClose(e) {
