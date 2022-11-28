@@ -37,6 +37,7 @@ class NotificationHub extends Entity {
         this._container = new ThreeMeshUI.Block({
             height: 0.04,
             width: 0.3,
+            interline: 0.01,
             backgroundColor: Colors.defaultMenuBackground,
             backgroundOpacity: BACKGROUND_OPACITY,
             justifyContent: 'center',
@@ -82,6 +83,8 @@ class NotificationHub extends Entity {
         if(notification.state == NOTIFICATION_STATES.FADE_IN) {
             if(notification.timeInState == 0) {
                 this._container.visible = true;
+                let height = Math.ceil(notification.text.length/20) * 0.02+0.02;
+                this._container.set({ height: height });
                 this._textComponent.set({ content: notification.text });
                 this._object.position.setY(this._notificationHeight);
             }
