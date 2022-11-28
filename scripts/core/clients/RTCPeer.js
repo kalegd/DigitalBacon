@@ -14,12 +14,14 @@ const ICE_SERVER_URLS = [
 ];
 const CONFIGURATION = { iceServers: [{ urls: ICE_SERVER_URLS }] };
 const SIXTY_FOUR_KB = 1024 * 64;
+const TIMEOUT = 20000; //20 Seconds
 
 export default class RTCPeer {
-    constructor(peerId, polite, socket) {
+    constructor(peerId, polite, socket, onTimeout) {
         this._peerId = peerId;
         this._polite = polite;
         this._socket = socket;
+        this._onTimeout = onTimeout;
         this._myAudioTrack;
         this._peerAudioTrack;
         this._connection = new RTCPeerConnection(CONFIGURATION);
@@ -29,6 +31,7 @@ export default class RTCPeer {
         this._isSettingRemoteAnswerPending = false;
         this._hasConnected = false;
         this._dataChannel = null;
+        if(!polite) this._timeoutId = setTimeout(() => this._timeout(),TIMEOUT);
         this._setupConnection();
         this._sendDataQueue = new Queue();
     }
@@ -82,7 +85,9 @@ export default class RTCPeer {
             if(state == "connected" && !this._hasConnected) {
                 this._hasConnected = true;
                 if(this._polite) this._setupDataChannel();
+                if(!this._polite) clearTimeout(this._timeoutId);
             } else if(state == "disconnected" || state == "failed") {
+                if(!this._polite) clearTimeout(this._timeoutId);
                 if(this._onDisconnect) this._onDisconnect();
             }
         }
@@ -101,6 +106,10 @@ export default class RTCPeer {
         this._dataChannel.onmessage = (message) => {
             if(this._onMessage) this._onMessage(message.data);
         }
+    }
+
+    _timeout() {
+        if(this._onTimeout) this._onTimeout();
     }
 
     toggleMyselfMuted(muted) {

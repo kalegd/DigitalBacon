@@ -157,10 +157,15 @@ class Party {
         if(this._errorCallback) this._errorCallback(e);
     }
 
+    _onRTCTimeout() {
+        if(this._socket) this._onSocketError({ topic: "rtc-timeout" });
+    }
+
     _setupRTCPeer(message) {
         let peerId = message.peerId;
         let polite = message.polite;
-        this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket);
+        this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket,
+            () => this._onRTCTimeout());
         let streamClone = this._userAudio.srcObject.clone();
         this._peers[peerId].addAudioTrack(streamClone.getAudioTracks()[0],
             streamClone);

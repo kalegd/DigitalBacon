@@ -103,6 +103,10 @@ class JoinPartyPage extends MenuPage {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Party Name Not Found',
             });
+        } else if(topic == 'rtc-timeout') {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Could not connect to all other users, please try again',
+            });
         } else if(topic == 'error') {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Unexpected Error',
