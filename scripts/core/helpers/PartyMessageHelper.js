@@ -243,7 +243,7 @@ class PartyMessageHelper {
     }
 
     handlePartyStarted() {
-        PubSub.publish(this._id, PubSubTopics.PARTY_ENDED);
+        PubSub.publish(this._id, PubSubTopics.PARTY_STARTED);
     }
 
     handlePartyEnded() {
