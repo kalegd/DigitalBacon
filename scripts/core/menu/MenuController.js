@@ -9,6 +9,8 @@ import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableE
 import UserController from '/scripts/core/assets/UserController.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import NotificationHub from '/scripts/core/menu/NotificationHub.js';
 import AssetPage from '/scripts/core/menu/pages/AssetPage.js';
 import AssetsPage from '/scripts/core/menu/pages/AssetsPage.js';
@@ -116,6 +118,7 @@ export default class MenuController extends PointerInteractableEntity {
         this._pageCalls = [page];
         currentPage = this._getCurrentPage();
         currentPage.addToScene(this._object, this._pointerInteractable);
+        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     pushPage(page) {
@@ -123,6 +126,7 @@ export default class MenuController extends PointerInteractableEntity {
         currentPage.removeFromScene();
         this._pageCalls.push(page);
         this._pages[page].addToScene(this._object, this._pointerInteractable);
+        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     popPage() {
@@ -131,6 +135,7 @@ export default class MenuController extends PointerInteractableEntity {
         this._pageCalls.pop();
         currentPage = this._getCurrentPage();
         currentPage.addToScene(this._object, this._pointerInteractable);
+        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     popPagesPast(page) {
@@ -140,6 +145,7 @@ export default class MenuController extends PointerInteractableEntity {
             poppedPage = this._pageCalls[this._pageCalls.length-1];
             currentPage.back();
         } while(poppedPage != page);
+        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     back() {

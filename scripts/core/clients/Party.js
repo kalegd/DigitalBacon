@@ -111,7 +111,6 @@ class Party {
             isHost: this._isHost,
         }));
         this._pingIntervalId = setInterval(() => {
-            console.log("Pinging webserver");
             this._socket.send(JSON.stringify({ topic: "ping" }));
         }, NINE_MINUTES);
     }

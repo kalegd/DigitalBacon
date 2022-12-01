@@ -52,6 +52,9 @@ class TextField extends PointerInteractableEntity {
         PubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
             if(this._id != message.id) this.deactivate();
         });
+        PubSub.subscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED, () => {
+            this.deactivate();
+        });
         if(global.deviceType == "XR") {
             PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, () => {
                 this.deactivate();
@@ -61,6 +64,7 @@ class TextField extends PointerInteractableEntity {
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED);
+        PubSub.unsubscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED);
         if(global.deviceType == "XR")
             PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
     }

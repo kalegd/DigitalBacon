@@ -17,20 +17,21 @@ const ERROR_FIX_FRAMES = 30;
 const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
 
 export default class PeerController extends Entity {
-    constructor(avatarUrl, username, displayingUsername) {
+    constructor(avatarUrl, username, displayingUsername, isXR) {
         super();
         this._velocity = new THREE.Vector3();
         this._positionError = new THREE.Vector3();
         this._errorFixFrame = ERROR_FIX_FRAMES;
         this._username = username || '...';
         this._displayingUsername = displayingUsername;
+        this._isXR = isXR;
         this._setup(avatarUrl);
     }
 
     _setup(avatarUrl) {
         this._avatar = new Avatar({
             'URL': avatarUrl,
-            'Vertical Offset': 1.7,
+            'Vertical Offset': this._isXR ? 0 : 1.7,
         });
         let usernameParams = {
             'text': this._username, 
@@ -61,10 +62,10 @@ export default class PeerController extends Entity {
         object.rotation.fromArray(rotation);
     }
 
-    _updateVelocity(float32Array, index, isXR, timeDelta) {
+    _updateVelocity(float32Array, index, timeDelta) {
         this._velocity.fromArray(float32Array, index);
         this._object.position.addScaledVector(this._velocity, timeDelta);
-        if(!isXR) {
+        if(!this._isXR) {
             vector3s[0].copy(this._velocity).setY(0);
             if(vector3s[0].length() < 0.001) return;
             vector3s[0].multiplyScalar(-1).add(this._object.position);
@@ -128,13 +129,12 @@ export default class PeerController extends Entity {
         let codes = new Uint8Array(message.slice(2, 3))[0];
         let float32Array = new Float32Array(message.slice(3));
         let index = 0;
-        let isXR = false;
         if(UserMessageCodes.AVATAR & codes) {
             this._updateAvatarData(float32Array, index);
             index += 6;
         }
         if(UserMessageCodes.USER_VELOCITY & codes) {
-            this._updateVelocity(float32Array, index, isXR, timeDelta);
+            this._updateVelocity(float32Array, index, timeDelta);
             index += 3;
         } else {
             this._velocity.set(0, 0, 0);

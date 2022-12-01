@@ -72,12 +72,19 @@ class UserController {
         let codes = 0;
         let data = [];
         if(global.deviceType == "XR") {
+            //TODO: Maybe we can just use the local position of the camera?
             global.camera.getWorldPosition(vector3s[0]);
+            this._userObj.getWorldPosition(vector3s[1]);
+            let position = vector3s[0].sub(vector3s[1]).toArray();
+
             global.camera.getWorldQuaternion(quaternion);
             quaternion.normalize();
             euler.setFromQuaternion(quaternion);
-            data.push(...vector3s[0].toArray());
-            data.push(...euler.toArray());
+            let rotation = euler.toArray();
+            rotation.pop();
+
+            data.push(...position);
+            data.push(...rotation);
             codes += UserMessageCodes.AVATAR;
             //TODO: Push hand data as well
         }

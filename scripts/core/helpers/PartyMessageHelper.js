@@ -56,7 +56,7 @@ class PartyMessageHelper {
             peer.controller.updateAvatar(message.url);
         } else {
             peer.controller = new PeerController(message.url, peer.username,
-                this._partyHandler.getDisplayingUsernames());
+                this._partyHandler.getDisplayingUsernames(), message.isXR);
             peer.controller.addToScene(global.scene);
         }
     }

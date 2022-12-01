@@ -51,6 +51,7 @@ class PartyHandler {
             rtc.sendData(JSON.stringify({
                 "topic": "avatar",
                 "url": UserController.getAvatarUrl(),
+                "isXR": global.deviceType == "XR",
             }));
             rtc.sendData(JSON.stringify({
                 topic: 'username',
