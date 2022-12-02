@@ -7,6 +7,8 @@
 import global from '/scripts/core/global.js';
 import Avatar from '/scripts/core/assets/Avatar.js';
 import Entity from '/scripts/core/assets/Entity.js';
+import PeerHand from '/scripts/core/assets/PeerHand.js';
+import Hands from '/scripts/core/enums/Hands.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import { vector3s, Fonts } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
@@ -33,6 +35,15 @@ export default class PeerController extends Entity {
             'URL': avatarUrl,
             'Vertical Offset': this._isXR ? 0 : 1.7,
         });
+        this._avatar.addToScene(this._object);
+        if(this._isXR) {
+            this.hands = {};
+            for(let hand of [Hands.RIGHT, Hands.LEFT]) {
+                let peerHand = new PeerHand(hand);
+                this.hands[hand] = peerHand;
+                peerHand.addToScene(this._object);
+            }
+        }
         let usernameParams = {
             'text': this._username, 
             'fontFamily': Fonts.defaultFamily,
@@ -60,6 +71,13 @@ export default class PeerController extends Entity {
         object.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
         object.rotation.fromArray(rotation);
+    }
+
+    _updateHandData(float32Array, index, hand) {
+        let peerHand = this.hands[hand].getObject();
+        peerHand.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        peerHand.rotation.fromArray(rotation);
     }
 
     _updateVelocity(float32Array, index, timeDelta) {
@@ -102,16 +120,6 @@ export default class PeerController extends Entity {
         });
     }
 
-    addToScene(scene) {
-        super.addToScene(scene);
-        this._avatar.addToScene(this._object);
-    }
-
-    removeFromScene() {
-        super.removeFromScene();
-        this._avatar.removeFromScene();
-    }
-
     update(timeDelta, message) {
         if(message) {
             this._updateWithMessage(timeDelta, message);
@@ -131,6 +139,14 @@ export default class PeerController extends Entity {
         let index = 0;
         if(UserMessageCodes.AVATAR & codes) {
             this._updateAvatarData(float32Array, index);
+            index += 6;
+        }
+        if(UserMessageCodes.LEFT_HAND & codes) {
+            this._updateHandData(float32Array, index, Hands.LEFT);
+            index += 6;
+        }
+        if(UserMessageCodes.RIGHT_HAND & codes) {
+            this._updateHandData(float32Array, index, Hands.RIGHT);
             index += 6;
         }
         if(UserMessageCodes.USER_VELOCITY & codes) {

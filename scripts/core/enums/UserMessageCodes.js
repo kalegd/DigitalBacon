@@ -1,7 +1,9 @@
 const UserMessageCodes = {
     AVATAR: 1,
-    USER_VELOCITY: 2,
-    USER_POSITION: 4,
+    LEFT_HAND: 2,
+    RIGHT_HAND: 4,
+    USER_VELOCITY: 8,
+    USER_POSITION: 16,
 };
 
 export default UserMessageCodes;

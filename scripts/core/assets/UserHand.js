@@ -8,6 +8,7 @@ import global from '/scripts/core/global.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
+import { euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { Vector3 } from 'three';
 
 export default class UserHand {
@@ -22,18 +23,28 @@ export default class UserHand {
         this._vector3 = new Vector3();
 
         this._setup();
-        //Register as grabber in GrabInteractionHandler
     }
 
-    _setup(hand) {
+    _setup() {
         this._controller = InputHandler.getXRController(this._hand, 'grip');
         this._controllerModel = InputHandler.getXRControllerModel(this._hand);
         this._cursor = PointerInteractableHandler.createXRCursor(this._hand);
     }
 
+    isInScene() {
+        return this._controller.parent != null;
+    }
+
     getWorldPosition() {
         this._controller.getWorldPosition(this._vector3);
         return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._controller.getWorldQuaternion(quaternion);
+        quaternion.normalize();
+        euler.setFromQuaternion(quaternion);
+        return euler;
     }
 
     add(threeObj) {
@@ -59,9 +70,4 @@ export default class UserHand {
         this._controller.remove(this._controllerModel);
         global.scene.remove(this._cursor);
     }
-
-    update(timeDelta) {
-
-    }
-
 }

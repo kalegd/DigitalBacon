@@ -7,9 +7,9 @@
 import global from '/scripts/core/global.js';
 import Avatar from '/scripts/core/assets/Avatar.js';
 import BasicMovement from '/scripts/core/assets/BasicMovement.js';
+import UserHand from '/scripts/core/assets/UserHand.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import UserHand from '/scripts/core/assets/UserHand.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
@@ -68,25 +68,41 @@ class UserController {
         return leftPosition.distanceTo(rightPosition);
     }
 
+    _pushXRDataForRTC(data) {
+        let codes = 0;
+        global.camera.getWorldPosition(vector3s[0]);
+        this._userObj.getWorldPosition(vector3s[1]);
+        let position = vector3s[0].sub(vector3s[1]).toArray();
+
+        global.camera.getWorldQuaternion(quaternion);
+        quaternion.normalize();
+        euler.setFromQuaternion(quaternion);
+        let rotation = euler.toArray();
+        rotation.pop();
+
+        data.push(...position);
+        data.push(...rotation);
+        codes += UserMessageCodes.AVATAR;
+
+        for(let hand of [Hands.LEFT, Hands.RIGHT]) {
+            let userHand = this.hands[hand];
+            if(userHand.isInScene()) {
+                position = userHand.getWorldPosition().sub(vector3s[1]);
+                rotation = userHand.getWorldRotation().toArray();
+                rotation.pop();
+                data.push(...position.toArray());
+                data.push(...rotation);
+                codes += UserMessageCodes[hand + '_HAND'];
+            }
+        }
+        return codes;
+    }
+
     getDataForRTC() {
         let codes = 0;
         let data = [];
         if(global.deviceType == "XR") {
-            //TODO: Maybe we can just use the local position of the camera?
-            global.camera.getWorldPosition(vector3s[0]);
-            this._userObj.getWorldPosition(vector3s[1]);
-            let position = vector3s[0].sub(vector3s[1]).toArray();
-
-            global.camera.getWorldQuaternion(quaternion);
-            quaternion.normalize();
-            euler.setFromQuaternion(quaternion);
-            let rotation = euler.toArray();
-            rotation.pop();
-
-            data.push(...position);
-            data.push(...rotation);
-            codes += UserMessageCodes.AVATAR;
-            //TODO: Push hand data as well
+            codes += this._pushXRDataForRTC(data);
         }
         let worldVelocity = this._basicMovement.getWorldVelocity();
         if(worldVelocity.length() >= 0.00001) {
