@@ -20,6 +20,8 @@ const BLOCKABLE_HANDLERS_MAP = {
     instance_added: '_handleInstanceAdded',
     instance_deleted: '_handleInstanceDeleted',
     instance_updated: '_handleInstanceUpdated',
+    instance_attached: '_handleInstanceAttached',
+    instance_detached: '_handleInstanceDetached',
     material_added: '_handleMaterialAdded',
     material_deleted: '_handleMaterialDeleted',
     material_updated: '_handleMaterialUpdated',
@@ -128,6 +130,22 @@ class PartyMessageHelper {
         if(instance) {
             this._handleAssetUpdate(instance, params,
                 PubSubTopics.INSTANCE_UPDATED);
+        }
+    }
+
+    _handleInstanceAttached(peer, message) {
+        let instance = ProjectHandler.getSessionInstance(message.id);
+        if(instance) {
+            let editorHelper = instance.getEditorHelper();
+            if(editorHelper) editorHelper.attachToPeer(peer, message.option);
+        }
+    }
+
+    _handleInstanceDetached(peer, message) {
+        let instance = ProjectHandler.getSessionInstance(message.id);
+        if(instance) {
+            let editorHelper = instance.getEditorHelper();
+            if(editorHelper) editorHelper.detachFromPeer(peer, message.option);
         }
     }
 
@@ -319,6 +337,28 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishInstanceAttached(data) {
+        let message = {
+            topic: 'instance_attached',
+            id: data.instance.getId(),
+            assetId: data.instance.getAssetId(),
+            option: data.option,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishInstanceDetached(data) {
+        let message = {
+            topic: 'instance_detached',
+            id: data.instance.getId(),
+            assetId: data.instance.getAssetId(),
+            option: data.option,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
     _publishMaterialAdded(material) {
         let message = {
             topic: 'material_added',
@@ -416,6 +456,16 @@ class PartyMessageHelper {
                 return this._publishAssetUpdate(message, "instance");
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (message) =>{
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceAttached(message);
+            });
+        });
+        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DETACHED, (message) =>{
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceDetached(message);
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (material) => {
             this._publishQueue.enqueue(() => {
                 return this._publishMaterialAdded(material);
@@ -461,6 +511,8 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
+        PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);

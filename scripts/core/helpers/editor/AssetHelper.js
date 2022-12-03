@@ -46,6 +46,7 @@ export default class AssetHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.INSTANCE_UPDATED);
         this._object = asset.getObject();
+        this._attachedPeers = new Set();
         this._gripInteractables = {};
         this._pointerInteractables = {};
         for(let key of INTERACTABLE_KEYS) {
@@ -157,6 +158,30 @@ export default class AssetHelper extends EditorHelper {
                 this.updateVisualEdit(isVisualEdit, true, ignorePublish);
                 this.updateMenuField('visualEdit');
             });
+        }
+    }
+
+    attachToPeer(peer, option) {
+        this._attachedPeers.add(peer.id + option);
+        if(!this._asset.visualEdit || this._attachedPeers.size > 1) return;
+        for(let key of INTERACTABLE_KEYS) {
+            let tool = (key != TOOL_AGNOSTIC) ? key : null;
+            GripInteractableHandler.removeInteractables(
+                this._gripInteractables[key], tool);
+            PointerInteractableHandler.removeInteractables(
+                this._pointerInteractables[key], tool);
+        }
+    }
+
+    detachFromPeer(peer, option) {
+        this._attachedPeers.delete(peer.id + option);
+        if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
+        for(let key of INTERACTABLE_KEYS) {
+            let tool = (key != TOOL_AGNOSTIC) ? key : null;
+            GripInteractableHandler.addInteractables(
+                this._gripInteractables[key], tool);
+            PointerInteractableHandler.addInteractables(
+                this._pointerInteractables[key], tool);
         }
     }
 
