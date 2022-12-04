@@ -178,6 +178,10 @@ class PartyHandler {
         return this._displayingUsernames;
     }
 
+    getPeer(peerId) {
+        return this._peers[peerId];
+    }
+
     getPeers() {
         return this._peers;
     }

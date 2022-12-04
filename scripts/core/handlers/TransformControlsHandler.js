@@ -56,8 +56,7 @@ class TransformControlsHandler {
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (e) => {
             for(let option in this._attachedAssets) {
                 if(this._attachedAssets[option] == e.instance) {
-                    this.detach(option);
-                    return;
+                    this._detachDeleted(option);
                 }
             }
         });
@@ -66,16 +65,16 @@ class TransformControlsHandler {
     _addEventListeners() {
         this._transformControls.addEventListener('mouseDown', () => {
             SessionHandler.disableOrbit();
-            this._preTransformStates[global.deviceType]
-                = this._attachedAssets[global.deviceType].getEditorHelper()
-                    .getObjectTransformation();
+            let instance = this._attachedAssets[global.deviceType];
+            this._preTransformStates[instance.getId()]
+                = instance.getEditorHelper().getObjectTransformation();
         });
         this._transformControls.addEventListener('mouseUp', () => {
             SessionHandler.enableOrbit();
             let instance = this._attachedAssets[global.deviceType];
             let instanceHelper = instance.getEditorHelper();
             instanceHelper.roundAttributes(true);
-            let preState = this._preTransformStates[global.deviceType];
+            let preState = this._preTransformStates[instance.getId()];
             let postState = instanceHelper.getObjectTransformation();
             instanceHelper.setObjectTransformation(preState, postState);
         });
@@ -280,6 +279,10 @@ class TransformControlsHandler {
             factor * this._initialScalingValues.x,
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
+
+        if(global.renderer.info.render.frame % 6 == 0)
+            this._attachedAssets[Hands.LEFT].getEditorHelper()
+                ._publish(['scale']);
     }
 
     //Slightly modified version of Raycaster::intersectObjects
@@ -367,6 +370,37 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
         this._transformControls.detach();
         $("#transform-controls").addClass("hidden");
+    }
+
+    _detachDeleted(option) {
+        let asset = this._attachedAssets[option];
+        if(!asset) return;
+        if(global.deviceType == 'XR') {
+            let otherOption = this._getOtherHand(option);
+            if(this._attachedAssets[otherOption] == asset) {
+                this._twoHandScaling = false;
+            } else {
+                asset.returnTransparency();
+                let preState = this._preTransformStates[asset.getId()];
+                let assetHelper = asset.getEditorHelper();
+                for(let param in preState) {
+                    asset.getObject()[param].fromArray(preState[param]);
+                }
+                assetHelper._publish(['position', 'rotation', 'scale']);
+            }
+            if(Object.keys(this._attachedAssets).length == 1)
+                UndoRedoHandler.enable(this._id);
+        } else {
+            this._transformControls.detach();
+            let preState = this._preTransformStates[global.deviceType];
+            let assetHelper = asset.getEditorHelper();
+            for(let param in preState) {
+                asset.getObject()[param].fromArray(preState[param]);
+            }
+            assetHelper._publish(['position', 'rotation', 'scale']);
+        }
+        delete this._attachedAssets[option];
+        this._placingObject[option] = false;
     }
 
     _isDragging(instance) {

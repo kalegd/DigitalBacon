@@ -32,15 +32,15 @@ export default class PeerHand extends Entity {
     }
 
     add(threeObj) {
-        this._controller.add(threeObj);
+        this._object.add(threeObj);
     }
 
     attach(threeObj) {
-        this._controller.attach(threeObj);
+        this._object.attach(threeObj);
     }
 
     remove(threeObj) {
-        if(threeObj.parent == this._controller) {
+        if(threeObj.parent == this._object) {
             global.scene.attach(threeObj);
         }
     }

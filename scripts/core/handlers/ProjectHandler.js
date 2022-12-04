@@ -208,6 +208,9 @@ class ProjectHandler {
                     break;
                 }
             }
+            if(instance.getObject().parent != this._scene) {
+                this._scene.attach(instance.getObject());
+            }
             delete this.project[assetId][id];
             instance.removeFromScene();
             if(ignorePublish) return;

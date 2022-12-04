@@ -15,6 +15,7 @@ import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHand
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
@@ -126,27 +127,35 @@ export default class AssetHelper extends EditorHelper {
         }
     }
 
+    _addInteractables() {
+        for(let key of INTERACTABLE_KEYS) {
+            let tool = (key != TOOL_AGNOSTIC) ? key : null;
+            GripInteractableHandler.addInteractables(
+                this._gripInteractables[key], tool);
+            PointerInteractableHandler.addInteractables(
+                this._pointerInteractables[key], tool);
+        }
+    }
+
+    _removeInteractables() {
+        for(let key of INTERACTABLE_KEYS) {
+            let tool = (key != TOOL_AGNOSTIC) ? key : null;
+            GripInteractableHandler.removeInteractables(
+                this._gripInteractables[key], tool);
+            PointerInteractableHandler.removeInteractables(
+                this._pointerInteractables[key], tool);
+        }
+    }
+
     updateVisualEdit(isVisualEdit, ignoreUndoRedo, ignorePublish) {
         if(isVisualEdit == this._asset.visualEdit) return;
         this._asset.visualEdit = isVisualEdit;
         if(isVisualEdit) {
-            if(this._object.parent) {
-                for(let key of INTERACTABLE_KEYS) {
-                    let tool = (key != TOOL_AGNOSTIC) ? key : null;
-                    GripInteractableHandler.addInteractables(
-                        this._gripInteractables[key], tool);
-                    PointerInteractableHandler.addInteractables(
-                        this._pointerInteractables[key], tool);
-                }
+            if(this._object.parent && this._attachedPeers.size == 0) {
+                this._addInteractables();
             }
         } else {
-            for(let key of INTERACTABLE_KEYS) {
-                let tool = (key != TOOL_AGNOSTIC) ? key : null;
-                GripInteractableHandler.removeInteractables(
-                    this._gripInteractables[key], tool);
-                PointerInteractableHandler.removeInteractables(
-                    this._pointerInteractables[key], tool);
-            }
+            this._removeInteractables();
         }
         if(!ignorePublish)
             this._publish(['visualEdit']);
@@ -161,28 +170,49 @@ export default class AssetHelper extends EditorHelper {
         }
     }
 
-    attachToPeer(peer, option) {
-        this._attachedPeers.add(peer.id + option);
-        if(!this._asset.visualEdit || this._attachedPeers.size > 1) return;
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            GripInteractableHandler.removeInteractables(
-                this._gripInteractables[key], tool);
-            PointerInteractableHandler.removeInteractables(
-                this._pointerInteractables[key], tool);
+    attachToPeer(peer, message) {
+        this._attachedPeers.add(peer.id + ':' + message.option);
+        if(message.isXR) {
+            if(this._attachedPeers.size == 1) {
+                if(message.option in Hands && peer.controller) {
+                    peer.controller.hands[message.option].attach(this._object);
+                    this._asset.setPosition(message.position);
+                    this._asset.setRotation(message.rotation);
+                }
+            } else {
+                global.scene.attach(this._object);
+                this._asset.setPosition(message.position);
+                this._asset.setRotation(message.rotation);
+                return;
+            }
         }
+        if(!this._asset.visualEdit) return;
+
+        this._removeInteractables();
     }
 
-    detachFromPeer(peer, option) {
-        this._attachedPeers.delete(peer.id + option);
-        if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            GripInteractableHandler.addInteractables(
-                this._gripInteractables[key], tool);
-            PointerInteractableHandler.addInteractables(
-                this._pointerInteractables[key], tool);
+    detachFromPeer(peer, message) {
+        this._attachedPeers.delete(peer.id + ':' + message.option);
+        if(message.isXR) {
+            if(this._attachedPeers.size == 0) {
+                global.scene.attach(this._object);
+                this._asset.setPosition(message.position);
+                this._asset.setRotation(message.rotation);
+            } else {
+                let firstId = this._attachedPeers.values().next().value;
+                let [firstPeerId, option] = firstId.split(':');
+                let firstPeer = PartyHandler.getPeer(firstPeerId)
+                if(option in Hands && firstPeer && firstPeer.controller) {
+                    firstPeer.controller.hands[option].attach(this._object);
+                    this._asset.setPosition(message.position);
+                    this._asset.setRotation(message.rotation);
+                }
+                return;
+            }
         }
+        if(!this._asset.visualEdit) return;
+
+        this._addInteractables();
     }
 
     getObjectTransformation() {
@@ -259,25 +289,13 @@ export default class AssetHelper extends EditorHelper {
     }
 
     addToScene(scene) {
-        if(!this._asset.visualEdit) return;
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            GripInteractableHandler.addInteractables(
-                this._gripInteractables[key], tool);
-            PointerInteractableHandler.addInteractables(
-                this._pointerInteractables[key], tool);
-        }
+        if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
+        this._addInteractables();
     }
 
     removeFromScene() {
         global.scene.remove(this._boundingBoxObj);
         fullDispose(this._boundingBoxObj);
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            GripInteractableHandler.removeInteractables(
-                this._gripInteractables[key], tool);
-            PointerInteractableHandler.removeInteractables(
-                this._pointerInteractables[key], tool);
-        }
+        this._removeInteractables();
     }
 }

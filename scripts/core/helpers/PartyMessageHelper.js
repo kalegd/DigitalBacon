@@ -137,7 +137,7 @@ class PartyMessageHelper {
         let instance = ProjectHandler.getSessionInstance(message.id);
         if(instance) {
             let editorHelper = instance.getEditorHelper();
-            if(editorHelper) editorHelper.attachToPeer(peer, message.option);
+            if(editorHelper) editorHelper.attachToPeer(peer, message);
         }
     }
 
@@ -145,7 +145,7 @@ class PartyMessageHelper {
         let instance = ProjectHandler.getSessionInstance(message.id);
         if(instance) {
             let editorHelper = instance.getEditorHelper();
-            if(editorHelper) editorHelper.detachFromPeer(peer, message.option);
+            if(editorHelper) editorHelper.detachFromPeer(peer, message);
         }
     }
 
@@ -344,6 +344,11 @@ class PartyMessageHelper {
             assetId: data.instance.getAssetId(),
             option: data.option,
         };
+        if(global.deviceType == 'XR') {
+            message['position'] = data.instance.getPosition();
+            message['rotation'] = data.instance.getRotation();
+            message['isXR'] = true;
+        }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
         return Promise.resolve();
     }
@@ -355,6 +360,11 @@ class PartyMessageHelper {
             assetId: data.instance.getAssetId(),
             option: data.option,
         };
+        if(global.deviceType == 'XR') {
+            message['position'] = data.instance.getPosition();
+            message['rotation'] = data.instance.getRotation();
+            message['isXR'] = true;
+        }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
         return Promise.resolve();
     }
