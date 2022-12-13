@@ -9,7 +9,7 @@ import {
 } from 'three';
 
 ////////////////////////////////////////////////////////////////////////////////
-// Hey dumbass, there are 2 local changes in this file that need to be carried
+// Hey dumbass, there are 5 local changes in this file that need to be carried
 // over when updating. Let's not waste half a day because you forgot about it
 // the next time we update three.js files...
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,6 +100,11 @@ class OrbitControls extends EventDispatcher {
 		this.target0 = this.target.clone();
 		this.position0 = this.object.position.clone();
 		this.zoom0 = this.object.zoom;
+
+        ////////////////////////////////////////////////////////
+        this.rotateStartTime = 0;
+        this.rotateDelay = 0;
+        ////////////////////////////////////////////////////////
 
 		// the target DOM element for key events
 		this._domElementKeyEvents = null;
@@ -535,6 +540,9 @@ class OrbitControls extends EventDispatcher {
 		function handleMouseDownRotate( event ) {
 
 			rotateStart.set( event.clientX, event.clientY );
+            ////////////////////////////////////////////////////////
+            scope.rotateStartTime = Date.now();
+            ////////////////////////////////////////////////////////
 
 		}
 
@@ -551,6 +559,10 @@ class OrbitControls extends EventDispatcher {
 		}
 
 		function handleMouseMoveRotate( event ) {
+
+            ////////////////////////////////////////////////////////////
+            if(scope.rotateDelay && Date.now() - scope.rotateStartTime < scope.rotateDelay) return;
+            ////////////////////////////////////////////////////////////
 
 			rotateEnd.set( event.clientX, event.clientY );
 

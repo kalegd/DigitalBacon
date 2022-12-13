@@ -62,6 +62,7 @@ class SessionHandler {
         this._controls.minPolarAngle = 0.3;
         this._controls.enablePan = false;
         this._controls.enabled = false;
+        this._controls.rotateDelay = 20;
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
             this._controls.enabled = true;
