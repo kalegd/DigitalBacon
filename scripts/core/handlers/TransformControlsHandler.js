@@ -146,6 +146,7 @@ class TransformControlsHandler {
     }
 
     _paste(e) {
+        if(!global.isEditor) return;
         if(e.clipboardData.types.indexOf('Files') >= 0)
             this._pasteFiles(e.clipboardData.files);
         if(e.clipboardData.types.indexOf('text/digitalbacon') >= 0)

@@ -199,6 +199,10 @@ function setupContainer(containerId) {
 #container .hidden {
     display: none;
 }
+
+#container > canvas {
+    outline: none;
+}
     `.replaceAll("container", containerId);
     if(global.deviceType == "MOBILE")
         style.innerHTML += `
@@ -239,7 +243,6 @@ function setupContainer(containerId) {
         <button id="mobile-flying-up-button">UP</button>
         <button id="mobile-flying-down-button">DOWN</button>
       </div>`;
-    container.style.outline = 'none';
     container.style.position = 'relative';
 }
 

@@ -5,7 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
@@ -14,22 +13,19 @@ import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const pages = [
-    { "title": "Backdrop", "menuPage": MenuPages.SKYBOX, isEditorOnly: true },
-    { "title": "User Settings", "menuPage": MenuPages.USER_SETTINGS },
-    { "title": "Editor Settings", "menuPage": MenuPages.EDITOR_SETTINGS,
-        isEditorOnly: true },
-    { "title": "Update Avatar" },
+    { "title": "Settings", "menuPage": MenuPages.SETTINGS },
+    { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
 ];
 
-class SettingsPage extends MenuPage {
+class HomePage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, false);
         this._addPageContent();
     }
 
     _addPageContent() {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Settings',
+            'text': 'Home',
             'fontSize': FontSizes.header,
             'height': 0.04,
             'width': 0.2,
@@ -44,7 +40,6 @@ class SettingsPage extends MenuPage {
             'backgroundOpacity': 0,
         });
         for(let page of pages) {
-            if(!global.isEditor && page.isEditorOnly) continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': page.title,
                 'fontSize': FontSizes.body,
@@ -54,12 +49,7 @@ class SettingsPage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
-                if(page.menuPage) {
-                    this._controller.pushPage(page.menuPage);
-                } else {
-                    ReadyPlayerMe.selectAvatar();
-                }
-
+                this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);
         }
@@ -68,4 +58,4 @@ class SettingsPage extends MenuPage {
 
 }
 
-export default SettingsPage;
+export default HomePage;

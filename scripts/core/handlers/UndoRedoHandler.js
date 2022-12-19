@@ -48,13 +48,13 @@ class UndoRedoHandler {
         this._undoRedoParent.add(this._redoButton);
         this._containerInteractable = new PointerInteractable(
             null, null, false);
-    }
-
-    addButtons(menu, interactable) {
         this._undoInteractable = new PointerInteractable(this._undoButton,
             () => { this._undo(); });
         this._redoInteractable = new PointerInteractable(this._redoButton,
             () => { this._redo(); });
+    }
+
+    addButtons(menu, interactable) {
         interactable.addChild(this._containerInteractable);
         menu.add(this._undoRedoParent);
     }

@@ -57,8 +57,13 @@ class PartyHandler {
                 topic: 'username',
                 username: this._username,
             }));
-            if(this._isHost && global.isEditor) {
-                this._sendProject([rtc]);
+            if(this._isHost) {
+                if(global.isEditor) {
+                    this._sendProject([rtc]);
+                } else {
+                    //TODO: Send only the diff whenever we support state changes
+                    //      in the live mode
+                }
             }
         });
         rtc.setOnSendDataChannelClose(() => {

@@ -4,7 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import MenuController from '/scripts/core/menu/MenuController.js';
+import EditorMenuController from '/scripts/core/menu/EditorMenuController.js';
+import LiveMenuController from '/scripts/core/menu/LiveMenuController.js';
 import PrimitiveAmbientLight from '/scripts/core/assets/PrimitiveAmbientLight.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
@@ -102,13 +103,15 @@ export default class Main {
 
     _createClients() {
         if(global.disableImmersion) return;
-        GoogleDrive.init();
+        if(global.isEditor) GoogleDrive.init();
         ReadyPlayerMe.init(this._container);
     }
 
     _createAssets(projectFilePath) {
         if(!global.disableImmersion) {
-            this._menuController = new MenuController();
+            this._menuController = global.isEditor
+                ? new EditorMenuController()
+                : new LiveMenuController();
             this._menuController.addToScene(this._scene);
             global.menuController = this._menuController;
 
