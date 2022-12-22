@@ -51,11 +51,6 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['height'] = this._height;

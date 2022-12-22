@@ -125,7 +125,8 @@ class DynamicFieldsPage extends MenuPage {
         for(let i = this._firstItemIndex; i < this._fields.length; i++) {
             let field = this._fields[i];
             availableHeight -= field.getHeight();
-            if(availableHeight >= 0) {
+            //Allow oversized fields if it's the first field
+            if(availableHeight >= 0 || i == this._firstItemIndex) {
                 field.addToScene(this._fieldsContainer,
                     this._containerInteractable);
                 this._lastItemIndex = i;
@@ -145,7 +146,8 @@ class DynamicFieldsPage extends MenuPage {
         for(let i = this._lastItemIndex; i >= 0; i--) {
             let field = this._fields[i];
             availableHeight -= field.getHeight();
-            if(availableHeight >= 0) {
+            //Allow oversized fields if it's the first field
+            if(availableHeight >= 0 || i == this._lastItemIndex) {
                 pendingFields.push(field);
                 this._firstItemIndex = i;
             } else {

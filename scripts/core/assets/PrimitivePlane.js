@@ -7,7 +7,7 @@
 import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveBoxHelper from '/scripts/core/helpers/editor/PrimitiveBoxHelper.js';
+import PrimitivePlaneHelper from '/scripts/core/helpers/editor/PrimitivePlaneHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
@@ -26,7 +26,7 @@ export default class PrimitivePlane extends PrimitiveMesh {
     }
 
     _createEditorHelper() {
-        this._editorHelper = new PrimitiveBoxHelper(this);
+        this._editorHelper = new PrimitivePlaneHelper(this);
     }
 
     _createMesh() {

@@ -107,7 +107,6 @@ class TransformControlsHandler {
         let deleteButton = document.getElementById("delete-button");
         deleteButton.addEventListener('click', () => {
             this._delete();
-            this._placingObject[global.deviceType] = false;
         });
 
         let closeButton = document.getElementById("close-button");
@@ -393,6 +392,7 @@ class TransformControlsHandler {
                 UndoRedoHandler.enable(this._id);
         } else {
             this._transformControls.detach();
+            $("#transform-controls").addClass("hidden");
             let preState = this._preTransformStates[global.deviceType];
             let assetHelper = asset.getEditorHelper();
             for(let param in preState) {

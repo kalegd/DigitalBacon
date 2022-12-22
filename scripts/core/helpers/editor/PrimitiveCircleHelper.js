@@ -31,10 +31,10 @@ export default class PrimitiveCircleHelper extends PrimitiveMeshHelper {
         let face = intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }

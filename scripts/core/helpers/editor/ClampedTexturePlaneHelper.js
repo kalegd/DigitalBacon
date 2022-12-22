@@ -4,6 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
+import { vector3s } from '/scripts/core/helpers/constants.js';
 import AssetHelper from '/scripts/core/helpers/editor/AssetHelper.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 
@@ -11,9 +13,9 @@ const FIELDS = [
     { "parameter": "visualEdit" },
     { "parameter": "doubleSided", "name": "Double Sided",
         "suppressMenuFocusEvent": true, "type": CheckboxInput },
-    { "parameter": "Position" },
-    { "parameter": "Rotation" },
-    { "parameter": "Scale" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
 export default class ClampedTexturePlaneHelper extends AssetHelper {
@@ -21,16 +23,16 @@ export default class ClampedTexturePlaneHelper extends AssetHelper {
         super(asset);
     }
 
-     place(intersection) {
+    place(intersection) {
         let object = intersection.object;
         let point = intersection.point;
         let face = intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }

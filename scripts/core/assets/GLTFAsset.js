@@ -9,13 +9,6 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import GLTFAssetHelper from '/scripts/core/helpers/editor/GLTFAssetHelper.js';
 
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
-
 export default class GLTFAsset extends Asset {
     constructor(params = {}) {
         super(params);
@@ -35,9 +28,5 @@ export default class GLTFAsset extends Asset {
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
         return ProjectHandler.addGLTF(params);
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
     }
 }

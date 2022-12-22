@@ -64,7 +64,7 @@ export default class PrimitiveRing extends PrimitiveMesh {
     }
 
     getOuterRadius() {
-        return this._outeRadius;
+        return this._outerRadius;
     }
 
     getThetaSegments() {
@@ -85,9 +85,9 @@ export default class PrimitiveRing extends PrimitiveMesh {
         this._updateGeometry();
     }
 
-    setOuterRadius(outeRadius) {
-        if(this._outeRadius == outeRadius) return;
-        this._outeRadius = outeRadius;
+    setOuterRadius(outerRadius) {
+        if(this._outerRadius == outerRadius) return;
+        this._outerRadius = outerRadius;
         this._updateGeometry();
     }
 

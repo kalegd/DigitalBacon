@@ -11,7 +11,7 @@ import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import LambertMaterialHelper from '/scripts/core/helpers/editor/LambertMaterialHelper.js';
 import * as THREE from 'three';
 
-const MAPS = ["map", "alphaMap", "emissiveMap", "envMap", "specularMap"];
+const MAPS = ["map", "alphaMap", "emissiveMap", "envMap"];
 
 export default class LambertMaterial extends Material {
     constructor(params = {}) {
