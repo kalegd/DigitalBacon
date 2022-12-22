@@ -68,6 +68,7 @@ export default class Avatar {
                     gltf.scene.position.setY(-0.7);
                 }
                 this._pivotPoint.add(gltf.scene);
+                this._saveOriginalTransparencyStates();
                 this._dimensions = 3;
             }, () => {}, (error) => {
                 console.log(error);
@@ -99,6 +100,7 @@ export default class Avatar {
                 geometry.rotateY(Math.PI);
                 let mesh = new THREE.Mesh(geometry, material);
                 this._pivotPoint.add(mesh);
+                this._saveOriginalTransparencyStates();
                 //let sprite = new THREE.Sprite(material);
                 //this._pivotPoint.add(sprite);
                 this._dimensions = 2;
@@ -116,6 +118,63 @@ export default class Avatar {
                 console.error("Default avatar URL is invalid :(");
             }
         }
+    }
+
+    _saveOriginalTransparencyStates() {
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.userData['transparent'] = material.transparent;
+                        material.userData['opacity'] = material.opacity;
+                    }
+                } else {
+                    let material = node.material;
+                    material.userData['transparent'] = material.transparent;
+                    material.userData['opacity'] = material.opacity;
+                }
+            }
+        });
+    }
+
+    fade(percent) {
+        this._isFading = true;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        if(!material.transparent) material.transparent = true;
+                        material.opacity = material.userData['opacity']*percent;
+                    }
+                } else {
+                    let material = node.material;
+                    if(!material.transparent) material.transparent = true;
+                    material.opacity = material.userData['opacity'] * percent;
+                }
+            }
+        });
+    }
+
+    endFade() {
+        if(!this._isFading) return;
+        this._isFading = false;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.transparent = material.userData['transparent'];
+                        material.opacity = material.userData['opacity'];
+                    }
+                } else {
+                    let material = node.material;
+                    material.transparent = material.userData['transparent'];
+                    material.opacity = material.userData['opacity'];
+                }
+            }
+        });
     }
 
     lookAtLocal(point) {
@@ -146,7 +205,6 @@ export default class Avatar {
     removeFromScene() {
         if(this._pivotPoint.parent) {
             this._pivotPoint.parent.remove(this._pivotPoint);
-            fullDispose(this._pivotPoint, true);
         }
     }
 }

@@ -57,12 +57,16 @@ class SessionHandler {
         this._controls = new OrbitControls(global.camera, global.renderer.domElement);
         this._controls.target = this._orbitControlsTarget;
         this._controls.enableKeys = false;
-        //this._controls.enableZoom = false;
         this._controls.maxPolarAngle = Math.PI-0.3;
         this._controls.minPolarAngle = 0.3;
+        this._controls.minDistance = 0.05;
         this._controls.enablePan = false;
         this._controls.enabled = false;
         this._controls.rotateDelay = 20;
+        this._controlsUpdateNumber = 0;
+        this._controls.addEventListener('change', () => {
+            this._controlsUpdateNumber++;
+        });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
             this._controls.enabled = true;
@@ -81,9 +85,16 @@ class SessionHandler {
 
         this._controls = new OrbitControls(global.camera, global.renderer.domElement);
         this._controls.target = this._orbitControlsTarget;
-        this._controls.zoomSpeed = 0.4;
-        this._controls.enabled = false;
+        this._controls.maxPolarAngle = Math.PI-0.3;
+        this._controls.minPolarAngle = 0.3;
+        this._controls.minDistance = 0.05;
         this._controls.enablePan = false;
+        this._controls.enabled = false;
+        this._controls.rotateDelay = 20;
+        this._controlsUpdateNumber = 0;
+        this._controls.addEventListener('change', () => {
+            this._controlsUpdateNumber++;
+        });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
             this._controls.enabled = true;
@@ -135,10 +146,12 @@ class SessionHandler {
         this._controls.enableRotate = false;
     }
 
-    update() {
-        if(this._firstPersonControls && this._firstPersonControls.enabled) {
-            this._firstPersonControls.update();
-        }
+    getControlsUpdateNumber() {
+        return this._controlsUpdateNumber;
+    }
+
+    getCameraDistance() {
+        if(this._controls) return this._controls.getDistance();
     }
 }
 

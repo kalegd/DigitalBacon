@@ -12,9 +12,14 @@ import Hands from '/scripts/core/enums/Hands.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
+const FADE_START = 0.6;
+const FADE_END = 0.2;
+const FADE_RANGE = FADE_START - FADE_END;
+const EPSILON = 0.00000000001;
   
 class UserController {
     init(params) {
@@ -26,6 +31,7 @@ class UserController {
         this._flightEnabled = params['Flight Enabled'] || false;
         this._avatarUrl = localStorage.getItem(AVATAR_KEY)
             || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._avatarFadeUpdateNumber = 0;
 
         this._setup();
     }
@@ -136,7 +142,33 @@ class UserController {
         }
     }
 
+    _updateAvatar() {
+        let updateNumber = SessionHandler.getControlsUpdateNumber();
+        if(this._avatarFadeUpdateNumber == updateNumber) return;
+        this._avatarFadeUpdateNumber = updateNumber;
+        let cameraDistance = SessionHandler.getCameraDistance();
+        if(cameraDistance > FADE_START * 2) return;
+        let diff = cameraDistance - this._avatarFadeCameraDistance
+        if(Math.abs(diff) < EPSILON) return;
+        this._avatarFadeCameraDistance = cameraDistance;
+        let object = this._avatar.getObject();
+        let fadePercent = Math.max(cameraDistance, FADE_END);
+        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
+        if(fadePercent == 0) {
+            if(object.parent) this._avatar.removeFromScene();
+            return;
+        } else if(!object.parent) {
+            this._avatar.addToScene(global.cameraFocus);
+        }
+        (fadePercent < 1)
+            ? this._avatar.fade(fadePercent)
+            : this._avatar.endFade();
+    }
+
     update(timeDelta) {
+        if(this._avatar) {
+            this._updateAvatar();
+        }
         for(let i = 0; i < this._dynamicAssets.length; i++) {
             this._dynamicAssets[i].update(timeDelta);
         }
