@@ -254,6 +254,11 @@ function setupEditor(containerId, projectFilePath, partyUrl) {
 function setup(containerId, projectFilePath, partyUrl) {
     global.partyUrl = partyUrl;
     let promise = new Promise((resolve) => {
+        //Check mobile override for VR capable phones
+        if(localStorage.getItem('DigitalBacon:MobileOverride')) {
+            start(resolve, containerId, projectFilePath);
+            return;
+        }
         if('xr' in navigator) {
             navigator.xr.isSessionSupported( 'immersive-vr' )
                 .then(function (supported) {

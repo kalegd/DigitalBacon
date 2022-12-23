@@ -11,6 +11,8 @@ import { VRButton } from '/node_modules/three/examples/jsm/webxr/VRButton.js';
 import { OrbitControls } from '/scripts/three/examples/jsm/controls/OrbitControls.js';
 import { Vector3 } from 'three';
 
+const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
+
 class SessionHandler {
     init(container, params) {
         this._container = container;
@@ -37,6 +39,7 @@ class SessionHandler {
         this._stylizeElements();
         this._button.style.minWidth = '150px';
         this._div.appendChild(this._button);
+        this._div.appendChild(this._createMobileOverrideLink());
         global.renderer.xr.addEventListener("sessionstart", () => {
             global.sessionActive = true;
             AudioHandler.init();
@@ -54,7 +57,8 @@ class SessionHandler {
         this._stylizeElements();
         this._div.appendChild(this._button);
 
-        this._controls = new OrbitControls(global.camera, global.renderer.domElement);
+        this._controls = new OrbitControls(global.camera,
+            global.renderer.domElement);
         this._controls.target = this._orbitControlsTarget;
         this._controls.enableKeys = false;
         this._controls.maxPolarAngle = Math.PI-0.3;
@@ -82,8 +86,11 @@ class SessionHandler {
         this._button.innerText = "TAP TO START";
         this._stylizeElements();
         this._div.appendChild(this._button);
+        if(localStorage.getItem(MOBILE_OVERRIDE))
+            this._div.appendChild(this._createVROverrideLink());
 
-        this._controls = new OrbitControls(global.camera, global.renderer.domElement);
+        this._controls = new OrbitControls(global.camera,
+            global.renderer.domElement);
         this._controls.target = this._orbitControlsTarget;
         this._controls.maxPolarAngle = Math.PI-0.3;
         this._controls.minPolarAngle = 0.3;
@@ -128,6 +135,36 @@ class SessionHandler {
             this._button.style.cursor = 'inherit';
             this._button.style.background = 'none';
         };
+    }
+
+    _createMobileOverrideLink() {
+        let a = document.createElement('a');
+        a.innerText = 'Use Touchscreen Controls';
+        a.href = '#';
+        a.style.display = 'block';
+        a.style.paddingTop = '12px';
+        a.style.color = 'rgb(255, 199, 229)';
+        a.addEventListener('click', () => {
+            event.preventDefault();
+            localStorage.setItem(MOBILE_OVERRIDE, true);
+            window.location.reload();
+        });
+        return a;
+    }
+
+    _createVROverrideLink() {
+        let a = document.createElement('a');
+        a.innerText = 'Use VR Controls';
+        a.href = '#';
+        a.style.display = 'block';
+        a.style.paddingTop = '12px';
+        a.style.color = 'rgb(255, 199, 229)';
+        a.addEventListener('click', () => {
+            event.preventDefault();
+            localStorage.removeItem(MOBILE_OVERRIDE);
+            window.location.reload();
+        });
+        return a;
     }
 
     displayButton() {

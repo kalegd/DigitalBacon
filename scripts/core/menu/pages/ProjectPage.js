@@ -145,7 +145,7 @@ class ProjectPage extends PaginatedPage {
             );
             this._controller.pushPage(MenuPages.TEXT_INPUT);
         } else {
-            this._googleDriveSignin();
+            this._googleDriveSignin(() => this._googleDriveSave());
         }
     }
 
@@ -161,11 +161,12 @@ class ProjectPage extends PaginatedPage {
             instancePage.loadProjects();
             this._controller.pushPage(MenuPages.LOAD_GDRIVE);
         } else {
-            this._googleDriveSignin();
+            this._googleDriveSignin(() => this._googleDriveLoad());
         }
     }
 
-    _googleDriveSignin() {
+    _googleDriveSignin(callback) {
+        this._googleSigninCallback = callback;
         if(global.deviceType == 'XR') {
             SessionHandler.exitXRSession();
             GoogleDrive.handleAuthButton(
@@ -178,6 +179,7 @@ class ProjectPage extends PaginatedPage {
     _handleGoogleAuthResponse() {
         this._refreshItems();
         this._updateItemsGUI();
+        if(this._googleSigninCallback) this._googleSigninCallback();
     }
 
     _googleDriveSignout() {
