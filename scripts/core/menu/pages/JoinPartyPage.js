@@ -107,6 +107,10 @@ class JoinPartyPage extends MenuPage {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Could not connect to all other users, please try again',
             });
+        } else if(topic == 'bad-auth') {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Could not authenticate with Server',
+            });
         } else if(topic == 'error') {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Unexpected Error',

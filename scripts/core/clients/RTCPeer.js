@@ -45,21 +45,21 @@ export default class RTCPeer {
             };
         };
         this._connection.onicecandidate = (e) => {
-            this._socket.send(JSON.stringify({
+            this._socket.send({
                 topic: "candidate",
                 to: this._peerId,
                 candidate: e.candidate,
-            }));
+            });
         };
         this._connection.onnegotiationneeded = async () => {
             try {
                 this._makingOffer = true;
                 await this._connection.setLocalDescription();
-                this._socket.send(JSON.stringify({
+                this._socket.send({
                     topic: "description",
                     to: this._peerId,
                     description: this._connection.localDescription,
-                }));
+                });
             } catch(error) {
                 console.error(error);
             } finally {
@@ -159,11 +159,11 @@ export default class RTCPeer {
             this._isSettingRemoteAnswerPending = false;
             if(description.type == "offer") {
                 await this._connection.setLocalDescription();
-                this._socket.send(JSON.stringify({
+                this._socket.send({
                     topic: "description",
                     to: this._peerId,
                     description: this._connection.localDescription,
-                }));
+                });
             }
         } catch(error) {
             console.error(error);

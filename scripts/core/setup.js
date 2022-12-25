@@ -246,12 +246,13 @@ function setupContainer(containerId) {
     container.style.position = 'relative';
 }
 
-function setupEditor(containerId, projectFilePath, partyUrl) {
+function setupEditor(containerId, projectFilePath, authUrl, partyUrl) {
     global.isEditor = true;
-    return setup(containerId, projectFilePath, partyUrl);
+    return setup(containerId, projectFilePath, authUrl, partyUrl);
 }
 
-function setup(containerId, projectFilePath, partyUrl) {
+function setup(containerId, projectFilePath, authUrl, partyUrl) {
+    global.authUrl = authUrl;
     global.partyUrl = partyUrl;
     let promise = new Promise((resolve) => {
         //Check mobile override for VR capable phones

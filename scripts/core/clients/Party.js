@@ -24,6 +24,12 @@ class Party {
     }
 
     host(roomId, successCallback, errorCallback) {
+        if(!this._authToken) {
+            this._fetchAuthToken(() => {
+                this.host(roomId, successCallback, errorCallback);
+            }, errorCallback);
+            return;
+        }
         if(this._socket) this.disconnect();
         this._isHost = true;
         this._roomId = roomId;
@@ -37,6 +43,12 @@ class Party {
     }
 
     join(roomId, successCallback, errorCallback) {
+        if(!this._authToken) {
+            this._fetchAuthToken(() => {
+                this.join(roomId, successCallback, errorCallback);
+            }, errorCallback);
+            return;
+        }
         if(this._socket) this.disconnect();
         this._roomId = roomId;
         this._successCallback = successCallback;
@@ -64,17 +76,17 @@ class Party {
     }
 
     bootPeer(peerId) {
-        this._socket.send(JSON.stringify({
+        this._socket.send({
             topic: "boot-peer",
             peerId: peerId,
-        }));
+        });
     }
 
     designateHost(peerId) {
-        this._socket.send(JSON.stringify({
+        this._socket.send({
             topic: "designate-host",
             peerId: peerId,
-        }));
+        });
     }
 
     setOnSetupPeer(f) {
@@ -83,6 +95,19 @@ class Party {
 
     setOnDisconnect(f) {
         this._onDisconnect = f;
+    }
+
+    _fetchAuthToken(successCallback, errorCallback) {
+        fetch(global.authUrl)
+            .then((response) => response.json())
+            .then((body) => {
+                this._authToken = body.authToken;
+                successCallback();
+            })
+            .catch((error) => {
+                this.disconnect();
+                errorCallback({ topic: 'bad-auth' });
+            });
     }
 
     _setupUserMedia() {
@@ -101,17 +126,22 @@ class Party {
         this._socket.onclose = (e) => { this._onSocketClose(e); };
         this._socket.onmessage = (e) => { this._onSocketMessage(e); };
         this._socket.onerror = (e) => { this._onSocketError(e); };
+        this._socket._send = this._socket.send;
+        this._socket.send = (body) => {
+            body['authToken'] = this._authToken;
+            this._socket._send(JSON.stringify(body));
+        };
     }
 
     _onSocketOpen(e) {
-        this._socket.send(JSON.stringify({
+        this._socket.send({
             topic: "identify",
             //id: this._id,
             roomId: this._roomId,
             isHost: this._isHost,
-        }));
+        });
         this._pingIntervalId = setInterval(() => {
-            this._socket.send(JSON.stringify({ topic: "ping" }));
+            this._socket.send({ topic: "ping" });
         }, NINE_MINUTES);
     }
 
