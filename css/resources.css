@@ -289,6 +289,25 @@ table.basic-table tr:nth-child(even) {
     max-width: 300px;
 }
 
+.template-buttons {
+    margin-left: 10px;
+    padding-top: 10px;
+}
+
+.template-buttons > a {
+    background-color: #673ab7;
+    border-radius: 4px;
+    color: #ffffff;
+    font: normal 16px sans-serif;
+    outline: none;
+    padding: 8px;
+    text-decoration: none;
+}
+
+.template-buttons > a:nth-child(2) {
+    background-color: #8ab73a;
+}
+
 .bold {
     font-weight: bold;
 }

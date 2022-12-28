@@ -73,7 +73,7 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.0.2)</h1>
+        <h1>DigitalBacon (0.0.3)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
@@ -127,7 +127,7 @@
           </tbody>
         </table>
         <h5>Functions</h5>
-        <p class="bold">setup(containerId, projectFilePath)</p>
+        <p class="bold">setup(containerId, projectFilePath, authUrl, partyUrl)</p>
         <p>Sets up project without user editing enabled</p>
         <p class="return-data">Returns Promise&lt;App&gt; that resolves after initial assets have loaded</p>
         <table class="attributes">
@@ -151,6 +151,28 @@
                 <p class="datatype">String</p>
                 <p class="optional">Optional</p>
                 <p>File path of the Digital Bacon project you want to load on startup. If not provided, a scene with only ambient lighting will be created</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">authUrl</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p class="optional">Optional</p>
+                <p>The authorization url provided to you by your party service to support multi-user experiences</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">partyUrl</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p class="optional">Optional</p>
+                <p>The party url provided to you by your party service to support multi-user experiences</p>
               </td>
             </tr>
           </tbody>
@@ -179,6 +201,28 @@
                 <p class="datatype">String</p>
                 <p class="optional">Optional</p>
                 <p>File path of the Digital Bacon project you want to load on startup. If not provided, a scene with only ambient lighting will be created</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">authUrl</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p class="optional">Optional</p>
+                <p>The authorization url provided to you by your party service to support multi-user experiences</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">partyUrl</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p class="optional">Optional</p>
+                <p>The party url provided to you by your party service to support multi-user experiences</p>
               </td>
             </tr>
           </tbody>

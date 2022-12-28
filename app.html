@@ -14,8 +14,8 @@
       {
         "imports": {
           "DigitalBacon": "/build/DigitalBacon.min.js",
-          "three": "https://cdn.jsdelivr.net/npm/three@0.139.0/build/three.module.js",
-          "three-mesh-ui": "https://cdn.jsdelivr.net/npm/three-mesh-ui@6.4.3/build/three-mesh-ui.module.js"
+          "three": "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.module.js",
+          "three-mesh-ui": "https://cdn.jsdelivr.net/npm/three-mesh-ui@6.5.2/build/three-mesh-ui.module.js"
         }
       }
     </script>
@@ -33,10 +33,13 @@
           ProjectHandler
       } from 'DigitalBacon';
 
-      let partyUrl ='wss://4qwv60mhml.execute-api.us-east-1.amazonaws.com/prod';
+      let authUrl =
+          'https://efjdkvjusd.execute-api.us-east-1.amazonaws.com/prod/auth';
+      let partyUrl =
+          'wss://4qwv60mhml.execute-api.us-east-1.amazonaws.com/prod';
 
-      setupEditor("container", "/projects/default-project.zip", partyUrl).then(
-          () => {
+      setupEditor("container", "/projects/default-project.zip", authUrl,
+          partyUrl).then(() => {
               let imagePath;
               let deviceType = getDeviceType();
               if(deviceType == "XR") {
