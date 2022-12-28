@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Quaternion, Interpolant, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, sRGBEncoding, MeshPhysicalMaterial, Vector2, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, BufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Object3D, Matrix4, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Vector3, Sphere, SphereGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
+import { Quaternion, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, sRGBEncoding, MeshPhysicalMaterial, Vector2, Matrix4, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, InterpolateLinear, AnimationClip, Bone, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Sphere, Interpolant, SphereGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 
 /*
@@ -27,8 +27,11 @@ const FileTypes$2 = {
     png: "png",
 };
 
-const PubSubTopics = {
-    ASSET_ADDED: "ASSED_ADDED",
+const PubSubTopics$1 = {
+    ASSET_ADDED: "ASSET_ADDED",
+    AVATAR_UPDATED: "AVATAR_UPDATED",
+    BECOME_PARTY_HOST: "BECOME_PARTY_HOST",
+    BOOT_PEER: "BOOT_PEER",
     HAND_TOOLS_SWITCH: "HAND_TOOLS_SWITCH",
     INSTANCE_ADDED: "INSTANCE_ADDED",
     INSTANCE_DELETED: "INSTANCE_DELETED",
@@ -40,9 +43,16 @@ const PubSubTopics = {
     MATERIAL_UPDATED: "MATERIAL_UPDATED",
     MENU_FIELD_FOCUSED: "MENU_FIELD_FOCUSED",
     MENU_NOTIFICATION: "MENU_NOTIFICATION",
+    MENU_PAGE_CHANGED: "MENU_PAGE_CHANGED",
     NOTIFICATION: "NOTIFICATION",
+    PARTY_ENDED: "PARTY_ENDED",
+    PARTY_STARTED: "PARTY_STARTED",
+    PEER_CONNECTED: "PEER_CONNECTED",
+    PEER_DISCONNECTED: "PEER_DISCONNECTED",
+    PEER_USERNAME_UPDATED: "PEER_USERNAME_UPDATED",
     PROJECT_LOADING: "PROJECT_LOADING",
     PROJECT_SAVING: "PROJECT_SAVING",
+    SETTINGS_UPDATED: "SETTINGS_UPDATED",
     TEXTURE_ADDED: "TEXTURE_ADDED",
     TEXTURE_DELETED: "TEXTURE_DELETED",
     TEXTURE_UPDATED: "TEXTURE_UPDATED",
@@ -54,7 +64,7 @@ const PubSubTopics = {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class PubSub {
+class PubSub$1 {
     constructor() {
         this._topics = {};
         this._toPublish = [];
@@ -75,13 +85,28 @@ class PubSub {
     }
 
     publish(owner, topic, message, urgent) {
-        if(!topic in this._topics) {
-            return;
-        } else if(urgent) {
-            this._publish(owner, topic, message);
-        } else {
-            this._toPublish.push(() => { this._publish(owner, topic, message);});
+        let topics = this._splitTopic(topic);
+        for(let topic of topics) {
+            if(!topic in this._topics) {
+                continue;
+            } else if(urgent) {
+                this._publish(owner, topic, message);
+            } else {
+                this._toPublish.push(
+                    () => { this._publish(owner, topic, message);});
+            }
         }
+    }
+
+    _splitTopic(topic) {
+        let topicParts = topic.split(":");
+        let t = topicParts[0];
+        let topics = [t];
+        for(let i = 1; i < topicParts.length; i++) {
+            t += ":" + topicParts[i];
+            topics.push(t);
+        }
+        return topics;
     }
 
     _publish(owner, topic, message) {
@@ -100,7 +125,7 @@ class PubSub {
     }
 }
 
-let pubSub = new PubSub();
+let pubSub = new PubSub$1();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -119,10 +144,18 @@ const numberOr = (number, defaultValue) => {
         : defaultValue;
 };
 
+const compareLists = (list1, list2) => {
+    return list1.length == list2.length
+        && list1.reduce((a, v, i) => a && list2[i] == v, true);
+};
 const stringWithMaxLength = (string, maxLength) => {
     return (string.length > maxLength)
         ? string.substring(0, maxLength) + "..."
         : string;
+};
+
+const capitalizeFirstLetter = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
 const fullDispose = (object3d, textures) => {
@@ -134,8 +167,8 @@ const fullDispose = (object3d, textures) => {
 
             if (node.material) {
 
-                if (node.material instanceof THREE.MeshFaceMaterial || node.material instanceof THREE.MultiMaterial) {
-                    node.material.materials.forEach((mtrl, idx) => {
+                if (Array.isArray(node.material)) {
+                    node.material.forEach((mtrl) => {
                         disposeMaterial(mtrl, textures);
                     });
                 }
@@ -169,25 +202,31 @@ const disposeMaterial = (material, textures) => {
 
 //https://stackoverflow.com/questions/21711600/javascript-number-precision-without-converting-to-string
 const roundWithPrecision = (num, p) => {
-    let precision = p || 9;
-    let multiplier = Math.pow(10, precision);
-    return Math.round( num * multiplier ) / multiplier;
+    return Number(num.toFixed(p));
 };
 
 THREE.Vector3.prototype.roundWithPrecision = function(p) {
     let precision = p || 9;
+    let oldValues = [this.x, this.y, this.z];
     this.setX(roundWithPrecision(this.x, precision));
     this.setY(roundWithPrecision(this.y, precision));
     this.setZ(roundWithPrecision(this.z, precision));
+    return this.x != oldValues[0]
+        || this.y != oldValues[1]
+        || this.z != oldValues[2];
 };
 
 THREE.Euler.prototype.roundWithPrecision = function(p) {
     let precision = p || 9;
+    let oldValues = [this.x, this.y, this.z];
     this.set(
         roundWithPrecision(this.x, precision),
         roundWithPrecision(this.y, precision),
         roundWithPrecision(this.z, precision)
     );
+    return this.x != oldValues[0]
+        || this.y != oldValues[1]
+        || this.z != oldValues[2];
 };
 
 const cartesianToPolar = (x, y) => {
@@ -230,12 +269,8 @@ const hslToRGB = (h, s, l) => {
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 };
 
-const rgbToHex = (rgb) => {
-  var hex = Number(rgb).toString(16);
-  if (hex.length < 2) {
-       hex = "0" + hex;
-  }
-  return hex;
+const rgbToHex = (r, g, b) => {
+    return r << 16 ^ g << 8 ^ b << 0;
 };
 
 const blobToHash = (blob) => {
@@ -251,6 +286,46 @@ const blobToHash = (blob) => {
     });
 };
 
+//https://gist.github.com/72lions/4528834
+const concatenateArrayBuffers = (buffers) => {
+    let length = 0;
+    for(let buffer of buffers) {
+        length += buffer.byteLength;
+    }
+    let array = new Uint8Array(length);
+    let index = 0;
+    for(let buffer of buffers) {
+        array.set(new Uint8Array(buffer), index);
+        index += buffer.byteLength;
+    }
+    return array.buffer;
+};
+
+//https://dmitripavlutin.com/javascript-queue/
+class Queue {
+    constructor() {
+        this.items = {};
+        this.headIndex = 0;
+        this.tailIndex = 0;
+        this.length = 0;
+    }
+    enqueue(item) {
+        this.items[this.tailIndex] = item;
+        this.tailIndex++;
+        this.length++;
+    }
+    dequeue() {
+        const item = this.items[this.headIndex];
+        delete this.items[this.headIndex];
+        this.headIndex++;
+        this.length--;
+        return item;
+    }
+    peek() {
+        return this.items[this.headIndex];
+    }
+}
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -258,7 +333,7 @@ const blobToHash = (blob) => {
  */
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'hamburger', 'image', 'lightbulb', 'material', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global$1.loadingLocks.add(blackPixelLock);
@@ -279,6 +354,10 @@ const Textures = {
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAQAAAAHUWYVAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA75o43NsAAAAHdElNRQflBwgBKRc7nqR1AAAAAW9yTlQBz6J3mgAAAQpJREFUeNrt3bEKgzAUQNFY/P8f7mBnoVMN9UbO2RN43jE8HAMAAAAAAAAAAAAAAAAAAAAAAACANW2T79uP990j/dc2+Qu+7h6IM0FiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiZgc57h4IAAAAAAAAACaZvRY9xv7zySvv8Sue/cqe+kX21B9OkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBAAAAAAAAAIAl2FO/yJ76wwkSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgS43/qAAAAAAAAAAAAAAAAAAAAAAAAADDFB0xaDHVXaSV/AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIxLTA3LTA4VDAxOjQxOjIzKzAwOjAw09nK7wAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMS0wNy0wOFQwMTo0MToyMyswMDowMKKEclMAAAAASUVORK5CYII=',
         function(texture) { global$1.loadingLocks.delete(locks['hamburger']); },
     ),
+    "headphonesIcon": new THREE.TextureLoader().load(
+        'data:image/png;base64,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',
+        function(texture) { global$1.loadingLocks.delete(locks['headphones']); },
+    ),
     "imageIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
         function(texture) { global$1.loadingLocks.delete(locks['image']); },
@@ -290,6 +369,10 @@ const Textures = {
     "materialIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
         function(texture) { global$1.loadingLocks.delete(locks['material']); },
+    ),
+    "microphoneIcon": new THREE.TextureLoader().load(
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAADzlJREFUeF7tnOuaWykMBOP3f+jZbzaZJOP4ApySEFD7N9BHtFpljp3N7Yf/benAx8fHB3mw2+12I/XUquGATa3RB6QKeuifFSUMkHaVEBEAJdowXkTW0AuD8R5V3ikAKnfnSW2zh14YLBiaJyULgIV6WXXw7y30FWGdUAmARXq1yvB/2SkE1giWACjep9UG39tA8UDdlScAivZr9cEXBEWDJQDqN2a34fe1oG7mvAEU682uwy8EigXtVzkCoFBfdh9+IVAobAKgTjNOGXy/F6iTud8wrlfSWRWdOvzeBmrk3FeAiX04ffiFwMTw+Qow13yH/7v//sWhOXn0BjDH9x8CQABMit63xwqACV1w+B+b7i0gP4wCINlzh/+14UIgN5ACINFvh7/NbCHQ5hOxSgAQLjZoVBr+ZwO2Qo0NVrukwwEB0GHWlaUzh2v0E3XFmq/06MS9AiCh6zMGaXTon9mxwxkSWr3cIwRAQssyh4ce/Ht7djpLQuvLP0IABLcoa2CiB38WCLLPFRyHcvICILglGQCYNSQ7ny04FmXkBUBgK04YkBPOGBiR6dICIKgF0YMx61N/1peE1c4bFJt0WQEQZHkkAKoOw4lnDopPmqwACLL6xGE48cxB8UmTFQABVp88CCefPSBK4ZICIMDiqCGoevXP+olwlfMHRCpMUgAEWBsBgNXCrwcBwQqQFACwqRHB/yxRAPxs1Go+wPHC5QQAbGkEAFYNvV7A4QqQEwCwqYb+j6F6AYcrQE4AwKbSoV/10//LVv2AAwbLCQDQUDrsO7zz6gkYsAApAQCaatj/NVNPwIAFSAkA0FQ67Ktf/30NAMMVJCUAQGMFwGMz9QUMGSwlAEBDDboAAOOUIiUAQJsFgAAA45QiJQBAmwWAAADjlCIlAECbBYAAAOOUIiUAQJtJAOzyC0DELwG7eQNGsFtKAHRb9nyDANAbME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVLbAuDZMN5ut7AzC4D1ATAjNymT/uQhYcMw61A9Q0jDoOfZ7/yha3v3vOg/r+xNT2279WUrAPQ08ivwZENHnv9s8Mi6ooe7Rb+qNyN17dSbbQAw0kgaAldquB+inUL2ebaK3lypaZf+bAGAK40kIUDUQdbT8smctaaaN0Q9O0BgeQAQjfwcAqKZVC1UPVnD3fKcat5Q9RC5afEvao0A+MvZq82kQiUAXsfdPnE4EAACgEvTC6VKcKxUS4r5Lx4iAARASgYrDV2lWlLM3xUAZCOJazdZz9Vr7uxg3T+/kjdkLURuZvZq6RtAtUaS9QiA52Nx1RuyTwJgIr6q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',
+        function(texture) { global$1.loadingLocks.delete(locks['microphone']); },
     ),
     "objectIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
@@ -342,6 +425,8 @@ const Materials = {
 
 const Colors = {
     "black": new THREE.Color(0x000000),
+    "green": new THREE.Color(0x00ff00),
+    "red": new THREE.Color(0xff0000),
     "white": new THREE.Color(0xffffff),
     "yellow": new THREE.Color(0xffff00),
     "defaultIdle": new THREE.Color(0x969696),
@@ -369,7 +454,7 @@ let v1 = new THREE.Vector3();
 let v2 = new THREE.Vector3();
 let v3 = new THREE.Vector3();
 
-const vector3s = [v1, v2, v3];
+const vector3s$1 = [v1, v2, v3];
 const vector2 = new THREE.Vector2();
 const euler = new THREE.Euler();
 const quaternion = new THREE.Quaternion();
@@ -492,7 +577,19 @@ class GLTFLoader extends Loader {
 
 		this.register( function ( parser ) {
 
+			return new GLTFMaterialsEmissiveStrengthExtension( parser );
+
+		} );
+
+		this.register( function ( parser ) {
+
 			return new GLTFMaterialsSpecularExtension( parser );
+
+		} );
+
+		this.register( function ( parser ) {
+
+			return new GLTFMaterialsIridescenceExtension( parser );
 
 		} );
 
@@ -505,6 +602,12 @@ class GLTFLoader extends Loader {
 		this.register( function ( parser ) {
 
 			return new GLTFMeshoptCompression( parser );
+
+		} );
+
+		this.register( function ( parser ) {
+
+			return new GLTFMeshGpuInstancing( parser );
 
 		} );
 
@@ -638,15 +741,15 @@ class GLTFLoader extends Loader {
 
 	parse( data, path, onLoad, onError ) {
 
-		let content;
+		let json;
 		const extensions = {};
 		const plugins = {};
 
 		if ( typeof data === 'string' ) {
 
-			content = data;
+			json = JSON.parse( data );
 
-		} else {
+		} else if ( data instanceof ArrayBuffer ) {
 
 			const magic = LoaderUtils.decodeText( new Uint8Array( data, 0, 4 ) );
 
@@ -663,17 +766,19 @@ class GLTFLoader extends Loader {
 
 				}
 
-				content = extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content;
+				json = JSON.parse( extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content );
 
 			} else {
 
-				content = LoaderUtils.decodeText( new Uint8Array( data ) );
+				json = JSON.parse( LoaderUtils.decodeText( new Uint8Array( data ) ) );
 
 			}
 
-		}
+		} else {
 
-		const json = JSON.parse( content );
+			json = data;
+
+		}
 
 		if ( json.asset === undefined || json.asset.version[ 0 ] < 2 ) {
 
@@ -719,10 +824,6 @@ class GLTFLoader extends Loader {
 
 					case EXTENSIONS.KHR_MATERIALS_UNLIT:
 						extensions[ extensionName ] = new GLTFMaterialsUnlitExtension();
-						break;
-
-					case EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS:
-						extensions[ extensionName ] = new GLTFMaterialsPbrSpecularGlossinessExtension();
 						break;
 
 					case EXTENSIONS.KHR_DRACO_MESH_COMPRESSION:
@@ -817,17 +918,19 @@ const EXTENSIONS = {
 	KHR_LIGHTS_PUNCTUAL: 'KHR_lights_punctual',
 	KHR_MATERIALS_CLEARCOAT: 'KHR_materials_clearcoat',
 	KHR_MATERIALS_IOR: 'KHR_materials_ior',
-	KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS: 'KHR_materials_pbrSpecularGlossiness',
 	KHR_MATERIALS_SHEEN: 'KHR_materials_sheen',
 	KHR_MATERIALS_SPECULAR: 'KHR_materials_specular',
 	KHR_MATERIALS_TRANSMISSION: 'KHR_materials_transmission',
+	KHR_MATERIALS_IRIDESCENCE: 'KHR_materials_iridescence',
 	KHR_MATERIALS_UNLIT: 'KHR_materials_unlit',
 	KHR_MATERIALS_VOLUME: 'KHR_materials_volume',
 	KHR_TEXTURE_BASISU: 'KHR_texture_basisu',
 	KHR_TEXTURE_TRANSFORM: 'KHR_texture_transform',
 	KHR_MESH_QUANTIZATION: 'KHR_mesh_quantization',
+	KHR_MATERIALS_EMISSIVE_STRENGTH: 'KHR_materials_emissive_strength',
 	EXT_TEXTURE_WEBP: 'EXT_texture_webp',
-	EXT_MESHOPT_COMPRESSION: 'EXT_meshopt_compression'
+	EXT_MESHOPT_COMPRESSION: 'EXT_meshopt_compression',
+	EXT_MESH_GPU_INSTANCING: 'EXT_mesh_gpu_instancing'
 };
 
 /**
@@ -925,6 +1028,8 @@ class GLTFLightsExtension {
 
 		lightNode.decay = 2;
 
+		assignExtrasToUserData( lightNode, lightDef );
+
 		if ( lightDef.intensity !== undefined ) lightNode.intensity = lightDef.intensity;
 
 		lightNode.name = parser.createUniqueName( lightDef.name || ( 'light_' + lightIndex ) );
@@ -934,6 +1039,14 @@ class GLTFLightsExtension {
 		parser.cache.add( cacheKey, dependency );
 
 		return dependency;
+
+	}
+
+	getDependency( type, index ) {	
+
+		if ( type !== 'light' ) return;
+
+		return this._loadLight( index );
 
 	}
 
@@ -1006,6 +1119,45 @@ class GLTFMaterialsUnlitExtension {
 		}
 
 		return Promise.all( pending );
+
+	}
+
+}
+
+/**
+ * Materials Emissive Strength Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/blob/5768b3ce0ef32bc39cdf1bef10b948586635ead3/extensions/2.0/Khronos/KHR_materials_emissive_strength/README.md
+ */
+class GLTFMaterialsEmissiveStrengthExtension {
+
+	constructor( parser ) {
+
+		this.parser = parser;
+		this.name = EXTENSIONS.KHR_MATERIALS_EMISSIVE_STRENGTH;
+
+	}
+
+	extendMaterialParams( materialIndex, materialParams ) {
+
+		const parser = this.parser;
+		const materialDef = parser.json.materials[ materialIndex ];
+
+		if ( ! materialDef.extensions || ! materialDef.extensions[ this.name ] ) {
+
+			return Promise.resolve();
+
+		}
+
+		const emissiveStrength = materialDef.extensions[ this.name ].emissiveStrength;
+
+		if ( emissiveStrength !== undefined ) {
+
+			materialParams.emissiveIntensity = emissiveStrength;
+
+		}
+
+		return Promise.resolve();
 
 	}
 
@@ -1086,6 +1238,94 @@ class GLTFMaterialsClearcoatExtension {
 				materialParams.clearcoatNormalScale = new Vector2( scale, scale );
 
 			}
+
+		}
+
+		return Promise.all( pending );
+
+	}
+
+}
+
+/**
+ * Iridescence Materials Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_iridescence
+ */
+class GLTFMaterialsIridescenceExtension {
+
+	constructor( parser ) {
+
+		this.parser = parser;
+		this.name = EXTENSIONS.KHR_MATERIALS_IRIDESCENCE;
+
+	}
+
+	getMaterialType( materialIndex ) {
+
+		const parser = this.parser;
+		const materialDef = parser.json.materials[ materialIndex ];
+
+		if ( ! materialDef.extensions || ! materialDef.extensions[ this.name ] ) return null;
+
+		return MeshPhysicalMaterial;
+
+	}
+
+	extendMaterialParams( materialIndex, materialParams ) {
+
+		const parser = this.parser;
+		const materialDef = parser.json.materials[ materialIndex ];
+
+		if ( ! materialDef.extensions || ! materialDef.extensions[ this.name ] ) {
+
+			return Promise.resolve();
+
+		}
+
+		const pending = [];
+
+		const extension = materialDef.extensions[ this.name ];
+
+		if ( extension.iridescenceFactor !== undefined ) {
+
+			materialParams.iridescence = extension.iridescenceFactor;
+
+		}
+
+		if ( extension.iridescenceTexture !== undefined ) {
+
+			pending.push( parser.assignTexture( materialParams, 'iridescenceMap', extension.iridescenceTexture ) );
+
+		}
+
+		if ( extension.iridescenceIor !== undefined ) {
+
+			materialParams.iridescenceIOR = extension.iridescenceIor;
+
+		}
+
+		if ( materialParams.iridescenceThicknessRange === undefined ) {
+
+			materialParams.iridescenceThicknessRange = [ 100, 400 ];
+
+		}
+
+		if ( extension.iridescenceThicknessMinimum !== undefined ) {
+
+			materialParams.iridescenceThicknessRange[ 0 ] = extension.iridescenceThicknessMinimum;
+
+		}
+
+		if ( extension.iridescenceThicknessMaximum !== undefined ) {
+
+			materialParams.iridescenceThicknessRange[ 1 ] = extension.iridescenceThicknessMaximum;
+
+		}
+
+		if ( extension.iridescenceThicknessTexture !== undefined ) {
+
+			pending.push( parser.assignTexture( materialParams, 'iridescenceThicknessMap', extension.iridescenceThicknessTexture ) );
 
 		}
 
@@ -1276,7 +1516,7 @@ class GLTFMaterialsVolumeExtension {
 
 		}
 
-		materialParams.attenuationDistance = extension.attenuationDistance || 0;
+		materialParams.attenuationDistance = extension.attenuationDistance || Infinity;
 
 		const colorArray = extension.attenuationColor || [ 1, 1, 1 ];
 		materialParams.attenuationColor = new Color( colorArray[ 0 ], colorArray[ 1 ], colorArray[ 2 ] );
@@ -1489,7 +1729,7 @@ class GLTFTextureWebPExtension {
 
 		return this.detectSupport().then( function ( isSupported ) {
 
-			if ( isSupported ) return parser.loadTextureImage( textureIndex, source, loader );
+			if ( isSupported ) return parser.loadTextureImage( textureIndex, extension.source, loader );
 
 			if ( json.extensionsRequired && json.extensionsRequired.indexOf( name ) >= 0 ) {
 
@@ -1573,7 +1813,7 @@ class GLTFMeshoptCompression {
 
 			}
 
-			return Promise.all( [ buffer, decoder.ready ] ).then( function ( res ) {
+			return buffer.then( function ( res ) {
 
 				const byteOffset = extensionDef.byteOffset || 0;
 				const byteLength = extensionDef.byteLength || 0;
@@ -1581,11 +1821,28 @@ class GLTFMeshoptCompression {
 				const count = extensionDef.count;
 				const stride = extensionDef.byteStride;
 
-				const result = new ArrayBuffer( count * stride );
-				const source = new Uint8Array( res[ 0 ], byteOffset, byteLength );
+				const source = new Uint8Array( res, byteOffset, byteLength );
 
-				decoder.decodeGltfBuffer( new Uint8Array( result ), count, stride, source, extensionDef.mode, extensionDef.filter );
-				return result;
+				if ( decoder.decodeGltfBufferAsync ) {
+
+					return decoder.decodeGltfBufferAsync( count, stride, source, extensionDef.mode, extensionDef.filter ).then( function ( res ) {
+
+						return res.buffer;
+
+					} );
+
+				} else {
+
+					// Support for MeshoptDecoder 0.18 or earlier, without decodeGltfBufferAsync
+					return decoder.ready.then( function () {
+
+						const result = new ArrayBuffer( count * stride );
+						decoder.decodeGltfBuffer( new Uint8Array( result ), count, stride, source, extensionDef.mode, extensionDef.filter );
+						return result;
+
+					} );
+
+				}
 
 			} );
 
@@ -1594,6 +1851,160 @@ class GLTFMeshoptCompression {
 			return null;
 
 		}
+
+	}
+
+}
+
+/**
+ * GPU Instancing Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Vendor/EXT_mesh_gpu_instancing
+ *
+ */
+class GLTFMeshGpuInstancing {
+
+	constructor( parser ) {
+
+		this.name = EXTENSIONS.EXT_MESH_GPU_INSTANCING;
+		this.parser = parser;
+
+	}
+
+	createNodeMesh( nodeIndex ) {
+
+		const json = this.parser.json;
+		const nodeDef = json.nodes[ nodeIndex ];
+
+		if ( ! nodeDef.extensions || ! nodeDef.extensions[ this.name ] ||
+			nodeDef.mesh === undefined ) {
+
+			return null;
+
+		}
+
+		const meshDef = json.meshes[ nodeDef.mesh ];
+
+		// No Points or Lines + Instancing support yet
+
+		for ( const primitive of meshDef.primitives ) {
+
+			if ( primitive.mode !== WEBGL_CONSTANTS.TRIANGLES &&
+				 primitive.mode !== WEBGL_CONSTANTS.TRIANGLE_STRIP &&
+				 primitive.mode !== WEBGL_CONSTANTS.TRIANGLE_FAN &&
+				 primitive.mode !== undefined ) {
+
+				return null;
+
+			}
+
+		}
+
+		const extensionDef = nodeDef.extensions[ this.name ];
+		const attributesDef = extensionDef.attributes;
+
+		// @TODO: Can we support InstancedMesh + SkinnedMesh?
+
+		const pending = [];
+		const attributes = {};
+
+		for ( const key in attributesDef ) {
+
+			pending.push( this.parser.getDependency( 'accessor', attributesDef[ key ] ).then( accessor => {
+
+				attributes[ key ] = accessor;
+				return attributes[ key ];
+
+			} ) );
+
+		}
+
+		if ( pending.length < 1 ) {
+
+			return null;
+
+		}
+
+		pending.push( this.parser.createNodeMesh( nodeIndex ) );
+
+		return Promise.all( pending ).then( results => {
+
+			const nodeObject = results.pop();
+			const meshes = nodeObject.isGroup ? nodeObject.children : [ nodeObject ];
+			const count = results[ 0 ].count; // All attribute counts should be same
+			const instancedMeshes = [];
+
+			for ( const mesh of meshes ) {
+
+				// Temporal variables
+				const m = new Matrix4();
+				const p = new Vector3();
+				const q = new Quaternion();
+				const s = new Vector3( 1, 1, 1 );
+
+				const instancedMesh = new InstancedMesh( mesh.geometry, mesh.material, count );
+
+				for ( let i = 0; i < count; i ++ ) {
+
+					if ( attributes.TRANSLATION ) {
+
+						p.fromBufferAttribute( attributes.TRANSLATION, i );
+
+					}
+
+					if ( attributes.ROTATION ) {
+
+						q.fromBufferAttribute( attributes.ROTATION, i );
+
+					}
+
+					if ( attributes.SCALE ) {
+
+						s.fromBufferAttribute( attributes.SCALE, i );
+
+					}
+
+					instancedMesh.setMatrixAt( i, m.compose( p, q, s ) );
+
+				}
+
+				// Add instance attributes to the geometry, excluding TRS.
+				for ( const attributeName in attributes ) {
+
+					if ( attributeName !== 'TRANSLATION' &&
+						 attributeName !== 'ROTATION' &&
+						 attributeName !== 'SCALE' ) {
+
+						mesh.geometry.setAttribute( attributeName, attributes[ attributeName ] );
+
+					}
+
+				}
+
+				// Just in case
+				Object3D.prototype.copy.call( instancedMesh, mesh );
+
+				// https://github.com/mrdoob/three.js/issues/18334
+				instancedMesh.frustumCulled = false;
+				this.parser.assignFinalMaterial( instancedMesh );
+
+				instancedMeshes.push( instancedMesh );
+
+			}
+
+			if ( nodeObject.isGroup ) {
+
+				nodeObject.clear();
+
+				nodeObject.add( ... instancedMeshes );
+
+				return nodeObject;
+
+			}
+
+			return instancedMeshes[ 0 ];
+
+		} );
 
 	}
 
@@ -1719,7 +2130,7 @@ class GLTFDracoMeshCompressionExtension {
 				const accessorDef = json.accessors[ primitive.attributes[ attributeName ] ];
 				const componentType = WEBGL_COMPONENT_TYPES[ accessorDef.componentType ];
 
-				attributeTypeMap[ threeAttributeName ] = componentType;
+				attributeTypeMap[ threeAttributeName ] = componentType.name;
 				attributeNormalizedMap[ threeAttributeName ] = accessorDef.normalized === true;
 
 			}
@@ -1810,335 +2221,6 @@ class GLTFTextureTransformExtension {
 }
 
 /**
- * Specular-Glossiness Extension
- *
- * Specification: https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
- */
-
-/**
- * A sub class of StandardMaterial with some of the functionality
- * changed via the `onBeforeCompile` callback
- * @pailhead
- */
-class GLTFMeshStandardSGMaterial extends MeshStandardMaterial {
-
-	constructor( params ) {
-
-		super();
-
-		this.isGLTFSpecularGlossinessMaterial = true;
-
-		//various chunks that need replacing
-		const specularMapParsFragmentChunk = [
-			'#ifdef USE_SPECULARMAP',
-			'	uniform sampler2D specularMap;',
-			'#endif'
-		].join( '\n' );
-
-		const glossinessMapParsFragmentChunk = [
-			'#ifdef USE_GLOSSINESSMAP',
-			'	uniform sampler2D glossinessMap;',
-			'#endif'
-		].join( '\n' );
-
-		const specularMapFragmentChunk = [
-			'vec3 specularFactor = specular;',
-			'#ifdef USE_SPECULARMAP',
-			'	vec4 texelSpecular = texture2D( specularMap, vUv );',
-			'	// reads channel RGB, compatible with a glTF Specular-Glossiness (RGBA) texture',
-			'	specularFactor *= texelSpecular.rgb;',
-			'#endif'
-		].join( '\n' );
-
-		const glossinessMapFragmentChunk = [
-			'float glossinessFactor = glossiness;',
-			'#ifdef USE_GLOSSINESSMAP',
-			'	vec4 texelGlossiness = texture2D( glossinessMap, vUv );',
-			'	// reads channel A, compatible with a glTF Specular-Glossiness (RGBA) texture',
-			'	glossinessFactor *= texelGlossiness.a;',
-			'#endif'
-		].join( '\n' );
-
-		const lightPhysicalFragmentChunk = [
-			'PhysicalMaterial material;',
-			'material.diffuseColor = diffuseColor.rgb * ( 1. - max( specularFactor.r, max( specularFactor.g, specularFactor.b ) ) );',
-			'vec3 dxy = max( abs( dFdx( geometryNormal ) ), abs( dFdy( geometryNormal ) ) );',
-			'float geometryRoughness = max( max( dxy.x, dxy.y ), dxy.z );',
-			'material.roughness = max( 1.0 - glossinessFactor, 0.0525 ); // 0.0525 corresponds to the base mip of a 256 cubemap.',
-			'material.roughness += geometryRoughness;',
-			'material.roughness = min( material.roughness, 1.0 );',
-			'material.specularColor = specularFactor;',
-		].join( '\n' );
-
-		const uniforms = {
-			specular: { value: new Color().setHex( 0xffffff ) },
-			glossiness: { value: 1 },
-			specularMap: { value: null },
-			glossinessMap: { value: null }
-		};
-
-		this._extraUniforms = uniforms;
-
-		this.onBeforeCompile = function ( shader ) {
-
-			for ( const uniformName in uniforms ) {
-
-				shader.uniforms[ uniformName ] = uniforms[ uniformName ];
-
-			}
-
-			shader.fragmentShader = shader.fragmentShader
-				.replace( 'uniform float roughness;', 'uniform vec3 specular;' )
-				.replace( 'uniform float metalness;', 'uniform float glossiness;' )
-				.replace( '#include <roughnessmap_pars_fragment>', specularMapParsFragmentChunk )
-				.replace( '#include <metalnessmap_pars_fragment>', glossinessMapParsFragmentChunk )
-				.replace( '#include <roughnessmap_fragment>', specularMapFragmentChunk )
-				.replace( '#include <metalnessmap_fragment>', glossinessMapFragmentChunk )
-				.replace( '#include <lights_physical_fragment>', lightPhysicalFragmentChunk );
-
-		};
-
-		Object.defineProperties( this, {
-
-			specular: {
-				get: function () {
-
-					return uniforms.specular.value;
-
-				},
-				set: function ( v ) {
-
-					uniforms.specular.value = v;
-
-				}
-			},
-
-			specularMap: {
-				get: function () {
-
-					return uniforms.specularMap.value;
-
-				},
-				set: function ( v ) {
-
-					uniforms.specularMap.value = v;
-
-					if ( v ) {
-
-						this.defines.USE_SPECULARMAP = ''; // USE_UV is set by the renderer for specular maps
-
-					} else {
-
-						delete this.defines.USE_SPECULARMAP;
-
-					}
-
-				}
-			},
-
-			glossiness: {
-				get: function () {
-
-					return uniforms.glossiness.value;
-
-				},
-				set: function ( v ) {
-
-					uniforms.glossiness.value = v;
-
-				}
-			},
-
-			glossinessMap: {
-				get: function () {
-
-					return uniforms.glossinessMap.value;
-
-				},
-				set: function ( v ) {
-
-					uniforms.glossinessMap.value = v;
-
-					if ( v ) {
-
-						this.defines.USE_GLOSSINESSMAP = '';
-						this.defines.USE_UV = '';
-
-					} else {
-
-						delete this.defines.USE_GLOSSINESSMAP;
-						delete this.defines.USE_UV;
-
-					}
-
-				}
-			}
-
-		} );
-
-		delete this.metalness;
-		delete this.roughness;
-		delete this.metalnessMap;
-		delete this.roughnessMap;
-
-		this.setValues( params );
-
-	}
-
-	copy( source ) {
-
-		super.copy( source );
-
-		this.specularMap = source.specularMap;
-		this.specular.copy( source.specular );
-		this.glossinessMap = source.glossinessMap;
-		this.glossiness = source.glossiness;
-		delete this.metalness;
-		delete this.roughness;
-		delete this.metalnessMap;
-		delete this.roughnessMap;
-		return this;
-
-	}
-
-}
-
-
-class GLTFMaterialsPbrSpecularGlossinessExtension {
-
-	constructor() {
-
-		this.name = EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS;
-
-		this.specularGlossinessParams = [
-			'color',
-			'map',
-			'lightMap',
-			'lightMapIntensity',
-			'aoMap',
-			'aoMapIntensity',
-			'emissive',
-			'emissiveIntensity',
-			'emissiveMap',
-			'bumpMap',
-			'bumpScale',
-			'normalMap',
-			'normalMapType',
-			'displacementMap',
-			'displacementScale',
-			'displacementBias',
-			'specularMap',
-			'specular',
-			'glossinessMap',
-			'glossiness',
-			'alphaMap',
-			'envMap',
-			'envMapIntensity'
-		];
-
-	}
-
-	getMaterialType() {
-
-		return GLTFMeshStandardSGMaterial;
-
-	}
-
-	extendParams( materialParams, materialDef, parser ) {
-
-		const pbrSpecularGlossiness = materialDef.extensions[ this.name ];
-
-		materialParams.color = new Color( 1.0, 1.0, 1.0 );
-		materialParams.opacity = 1.0;
-
-		const pending = [];
-
-		if ( Array.isArray( pbrSpecularGlossiness.diffuseFactor ) ) {
-
-			const array = pbrSpecularGlossiness.diffuseFactor;
-
-			materialParams.color.fromArray( array );
-			materialParams.opacity = array[ 3 ];
-
-		}
-
-		if ( pbrSpecularGlossiness.diffuseTexture !== undefined ) {
-
-			pending.push( parser.assignTexture( materialParams, 'map', pbrSpecularGlossiness.diffuseTexture, sRGBEncoding ) );
-
-		}
-
-		materialParams.emissive = new Color( 0.0, 0.0, 0.0 );
-		materialParams.glossiness = pbrSpecularGlossiness.glossinessFactor !== undefined ? pbrSpecularGlossiness.glossinessFactor : 1.0;
-		materialParams.specular = new Color( 1.0, 1.0, 1.0 );
-
-		if ( Array.isArray( pbrSpecularGlossiness.specularFactor ) ) {
-
-			materialParams.specular.fromArray( pbrSpecularGlossiness.specularFactor );
-
-		}
-
-		if ( pbrSpecularGlossiness.specularGlossinessTexture !== undefined ) {
-
-			const specGlossMapDef = pbrSpecularGlossiness.specularGlossinessTexture;
-			pending.push( parser.assignTexture( materialParams, 'glossinessMap', specGlossMapDef ) );
-			pending.push( parser.assignTexture( materialParams, 'specularMap', specGlossMapDef, sRGBEncoding ) );
-
-		}
-
-		return Promise.all( pending );
-
-	}
-
-	createMaterial( materialParams ) {
-
-		const material = new GLTFMeshStandardSGMaterial( materialParams );
-		material.fog = true;
-
-		material.color = materialParams.color;
-
-		material.map = materialParams.map === undefined ? null : materialParams.map;
-
-		material.lightMap = null;
-		material.lightMapIntensity = 1.0;
-
-		material.aoMap = materialParams.aoMap === undefined ? null : materialParams.aoMap;
-		material.aoMapIntensity = 1.0;
-
-		material.emissive = materialParams.emissive;
-		material.emissiveIntensity = 1.0;
-		material.emissiveMap = materialParams.emissiveMap === undefined ? null : materialParams.emissiveMap;
-
-		material.bumpMap = materialParams.bumpMap === undefined ? null : materialParams.bumpMap;
-		material.bumpScale = 1;
-
-		material.normalMap = materialParams.normalMap === undefined ? null : materialParams.normalMap;
-		material.normalMapType = TangentSpaceNormalMap;
-
-		if ( materialParams.normalScale ) material.normalScale = materialParams.normalScale;
-
-		material.displacementMap = null;
-		material.displacementScale = 1;
-		material.displacementBias = 0;
-
-		material.specularMap = materialParams.specularMap === undefined ? null : materialParams.specularMap;
-		material.specular = materialParams.specular;
-
-		material.glossinessMap = materialParams.glossinessMap === undefined ? null : materialParams.glossinessMap;
-		material.glossiness = materialParams.glossiness;
-
-		material.alphaMap = null;
-
-		material.envMap = materialParams.envMap === undefined ? null : materialParams.envMap;
-		material.envMapIntensity = 1.0;
-
-		return material;
-
-	}
-
-}
-
-/**
  * Mesh Quantization Extension
  *
  * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_mesh_quantization
@@ -2187,51 +2269,47 @@ class GLTFCubicSplineInterpolant extends Interpolant {
 
 	}
 
-}
+	interpolate_( i1, t0, t, t1 ) {
 
-GLTFCubicSplineInterpolant.prototype.beforeStart_ = GLTFCubicSplineInterpolant.prototype.copySampleValue_;
+		const result = this.resultBuffer;
+		const values = this.sampleValues;
+		const stride = this.valueSize;
 
-GLTFCubicSplineInterpolant.prototype.afterEnd_ = GLTFCubicSplineInterpolant.prototype.copySampleValue_;
+		const stride2 = stride * 2;
+		const stride3 = stride * 3;
 
-GLTFCubicSplineInterpolant.prototype.interpolate_ = function ( i1, t0, t, t1 ) {
+		const td = t1 - t0;
 
-	const result = this.resultBuffer;
-	const values = this.sampleValues;
-	const stride = this.valueSize;
+		const p = ( t - t0 ) / td;
+		const pp = p * p;
+		const ppp = pp * p;
 
-	const stride2 = stride * 2;
-	const stride3 = stride * 3;
+		const offset1 = i1 * stride3;
+		const offset0 = offset1 - stride3;
 
-	const td = t1 - t0;
+		const s2 = - 2 * ppp + 3 * pp;
+		const s3 = ppp - pp;
+		const s0 = 1 - s2;
+		const s1 = s3 - pp + p;
 
-	const p = ( t - t0 ) / td;
-	const pp = p * p;
-	const ppp = pp * p;
+		// Layout of keyframe output values for CUBICSPLINE animations:
+		//   [ inTangent_1, splineVertex_1, outTangent_1, inTangent_2, splineVertex_2, ... ]
+		for ( let i = 0; i !== stride; i ++ ) {
 
-	const offset1 = i1 * stride3;
-	const offset0 = offset1 - stride3;
+			const p0 = values[ offset0 + i + stride ]; // splineVertex_k
+			const m0 = values[ offset0 + i + stride2 ] * td; // outTangent_k * (t_k+1 - t_k)
+			const p1 = values[ offset1 + i + stride ]; // splineVertex_k+1
+			const m1 = values[ offset1 + i ] * td; // inTangent_k+1 * (t_k+1 - t_k)
 
-	const s2 = - 2 * ppp + 3 * pp;
-	const s3 = ppp - pp;
-	const s0 = 1 - s2;
-	const s1 = s3 - pp + p;
+			result[ i ] = s0 * p0 + s1 * m0 + s2 * p1 + s3 * m1;
 
-	// Layout of keyframe output values for CUBICSPLINE animations:
-	//   [ inTangent_1, splineVertex_1, outTangent_1, inTangent_2, splineVertex_2, ... ]
-	for ( let i = 0; i !== stride; i ++ ) {
+		}
 
-		const p0 = values[ offset0 + i + stride ]; // splineVertex_k
-		const m0 = values[ offset0 + i + stride2 ] * td; // outTangent_k * (t_k+1 - t_k)
-		const p1 = values[ offset1 + i + stride ]; // splineVertex_k+1
-		const m1 = values[ offset1 + i ] * td; // inTangent_k+1 * (t_k+1 - t_k)
-
-		result[ i ] = s0 * p0 + s1 * m0 + s2 * p1 + s3 * m1;
+		return result;
 
 	}
 
-	return result;
-
-};
+}
 
 const _q = new Quaternion();
 
@@ -2642,13 +2720,26 @@ class GLTFParser {
 
 		// Use an ImageBitmapLoader if imageBitmaps are supported. Moves much of the
 		// expensive work of uploading a texture to the GPU off the main thread.
-		if ( typeof createImageBitmap !== 'undefined' && /^((?!chrome|android).)*safari/i.test( navigator.userAgent ) === false ) {
+		
+		let isSafari = false;
+		let isFirefox = false;
+		let firefoxVersion = - 1;
 
-			this.textureLoader = new ImageBitmapLoader( this.options.manager );
+		if ( typeof navigator !== 'undefined' ) {
+
+			isSafari = /^((?!chrome|android).)*safari/i.test( navigator.userAgent ) === true;
+			isFirefox = navigator.userAgent.indexOf( 'Firefox' ) > - 1;
+			firefoxVersion = isFirefox ? navigator.userAgent.match( /Firefox\/([0-9]+)\./ )[ 1 ] : - 1;
+
+		}
+
+		if ( typeof createImageBitmap === 'undefined' || isSafari || ( isFirefox && firefoxVersion < 98 ) ) {
+
+			this.textureLoader = new TextureLoader( this.options.manager );
 
 		} else {
 
-			this.textureLoader = new TextureLoader( this.options.manager );
+			this.textureLoader = new ImageBitmapLoader( this.options.manager );
 
 		}
 
@@ -2953,7 +3044,11 @@ class GLTFParser {
 					break;
 
 				case 'animation':
-					dependency = this.loadAnimation( index );
+					dependency = this._invokeOne( function ( ext ) {
+
+						return ext.loadAnimation && ext.loadAnimation( index );
+
+					} );
 					break;
 
 				case 'camera':
@@ -2961,7 +3056,19 @@ class GLTFParser {
 					break;
 
 				default:
-					throw new Error( 'Unknown type: ' + type );
+					dependency = this._invokeOne( function ( ext ) {
+
+						return ext != this && ext.getDependency && ext.getDependency( type, index );
+
+					} );
+
+					if ( ! dependency ) {
+
+						throw new Error( 'Unknown type: ' + type );
+
+					}
+
+					break;
 
 			}
 
@@ -3071,10 +3178,12 @@ class GLTFParser {
 
 		if ( accessorDef.bufferView === undefined && accessorDef.sparse === undefined ) {
 
-			// Ignore empty accessors, which may be used to declare runtime
-			// information about attributes coming from another source (e.g. Draco
-			// compression extension).
-			return Promise.resolve( null );
+			const itemSize = WEBGL_TYPE_SIZES[ accessorDef.type ];
+			const TypedArray = WEBGL_COMPONENT_TYPES[ accessorDef.componentType ];
+			const normalized = accessorDef.normalized === true;
+
+			const array = new TypedArray( accessorDef.count * itemSize );
+			return Promise.resolve( new BufferAttribute( array, itemSize, normalized ) );
 
 		}
 
@@ -3192,7 +3301,7 @@ class GLTFParser {
 	/**
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#textures
 	 * @param {number} textureIndex
-	 * @return {Promise<THREE.Texture>}
+	 * @return {Promise<THREE.Texture|null>}
 	 */
 	loadTexture( textureIndex ) {
 
@@ -3236,7 +3345,7 @@ class GLTFParser {
 
 			texture.flipY = false;
 
-			if ( textureDef.name ) texture.name = textureDef.name;
+			texture.name = textureDef.name || sourceDef.name || '';
 
 			const samplers = json.samplers || {};
 			const sampler = samplers[ textureDef.sampler ] || {};
@@ -3362,6 +3471,8 @@ class GLTFParser {
 
 		return this.getDependency( 'texture', mapDef.index ).then( function ( texture ) {
 
+			if ( ! texture ) return null;
+
 			// Materials sample aoMap from UV set 1 and other maps from UV set 0 - this can't be configured
 			// However, we will copy UV set 0 to UV set 1 on demand for aoMap
 			if ( mapDef.texCoord !== undefined && mapDef.texCoord != 0 && ! ( mapName === 'aoMap' && mapDef.texCoord == 1 ) ) {
@@ -3460,7 +3571,6 @@ class GLTFParser {
 
 			let cacheKey = 'ClonedMaterial:' + material.uuid + ':';
 
-			if ( material.isGLTFSpecularGlossinessMaterial ) cacheKey += 'specular-glossiness:';
 			if ( useDerivativeTangents ) cacheKey += 'derivative-tangents:';
 			if ( useVertexColors ) cacheKey += 'vertex-colors:';
 			if ( useFlatShading ) cacheKey += 'flat-shading:';
@@ -3528,13 +3638,7 @@ class GLTFParser {
 
 		const pending = [];
 
-		if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ] ) {
-
-			const sgExtension = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ];
-			materialType = sgExtension.getMaterialType();
-			pending.push( sgExtension.extendParams( materialParams, materialDef, parser ) );
-
-		} else if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ] ) {
+		if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ] ) {
 
 			const kmuExtension = extensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ];
 			materialType = kmuExtension.getMaterialType();
@@ -3658,17 +3762,7 @@ class GLTFParser {
 
 		return Promise.all( pending ).then( function () {
 
-			let material;
-
-			if ( materialType === GLTFMeshStandardSGMaterial ) {
-
-				material = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ].createMaterial( materialParams );
-
-			} else {
-
-				material = new materialType( materialParams );
-
-			}
+			const material = new materialType( materialParams );
 
 			if ( materialDef.name ) material.name = materialDef.name;
 
@@ -3957,25 +4051,65 @@ class GLTFParser {
 	/**
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#skins
 	 * @param {number} skinIndex
-	 * @return {Promise<Object>}
+	 * @return {Promise<Skeleton>}
 	 */
 	loadSkin( skinIndex ) {
 
 		const skinDef = this.json.skins[ skinIndex ];
 
-		const skinEntry = { joints: skinDef.joints };
+		const pending = [];
 
-		if ( skinDef.inverseBindMatrices === undefined ) {
+		for ( let i = 0, il = skinDef.joints.length; i < il; i ++ ) {
 
-			return Promise.resolve( skinEntry );
+			pending.push( this.getDependency( 'node', skinDef.joints[ i ] ) );
 
 		}
 
-		return this.getDependency( 'accessor', skinDef.inverseBindMatrices ).then( function ( accessor ) {
+		if ( skinDef.inverseBindMatrices !== undefined ) {
 
-			skinEntry.inverseBindMatrices = accessor;
+			pending.push( this.getDependency( 'accessor', skinDef.inverseBindMatrices ) );
 
-			return skinEntry;
+		} else {
+
+			pending.push( null );
+
+		}
+
+		return Promise.all( pending ).then( function ( results ) {
+
+			const inverseBindMatrices = results.pop();
+			const jointNodes = results;
+
+			const bones = [];
+			const boneInverses = [];
+
+			for ( let i = 0, il = jointNodes.length; i < il; i ++ ) {
+
+				const jointNode = jointNodes[ i ];
+
+				if ( jointNode ) {
+
+					bones.push( jointNode );
+
+					const mat = new Matrix4();
+
+					if ( inverseBindMatrices !== null ) {
+
+						mat.fromArray( inverseBindMatrices.array, i * 16 );
+
+					}
+
+					boneInverses.push( mat );
+
+				} else {
+
+					console.warn( 'THREE.GLTFLoader: Joint "%s" could not be found.', skinDef.joints[ i ] );
+
+				}
+
+			}
+
+			return new Skeleton( bones, boneInverses );
 
 		} );
 
@@ -4003,7 +4137,7 @@ class GLTFParser {
 			const channel = animationDef.channels[ i ];
 			const sampler = animationDef.samplers[ channel.sampler ];
 			const target = channel.target;
-			const name = target.node !== undefined ? target.node : target.id; // NOTE: target.id is deprecated.
+			const name = target.node;
 			const input = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.input ] : sampler.input;
 			const output = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.output ] : sampler.output;
 
@@ -4044,7 +4178,6 @@ class GLTFParser {
 				if ( node === undefined ) continue;
 
 				node.updateMatrix();
-				node.matrixAutoUpdate = true;
 
 				let TypedKeyframeTrack;
 
@@ -4413,58 +4546,13 @@ function buildNodeHierarchy( nodeId, parentObject, json, parser ) {
 
 		// build skeleton here as well
 
-		let skinEntry;
-
-		return parser.getDependency( 'skin', nodeDef.skin ).then( function ( skin ) {
-
-			skinEntry = skin;
-
-			const pendingJoints = [];
-
-			for ( let i = 0, il = skinEntry.joints.length; i < il; i ++ ) {
-
-				pendingJoints.push( parser.getDependency( 'node', skinEntry.joints[ i ] ) );
-
-			}
-
-			return Promise.all( pendingJoints );
-
-		} ).then( function ( jointNodes ) {
+		return parser.getDependency( 'skin', nodeDef.skin ).then( function ( skeleton ) {
 
 			node.traverse( function ( mesh ) {
 
-				if ( ! mesh.isMesh ) return;
+				if ( ! mesh.isSkinnedMesh ) return;
 
-				const bones = [];
-				const boneInverses = [];
-
-				for ( let j = 0, jl = jointNodes.length; j < jl; j ++ ) {
-
-					const jointNode = jointNodes[ j ];
-
-					if ( jointNode ) {
-
-						bones.push( jointNode );
-
-						const mat = new Matrix4();
-
-						if ( skinEntry.inverseBindMatrices !== undefined ) {
-
-							mat.fromArray( skinEntry.inverseBindMatrices.array, j * 16 );
-
-						}
-
-						boneInverses.push( mat );
-
-					} else {
-
-						console.warn( 'THREE.GLTFLoader: Joint "%s" could not be found.', skinEntry.joints[ j ] );
-
-					}
-
-				}
-
-				mesh.bind( new Skeleton( bones, boneInverses ), mesh.matrixWorld );
+				mesh.bind( skeleton, mesh.matrixWorld );
 
 			} );
 
@@ -4865,29 +4953,34 @@ class LibraryHandler {
                 }
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('blob').then((blob)=>{
-                    return blobToHash(blob).then((hash) => {
-                        if(hash in this._blobHashMap) {
-                            console.warn("Unreachable statement reached...");
-                            return;
-                        }
-                        this._blobHashMap[hash] = assetId;
-                        this.library[assetId] = {
-                            'Blob': blob,
-                            'Name': assetDetails['Name'],
-                            'Type': assetDetails['Type'],
-                        };
-                        return this._loadMesh(assetId, blob);
-                    });
+                    return this.loadLibraryAsset(assetId, assetDetails, blob);
                 });
                 loadPromises.push(promise);
             }
             Promise.all(loadPromises).then(successCallback).catch(error => {
+                console.log(error);
                 if(errorCallback) errorCallback();
             });
         } catch(error) {
             console.error(error);
             if(errorCallback) errorCallback();
         }
+    }
+
+    loadLibraryAsset(assetId, assetDetails, blob) {
+        return blobToHash(blob).then((hash) => {
+            if(hash in this._blobHashMap) {
+                console.warn("Unreachable statement reached...");
+                return;
+            }
+            this._blobHashMap[hash] = assetId;
+            this.library[assetId] = {
+                'Blob': blob,
+                'Name': assetDetails['Name'],
+                'Type': assetDetails['Type'],
+            };
+            return this._loadMesh(assetId, blob, true);
+        });
     }
 
     loadAsset(filepath, callback) {
@@ -4933,27 +5026,28 @@ class LibraryHandler {
         };
     }
 
-    _loadMesh(assetId, blob) {
+    _loadMesh(assetId, blob, ignorePublish) {
         if(this.library[assetId]['Type'] == AssetTypes.MODEL) {
-            return this._loadGLB(assetId, blob);
+            return this._loadGLB(assetId, blob, ignorePublish);
         } else if(this.library[assetId]['Type'] == AssetTypes.IMAGE) {
-            return this._loadImage(assetId, blob);
+            return this._loadImage(assetId, blob, ignorePublish);
         }
     }
 
-    _loadGLB(assetId, blob) {
+    _loadGLB(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
-                pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                if(!ignorePublish)
+                    pubSub.publish(this._id, PubSubTopics$1.ASSET_ADDED, assetId);
                 resolve();
             });
         });
     }
 
-    _loadImage(assetId, blob) {
+    _loadImage(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
             new THREE.TextureLoader().load(objectURL,
@@ -4967,7 +5061,7 @@ class LibraryHandler {
                         width *= defaultImageSize / height;
                         height = defaultImageSize;
                     }
-                    let geometry = new THREE.PlaneBufferGeometry(width, height);
+                    let geometry = new THREE.PlaneGeometry(width, height);
                     let material = new THREE.MeshBasicMaterial({
                         map: texture,
                         side: THREE.DoubleSide,
@@ -4975,7 +5069,10 @@ class LibraryHandler {
                     });
                     let mesh = new THREE.Mesh( geometry, material );
                     this.library[assetId]['Mesh'] = mesh;
-                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                    if(!ignorePublish) {
+                        pubSub.publish(this._id, PubSubTopics$1.ASSET_ADDED,
+                            assetId);
+                    }
                     resolve();
                 }
             );
@@ -5011,7 +5108,8 @@ class LibraryHandler {
     }
 
     getType(assetId) {
-        return this.library[assetId]['Type'];
+        if(assetId in this.library) return this.library[assetId]['Type'];
+        return null;
     }
 
     getAssetName(assetId) {
@@ -5273,7 +5371,7 @@ class GripInteractable extends Interactable {
     // Assumes intersectsSphere(sphere) is called first so we don't update the
     // bounding box by calling _getBoundingObject()
     distanceToSphere(sphere) {
-        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s[0]));
+        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s$1[0]));
     }
 
     _determineAndSetState() {
@@ -6343,13 +6441,7 @@ let inputHandler = new InputHandler();
 
 class VRButton {
 
-	static createButton( renderer, options ) {
-
-		if ( options ) {
-
-			console.error( 'THREE.VRButton: The "options" parameter has been removed. Please set the reference space type via renderer.xr.setReferenceSpaceType() instead.' );
-
-		}
+	static createButton( renderer ) {
 
 		const button = document.createElement( 'button' );
 
@@ -6529,6 +6621,10 @@ class VRButton {
 
 		if ( 'xr' in navigator ) {
 
+			// WebXRViewer (based on Firefox) has a bug where addEventListener
+			// throws a silent exception and aborts execution entirely.
+			if ( /WebXRViewer\//i.test( navigator.userAgent ) ) return;
+
 			navigator.xr.addEventListener( 'sessiongranted', () => {
 
 				VRButton.xrSessionIsGranted = true;
@@ -6544,7 +6640,7 @@ class VRButton {
 VRButton.registerSessionGrantedListener();
 
 ////////////////////////////////////////////////////////////////////////////////
-// Hey dumbass, there are 2 local changes in this file that need to be carried
+// Hey dumbass, there are 5 local changes in this file that need to be carried
 // over when updating. Let's not waste half a day because you forgot about it
 // the next time we update three.js files...
 ////////////////////////////////////////////////////////////////////////////////
@@ -6635,6 +6731,11 @@ class OrbitControls extends EventDispatcher {
 		this.target0 = this.target.clone();
 		this.position0 = this.object.position.clone();
 		this.zoom0 = this.object.zoom;
+
+        ////////////////////////////////////////////////////////
+        this.rotateStartTime = 0;
+        this.rotateDelay = 0;
+        ////////////////////////////////////////////////////////
 
 		// the target DOM element for key events
 		this._domElementKeyEvents = null;
@@ -7070,6 +7171,9 @@ class OrbitControls extends EventDispatcher {
 		function handleMouseDownRotate( event ) {
 
 			rotateStart.set( event.clientX, event.clientY );
+            ////////////////////////////////////////////////////////
+            scope.rotateStartTime = Date.now();
+            ////////////////////////////////////////////////////////
 
 		}
 
@@ -7086,6 +7190,10 @@ class OrbitControls extends EventDispatcher {
 		}
 
 		function handleMouseMoveRotate( event ) {
+
+            ////////////////////////////////////////////////////////////
+            if(scope.rotateDelay && Date.now() - scope.rotateStartTime < scope.rotateDelay) return;
+            ////////////////////////////////////////////////////////////
 
 			rotateEnd.set( event.clientX, event.clientY );
 
@@ -7786,6 +7894,8 @@ class OrbitControls extends EventDispatcher {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
+
 class SessionHandler {
     init(container, params) {
         this._container = container;
@@ -7812,6 +7922,7 @@ class SessionHandler {
         this._stylizeElements();
         this._button.style.minWidth = '150px';
         this._div.appendChild(this._button);
+        this._div.appendChild(this._createMobileOverrideLink());
         global$1.renderer.xr.addEventListener("sessionstart", () => {
             global$1.sessionActive = true;
             audioHandler.init();
@@ -7829,14 +7940,20 @@ class SessionHandler {
         this._stylizeElements();
         this._div.appendChild(this._button);
 
-        this._controls = new OrbitControls(global$1.camera, global$1.renderer.domElement);
+        this._controls = new OrbitControls(global$1.camera,
+            global$1.renderer.domElement);
         this._controls.target = this._orbitControlsTarget;
         this._controls.enableKeys = false;
-        //this._controls.enableZoom = false;
         this._controls.maxPolarAngle = Math.PI-0.3;
         this._controls.minPolarAngle = 0.3;
+        this._controls.minDistance = 0.05;
         this._controls.enablePan = false;
         this._controls.enabled = false;
+        this._controls.rotateDelay = 20;
+        this._controlsUpdateNumber = 0;
+        this._controls.addEventListener('change', () => {
+            this._controlsUpdateNumber++;
+        });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
             this._controls.enabled = true;
@@ -7852,12 +7969,22 @@ class SessionHandler {
         this._button.innerText = "TAP TO START";
         this._stylizeElements();
         this._div.appendChild(this._button);
+        if(localStorage.getItem(MOBILE_OVERRIDE))
+            this._div.appendChild(this._createVROverrideLink());
 
-        this._controls = new OrbitControls(global$1.camera, global$1.renderer.domElement);
+        this._controls = new OrbitControls(global$1.camera,
+            global$1.renderer.domElement);
         this._controls.target = this._orbitControlsTarget;
-        this._controls.zoomSpeed = 0.4;
-        this._controls.enabled = false;
+        this._controls.maxPolarAngle = Math.PI-0.3;
+        this._controls.minPolarAngle = 0.3;
+        this._controls.minDistance = 0.05;
         this._controls.enablePan = false;
+        this._controls.enabled = false;
+        this._controls.rotateDelay = 20;
+        this._controlsUpdateNumber = 0;
+        this._controls.addEventListener('change', () => {
+            this._controlsUpdateNumber++;
+        });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
             this._controls.enabled = true;
@@ -7893,6 +8020,36 @@ class SessionHandler {
         };
     }
 
+    _createMobileOverrideLink() {
+        let a = document.createElement('a');
+        a.innerText = 'Use Touchscreen Controls';
+        a.href = '#';
+        a.style.display = 'block';
+        a.style.paddingTop = '12px';
+        a.style.color = 'rgb(255, 199, 229)';
+        a.addEventListener('click', () => {
+            event.preventDefault();
+            localStorage.setItem(MOBILE_OVERRIDE, true);
+            window.location.reload();
+        });
+        return a;
+    }
+
+    _createVROverrideLink() {
+        let a = document.createElement('a');
+        a.innerText = 'Use VR Controls';
+        a.href = '#';
+        a.style.display = 'block';
+        a.style.paddingTop = '12px';
+        a.style.color = 'rgb(255, 199, 229)';
+        a.addEventListener('click', () => {
+            event.preventDefault();
+            localStorage.removeItem(MOBILE_OVERRIDE);
+            window.location.reload();
+        });
+        return a;
+    }
+
     displayButton() {
         this._container.appendChild(this._div);
     }
@@ -7909,10 +8066,12 @@ class SessionHandler {
         this._controls.enableRotate = false;
     }
 
-    update() {
-        if(this._firstPersonControls && this._firstPersonControls.enabled) {
-            this._firstPersonControls.update();
-        }
+    getControlsUpdateNumber() {
+        return this._controlsUpdateNumber;
+    }
+
+    getCameraDistance() {
+        if(this._controls) return this._controls.getDistance();
     }
 }
 
@@ -8018,23 +8177,18 @@ class Avatar {
         if(params == null) {
             params = {};
         }
-        this._focusCamera = (params['Focus Camera'])
-            ? params['Focus Camera']
-            : false;
-        this._cameraFocalPoint = (params['Camera Focal Point'])
-            ? params['Camera Focal Point']
-            : [0,1.7,0];
-        this._xrViewPoint = (params['XR View Point'])
-            ? params['XR View Point']
-            : [0,1.7,0];
+        let verticalOffset = params['Vertical Offset'] || 0;
+        let focusCamera = params['Focus Camera'] || false;
+        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
         this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
         this._pivotPoint = new THREE.Object3D();
+        this._pivotPoint.position.setY(verticalOffset);
         this._createBoundingBox(params);
         //this._pivotPoint.position.setY(1.3);
 
         this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
-        if(this._focusCamera) {
-            global$1.cameraFocus.position.fromArray(this._cameraFocalPoint);
+        if(focusCamera) {
+            global$1.cameraFocus.position.fromArray(cameraFocalPoint);
         }
     }
 
@@ -8073,9 +8227,10 @@ class Avatar {
                         }
                     });
                     hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(1);
+                    gltf.scene.position.setY(-0.7);
                 }
                 this._pivotPoint.add(gltf.scene);
+                this._saveOriginalTransparencyStates();
                 this._dimensions = 3;
             }, () => {}, (error) => {
                 console.log(error);
@@ -8103,10 +8258,11 @@ class Avatar {
                     side: THREE.DoubleSide,
                     transparent: true,
                 });
-                let geometry = new THREE.PlaneBufferGeometry(width, height);
+                let geometry = new THREE.PlaneGeometry(width, height);
                 geometry.rotateY(Math.PI);
                 let mesh = new THREE.Mesh(geometry, material);
                 this._pivotPoint.add(mesh);
+                this._saveOriginalTransparencyStates();
                 //let sprite = new THREE.Sprite(material);
                 //this._pivotPoint.add(sprite);
                 this._dimensions = 2;
@@ -8126,11 +8282,68 @@ class Avatar {
         }
     }
 
+    _saveOriginalTransparencyStates() {
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.userData['transparent'] = material.transparent;
+                        material.userData['opacity'] = material.opacity;
+                    }
+                } else {
+                    let material = node.material;
+                    material.userData['transparent'] = material.transparent;
+                    material.userData['opacity'] = material.opacity;
+                }
+            }
+        });
+    }
+
+    fade(percent) {
+        this._isFading = true;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        if(!material.transparent) material.transparent = true;
+                        material.opacity = material.userData['opacity']*percent;
+                    }
+                } else {
+                    let material = node.material;
+                    if(!material.transparent) material.transparent = true;
+                    material.opacity = material.userData['opacity'] * percent;
+                }
+            }
+        });
+    }
+
+    endFade() {
+        if(!this._isFading) return;
+        this._isFading = false;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.transparent = material.userData['transparent'];
+                        material.opacity = material.userData['opacity'];
+                    }
+                } else {
+                    let material = node.material;
+                    material.transparent = material.userData['transparent'];
+                    material.opacity = material.userData['opacity'];
+                }
+            }
+        });
+    }
+
     lookAtLocal(point) {
         if(this._pivotPoint.parent) {
-            vector3s[0].copy(point);
-            this._pivotPoint.parent.localToWorld(vector3s[0]);
-            this._pivotPoint.lookAt(vector3s[0]);
+            vector3s$1[0].copy(point);
+            this._pivotPoint.parent.localToWorld(vector3s$1[0]);
+            this._pivotPoint.lookAt(vector3s$1[0]);
         }
     }
 
@@ -8143,13 +8356,18 @@ class Avatar {
         this._createMesh(url);
     }
 
+    getObject() {
+        return this._pivotPoint;
+    }
+
     addToScene(scene) {
         scene.add(this._pivotPoint);
     }
 
     removeFromScene() {
-        this._pivotPoint.parent.remove(this._pivotPoint);
-        fullDispose(this._pivotPoint, true);
+        if(this._pivotPoint.parent) {
+            this._pivotPoint.parent.remove(this._pivotPoint);
+        }
     }
 }
 
@@ -8297,10 +8515,15 @@ class SettingsHandler {
         return textures;
     }
 
-    setSkyboxSide(side, assetId) {
+    setSkyboxSide(side, assetId, ignorePublish) {
         //Should validate image size is square before setting Skybox side
         this.settings['Skybox'][side] = assetId;
         skybox.setSide(side, assetId);
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['Skybox', side],
+            });
     }
 
     getEditorSettings() {
@@ -8315,9 +8538,15 @@ class SettingsHandler {
         return this.settings['User Settings'];
     }
 
-    setUserSetting(key, value) {
-        if(key in this.settings['User Settings'])
-            this.settings['User Settings'][key] = value;
+    setUserSetting(key, value, ignorePublish) {
+        if(!(key in this.settings['User Settings'])) return;
+
+        this.settings['User Settings'][key] = value;
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['User Settings', key],
+            });
     }
 
     getMovementSpeed() {
@@ -8362,6 +8591,7 @@ class BasicMovement {
         this._userObj = params['User Object'];
         this._velocity = new THREE.Vector3();
         this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
         this._snapRotationTriggered = false;
     }
 
@@ -8380,26 +8610,31 @@ class BasicMovement {
             () => { this._mobileDown = false; });
     }
 
-    _moveForward(distance) {
+    _moveForward(velocity, timeDelta) {
         // move forward parallel to the xz-plane
         // assumes camera.up is y-up
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
+        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s$1[0].crossVectors(this._userObj.up, vector3s$1[0]);
         // not using addScaledVector because we use vector3s[0] later
-        vector3s[0].multiplyScalar(distance);
-        this._userObj.position.add(vector3s[0]);
+        vector3s$1[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s$1[0]);
+        vector3s$1[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s$1[0]);
     };
 
-    _moveRight(distance) {
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].y = 0;
-        vector3s[0].multiplyScalar(distance);
-        this._userObj.position.add(vector3s[0]);
+    _moveRight(velocity, timeDelta) {
+        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s$1[0].y = 0;
+        vector3s$1[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s$1[0]);
+        vector3s$1[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s$1[0]);
     };
 
-    _moveUp(distance) {
-        vector3s[0].fromArray([0,distance,0]);
-        this._userObj.position.add(vector3s[0]);
+    _moveUp(velocity, timeDelta) {
+        this._worldVelocity.setY(velocity);
+        vector3s$1[0].fromArray([0, velocity * timeDelta, 0]);
+        this._userObj.position.add(vector3s$1[0]);
     }
 
     _snapLeft() {
@@ -8408,6 +8643,10 @@ class BasicMovement {
 
     _snapRight() {
         this._userObj.rotateY(-Math.PI/8);
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
     }
 
     update(timeDelta) {
@@ -8425,28 +8664,30 @@ class BasicMovement {
     }
 
     _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
         if(timeDelta > 1) return;
         let movementSpeed = settingsHandler.getMovementSpeed();
         let flightEnabled = settingsHandler.isFlyingEnabled();
         // Decrease the velocity.
-        this._velocity.x -= this._velocity.x * 10.0 * timeDelta;
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
         if(flightEnabled)
-            this._verticalVelocity -= this._verticalVelocity * 10.0 * timeDelta;
-        this._velocity.z -= this._velocity.z * 10.0 * timeDelta;
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
 
         if(global$1.sessionActive && !global$1.keyboardLock) {
             if (inputHandler.isKeyCodePressed("ArrowUp")
                     || inputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += 1;
+                this._velocity.z += movementSpeed / 4;
             if (inputHandler.isKeyCodePressed("ArrowDown")
                     || inputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= 1;
+                this._velocity.z -= movementSpeed / 4;
             if (inputHandler.isKeyCodePressed("ArrowLeft")
                     || inputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= 1;
+                this._velocity.x -= movementSpeed / 4;
             if (inputHandler.isKeyCodePressed("ArrowRight")
                     || inputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += 1;
+                this._velocity.x += movementSpeed / 4;
             if (flightEnabled && inputHandler.isKeyCodePressed("Space")
                     != inputHandler.isKeyCodePressed("ShiftLeft")) {
                 this._verticalVelocity =
@@ -8460,36 +8701,37 @@ class BasicMovement {
             this._velocity.normalize().multiplyScalar(movementSpeed);
         }
         if(this._avatar) {
-            this._moveRight(this._velocity.x * timeDelta);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z * timeDelta);
-            vector3s[1].add(vector3s[0]);
-            if(vector3s[1].length() > 0.001) {
-                vector3s[1].multiplyScalar(-2);
-                this._avatar.lookAtLocal(vector3s[1]);
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s$1[1].copy(vector3s$1[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s$1[1].add(vector3s$1[0]);
+            if(vector3s$1[1].length() > 0.001) {
+                vector3s$1[1].multiplyScalar(-2);
+                this._avatar.lookAtLocal(vector3s$1[1]);
             }
             if(flightEnabled) {
-                this._moveUp(this._verticalVelocity * timeDelta);
+                this._moveUp(this._verticalVelocity, timeDelta);
             }
         } else {
-            this._moveRight(this._velocity.x * timeDelta);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         this._userObj.updateMatrixWorld(true);
     }
 
     _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
         let movementSpeed = settingsHandler.getMovementSpeed();
         let flightEnabled = settingsHandler.isFlyingEnabled();
         this._velocity.x = 0;
         if(flightEnabled)
-            this._verticalVelocity -= this._verticalVelocity * 10.0 * timeDelta;
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
         this._velocity.z = 0;
         if(global$1.sessionActive && !global$1.keyboardLock) {
             let joystickAngle = inputHandler.getJoystickAngle();
             let joystickDistance = inputHandler.getJoystickDistance();
-            let movingDistance = movementSpeed * timeDelta
-                * joystickDistance;
+            let movingDistance = movementSpeed * joystickDistance;
             this._velocity.x = movingDistance * Math.cos(joystickAngle);
             this._velocity.z = movingDistance * Math.sin(joystickAngle);
             if(flightEnabled && this._mobileUp != this._mobileDown) {
@@ -8503,25 +8745,27 @@ class BasicMovement {
             this._velocity.normalize().multiplyScalar(movementSpeed);
         }
         if(this._avatar) {
-            this._moveRight(this._velocity.x);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z);
-            vector3s[1].add(vector3s[0]);
-            if(vector3s[1].length() > 0.001) {
-                vector3s[1].multiplyScalar(-2);
-                this._avatar.lookAtLocal(vector3s[1]);
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s$1[1].copy(vector3s$1[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s$1[1].add(vector3s$1[0]);
+            if(vector3s$1[1].length() > 0.001) {
+                vector3s$1[1].multiplyScalar(-2);
+                this._avatar.lookAtLocal(vector3s$1[1]);
             }
             if(flightEnabled) {
-                this._moveUp(this._verticalVelocity * timeDelta);
+                this._moveUp(this._verticalVelocity, timeDelta);
             }
         } else {
-            this._moveRight(this._velocity.x);
-            this._moveForward(this._velocity.z);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         this._userObj.updateMatrixWorld(true);
     }
 
     _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
         let movementSpeed = settingsHandler.getMovementSpeed();
         let flightEnabled = settingsHandler.isFlyingEnabled();
         let movementGamepad;
@@ -8533,7 +8777,6 @@ class BasicMovement {
             movementGamepad = inputHandler.getXRGamepad(Hands.LEFT);
             rotationGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
         }
-        //These two lines below add decceleration to the mix
         this._velocity.x = 0;
         this._velocity.y = 0;
         this._velocity.z = 0;
@@ -8542,8 +8785,8 @@ class BasicMovement {
             this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
             this._velocity.x = movementSpeed * axes[2];//Left/Right
 
-            this._moveRight(this._velocity.x * timeDelta);
-            this._moveForward(this._velocity.z * timeDelta);
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
         }
         if(rotationGamepad) {
             let verticalForce = rotationGamepad.axes[3];
@@ -8558,7 +8801,7 @@ class BasicMovement {
             }
             if(flightEnabled && Math.abs(verticalForce) > 0.2) {
                 this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y * timeDelta);
+                this._moveUp(this._velocity.y, timeDelta);
             }
         } else {
             this._snapRotationTriggered = false;
@@ -8842,7 +9085,7 @@ class ThreeMeshUIHelper {
         let textAlign = params['textAlign'] || 'center';
         let height = (params['height']) ? params['height'] : 0.05;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let textBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -8891,12 +9134,12 @@ class ThreeMeshUIHelper {
             || Colors.defaultHovered;
         let selectedBackgroundColor = params['selectedBackgroundColor']
             || Colors.defaultHovered;
-        let idleOpacity = numberOrDefault(params['idleOpacity'], 0.7);
-        let hoveredOpacity = numberOrDefault(params['hoveredOpacity'], 0.8);
-        let selectedOpacity = numberOrDefault(params['selectedOpacity'], 0.8);
+        let idleOpacity = numberOr(params['idleOpacity'], 0.7);
+        let hoveredOpacity = numberOr(params['hoveredOpacity'], 0.8);
+        let selectedOpacity = numberOr(params['selectedOpacity'], 0.8);
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -8984,12 +9227,12 @@ class ThreeMeshUIHelper {
             || Colors.defaultHovered;
         let selectedBackgroundColor = params['selectedBackgroundColor']
             || Colors.defaultHovered;
-        let idleOpacity = numberOrDefault(params['idleOpacity'], 0.7);
-        let hoveredOpacity = numberOrDefault(params['hoveredOpacity'], 0.8);
-        let selectedOpacity = numberOrDefault(params['selectedOpacity'], 0.8);
+        let idleOpacity = numberOr(params['idleOpacity'], 0.7);
+        let hoveredOpacity = numberOr(params['hoveredOpacity'], 0.8);
+        let selectedOpacity = numberOr(params['selectedOpacity'], 0.8);
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -9041,7 +9284,7 @@ class ThreeMeshUIHelper {
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
         let initialValue = params['initialValue'] || 0;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -9104,7 +9347,7 @@ class ThreeMeshUIHelper {
             : Colors.yellow;
         let height = (params['height']) ? params['height'] : 0.15;
         let width = (params['width']) ? params['width'] : 0.7;
-        let margin = numberOrDefault(params['margin'], defaultMargin);
+        let margin = numberOr(params['margin'], defaultMargin);
         let buttonBlock = new ThreeMeshUI.Block({
             height: height,
             width: width,
@@ -9138,10 +9381,6 @@ class ThreeMeshUIHelper {
         buttonBlock.setState(InteractableStates.IDLE);
         return buttonBlock;
     }
-}
-
-function numberOrDefault(n, d) {
-    return (typeof n === 'number') ? n : d;
 }
 
 /*
@@ -9187,13 +9426,13 @@ class UndoRedoHandler {
         this._undoRedoParent.add(this._redoButton);
         this._containerInteractable = new PointerInteractable(
             null, null, false);
-    }
-
-    addButtons(menu, interactable) {
         this._undoInteractable = new PointerInteractable(this._undoButton,
             () => { this._undo(); });
         this._redoInteractable = new PointerInteractable(this._redoButton,
             () => { this._redo(); });
+    }
+
+    addButtons(menu, interactable) {
         interactable.addChild(this._containerInteractable);
         menu.add(this._undoRedoParent);
     }
@@ -9313,6 +9552,8 @@ class TransformControls extends Object3D {
 			domElement = document;
 
 		}
+
+		this.isTransformControls = true;
 
 		this.visible = false;
 		this.domElement = domElement;
@@ -9468,7 +9709,15 @@ class TransformControls extends Object3D {
 		this.camera.updateMatrixWorld();
 		this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this._cameraScale );
 
-		this.eye.copy( this.cameraPosition ).sub( this.worldPosition ).normalize();
+		if ( this.camera.isOrthographicCamera ) {
+
+			this.camera.getWorldDirection( this.eye ).negate();
+
+		} else {
+
+			this.eye.copy( this.cameraPosition ).sub( this.worldPosition ).normalize();
+
+		}
 
 		super.updateMatrixWorld( this );
 
@@ -9818,7 +10067,7 @@ class TransformControls extends Object3D {
 
 	}
 
-	// Detatch from object
+	// Detach from object
 	detach() {
 
 		this.object = undefined;
@@ -9898,15 +10147,7 @@ class TransformControls extends Object3D {
 
 	}
 
-	update() {
-
-		console.warn( 'THREE.TransformControls: update function has no more functionality and therefore has been deprecated.' );
-
-	}
-
 }
-
-TransformControls.prototype.isTransformControls = true;
 
 // mouse / touch event handlers
 
@@ -10030,6 +10271,8 @@ class TransformControlsGizmo extends Object3D {
 	constructor() {
 
 		super();
+
+		this.isTransformControlsGizmo = true;
 
 		this.type = 'TransformControlsGizmo';
 
@@ -10571,12 +10814,12 @@ class TransformControlsGizmo extends Object3D {
 
 				// Hide translate and scale axis facing the camera
 
-				const AXIS_HIDE_TRESHOLD = 0.99;
-				const PLANE_HIDE_TRESHOLD = 0.2;
+				const AXIS_HIDE_THRESHOLD = 0.99;
+				const PLANE_HIDE_THRESHOLD = 0.2;
 
 				if ( handle.name === 'X' ) {
 
-					if ( Math.abs( _alignVector.copy( _unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
+					if ( Math.abs( _alignVector.copy( _unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_THRESHOLD ) {
 
 						handle.scale.set( 1e-10, 1e-10, 1e-10 );
 						handle.visible = false;
@@ -10587,7 +10830,7 @@ class TransformControlsGizmo extends Object3D {
 
 				if ( handle.name === 'Y' ) {
 
-					if ( Math.abs( _alignVector.copy( _unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
+					if ( Math.abs( _alignVector.copy( _unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_THRESHOLD ) {
 
 						handle.scale.set( 1e-10, 1e-10, 1e-10 );
 						handle.visible = false;
@@ -10598,7 +10841,7 @@ class TransformControlsGizmo extends Object3D {
 
 				if ( handle.name === 'Z' ) {
 
-					if ( Math.abs( _alignVector.copy( _unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
+					if ( Math.abs( _alignVector.copy( _unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_THRESHOLD ) {
 
 						handle.scale.set( 1e-10, 1e-10, 1e-10 );
 						handle.visible = false;
@@ -10609,7 +10852,7 @@ class TransformControlsGizmo extends Object3D {
 
 				if ( handle.name === 'XY' ) {
 
-					if ( Math.abs( _alignVector.copy( _unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
+					if ( Math.abs( _alignVector.copy( _unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_THRESHOLD ) {
 
 						handle.scale.set( 1e-10, 1e-10, 1e-10 );
 						handle.visible = false;
@@ -10620,7 +10863,7 @@ class TransformControlsGizmo extends Object3D {
 
 				if ( handle.name === 'YZ' ) {
 
-					if ( Math.abs( _alignVector.copy( _unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
+					if ( Math.abs( _alignVector.copy( _unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_THRESHOLD ) {
 
 						handle.scale.set( 1e-10, 1e-10, 1e-10 );
 						handle.visible = false;
@@ -10631,7 +10874,7 @@ class TransformControlsGizmo extends Object3D {
 
 				if ( handle.name === 'XZ' ) {
 
-					if ( Math.abs( _alignVector.copy( _unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
+					if ( Math.abs( _alignVector.copy( _unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_THRESHOLD ) {
 
 						handle.scale.set( 1e-10, 1e-10, 1e-10 );
 						handle.visible = false;
@@ -10721,8 +10964,6 @@ class TransformControlsGizmo extends Object3D {
 
 }
 
-TransformControlsGizmo.prototype.isTransformControlsGizmo = true;
-
 //
 
 class TransformControlsPlane extends Mesh {
@@ -10733,6 +10974,8 @@ class TransformControlsPlane extends Mesh {
 			new PlaneGeometry( 100000, 100000, 2, 2 ),
 			new MeshBasicMaterial( { visible: false, wireframe: true, side: DoubleSide, transparent: true, opacity: 0.1, toneMapped: false } )
 		);
+
+		this.isTransformControlsPlane = true;
 
 		this.type = 'TransformControlsPlane';
 
@@ -10816,8 +11059,6 @@ class TransformControlsPlane extends Mesh {
 
 }
 
-TransformControlsPlane.prototype.isTransformControlsPlane = true;
-
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10839,23 +11080,22 @@ class TransformControlsHandler {
             scene.add(this._transformControls);
             this._addEventListeners();
         }
-        pubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (handTool)=>{
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
             if(handTool == HandTools.EDIT) return;
             for(let option in this._attachedAssets) {
                 this.detach(option);
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
             if(message['targetOnlyMenu']) return;
             for(let option in this._attachedAssets) {
                 this.detach(option);
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (e) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
             for(let option in this._attachedAssets) {
                 if(this._attachedAssets[option] == e.instance) {
-                    this.detach(option);
-                    return;
+                    this._detachDeleted(option);
                 }
             }
         });
@@ -10864,27 +11104,23 @@ class TransformControlsHandler {
     _addEventListeners() {
         this._transformControls.addEventListener('mouseDown', () => {
             sessionHandler.disableOrbit();
-            this._preTransformStates[global$1.deviceType]
-                = this._attachedAssets[global$1.deviceType].exportParams();
+            let instance = this._attachedAssets[global$1.deviceType];
+            this._preTransformStates[instance.getId()]
+                = instance.getEditorHelper().getObjectTransformation();
         });
         this._transformControls.addEventListener('mouseUp', () => {
             sessionHandler.enableOrbit();
             let instance = this._attachedAssets[global$1.deviceType];
-            instance.roundAttributes();
-            pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
-            let preState = this._preTransformStates[global$1.deviceType];
-            let postState = instance.exportParams();
-            undoRedoHandler.addAction(() => {
-                instance.setFromParams(preState);
-            }, () => {
-                instance.setFromParams(postState);
-            });
+            let instanceHelper = instance.getEditorHelper();
+            instanceHelper.roundAttributes(true);
+            let preState = this._preTransformStates[instance.getId()];
+            let postState = instanceHelper.getObjectTransformation();
+            instanceHelper.setObjectTransformation(preState, postState);
         });
         this._transformControls.addEventListener('objectChange', () => {
             if(global$1.renderer.info.render.frame % 6 == 0) {
-                this._attachedAssets[global$1.deviceType].roundAttributes();
-                pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                    this._attachedAssets[global$1.deviceType]);
+                this._attachedAssets[global$1.deviceType].getEditorHelper()
+                    .roundAttributes();
             }
         });
 
@@ -10910,7 +11146,6 @@ class TransformControlsHandler {
         let deleteButton = document.getElementById("delete-button");
         deleteButton.addEventListener('click', () => {
             this._delete();
-            this._placingObject[global$1.deviceType] = false;
         });
 
         let closeButton = document.getElementById("close-button");
@@ -10949,20 +11184,21 @@ class TransformControlsHandler {
     }
 
     _paste(e) {
+        if(!global$1.isEditor) return;
         if(e.clipboardData.types.indexOf('Files') >= 0)
             this._pasteFiles(e.clipboardData.files);
         if(e.clipboardData.types.indexOf('text/digitalbacon') >= 0)
-            this._parseDigitalBaconData(
-                e.clipboardData.getData('text/digitalbacon'));
+            this._pasteDigitalBaconData(e);
     }
 
-    _pasteDigitalBaconData(data) {
+    _pasteDigitalBaconData(e) {
+        let data = e.clipboardData.getData('text/digitalbacon');
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
         let instances = projectHandler.getInstancesForAssetId(assetId);
         let instance = instances[instanceId];
         //Maybe we should store parameters in case object has been deleted so we
-        //can still paste it back?
+        //can still paste it back? Definitily! But later...
         if(instance) {
             let clone = instance.clone();
             if(!this._isDragging(instance)) this._offsetClone(clone);
@@ -10972,14 +11208,14 @@ class TransformControlsHandler {
 
     _pasteFiles(files) {
         uploadHandler.uploadFiles(files, (assetIds) => {
-            global$1.camera.getWorldPosition(vector3s[0]);
-            global$1.camera.getWorldDirection(vector3s[1]);
-            vector3s[1].normalize().multiplyScalar(11/12);
-            vector3s[0].add(vector3s[1]);
-            let position = vector3s[0].toArray();
-            vector3s[0].set(0, 0, 1);
-            vector3s[1].setY(0).normalize();
-            quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+            global$1.camera.getWorldPosition(vector3s$1[0]);
+            global$1.camera.getWorldDirection(vector3s$1[1]);
+            vector3s$1[1].normalize().multiplyScalar(11/12);
+            vector3s$1[0].add(vector3s$1[1]);
+            let position = vector3s$1[0].toArray();
+            vector3s$1[0].set(0, 0, 1);
+            vector3s$1[1].setY(0).normalize();
+            quaternion.setFromUnitVectors(vector3s$1[0], vector3s$1[1]);
             euler.setFromQuaternion(quaternion);
             let rotation = euler.toArray();
             for(let assetId of assetIds) {
@@ -10991,14 +11227,14 @@ class TransformControlsHandler {
                         "rotation": rotation,
                         "doubleSided": true,
                         "transparent": true,
-                        "enableInteractions": true,
+                        "visualEdit": true,
                     });
                 } else if(type == AssetTypes.MODEL) {
                     projectHandler.addGLTF({
                         "assetId": assetId,
                         "position": position,
                         "rotation": rotation,
-                        "enableInteractions": true,
+                        "visualEdit": true,
                     });
                 }
             }
@@ -11016,16 +11252,15 @@ class TransformControlsHandler {
 
     _offsetClone(instance) {
         let object = instance.getObject();
-        vector3s[0].fromArray([0,1,0]);
-        vector3s[1].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[1].y = 0;
-        vector3s[1].setLength(0.2);
-        vector3s[1].applyAxisAngle(vector3s[0], -Math.PI / 4);
-        object.worldToLocal(vector3s[1]);
-        object.position.add(vector3s[1]);
+        vector3s$1[0].fromArray([0,1,0]);
+        vector3s$1[1].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s$1[1].y = 0;
+        vector3s$1[1].setLength(0.2);
+        vector3s$1[1].applyAxisAngle(vector3s$1[0], -Math.PI / 4);
+        object.worldToLocal(vector3s$1[1]);
+        object.position.add(vector3s$1[1]);
 
-        instance.roundAttributes();
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, instance);
+        instance.getEditorHelper().roundAttributes(true);
     }
 
     _delete(option) {
@@ -11061,20 +11296,16 @@ class TransformControlsHandler {
                             attachedAsset.getObject());
                         this._placingObject[option] = false;
                     }
-                    let preState = attachedAsset.exportParams();
-                    attachedAsset.place(intersections[0]);
-                    if(global$1.deviceType == 'XR') this.detach(option);
-                    attachedAsset.roundAttributes();
-                    pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED,
-                        attachedAsset);
-                    if(global$1.deviceType == "XR") return;
-                    let postState = attachedAsset.exportParams();
-                    undoRedoHandler.addAction(() => {
-                        attachedAsset.setFromParams(preState);
-                    }, () => {
-                        attachedAsset.setFromParams(postState);
-                    });
-                    return;
+                    let assetHelper = attachedAsset.getEditorHelper();
+                    let preState = assetHelper.getObjectTransformation();
+                    assetHelper.place(intersections[0]);
+                    if(global$1.deviceType == 'XR') {
+                        this.detach(option);
+                        return;
+                    }
+                    assetHelper.roundAttributes(true);
+                    let postState = assetHelper.getObjectTransformation();
+                    assetHelper.setObjectTransformation(preState, postState);
                 }
             }
         }
@@ -11087,6 +11318,10 @@ class TransformControlsHandler {
             factor * this._initialScalingValues.x,
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
+
+        if(global$1.renderer.info.render.frame % 6 == 0)
+            this._attachedAssets[Hands.LEFT].getEditorHelper()
+                ._publish(['scale']);
     }
 
     //Slightly modified version of Raycaster::intersectObjects
@@ -11114,7 +11349,7 @@ class TransformControlsHandler {
 
     attach(asset, option) {
         option = option || global$1.deviceType;
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
+        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
             instance: asset,
             option: option,
         });
@@ -11130,7 +11365,8 @@ class TransformControlsHandler {
                     userController.getDistanceBetweenHands();
                 this._initialScalingValues = asset.getObject().scale.clone();
             } else {
-                this._preTransformStates[asset.getId()] = asset.exportParams();
+                this._preTransformStates[asset.getId()]
+                    = asset.getEditorHelper().getObjectTransformation();
                 userController.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
@@ -11148,7 +11384,7 @@ class TransformControlsHandler {
         option = option || global$1.deviceType;
         let asset = this._attachedAssets[option];
         if(!asset) return;
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
+        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
             instance: asset,
             option: option,
         });
@@ -11160,15 +11396,11 @@ class TransformControlsHandler {
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
-                asset.roundAttributes();
-                pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, asset);
+                let assetHelper = asset.getEditorHelper();
+                assetHelper.roundAttributes(true);
                 let preState = this._preTransformStates[asset.getId()];
-                let postState = asset.exportParams();
-                undoRedoHandler.addAction(() => {
-                    asset.setFromParams(preState);
-                }, () => {
-                    asset.setFromParams(postState);
-                });
+                let postState = assetHelper.getObjectTransformation();
+                assetHelper.setObjectTransformation(preState, postState);
             }
             if(Object.keys(this._attachedAssets).length == 1)
                 undoRedoHandler.enable(this._id);
@@ -11177,6 +11409,38 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
         this._transformControls.detach();
         $("#transform-controls").addClass("hidden");
+    }
+
+    _detachDeleted(option) {
+        let asset = this._attachedAssets[option];
+        if(!asset) return;
+        if(global$1.deviceType == 'XR') {
+            let otherOption = this._getOtherHand(option);
+            if(this._attachedAssets[otherOption] == asset) {
+                this._twoHandScaling = false;
+            } else {
+                asset.returnTransparency();
+                let preState = this._preTransformStates[asset.getId()];
+                let assetHelper = asset.getEditorHelper();
+                for(let param in preState) {
+                    asset.getObject()[param].fromArray(preState[param]);
+                }
+                assetHelper._publish(['position', 'rotation', 'scale']);
+            }
+            if(Object.keys(this._attachedAssets).length == 1)
+                undoRedoHandler.enable(this._id);
+        } else {
+            this._transformControls.detach();
+            $("#transform-controls").addClass("hidden");
+            let preState = this._preTransformStates[global$1.deviceType];
+            let assetHelper = asset.getEditorHelper();
+            for(let param in preState) {
+                asset.getObject()[param].fromArray(preState[param]);
+            }
+            assetHelper._publish(['position', 'rotation', 'scale']);
+        }
+        delete this._attachedAssets[option];
+        this._placingObject[option] = false;
     }
 
     _isDragging(instance) {
@@ -11236,7 +11500,7 @@ class PointerInteractableHandler extends InteractableHandler {
     }
 
     _setupXRSubscription() {
-        pubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (tool) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (tool) => {
             if(tool == HandTools.EDIT) {
                 this.update = this._updateForXREdit;
             } else if(tool == HandTools.COPY_PASTE) {
@@ -11632,18 +11896,28 @@ class UserHand {
         this._vector3 = new Vector3();
 
         this._setup();
-        //Register as grabber in GrabInteractionHandler
     }
 
-    _setup(hand) {
+    _setup() {
         this._controller = inputHandler.getXRController(this._hand, 'grip');
         this._controllerModel = inputHandler.getXRControllerModel(this._hand);
         this._cursor = pointerInteractableHandler.createXRCursor(this._hand);
     }
 
+    isInScene() {
+        return this._controller.parent != null;
+    }
+
     getWorldPosition() {
         this._controller.getWorldPosition(this._vector3);
         return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._controller.getWorldQuaternion(quaternion);
+        quaternion.normalize();
+        euler.setFromQuaternion(quaternion);
+        return euler;
     }
 
     add(threeObj) {
@@ -11669,12 +11943,15 @@ class UserHand {
         this._controller.remove(this._controllerModel);
         global$1.scene.remove(this._cursor);
     }
-
-    update(timeDelta) {
-
-    }
-
 }
+
+const UserMessageCodes = {
+    AVATAR: 1,
+    LEFT_HAND: 2,
+    RIGHT_HAND: 4,
+    USER_VELOCITY: 8,
+    USER_POSITION: 16,
+};
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -11683,18 +11960,22 @@ class UserHand {
  */
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
+const FADE_START = 0.6;
+const FADE_END = 0.2;
+const FADE_RANGE = FADE_START - FADE_END;
+const EPSILON = 0.00000000001;
   
 class UserController {
     init(params) {
         if(params == null) {
             params = {};
         }
-        this._sceneAssets = new Set();
         this._dynamicAssets = [];
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
-        this._avatarURL = localStorage.getItem(AVATAR_KEY)
+        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
             || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._avatarFadeUpdateNumber = 0;
 
         this._setup();
     }
@@ -11703,28 +11984,31 @@ class UserController {
         if(global$1.deviceType != "XR") {
             this._avatar = new Avatar({
                 'Focus Camera': true,
-                'URL': this._avatarURL,
+                'URL': this._avatarUrl,
             });
-            this._sceneAssets.add(this._avatar);
         } else {
             this.hands = {};
             for(let hand of [Hands.RIGHT, Hands.LEFT]) {
                 let userHand = new UserHand(hand);
                 this.hands[hand] = userHand;
-                this._sceneAssets.add(userHand);
             }
         }
-        let basicMovement = new BasicMovement({
+        this._basicMovement = new BasicMovement({
             'User Object': this._userObj,
             'Avatar': this._avatar,
         });
-        this._dynamicAssets.push(basicMovement);
+        this._dynamicAssets.push(this._basicMovement);
+    }
+
+    getAvatarUrl() {
+        return this._avatarUrl;
     }
 
     updateAvatar(url) {
         localStorage.setItem(AVATAR_KEY, url);
-        this._avatarURL = url;
+        this._avatarUrl = url;
         if(global$1.deviceType != "XR") this._avatar.updateSourceUrl(url);
+        pubSub.publish(this._id, PubSubTopics$1.AVATAR_UPDATED, this._avatarUrl);
     }
 
     getDistanceBetweenHands() {
@@ -11734,19 +12018,101 @@ class UserController {
         return leftPosition.distanceTo(rightPosition);
     }
 
+    _pushXRDataForRTC(data) {
+        let codes = 0;
+        global$1.camera.getWorldPosition(vector3s$1[0]);
+        this._userObj.getWorldPosition(vector3s$1[1]);
+        let position = vector3s$1[0].sub(vector3s$1[1]).toArray();
+
+        global$1.camera.getWorldQuaternion(quaternion);
+        quaternion.normalize();
+        euler.setFromQuaternion(quaternion);
+        let rotation = euler.toArray();
+        rotation.pop();
+
+        data.push(...position);
+        data.push(...rotation);
+        codes += UserMessageCodes.AVATAR;
+
+        for(let hand of [Hands.LEFT, Hands.RIGHT]) {
+            let userHand = this.hands[hand];
+            if(userHand.isInScene()) {
+                position = userHand.getWorldPosition().sub(vector3s$1[1]);
+                rotation = userHand.getWorldRotation().toArray();
+                rotation.pop();
+                data.push(...position.toArray());
+                data.push(...rotation);
+                codes += UserMessageCodes[hand + '_HAND'];
+            }
+        }
+        return codes;
+    }
+
+    getDataForRTC() {
+        let codes = 0;
+        let data = [];
+        if(global$1.deviceType == "XR") {
+            codes += this._pushXRDataForRTC(data);
+        }
+        let worldVelocity = this._basicMovement.getWorldVelocity();
+        if(worldVelocity.length() >= 0.00001) {
+            data.push(...this._basicMovement.getWorldVelocity().toArray());
+            codes += UserMessageCodes.USER_VELOCITY;
+        }
+        if(global$1.renderer.info.render.frame % 300 == 0) {
+            this._userObj.getWorldPosition(vector3s$1[0]);
+            data.push(...vector3s$1[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
+    }
+
     addToScene(scene) {
-        for(let asset of this._sceneAssets) {
-            asset.addToScene(scene);
+        if(global$1.deviceType != "XR") {
+            this._avatar.addToScene(global$1.cameraFocus);
+        } else {
+            this.hands[Hands.RIGHT].addToScene(scene);
+            this.hands[Hands.LEFT].addToScene(scene);
         }
     }
 
     removeFromScene() {
-        for(let asset of this._sceneAssets) {
-            asset.removeFromScene();
+        if(global$1.deviceType != "XR") {
+            this._avatar.removeFromScene();
+        } else {
+            this.hands[Hands.RIGHT].removeFromScene();
+            this.hands[Hands.LEFT].removeFromScene();
         }
     }
 
+    _updateAvatar() {
+        let updateNumber = sessionHandler.getControlsUpdateNumber();
+        if(this._avatarFadeUpdateNumber == updateNumber) return;
+        this._avatarFadeUpdateNumber = updateNumber;
+        let cameraDistance = sessionHandler.getCameraDistance();
+        if(cameraDistance > FADE_START * 2) return;
+        let diff = cameraDistance - this._avatarFadeCameraDistance;
+        if(Math.abs(diff) < EPSILON) return;
+        this._avatarFadeCameraDistance = cameraDistance;
+        let object = this._avatar.getObject();
+        let fadePercent = Math.max(cameraDistance, FADE_END);
+        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
+        if(fadePercent == 0) {
+            if(object.parent) this._avatar.removeFromScene();
+            return;
+        } else if(!object.parent) {
+            this._avatar.addToScene(global$1.cameraFocus);
+        }
+        (fadePercent < 1)
+            ? this._avatar.fade(fadePercent)
+            : this._avatar.endFade();
+    }
+
     update(timeDelta) {
+        if(this._avatar) {
+            this._updateAvatar();
+        }
         for(let i = 0; i < this._dynamicAssets.length; i++) {
             this._dynamicAssets[i].update(timeDelta);
         }
@@ -11767,7 +12133,7 @@ class CopyPasteControlsHandler {
         this._assetAlreadyPastedByTrigger = false;
         this._assetAlreadyPastedByGrip = false;
         this._copiedAsset;
-        pubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (handTool)=>{
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
             if(this._copiedAsset) this._clear();
             this._assetAlreadyPastedByTrigger = false;
             this._assetAlreadyPastedByGrip = false;
@@ -11784,7 +12150,7 @@ class CopyPasteControlsHandler {
 
     _paste() {
         this._previewAsset.clone(
-            this._copiedAsset.enableInteractables);
+            this._copiedAsset.visualEdit);
         this._assetAlreadyPastedByGrip = true;
     }
 
@@ -11802,7 +12168,7 @@ class CopyPasteControlsHandler {
             controller['closestPoint'] = intersections[0].point;
             if(isPressed && this._copiedAsset) {
                 let clonedAsset = this._copiedAsset.clone();
-                clonedAsset.place(intersections[0]);
+                clonedAsset.getEditorHelper().place(intersections[0]);
                 this._assetAlreadyPastedByTrigger = true;
             }
         }
@@ -11850,7 +12216,7 @@ class GripInteractableHandler extends InteractableHandler {
     }
 
     _setupXRSubscription() {
-        pubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (tool) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (tool) => {
             let options = [Hands.LEFT, Hands.RIGHT];
             for(let option of options) {
                 let hoveredInteractable = this._hoveredInteractables[option];
@@ -12019,6 +12385,1678 @@ class GripInteractableHandler extends InteractableHandler {
 }
 
 let gripInteractableHandler = new GripInteractableHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const ICE_SERVER_URLS = [
+    'stun:stun1.l.google.com:19302',
+    'stun:stun2.l.google.com:19302',
+    'stun:stun3.l.google.com:19302',
+    'stun:stun4.l.google.com:19302'
+];
+const CONFIGURATION = { iceServers: [{ urls: ICE_SERVER_URLS }] };
+const SIXTY_FOUR_KB = 1024 * 64;
+const TIMEOUT = 20000; //20 Seconds
+
+class RTCPeer {
+    constructor(peerId, polite, socket, onTimeout) {
+        this._peerId = peerId;
+        this._polite = polite;
+        this._socket = socket;
+        this._onTimeout = onTimeout;
+        this._myAudioTrack;
+        this._peerAudioTrack;
+        this._connection = new RTCPeerConnection(CONFIGURATION);
+        this._audio = createAudioElement$1();
+        this._makingOffer = false;
+        this._ignoreOffer = false;
+        this._isSettingRemoteAnswerPending = false;
+        this._hasConnected = false;
+        this._dataChannel = null;
+        if(!polite) this._timeoutId = setTimeout(() => this._timeout(),TIMEOUT);
+        this._setupConnection();
+        this._sendDataQueue = new Queue();
+    }
+
+    _setupConnection() {
+        this._connection.ontrack = (e) => {
+            this._peerAudioTrack = e.track;
+            e.track.onunmute = () => {
+                if(this._audio.srcObject) return;
+                this._audio.srcObject = e.streams[0];
+            };
+        };
+        this._connection.onicecandidate = (e) => {
+            this._socket.send({
+                topic: "candidate",
+                to: this._peerId,
+                candidate: e.candidate,
+            });
+        };
+        this._connection.onnegotiationneeded = async () => {
+            try {
+                this._makingOffer = true;
+                await this._connection.setLocalDescription();
+                this._socket.send({
+                    topic: "description",
+                    to: this._peerId,
+                    description: this._connection.localDescription,
+                });
+            } catch(error) {
+                console.error(error);
+            } finally {
+                this._makingOffer = false;
+            }
+        };
+        this._connection.ondatachannel = (e) => {
+            if(this._polite) return;
+            this._dataChannel = e.channel;
+            this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+            this._dataChannel.onopen = (e) => {
+                if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
+            };
+            this._dataChannel.onclose = (e) => {
+                if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+            };
+            this._dataChannel.onmessage = (message) => {
+                if(this._onMessage) this._onMessage(message.data);
+            };
+        };
+        this._connection.onconnectionstatechange = (e) => {
+            let state = this._connection.connectionState;
+            if(state == "connected" && !this._hasConnected) {
+                this._hasConnected = true;
+                if(this._polite) this._setupDataChannel();
+                if(!this._polite) clearTimeout(this._timeoutId);
+            } else if(state == "disconnected" || state == "failed") {
+                if(!this._polite) clearTimeout(this._timeoutId);
+                if(this._onDisconnect) this._onDisconnect();
+            }
+        };
+    }
+
+    _setupDataChannel() {
+        this._dataChannel = this._connection.createDataChannel(
+            this._peerId);
+        this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+        this._dataChannel.onopen = (e) => {
+            if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
+        };
+        this._dataChannel.onclose = (e) => {
+            if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+        };
+        this._dataChannel.onmessage = (message) => {
+            if(this._onMessage) this._onMessage(message.data);
+        };
+    }
+
+    _timeout() {
+        if(this._onTimeout) this._onTimeout();
+    }
+
+    toggleMyselfMuted(muted) {
+        this._myAudioTrack.enabled = !muted;
+    }
+
+    togglePeerMuted(muted) {
+        this._peerAudioTrack.enabled = !muted;
+    }
+
+    addAudioTrack(track, srcObject) {
+        this._myAudioTrack = track;
+        this._connection.addTrack(track, srcObject);
+    }
+
+    close() {
+        this._connection.close();
+        this._audio.srcObject = null;
+        if(this._audio.parentNode) document.body.removeChild(this._audio);
+        if(this._onDisconnect) this._onDisconnect();
+    }
+
+    getPeerId() {
+        return this._peerId;
+    }
+
+    handleCandidate(message) {
+        try {
+            this._connection.addIceCandidate(message.candidate);
+        } catch(error) {
+            if(!this._ignoreOffer) console.error(error);
+        }
+    }
+
+    async handleDescription(message) {
+        let description = message.description;
+        try {
+            let readyForOffer = !this._makingOffer
+                && (this._connection.signalingState == "stable"
+                    || this._isSettingRemoteAnswerPending);
+            let offerCollision = description.type == "offer" && !readyForOffer;
+            this._ignoreOffer = !this._polite && offerCollision;
+            if(this._ignoreOffer) return;
+
+            this._isSettingRemoteAnswerPending = description.type == "answer";
+            await this._connection.setRemoteDescription(description);
+            this._isSettingRemoteAnswerPending = false;
+            if(description.type == "offer") {
+                await this._connection.setLocalDescription();
+                this._socket.send({
+                    topic: "description",
+                    to: this._peerId,
+                    description: this._connection.localDescription,
+                });
+            }
+        } catch(error) {
+            console.error(error);
+        }
+    }
+
+    isConnected() {
+        return this._hasConnected;
+    }
+
+    sendData(data) {
+        this._sendDataQueue.enqueue(data);
+        if(this._dataChannel.onbufferedamountlow) return;
+        if(this._sendDataQueue.length == 1) this._sendData();
+    }
+
+    _sendData() {
+        let channel = this._dataChannel;
+        while(channel.bufferedAmount <= channel.bufferedAmountLowThreshold) {
+            channel.send(this._sendDataQueue.dequeue());
+            if(this._sendDataQueue.length == 0) return;
+        }
+        channel.onbufferedamountlow = () => {
+            channel.onbufferedamountlow = null;
+            this._sendData();
+        };
+    }
+
+    setOnDisconnect(f) {
+        this._onDisconnect = f;
+    }
+
+    setOnMessage(f) {
+        this._onMessage = f;
+    }
+
+    setOnSendDataChannelOpen(f) {
+        this._onSendDataChannelOpen = f;
+    }
+
+    setOnSendDataChannelClose(f) {
+        this._onSendDataChannelClose = f;
+    }
+}
+
+function createAudioElement$1() {
+    let audioElement = document.createElement('audio');
+    audioElement.autoplay = true;
+    document.body.appendChild(audioElement);
+    return audioElement;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const CONSTRAINTS = { audio: true, video: false };
+const NINE_MINUTES = 60000 * 9;
+
+class Party {
+    constructor() {
+        //this._id = uuidv4();
+        this._peers = {};
+        this._userAudio = createAudioElement();
+        this._userAudio.defaultMuted = true;
+        this._userAudio.muted = true;
+        this._pingIntervalId = null;
+    }
+
+    host(roomId, successCallback, errorCallback) {
+        if(!this._authToken) {
+            this._fetchAuthToken(() => {
+                this.host(roomId, successCallback, errorCallback);
+            }, errorCallback);
+            return;
+        }
+        if(this._socket) this.disconnect();
+        this._isHost = true;
+        this._roomId = roomId;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        if(this._userAudio.srcObject) {
+            this._setupWebSocket();
+        } else {
+            this._setupUserMedia();
+        }
+    }
+
+    join(roomId, successCallback, errorCallback) {
+        if(!this._authToken) {
+            this._fetchAuthToken(() => {
+                this.join(roomId, successCallback, errorCallback);
+            }, errorCallback);
+            return;
+        }
+        if(this._socket) this.disconnect();
+        this._roomId = roomId;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        if(this._userAudio.srcObject) {
+            this._setupWebSocket();
+        } else {
+            this._setupUserMedia();
+        }
+    }
+
+    disconnect() {
+        if(this._socket) this._socket.close();
+        if(this._pingIntervalId) {
+            clearInterval(this._pingIntervalId);
+            this._pingIntervalId = null;
+        }
+        this._socket = null;
+        this._isHost = false;
+        for(let peerId in this._peers) {
+            this._peers[peerId].close();
+        }
+        this._peers = {};
+        if(this._onDisconnect) this._onDisconnect();
+    }
+
+    bootPeer(peerId) {
+        this._socket.send({
+            topic: "boot-peer",
+            peerId: peerId,
+        });
+    }
+
+    designateHost(peerId) {
+        this._socket.send({
+            topic: "designate-host",
+            peerId: peerId,
+        });
+    }
+
+    setOnSetupPeer(f) {
+        this._onSetupPeer = f;
+    }
+
+    setOnDisconnect(f) {
+        this._onDisconnect = f;
+    }
+
+    _fetchAuthToken(successCallback, errorCallback) {
+        fetch(global$1.authUrl)
+            .then((response) => response.json())
+            .then((body) => {
+                this._authToken = body.authToken;
+                successCallback();
+            })
+            .catch((error) => {
+                this.disconnect();
+                errorCallback({ topic: 'bad-auth' });
+            });
+    }
+
+    _setupUserMedia() {
+        navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
+            this._userAudio.srcObject = stream;
+            this._setupWebSocket();
+        }).catch((error) => {
+            this._userAudio.srcObject = new MediaStream();
+            this._setupWebSocket();
+        });
+    }
+
+    _setupWebSocket() {
+        this._socket = new WebSocket(global$1.partyUrl);
+        this._socket.onopen = (e) => { this._onSocketOpen(e); };
+        this._socket.onclose = (e) => { this._onSocketClose(e); };
+        this._socket.onmessage = (e) => { this._onSocketMessage(e); };
+        this._socket.onerror = (e) => { this._onSocketError(e); };
+        this._socket._send = this._socket.send;
+        this._socket.send = (body) => {
+            body['authToken'] = this._authToken;
+            this._socket._send(JSON.stringify(body));
+        };
+    }
+
+    _onSocketOpen(e) {
+        this._socket.send({
+            topic: "identify",
+            //id: this._id,
+            roomId: this._roomId,
+            isHost: this._isHost,
+        });
+        this._pingIntervalId = setInterval(() => {
+            this._socket.send({ topic: "ping" });
+        }, NINE_MINUTES);
+    }
+
+    _onSocketClose(e) {
+        if(this._socket) this.disconnect();
+    }
+
+    _onSocketMessage(e) {
+        let message = JSON.parse(e.data);
+        let topic = message.topic;
+        if(topic == "initiate") {
+            this._setupRTCPeer(message);
+        } else if(topic == "candidate") {
+            this._peers[message.from].handleCandidate(message);
+        } else if(topic == "description") {
+            this._peers[message.from].handleDescription(message);
+        } else if(topic == "hosting") {
+            if(this._successCallback) this._successCallback();
+        } else if(topic == "designate-host") {
+            pubSub.publish(this._id, PubSubTopics$1.BECOME_PARTY_HOST);
+        } else if(topic == "boot-peer") {
+            pubSub.publish(this._id, PubSubTopics$1.BOOT_PEER, message.peerId);
+        } else if(topic == "disconnect") {
+            this.disconnect();
+        } else if(topic == "error" && message.requestTopic == "boot-peer") {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: "Error: Couldn't kick out user",
+            });
+        } else if(topic == "error" && message.requestTopic == "designate-host"){
+            pubSub.publish(this._id, PubSubTopics$1.BECOME_PARTY_HOST);
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: "Error: Couldn't make user host",
+            });
+        } else {
+            this.disconnect();
+            if(this._errorCallback) this._errorCallback(message);
+        }
+    }
+
+    _onSocketError(e) {
+        this.disconnect();
+        if(this._errorCallback) this._errorCallback(e);
+    }
+
+    _onRTCTimeout() {
+        if(this._socket) this._onSocketError({ topic: "rtc-timeout" });
+    }
+
+    _setupRTCPeer(message) {
+        let peerId = message.peerId;
+        let polite = message.polite;
+        this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket,
+            () => this._onRTCTimeout());
+        let streamClone = this._userAudio.srcObject.clone();
+        this._peers[peerId].addAudioTrack(streamClone.getAudioTracks()[0],
+            streamClone);
+        if(this._onSetupPeer) this._onSetupPeer(this._peers[peerId]);
+    }
+}
+
+function createAudioElement() {
+    let audioElement = document.createElement('audio');
+    audioElement.autoplay = true;
+    document.body.appendChild(audioElement);
+    return audioElement;
+}
+
+let party = new Party();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class PeerHand extends Entity {
+    constructor(hand) {
+        super();
+        if(!hand in Hands) {
+            throw new Error("constructor for PeerHand must be LEFT or RIGHT");
+        }
+        this._hand = hand;
+        this._isGripPressed = false;
+        this._vector3 = new THREE.Vector3();
+
+        this._setup();
+    }
+
+    _setup() {
+        let geometry = new THREE.SphereGeometry(0.05);
+        let material = new THREE.MeshLambertMaterial({ color: 0xC68863 });
+        this._mesh = new THREE.Mesh(geometry, material);
+        this._object.add(this._mesh);
+    }
+
+    add(threeObj) {
+        this._object.add(threeObj);
+    }
+
+    attach(threeObj) {
+        this._object.attach(threeObj);
+    }
+
+    remove(threeObj) {
+        if(threeObj.parent == this._object) {
+            global$1.scene.attach(threeObj);
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const ERROR_FIX_FRAMES = 30;
+const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
+
+class PeerController extends Entity {
+    constructor(avatarUrl, username, displayingUsername, isXR) {
+        super();
+        this._velocity = new THREE.Vector3();
+        this._positionError = new THREE.Vector3();
+        this._errorFixFrame = ERROR_FIX_FRAMES;
+        this._username = username || '...';
+        this._displayingUsername = displayingUsername;
+        this._isXR = isXR;
+        this._setup(avatarUrl);
+    }
+
+    _setup(avatarUrl) {
+        this._avatar = new Avatar({
+            'URL': avatarUrl,
+            'Vertical Offset': this._isXR ? 0 : 1.7,
+        });
+        this._avatar.addToScene(this._object);
+        if(this._isXR) {
+            this.hands = {};
+            for(let hand of [Hands.RIGHT, Hands.LEFT]) {
+                let peerHand = new PeerHand(hand);
+                this.hands[hand] = peerHand;
+                peerHand.addToScene(this._object);
+            }
+        }
+        let usernameParams = {
+            'text': this._username, 
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'fontSize': 0.06,
+            'height': 0.04,
+            'width': 0.5,
+            'offset': 0,
+            'margin': 0,
+        };
+        this._usernameBlock = new THREE.Object3D();
+        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        usernameFront.rotateY(Math.PI);
+        this._usernameBlock.position.setY(1.85);
+        this._usernameBlock.add(usernameFront);
+        this._usernameBlock.add(usernameBack);
+        if(this._displayingUsername) {
+            this._object.add(this._usernameBlock);
+        }
+    }
+
+    _updateAvatarData(float32Array, index) {
+        let object = this._avatar.getObject();
+        object.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        object.rotation.fromArray(rotation);
+    }
+
+    _updateHandData(float32Array, index, hand) {
+        let peerHand = this.hands[hand].getObject();
+        peerHand.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        peerHand.rotation.fromArray(rotation);
+    }
+
+    _updateVelocity(float32Array, index, timeDelta) {
+        this._velocity.fromArray(float32Array, index);
+        this._object.position.addScaledVector(this._velocity, timeDelta);
+        if(!this._isXR) {
+            vector3s$1[0].copy(this._velocity).setY(0);
+            if(vector3s$1[0].length() < 0.001) return;
+            vector3s$1[0].multiplyScalar(-1).add(this._object.position);
+            this._object.lookAt(vector3s$1[0]);
+        }
+    }
+
+    _updatePosition(float32Array, index) {
+        this._positionError.fromArray(float32Array, index)
+            .sub(this._object.position);
+        this._errorFixFrame = 0;
+    }
+
+    updateAvatar(url) {
+        this._avatar.updateSourceUrl(url);
+    }
+
+    setDisplayingUsername(displayingUsername) {
+        if(this._displayingUsername == displayingUsername) return;
+        this._displayingUsername = !this._displayingUsername;
+        if(this._displayingUsername) {
+            this._object.add(this._usernameBlock);
+        } else {
+            this._object.remove(this._usernameBlock);
+        }
+    }
+
+    updateUsername(username) {
+        if(this._username == username) return;
+        this._username = username;
+        let shortName = username = stringWithMaxLength(username || '...', 17);
+        this._usernameBlock.children.forEach((block) => {
+            block.children[1].set({ content: shortName });
+        });
+    }
+
+    update(timeDelta, message) {
+        if(message) {
+            this._updateWithMessage(timeDelta, message);
+        } else {
+            this._updateWithoutMessage(timeDelta);
+        }
+        if(this._errorFixFrame < ERROR_FIX_FRAMES) {
+            this._object.position.addScaledVector(this._positionError,
+                ERROR_FACTOR);
+            this._errorFixFrame++;
+        }
+    }
+
+    _updateWithMessage(timeDelta, message) {
+        let codes = new Uint8Array(message.slice(2, 3))[0];
+        let float32Array = new Float32Array(message.slice(3));
+        let index = 0;
+        if(UserMessageCodes.AVATAR & codes) {
+            this._updateAvatarData(float32Array, index);
+            index += 6;
+        }
+        if(UserMessageCodes.LEFT_HAND & codes) {
+            this._updateHandData(float32Array, index, Hands.LEFT);
+            index += 6;
+        }
+        if(UserMessageCodes.RIGHT_HAND & codes) {
+            this._updateHandData(float32Array, index, Hands.RIGHT);
+            index += 6;
+        }
+        if(UserMessageCodes.USER_VELOCITY & codes) {
+            this._updateVelocity(float32Array, index, timeDelta);
+            index += 3;
+        } else {
+            this._velocity.set(0, 0, 0);
+        }
+        if(UserMessageCodes.USER_POSITION & codes) {
+            this._updatePosition(float32Array, index);
+            index += 3;
+        }
+    }
+
+    _updateWithoutMessage(timeDelta, message) {
+        this._object.position.addScaledVector(this._velocity, timeDelta);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class MaterialsHandler {
+    constructor() {
+        this._materials = {};
+        this._materialClassMap = {};
+        this._sessionMaterials = {};
+    }
+
+    addNewMaterial(type, params, ignoreUndoRedo, ignorePublish) {
+        let material = new this._materialClassMap[type](params);
+        this.addMaterial(material, ignoreUndoRedo, ignorePublish);
+        return material;
+    }
+
+    addMaterial(material, ignoreUndoRedo, ignorePublish) {
+        if(this._materials[material.getId()]) return;
+        this._materials[material.getId()] = material;
+        this._sessionMaterials[material.getId()] = material;
+        if(!ignoreUndoRedo) {
+            undoRedoHandler.addAction(() => {
+                this.deleteMaterial(material, true, ignorePublish);
+            }, () => {
+                this.addMaterial(material, true, ignorePublish);
+            });
+        }
+        material.undoDispose();
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.MATERIAL_ADDED, material);
+    }
+
+    deleteMaterial(material, ignoreUndoRedo, ignorePublish) {
+        if(!(material.getId() in this._materials)) return;
+        let undoRedoAction;
+        if(!ignoreUndoRedo) {
+            undoRedoAction = undoRedoHandler.addAction(() => {
+                this.addMaterial(material, true, ignorePublish);
+            }, () => {
+                this.deleteMaterial(material, true, ignorePublish);
+            });
+        }
+        material.dispose();
+        delete this._materials[material.getId()];
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics$1.MATERIAL_DELETED, {
+            material: material,
+            undoRedoAction: undoRedoAction,
+        });
+    }
+
+    load(materials) {
+        if(!materials) return;
+        for(let materialType in materials) {
+            if(!(materialType in this._materialClassMap)) {
+                console.error("Unrecognized material found");
+                continue;
+            }
+            for(let params of materials[materialType]) {
+                this.addNewMaterial(materialType, params, true, true);
+            }
+        }
+    }
+
+    registerMaterial(materialClass, materialType) {
+        this._materialClassMap[materialType] = materialClass;
+    }
+
+    getMaterials() {
+        return this._materials;
+    }
+
+    getMaterial(materialId) {
+        return this._materials[materialId];
+    }
+
+    getSessionMaterial(id) {
+        return this._sessionMaterials[id];
+    }
+
+    getType(materialId) {
+        return this._materials[materialId].getMaterialType();
+    }
+
+    reset() {
+        this._materials = {};
+        this._sessionMaterials = {};
+    }
+
+    getMaterialsAssetIds() {
+        let assetIds = new Set();
+        //TODO: Fetch assetIds of each material
+        return assetIds;
+    }
+
+    getMaterialsDetails() {
+        let materialsDetails = {};
+        for(let materialId in this._materials) {
+            let material = this._materials[materialId];
+            let type = material.getMaterialType();
+            let params = material.exportParams();
+            if(!(type in materialsDetails)) materialsDetails[type] = [];
+            materialsDetails[type].push(params);
+        }
+        return materialsDetails;
+    }
+}
+
+let materialsHandler = new MaterialsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class TexturesHandler {
+    constructor() {
+        this._textures = {};
+        this._textureClassMap = {};
+        this._sessionTextures = {};
+    }
+
+    addNewTexture(type, params, ignoreUndoRedo, ignorePublish) {
+        let texture = new this._textureClassMap[type](params);
+        this.addTexture(texture, ignoreUndoRedo, ignorePublish);
+        return texture;
+    }
+
+    addTexture(texture, ignoreUndoRedo, ignorePublish) {
+        if(this._textures[texture.getId()]) return;
+        this._textures[texture.getId()] = texture;
+        this._sessionTextures[texture.getId()] = texture;
+        if(!ignoreUndoRedo) {
+            undoRedoHandler.addAction(() => {
+                this.deleteTexture(texture, true, ignorePublish);
+            }, () => {
+                this.addTexture(texture, true, ignorePublish);
+            });
+        }
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.TEXTURE_ADDED, texture);
+    }
+
+    deleteTexture(texture, ignoreUndoRedo, ignorePublish) {
+        if(!(texture.getId() in this._textures)) return;
+        let undoRedoAction;
+        if(!ignoreUndoRedo) {
+            undoRedoAction = undoRedoHandler.addAction(() => {
+                this.addTexture(texture, true, ignorePublish);
+            }, () => {
+                this.deleteTexture(texture, true, ignorePublish);
+            });
+        }
+        texture.dispose();
+        delete this._textures[texture.getId()];
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics$1.TEXTURE_DELETED, {
+            texture: texture,
+            undoRedoAction: undoRedoAction,
+        });
+    }
+
+    load(textures) {
+        if(!textures) return;
+        for(let textureType in textures) {
+            if(!(textureType in this._textureClassMap)) {
+                console.error("Unrecognized texture found");
+                continue;
+            }
+            for(let params of textures[textureType]) {
+                this.addNewTexture(textureType, params, true, true);
+            }
+        }
+    }
+
+    registerTexture(textureClass, textureType) {
+        this._textureClassMap[textureType] = textureClass;
+    }
+
+    getTextures() {
+        return this._textures;
+    }
+
+    getTexture(textureId) {
+        return this._textures[textureId];
+    }
+
+    getSessionTexture(id) {
+        return this._sessionTextures[id];
+    }
+
+    getTextureName(textureId) {
+        if(textureId in this._textures)
+            return this._textures[textureId].getName();
+        return null;
+    }
+
+    getType(textureId) {
+        return this._textures[textureId].getTextureType();
+    }
+
+    reset() {
+        this._textures = {};
+        this._sessionTextures = {};
+    }
+
+    getTexturesAssetIds() {
+        let assetIds = new Set();
+        for(let textureId in this._textures) {
+            let texture = this._textures[textureId];
+            let textureAssetIds = texture.getAssetIds();
+            for(let assetId of textureAssetIds) {
+                assetIds.add(assetId);
+            }
+        }
+        return assetIds;
+    }
+
+    getTexturesDetails() {
+        let texturesDetails = {};
+        for(let textureId in this._textures) {
+            let texture = this._textures[textureId];
+            let type = texture.getTextureType();
+            let params = texture.exportParams();
+            if(!(type in texturesDetails)) texturesDetails[type] = [];
+            texturesDetails[type].push(params);
+        }
+        return texturesDetails;
+    }
+}
+
+let texturesHandler = new TexturesHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const SIXTEEN_KB$1 = 1024 * 16;
+const BLOCKABLE_HANDLERS_MAP = {
+    instance_added: '_handleInstanceAdded',
+    instance_deleted: '_handleInstanceDeleted',
+    instance_updated: '_handleInstanceUpdated',
+    instance_attached: '_handleInstanceAttached',
+    instance_detached: '_handleInstanceDetached',
+    material_added: '_handleMaterialAdded',
+    material_deleted: '_handleMaterialDeleted',
+    material_updated: '_handleMaterialUpdated',
+    settings_updated: '_handleSettingsUpdated',
+    texture_added: '_handleTextureAdded',
+    texture_deleted: '_handleTextureDeleted',
+    texture_updated: '_handleTextureUpdated',
+};
+
+class PartyMessageHelper {
+    constructor() {
+        this._id = uuidv4();
+        this._handlingLocks = new Set();
+        this._handleQueue = new Queue();
+        this._publishQueue = new Queue();
+    }
+
+    init(PartyHandler) {
+        this._partyHandler = PartyHandler;
+        let handlers = {
+            avatar: (p, m) => { this._handleAvatar(p, m); },
+            asset_added: (p, m) => { this._handleAssetAdded(p, m); },
+            username: (p, m) => { this._handleUsername(p, m); },
+        };
+        for(let topic in BLOCKABLE_HANDLERS_MAP) {
+            let handler = BLOCKABLE_HANDLERS_MAP[topic];
+            handlers[topic] = (p, m) => { this._handleBlockable(handler,p,m); };
+        }
+        this._partyHandler.addMessageHandlers(handlers);
+    }
+
+    _handleAvatar(peer, message) {
+        if(peer.controller) {
+            peer.controller.updateAvatar(message.url);
+        } else {
+            peer.controller = new PeerController(message.url, peer.username,
+                this._partyHandler.getDisplayingUsernames(), message.isXR);
+            peer.controller.addToScene(global$1.scene);
+        }
+    }
+
+    _handleAssetAdded(peer, message) {
+        let lock = uuidv4();
+        this._handlingLocks.add(lock);
+        let partsLength = message.parts;
+        let assetId = message.assetId;
+        let name = message.name;
+        let type = message.type;
+        let parts = [];
+        this._partyHandler.setEventBufferHandler(peer, (peer, message) => {
+            parts.push(message);
+            if(parts.length == partsLength) {
+                this._partyHandler.setEventBufferHandler(peer);
+                let blob = new Blob(parts);
+                let assetDetails = {
+                    Name: name,
+                    Type: type,
+                };
+                libraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
+                    .then(() => {
+                        pubSub.publish(this._id, PubSubTopics$1.ASSET_ADDED,
+                            assetId);
+                        this._removeHandlingLock(lock);
+                    });
+            }
+        });
+    }
+
+    _handleBlockable(handler, peer, message) {
+        if(this._handlingLocks.size > 0) {
+            this._handleQueue.enqueue(() => {
+                this[handler](peer, message);
+            });
+            return;
+        }
+        this[handler](peer, message);
+    }
+
+    _handleInstanceAdded(peer, message) {
+        let instance = projectHandler.getSessionInstance(message.instance.id);
+        if(instance) {
+            instance.addToScene(global$1.scene);
+            projectHandler.addAsset(instance, true, true);
+        } else {
+            instance = projectHandler.addInstance(message.instance, true, true);
+        }
+        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ADDED, instance);
+    }
+
+    _handleInstanceDeleted(peer, peerMessage) {
+        let assets = projectHandler.getInstancesForAssetId(peerMessage.assetId);
+        let instance = assets[peerMessage.id];
+        if(instance) {
+            projectHandler.deleteAssetInstance(instance, true, true);
+            let topic = PubSubTopics$1.INSTANCE_DELETED + ":" + peerMessage.id;
+            let message = { instance: instance };
+            pubSub.publish(this._id, topic, message, true);
+        } else {
+            console.error("Instance to delete does not exist");
+        }
+    }
+
+    _handleInstanceUpdated(peer, message) {
+        let params = message.instance;
+        let instance = projectHandler.getSessionInstance(params.id);
+        if(instance) {
+            this._handleAssetUpdate(instance, params,
+                PubSubTopics$1.INSTANCE_UPDATED);
+        }
+    }
+
+    _handleInstanceAttached(peer, message) {
+        let instance = projectHandler.getSessionInstance(message.id);
+        if(instance) {
+            let editorHelper = instance.getEditorHelper();
+            if(editorHelper) editorHelper.attachToPeer(peer, message);
+        }
+    }
+
+    _handleInstanceDetached(peer, message) {
+        let instance = projectHandler.getSessionInstance(message.id);
+        if(instance) {
+            let editorHelper = instance.getEditorHelper();
+            if(editorHelper) editorHelper.detachFromPeer(peer, message);
+        }
+    }
+
+    _handleMaterialAdded(peer, message) {
+        let material = materialsHandler.getSessionMaterial(message.material.id);
+        if(material) {
+            materialsHandler.addMaterial(material, true, true);
+        } else {
+            material = materialsHandler.addNewMaterial(message.type,
+                        message.material, true, true);
+        }
+        pubSub.publish(this._id, PubSubTopics$1.MATERIAL_ADDED, material);
+    }
+
+    _handleMaterialDeleted(peer, peerMessage) {
+        let material = materialsHandler.getMaterial(peerMessage.id);
+        if(material) {
+            materialsHandler.deleteMaterial(material, true, true);
+            let topic = PubSubTopics$1.MATERIAL_DELETED + ":" + peerMessage.id;
+            let message = { material: material };
+            pubSub.publish(this._id, topic, message, true);
+        } else {
+            console.error("Material to delete does not exist");
+        }
+    }
+
+    _handleMaterialUpdated(peer, message) {
+        let params = message.material;
+        let material = materialsHandler.getSessionMaterial(params.id);
+        if(material) {
+            this._handleAssetUpdate(material, params,
+                PubSubTopics$1.MATERIAL_UPDATED);
+        }
+    }
+
+    _handleSettingsUpdated(peer, message) {
+        let settings = message.settings;
+        for(let setting in settings) {
+            let handler;
+            if(setting == 'User Settings') {
+                handler = 'setUserSetting';
+            } else if(setting == 'Skybox') {
+                handler = 'setSkyboxSide';
+            } else {
+                console.error("Unknown setting updated: " + setting);
+                return;
+            }
+            for(let key in settings[setting]) {
+                settingsHandler[handler](key, settings[setting][key], true);
+            }
+        }
+        pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED,
+            { settings: settings });
+    }
+
+    _handleTextureAdded(peer, message) {
+        let texture = texturesHandler.getSessionTexture(message.texture.id);
+        if(texture) {
+            texturesHandler.addTexture(texture, true, true);
+        } else {
+            texture = texturesHandler.addNewTexture(message.type,
+                        message.texture, true, true);
+        }
+        pubSub.publish(this._id, PubSubTopics$1.TEXTURE_ADDED, texture);
+    }
+
+    _handleTextureDeleted(peer, peerMessage) {
+        let texture = texturesHandler.getTexture(peerMessage.id);
+        if(texture) {
+            texturesHandler.deleteTexture(texture, true, true);
+            let topic = PubSubTopics$1.TEXTURE_DELETED + ":" + peerMessage.id;
+            let message = { texture: texture };
+            pubSub.publish(this._id, topic, message, true);
+        } else {
+            console.error("Texture to delete does not exist");
+        }
+    }
+
+    _handleTextureUpdated(peer, message) {
+        let params = message.texture;
+        let texture = texturesHandler.getSessionTexture(params.id);
+        if(texture) {
+            this._handleAssetUpdate(texture, params,
+                PubSubTopics$1.TEXTURE_UPDATED);
+        }
+    }
+
+    _handleAssetUpdate(asset, params, topic) {
+        let updatedParams = [];
+        for(let param in params) {
+            if(param == 'id') continue;
+            updatedParams.push(param);
+            let capitalizedParam = capitalizeFirstLetter(param);
+            if(('set' + capitalizedParam) in asset)
+                asset['set' + capitalizedParam](params[param]);
+            if(global$1.isEditor) asset.getEditorHelper().updateMenuField(param);
+        }
+        let message = {
+            asset: asset,
+            fields: updatedParams,
+        };
+        pubSub.publish(this._id, topic, message);
+    }
+
+    _handleUsername(peer, message) {
+        let username = message.username;
+        if(peer.username == username) return;
+        peer.username = username;
+        if(peer.controller) peer.controller.updateUsername(username);
+        pubSub.publish(this._id, PubSubTopics$1.PEER_USERNAME_UPDATED, {
+            peer: peer,
+        });
+    }
+
+    handlePartyStarted() {
+        pubSub.publish(this._id, PubSubTopics$1.PARTY_STARTED);
+    }
+
+    handlePartyEnded() {
+        pubSub.publish(this._id, PubSubTopics$1.PARTY_ENDED);
+    }
+
+    handlePeerConnected(peer) {
+        pubSub.publish(this._id, PubSubTopics$1.PEER_CONNECTED, { peer: peer });
+    }
+
+    handlePeerDisconnected(peer) {
+        pubSub.publish(this._id, PubSubTopics$1.PEER_DISCONNECTED,{ peer: peer });
+    }
+
+    _removeHandlingLock(lock) {
+        this._handlingLocks.delete(lock);
+        while(this._handleQueue.length > 0 && this._handlingLocks.size == 0) {
+            this._handleQueue.dequeue()();
+        }
+    }
+
+    _publishAssetAdded(assetId) {
+        return new Promise((resolve) => {
+            let libraryDetails = libraryHandler.getLibrary()[assetId];
+            let blob = libraryDetails['Blob'];
+            blob.arrayBuffer().then((buffer) => {
+                let parts = [];
+                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB$1);
+                for(let i = 0; i < n; i++) {
+                    let chunkStart = i * SIXTEEN_KB$1;
+                    let chunkEnd = (i + 1) * SIXTEEN_KB$1;
+                    parts.push(buffer.slice(chunkStart, chunkEnd));
+                }
+                this._partyHandler.sendToAllPeers(JSON.stringify({
+                    topic: 'asset_added',
+                    assetId: assetId,
+                    name: libraryDetails['Name'],
+                    type: libraryDetails['Type'],
+                    parts: parts.length,
+                }));
+                for(let part of parts) {
+                    this._partyHandler.sendToAllPeers(part);
+                }
+                resolve();
+            });
+        });
+    }
+
+    _publishAvatarUpdated(url) {
+        this._partyHandler.sendToAllPeers(JSON.stringify({
+            "topic": "avatar",
+            "url": url,
+        }));
+        return Promise.resolve();
+    }
+
+    _publishInstanceAdded(instance) {
+        let message = {
+            topic: 'instance_added',
+            instance: instance.exportParams(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishInstanceDeleted(instance) {
+        let message = {
+            topic: 'instance_deleted',
+            id: instance.getId(),
+            assetId: instance.getAssetId(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishInstanceAttached(data) {
+        let message = {
+            topic: 'instance_attached',
+            id: data.instance.getId(),
+            assetId: data.instance.getAssetId(),
+            option: data.option,
+        };
+        if(global$1.deviceType == 'XR') {
+            message['position'] = data.instance.getPosition();
+            message['rotation'] = data.instance.getRotation();
+            message['isXR'] = true;
+        }
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishInstanceDetached(data) {
+        let message = {
+            topic: 'instance_detached',
+            id: data.instance.getId(),
+            assetId: data.instance.getAssetId(),
+            option: data.option,
+        };
+        if(global$1.deviceType == 'XR') {
+            message['position'] = data.instance.getPosition();
+            message['rotation'] = data.instance.getRotation();
+            message['isXR'] = true;
+        }
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishMaterialAdded(material) {
+        let message = {
+            topic: 'material_added',
+            material: material.exportParams(),
+            type: material.getMaterialType(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishMaterialDeleted(material) {
+        let message = {
+            topic: 'material_deleted',
+            id: material.getId(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishSettingsUpdate(updateMessage) {
+        let settings = updateMessage.settings;
+        let keys = updateMessage.keys;
+        let peerMessage = {
+            topic: 'settings_updated',
+            settings: {},
+        };
+        peerMessage.settings[keys[0]] = {};
+        peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
+        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+        return Promise.resolve();
+    }
+
+    _publishTextureAdded(texture) {
+        let message = {
+            topic: 'texture_added',
+            texture: texture.exportParams(),
+            type: texture.getTextureType(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishTextureDeleted(texture) {
+        let message = {
+            topic: 'texture_deleted',
+            id: texture.getId(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishAssetUpdate(updateMessage, type) {
+        let asset = {};
+        asset['id'] = updateMessage.asset.getId();
+        for(let param of updateMessage.fields) {
+            let capitalizedParam = capitalizeFirstLetter(param);
+            asset[param] = updateMessage.asset['get' + capitalizedParam]();
+        }
+        let peerMessage = { "topic": type + "_updated" };
+        peerMessage[type] = asset;
+        this._partyHandler.sendToAllPeers(
+            JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
+        return Promise.resolve();
+    }
+
+    addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.ASSET_ADDED, (assetId) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetAdded(assetId);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.AVATAR_UPDATED, (url) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAvatarUpdated(url);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.BECOME_PARTY_HOST, () => {
+            this._partyHandler.setIsHost(true);
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.BOOT_PEER, (peerId) => {
+            this._partyHandler.bootPeer(peerId);
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_ADDED, (instance) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceAdded(instance);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceDeleted(message.instance);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_UPDATED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "instance");
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_ATTACHED, (message) =>{
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceAttached(message);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DETACHED, (message) =>{
+            this._publishQueue.enqueue(() => {
+                return this._publishInstanceDetached(message);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_ADDED, (material) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishMaterialAdded(material);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_DELETED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishMaterialDeleted(message.material);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "material");
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.SETTINGS_UPDATED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishSettingsUpdate(message);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_ADDED, (texture) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishTextureAdded(texture);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_DELETED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishTextureDeleted(message.texture);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "texture");
+            });
+        });
+    }
+
+    removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics$1.ASSET_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.AVATAR_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.BECOME_PARTY_HOST);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.BOOT_PEER);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_ATTACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_DETACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.SETTINGS_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED);
+    }
+
+    update() {
+        if(this._isPublishing || this._publishQueue.length == 0) return;
+        this._isPublishing = true;
+        this._publishQueue.dequeue()().then(() => this._isPublishing = false);
+    }
+}
+
+let partyMessageHelper = new PartyMessageHelper();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const SIXTEEN_KB = 1024 * 16;
+const TWO_BYTE_MOD = 2 ** 16;
+const JITTER_DELAY = 50;
+
+class PartyHandler {
+    constructor() {
+        this._peers = {};
+        this._partyActive = false;
+        this._displayingUsernames = false;
+        this._username = generateRandomUsername();
+        this._messageHandlers = {
+            project: (p, m) => { this._handleProject(p, m); },
+        };
+        partyMessageHelper.init(this);
+        party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
+        party.setOnDisconnect(() => { this._onDisconnect(); });
+    }
+
+    _onDisconnect() {
+        this._partyActive = false;
+        partyMessageHelper.removeSubscriptions();
+        for(let peerId in this._peers) {
+            let peer = this._peers[peerId];
+            if(peer.rtc) peer.rtc.close();
+            if(peer.controller) peer.controller.removeFromScene();
+        }
+        this._peers = {};
+        partyMessageHelper.handlePartyEnded();
+    }
+
+    _registerPeer(rtc) {
+        let peer = { id: rtc.getPeerId(), jitterBuffer: new Queue() };
+        this._peers[peer.id] = peer;
+        rtc.setOnSendDataChannelOpen(() => {
+            if(this._successCallback) this._successCallback();
+            peer.rtc = rtc;
+            partyMessageHelper.handlePeerConnected(peer);
+            rtc.sendData(JSON.stringify({
+                "topic": "avatar",
+                "url": userController.getAvatarUrl(),
+                "isXR": global$1.deviceType == "XR",
+            }));
+            rtc.sendData(JSON.stringify({
+                topic: 'username',
+                username: this._username,
+            }));
+            if(this._isHost) {
+                if(global$1.isEditor) {
+                    this._sendProject([rtc]);
+                }
+            }
+        });
+        rtc.setOnSendDataChannelClose(() => {
+            delete peer['rtc'];
+        });
+        rtc.setOnDisconnect(() => {
+            if(peer.controller) peer.controller.removeFromScene();
+            if(peer.id in this._peers) {
+                delete this._peers[peer.id];
+                partyMessageHelper.handlePeerDisconnected(peer);
+            }
+        });
+        rtc.setOnMessage((message) => {
+            if(typeof message == "string") {
+                this._handleJSON(peer, JSON.parse(message));
+            } else {
+                this._handleArrayBuffer(peer, message);
+            }
+        });
+    }
+
+    _handleJSON(peer, message) {
+        if(message.topic in this._messageHandlers)
+            this._messageHandlers[message.topic](peer, message);
+    }
+
+    _handleArrayBuffer(peer, message) {
+        if(peer.handleEventArrayBuffer) {
+            peer.handleEventArrayBuffer(peer, message);
+            return;
+        }
+        peer.jitterBuffer.enqueue(message);
+    }
+
+    _getNextJitterBufferMessage(jitterBuffer, timestamp) {
+        let message = jitterBuffer.peek();
+        if(!message) return null;
+        let messageTimestamp = this._getMessageTimestamp(message);
+        let timestampDiff = timestamp - messageTimestamp;
+        timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
+            % TWO_BYTE_MOD;
+        if(timestampDiff <= JITTER_DELAY) return null;
+        let nextMessage;
+        do {
+            message = jitterBuffer.dequeue();
+            nextMessage = jitterBuffer.peek();
+            if(!nextMessage) return message;
+            messageTimestamp = this._getMessageTimestamp(nextMessage);
+            timestampDiff = timestamp - messageTimestamp;
+            timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
+                % TWO_BYTE_MOD;
+        } while(timestampDiff > JITTER_DELAY)
+        return message;
+    }
+
+    _getMessageTimestamp(message) {
+        let uint16array = new Uint16Array(message, 0, 1);
+        return uint16array[0];
+    }
+
+    _sendProject(rtcs, parts) {
+        if(!parts) {
+            let zip = projectHandler.exportProject();
+            zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
+                let parts = [];
+                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
+                for(let i = 0; i < n; i++) {
+                    let chunkStart = i * SIXTEEN_KB;
+                    let chunkEnd = (i + 1) * SIXTEEN_KB;
+                    parts.push(buffer.slice(chunkStart, chunkEnd));
+                }
+                this._sendProject(rtcs, parts);
+            });
+            return;
+        }
+        rtcs.forEach((rtc) => rtc.sendData(JSON.stringify({
+            "topic": "project",
+            "parts": parts.length,
+        })));
+        for(let part of parts) {
+            rtcs.forEach((rtc) => rtc.sendData(part));
+        }
+    }
+
+    _handleProject(peer, message) {
+        let partsLength = message.parts;
+        let parts = [];
+        peer.handleEventArrayBuffer = (peer, message) => {
+            parts.push(message);
+            if(parts.length == partsLength) {
+                peer.handleEventArrayBuffer = null;
+                let buffer = concatenateArrayBuffers(parts);
+                let zip = new JSZip();
+                zip.loadAsync(buffer).then((zip) => {
+                    projectHandler.loadZip(zip);
+                });
+            }
+        };
+    }
+
+    addMessageHandlers(messageHandlers) {
+        for(let key in messageHandlers) {
+            this._messageHandlers[key] = messageHandlers[key];
+        }
+    }
+
+    bootPeer(peerId) {
+        let peer = this._peers[peerId];
+        if(peer && peer.rtc) {
+            peer.rtc.close();
+        } else {
+            console.error("Error: couldn't boot peer. Maybe a race condition?");
+        }
+    }
+
+    getDisplayingUsernames() {
+        return this._displayingUsernames;
+    }
+
+    getPeer(peerId) {
+        return this._peers[peerId];
+    }
+
+    getPeers() {
+        return this._peers;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    sendProject() {
+        let rtcs = [];
+        for(let peerId in this._peers) {
+            if(this._peers[peerId].rtc) rtcs.push(this._peers[peerId].rtc);
+        }
+        this._sendProject(rtcs);
+    }
+
+    setDisplayingUsernames(displayingUsernames) {
+        if(this._displayingUsernames == displayingUsernames) return;
+        this._displayingUsernames = !this._displayingUsernames;
+        for(let peerId in this._peers) {
+            let controller = this._peers[peerId].controller;
+            if(controller)
+                controller.setDisplayingUsername(this._displayingUsernames);
+        }
+    }
+
+    setIsHost(isHost) {
+        this._isHost = isHost;
+    }
+
+    setUsername(username) {
+        this._username = username;
+        this.sendToAllPeers(JSON.stringify({
+            topic: 'username',
+            username: username,
+        }));
+    }
+
+    isHost() {
+        return this._isHost;
+    }
+
+    isPartyActive() {
+        return this._partyActive;
+    }
+
+    host(roomId, successCallback, errorCallback) {
+        this._isHost = true;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        party.host(roomId, successCallback, errorCallback);
+        partyMessageHelper.addSubscriptions();
+        this._partyActive = true;
+        partyMessageHelper.handlePartyStarted();
+    }
+
+    join(roomId, successCallback, errorCallback) {
+        this._isHost = false;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        party.join(roomId, successCallback, errorCallback);
+        partyMessageHelper.addSubscriptions();
+        this._partyActive = true;
+        partyMessageHelper.handlePartyStarted();
+    }
+
+    sendToAllPeers(data) {
+        for(let peerId in this._peers) {
+            let rtc = this._peers[peerId].rtc;
+            if(rtc) rtc.sendData(data);
+        }
+    }
+
+    setEventBufferHandler(peer, handler) {
+        peer.handleEventArrayBuffer = handler;
+    }
+
+    update(timeDelta) {
+        if(!this._partyActive) return;
+        let timestamp = new Date().getTime() % TWO_BYTE_MOD;
+        let buffer = new Uint16Array([timestamp]).buffer;
+        buffer = concatenateArrayBuffers(
+            [buffer, ...userController.getDataForRTC()]);
+        for(let peerId in this._peers) {
+            let peer = this._peers[peerId];
+            if(peer.controller) {
+                let message = this._getNextJitterBufferMessage(
+                    peer.jitterBuffer, timestamp);
+                peer.controller.update(timeDelta, message);
+            }
+            if(peer.rtc) peer.rtc.sendData(buffer);
+        }
+        partyMessageHelper.update();
+    }
+}
+
+function generateRandomUsername() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
+}
+
+let partyHandler = new PartyHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12253,20 +14291,24 @@ class TextField extends PointerInteractableEntity {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
             if(this._id != message.id) this.deactivate();
         });
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_PAGE_CHANGED, () => {
+            this.deactivate();
+        });
         if(global$1.deviceType == "XR") {
-            pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, () => {
+            pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_ATTACHED, () => {
                 this.deactivate();
             });
         }
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MENU_PAGE_CHANGED);
         if(global$1.deviceType == "XR")
-            pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
+            pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_ATTACHED);
     }
 
     _handlePaste(e) {
@@ -12349,13 +14391,13 @@ class TextField extends PointerInteractableEntity {
             global$1.keyboardLock = true;
         } else if (global$1.deviceType == "MOBILE") {
             let content = prompt("Enter Value", this.content);
-            if(content) {
+            if(content || content == '') {
                 this.setContent(content);
                 if(this._onBlur) this._onBlur();
                 if(this._onEnter) this._onEnter();
             }
         }
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+        pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
             'id': this._id, 'targetOnlyMenu': false });
     }
 
@@ -12471,17 +14513,17 @@ class NumberField extends TextField {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const HEIGHT$9 = 0.05;
-const WIDTH$9 = 0.31;
-const TITLE_WIDTH$9 = 0.14;
+const HEIGHT$a = 0.05;
+const WIDTH$a = 0.31;
+const TITLE_WIDTH$a = 0.14;
 const CHECKBOX_WIDTH = 0.04;
 const CHECKBOX_HEIGHT = 0.04;
 
 class CheckboxInput extends PointerInteractableEntity {
     constructor(params) {
         super();
+        this._onUpdate = params['onUpdate'];
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
         let initialValue = params['initialValue'] || false;
         let title = params['title'] || 'Missing Field Name...';
         this._suppressMenuFocusEvent = params['suppressMenuFocusEvent'];
@@ -12489,6 +14531,117 @@ class CheckboxInput extends PointerInteractableEntity {
     }
 
     _createInputs(initialValue, title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$a,
+            'width': WIDTH$a,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$a,
+            'width': TITLE_WIDTH$a,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._selectBox = ThreeMeshUIHelper.createCheckboxBlock({
+            'initialValue': initialValue,
+            'height': CHECKBOX_HEIGHT,
+            'width': CHECKBOX_WIDTH,
+            'margin': 0,
+        });
+        this._object.add(titleBlock);
+        this._object.add(this._selectBox);
+        let interactable = new PointerInteractable(this._selectBox, () => {
+            let value = this._selectBox.toggle();
+            if(this._onUpdate) this._onUpdate(Boolean(value));
+            pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
+                'id': this._id,
+                'targetOnlyMenu': this._suppressMenuFocusEvent,
+            });
+        });
+        this._pointerInteractable.addChild(interactable);
+    }
+
+    getWidth() {
+        return WIDTH$a;
+    }
+
+    getHeight() {
+        return HEIGHT$a;
+    }
+
+    deactivate() {
+        //Required method
+    }
+
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        if(this._getFromSource() != this._selectBox.getIsChecked())
+            this._selectBox.toggle();
+    }
+}
+
+const MenuPages = {
+    ASSET: "ASSET",
+    ASSETS: "ASSETS",
+    ASSET_SELECT: "ASSET_SELECT",
+    COLOR_WHEEL: "COLOR_WHEEL",
+    EDITOR_SETTINGS: "EDITOR_SETTINGS",
+    HANDS: "HANDS",
+    HOST_PARTY: "HOST_PARTY",
+    INSTANCE: "INSTANCE",
+    JOIN_PARTY: "JOIN_PARTY",
+    LIBRARY: "LIBRARY",
+    LIBRARY_SEARCH: "LIBRARY_SEARCH",
+    LOAD_GDRIVE: "LOAD_GDRIVE",
+    MATERIAL: "MATERIAL",
+    MATERIALS: "MATERIALS",
+    NAVIGATION: "NAVIGATION",
+    NEW_MATERIAL: "NEW_MATERIAL",
+    NEW_TEXTURE: "NEW_TEXTURE",
+    PARTY: "PARTY",
+    PEER: "PEER",
+    PROJECT: "PROJECT",
+    SETTINGS: "SETTINGS",
+    SKYBOX: "SKYBOX",
+    TEXTURE: "TEXTURE",
+    TEXTURES: "TEXTURES",
+    TEXT_INPUT: "TEXT_INPUT",
+    UPLOAD: "UPLOAD",
+    USER_SETTINGS: "USER_SETTINGS",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const HEIGHT$9 = 0.05;
+const WIDTH$9 = 0.31;
+const TITLE_WIDTH$9 = 0.14;
+const COLOR_BOX_WIDTH = 0.08;
+const COLOR_BOX_HEIGHT = 0.04;
+
+class ColorInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        let title = params['title'] || 'Missing Field Name...';
+        this._lastValue = numberOr(params['initialValue'], 0x2abbd5);
+        this._color = new THREE.Color(this._lastValue);
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._createInputs(title);
+    }
+
+    _createInputs(title) {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
@@ -12507,33 +14660,32 @@ class CheckboxInput extends PointerInteractableEntity {
             'margin': 0,
             'textAlign': 'left',
         });
-        this._selectBox = ThreeMeshUIHelper.createCheckboxBlock({
-            'initialValue': initialValue,
-            'height': CHECKBOX_HEIGHT,
-            'width': CHECKBOX_WIDTH,
+        this._colorBlock = ThreeMeshUIHelper.createColorBlock({
+            'height': COLOR_BOX_HEIGHT,
+            'width': COLOR_BOX_WIDTH,
             'margin': 0,
+            'selectedColor': this._color,
         });
         this._object.add(titleBlock);
-        this._object.add(this._selectBox);
-        let interactable = new PointerInteractable(this._selectBox, () => {
-            let value = this._selectBox.toggle();
-            this._setToSource(Boolean(value));
-            undoRedoHandler.addAction(() => {
-                this._setToSource(!value);
-                if(this._selectBox.getIsChecked() == value) {
-                    this._selectBox.toggle();
-                    this._selectBox.update(false, true, false);
-                }
-            }, () => {
-                this._setToSource(Boolean(value));
-                if(this._selectBox.getIsChecked() != value) {
-                    this._selectBox.toggle();
-                    this._selectBox.update(false, true, false);
-                }
-            });
-            pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+        this._object.add(this._colorBlock);
+        let interactable = new PointerInteractable(this._colorBlock, () => {
+            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
+            colorPage.setContent(this._id, this._color,
+                (color) => {
+                    this._color.setHex(color);
+                    if(this._onUpdate) this._onUpdate(color);
+                }, ()   => {
+                    if(colorPage.isDraggingCursors()) return;
+                    let oldColor = this._lastValue;
+                    let newColor = this._color.getHex();
+                    if(this._onBlur) this._onBlur(oldColor, newColor);
+                    this._lastValue = newColor;
+                    this._color.setHex(this._lastValue);
+                });
+            global$1.menuController.pushPage(MenuPages.COLOR_WHEEL);
+            pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
                 'id': this._id,
-                'targetOnlyMenu': this._suppressMenuFocusEvent,
+                'targetOnlyMenu': true,
             });
         });
         this._pointerInteractable.addChild(interactable);
@@ -12552,1457 +14704,11 @@ class CheckboxInput extends PointerInteractableEntity {
     }
 
     updateFromSource() {
-        //Required method
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$8 = 0.11;
-const WIDTH$8 = 0.31;
-const TITLE_WIDTH$8 = 0.09;
-const FIELD_HEIGHT$6 = 0.03;
-const FIELD_WIDTH$6 = 0.17;
-const FIELD_MARGIN$6 = 0.0025;
-const FIELD_MAX_LENGTH$b = 13;
-
-class EulerInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._euler = params['euler'];
-        this._lastValues = this._euler.toArray();
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInputs(title);
-    }
-
-    _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$8,
-            'width': WIDTH$8,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'margin': 0,
-            'offset': 0,
-        });
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': HEIGHT$8,
-            'width': WIDTH$8 - TITLE_WIDTH$8,
-            'contentDirection': 'column',
-            'justifyContent': 'center',
-            'alignItems': 'end',
-            'backgroundOpacity': 0,
-            'margin': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$8,
-            'width': TITLE_WIDTH$8,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._xField = new NumberField({
-            'initialText': toDegrees(this._euler.x),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$6,
-            'width': FIELD_WIDTH$6,
-            'margin': FIELD_MARGIN$6,
-            'maxLength': FIELD_MAX_LENGTH$b,
-            'onBlur': () => { this._onBlur(0); },
-            'onUpdate': () => { this._onUpdate(0); },
-        });
-        this._yField = new NumberField({
-            'initialText': toDegrees(this._euler.y),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$6,
-            'width': FIELD_WIDTH$6,
-            'margin': FIELD_MARGIN$6,
-            'maxLength': FIELD_MAX_LENGTH$b,
-            'onBlur': () => { this._onBlur(1); },
-            'onUpdate': () => { this._onUpdate(1); },
-        });
-        this._zField = new NumberField({
-            'initialText': toDegrees(this._euler.z),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$6,
-            'width': FIELD_WIDTH$6,
-            'margin': FIELD_MARGIN$6,
-            'maxLength': FIELD_MAX_LENGTH$b,
-            'onBlur': () => { this._onBlur(2); },
-            'onUpdate': () => { this._onUpdate(2); },
-        });
-        let xRow = createLabelRow$1("X:");
-        let yRow = createLabelRow$1("Y:");
-        let zRow = createLabelRow$1("Z:");
-        this._xField.addToScene(xRow, this._pointerInteractable);
-        this._yField.addToScene(yRow, this._pointerInteractable);
-        this._zField.addToScene(zRow, this._pointerInteractable);
-        this._object.add(titleBlock);
-        this._object.add(columnBlock);
-        columnBlock.add(xRow);
-        columnBlock.add(yRow);
-        columnBlock.add(zRow);
-    }
-
-    _onUpdate(index) {
-        if(index == 0) {
-            let number = this.getX();
-            if(!isNaN(number)) {
-                this._euler.x = MathUtils.degToRad(number);
-            }
-        } else if(index == 1) {
-            let number = this.getY();
-            if(!isNaN(number)) {
-                this._euler.y = MathUtils.degToRad(number);
-            }
-        } else if(index == 2) {
-            let number = this.getZ();
-            if(!isNaN(number)) {
-                this._euler.z = MathUtils.degToRad(number);
-            }
-        }
-    }
-
-    _onBlur(index) {
-        this._onUpdate(index);
-        let preValue = this._lastValues[index];
-        let postValue = this._getComponent(index);
-        if(preValue != postValue) {
-            undoRedoHandler.addAction(() => {
-                this._setComponent(index, preValue);
-                this.updateFromSource();
-            }, () => {
-                this._setComponent(index, postValue);
-                this.updateFromSource();
-            });
-            this._lastValues[index] = this._getComponent(index);
-        }
-    }
-
-    _getComponent(index) {
-        if(index == 0) {
-            return this._euler.x;
-        } else if(index == 1) {
-            return this._euler.y;
-        } else {
-            return this._euler.z;
-        }
-    }
-
-    _setComponent(index, value) {
-        if(index == 0) {
-            this._euler.x = value;
-        } else if(index == 1) {
-            this._euler.y = value;
-        } else {
-            this._euler.z = value;
-        }
-    }
-
-    getX() {
-        return Number.parseFloat(this._xField.content);
-    }
-
-    getY() {
-        return Number.parseFloat(this._yField.content);
-    }
-
-    getZ() {
-        return Number.parseFloat(this._zField.content);
-    }
-
-    getWidth() {
-        return WIDTH$8;
-    }
-
-    getHeight() {
-        return HEIGHT$8;
-    }
-
-    deactivate() {
-        this._xField.deactivate();
-        this._yField.deactivate();
-        this._zField.deactivate();
-    }
-
-    reset() {
-        this._xField.reset();
-        this._yField.reset();
-        this._zField.reset();
-    }
-
-    updateFromSource() {
-        this._xField.setContent(toDegrees(this._euler.x));
-        this._yField.setContent(toDegrees(this._euler.y));
-        this._zField.setContent(toDegrees(this._euler.z));
-        this._lastValues = this._euler.toArray();
-    }
-}
-
-////////////////////////////
-
-function createLabelRow$1(label) {
-    let row = new ThreeMeshUI.Block({
-        'height': FIELD_HEIGHT$6,
-        'width': WIDTH$8 - TITLE_WIDTH$8,
-        'contentDirection': 'row',
-        'justifyContent': 'start',
-        'backgroundOpacity': 0,
-        'margin': FIELD_MARGIN$6,
-        'offset': 0,
-    });
-    let labelBlock = ThreeMeshUIHelper.createTextBlock({
-        'text': label,
-        'fontSize': FontSizes.body,
-        'height': FIELD_HEIGHT$6,
-        'width': WIDTH$8 - TITLE_WIDTH$8 - FIELD_WIDTH$6,
-        'margin': 0,
-    });
-    row.add(labelBlock);
-    return row;
-}
-
-function toDegrees(radians) {
-    return String(roundWithPrecision(MathUtils.radToDeg(radians), 5));
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$7 = 0.11;
-const WIDTH$7 = 0.31;
-const TITLE_WIDTH$7 = 0.09;
-const FIELD_HEIGHT$5 = 0.03;
-const FIELD_WIDTH$5 = 0.17;
-const FIELD_MARGIN$5 = 0.0025;
-const FIELD_MAX_LENGTH$a = 13;
-
-class Vector3Input extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._vector3 = params['vector3'];
-        this._lastValues = this._vector3.toArray();
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInputs(title);
-    }
-
-    _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$7,
-            'width': WIDTH$7,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'margin': 0,
-            'offset': 0,
-        });
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': HEIGHT$7,
-            'width': WIDTH$7 - TITLE_WIDTH$7,
-            'contentDirection': 'column',
-            'justifyContent': 'center',
-            'alignItems': 'end',
-            'backgroundOpacity': 0,
-            'margin': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$7,
-            'width': TITLE_WIDTH$7,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._xField = new NumberField({
-            'initialText': String(this._vector3.x),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$5,
-            'width': FIELD_WIDTH$5,
-            'margin': FIELD_MARGIN$5,
-            'maxLength': FIELD_MAX_LENGTH$a,
-            'onBlur': () => { this._onBlur(0); },
-            'onUpdate': () => { this._onUpdate(0); },
-        });
-        this._yField = new NumberField({
-            'initialText': String(this._vector3.y),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$5,
-            'width': FIELD_WIDTH$5,
-            'margin': FIELD_MARGIN$5,
-            'maxLength': FIELD_MAX_LENGTH$a,
-            'onBlur': () => { this._onBlur(1); },
-            'onUpdate': () => { this._onUpdate(1); },
-        });
-        this._zField = new NumberField({
-            'initialText': String(this._vector3.z),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$5,
-            'width': FIELD_WIDTH$5,
-            'margin': FIELD_MARGIN$5,
-            'maxLength': FIELD_MAX_LENGTH$a,
-            'onBlur': () => { this._onBlur(2); },
-            'onUpdate': () => { this._onUpdate(2); },
-        });
-        let xRow = createLabelRow("X:");
-        let yRow = createLabelRow("Y:");
-        let zRow = createLabelRow("Z:");
-        this._xField.addToScene(xRow, this._pointerInteractable);
-        this._yField.addToScene(yRow, this._pointerInteractable);
-        this._zField.addToScene(zRow, this._pointerInteractable);
-        this._object.add(titleBlock);
-        this._object.add(columnBlock);
-        columnBlock.add(xRow);
-        columnBlock.add(yRow);
-        columnBlock.add(zRow);
-    }
-
-    _onUpdate(index) {
-        if(index == 0) {
-            let number = this.getX();
-            if(!isNaN(number)) {
-                this._vector3.setX(number);
-            }
-        } else if(index == 1) {
-            let number = this.getY();
-            if(!isNaN(number)) {
-                this._vector3.setY(number);
-            }
-        } else if(index == 2) {
-            let number = this.getZ();
-            if(!isNaN(number)) {
-                this._vector3.setZ(number);
-            }
-        }
-    }
-
-    _onBlur(index) {
-        this._onUpdate(index);
-        let preValue = this._lastValues[index];
-        let postValue = this._vector3.getComponent(index);
-        if(preValue != postValue) {
-            undoRedoHandler.addAction(() => {
-                this._vector3.setComponent(index, preValue);
-                this.updateFromSource();
-            }, () => {
-                this._vector3.setComponent(index, postValue);
-                this.updateFromSource();
-            });
-            this._lastValues[index] = this._vector3.getComponent(index);
-        }
-    }
-
-    getX() {
-        return Number.parseFloat(this._xField.content);
-    }
-
-    getY() {
-        return Number.parseFloat(this._yField.content);
-    }
-
-    getZ() {
-        return Number.parseFloat(this._zField.content);
-    }
-
-    getWidth() {
-        return WIDTH$7;
-    }
-
-    getHeight() {
-        return HEIGHT$7;
-    }
-
-    deactivate() {
-        this._xField.deactivate();
-        this._yField.deactivate();
-        this._zField.deactivate();
-    }
-
-    reset() {
-        this._xField.reset();
-        this._yField.reset();
-        this._zField.reset();
-    }
-
-    updateFromSource() {
-        this._xField.setContent(String(this._vector3.x));
-        this._yField.setContent(String(this._vector3.y));
-        this._zField.setContent(String(this._vector3.z));
-        this._lastValues = this._vector3.toArray();
-    }
-}
-
-////////////////////////////
-
-function createLabelRow(label) {
-    let row = new ThreeMeshUI.Block({
-        'height': FIELD_HEIGHT$5,
-        'width': WIDTH$7 - TITLE_WIDTH$7,
-        'contentDirection': 'row',
-        'justifyContent': 'start',
-        'backgroundOpacity': 0,
-        'margin': FIELD_MARGIN$5,
-        'offset': 0,
-    });
-    let labelBlock = ThreeMeshUIHelper.createTextBlock({
-        'text': label,
-        'fontSize': FontSizes.body,
-        'height': FIELD_HEIGHT$5,
-        'width': WIDTH$7 - TITLE_WIDTH$7 - FIELD_WIDTH$5,
-        'margin': 0,
-    });
-    row.add(labelBlock);
-    return row;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const TOOL_AGNOSTIC = "TOOL_AGNOSTIC";
-const INTERACTABLE_KEYS = [
-    "TOOL_AGNOSTIC",
-    HandTools.EDIT,
-    HandTools.COPY_PASTE,
-    HandTools.DELETE,
-];
-const FIELDS$l = [
-    { "name": "Position", "objParam": "position", "type": Vector3Input },
-    { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
-    { "name": "Scale", "objParam": "scale", "type": Vector3Input },
-    { "name": "Visually Edit", "type": CheckboxInput },
-];
-
-class Asset extends Entity {
-    constructor(params = {}) {
-        super();
-        this._boundingBox = new THREE.Box3();
-        this._boundingBoxObj = new Box3Helper(this._boundingBox);
-        this._id = params['id'] || this._id;
-        this._assetId = params['assetId'];
-        this._gripInteractables = {};
-        this._pointerInteractables = {};
-        for(let key of INTERACTABLE_KEYS) {
-            this._pointerInteractables[key] = [];
-            this._gripInteractables[key] = [];
-        }
-
-        this._name = ('name' in params) ? params['name'] : 'Object';
-        let position = (params['position']) ? params['position'] : [0,0,0];
-        let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
-        let scale = (params['scale']) ? params['scale'] : [1,1,1];
-        this.enableInteractables = params['enableInteractions'] || false;
-        this._object.position.fromArray(position);
-        this._object.rotation.fromArray(rotation);
-        this._object.scale.fromArray(scale);
-        this.roundAttributes();
-
-        this._createInteractables();
-    }
-
-    _createMesh() {
-        console.error("Asset._createMesh() should be overridden");
-        return;
-    }
-
-    _createInteractables() {
-        if(global$1.deviceType == "XR") {
-            let interactable = new GripInteractable(this._object,
-                (hand) => {
-                    transformControlsHandler.attach(this, hand);
-                }, (hand) => {
-                    transformControlsHandler.detach(hand);
-                }
-            );
-            this._gripInteractables[HandTools.EDIT].push(interactable);
-            let deleteInteractable = new GripInteractable(this._object,
-                (hand) => {
-                    projectHandler.deleteAssetInstance(this);
-                },
-                () => {}
-            );
-            this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
-            deleteInteractable = new PointerInteractable(this._object,
-                (hand) => {
-                    projectHandler.deleteAssetInstance(this);
-                },
-                true,
-                true
-            );
-            this._pointerInteractables[HandTools.DELETE]
-                .push(deleteInteractable);
-            let copyInteractable = new GripInteractable(this._object,
-                (hand) => {
-                    copyPasteControlsHandler.copy(this);
-                },
-                () => {},
-                Hands.LEFT
-            );
-            this._gripInteractables[HandTools.COPY_PASTE]
-                .push(copyInteractable);
-            copyInteractable = new PointerInteractable(this._object,
-                (hand) => {
-                    copyPasteControlsHandler.copy(this);
-                },
-                true,
-                true,
-                Hands.LEFT
-            );
-            this._pointerInteractables[HandTools.COPY_PASTE]
-                .push(copyInteractable);
-        } else {
-            this._object.states = InteractableStates;
-            this._object.setState = (state) => {
-                if(state == InteractableStates.HOVERED
-                    && this._object != transformControlsHandler.getObject())
-                {
-                    this._boundingBox.setFromObject(this._object);
-                    global$1.scene.add(this._boundingBoxObj);
-                } else {
-                    global$1.scene.remove(this._boundingBoxObj);
-                }
-            };
-            let interactable = new PointerInteractable(this._object,
-                () => {
-                    transformControlsHandler.attach(this);
-                },
-                true,
-                true
-            );
-            this._pointerInteractables[TOOL_AGNOSTIC].push(interactable);
-        }
-    }
-
-    _updateInteractable(isInteractable) {
-        if(isInteractable == this.enableInteractables) return;
-        this.enableInteractables = isInteractable;
-        if(isInteractable) {
-            if(this._object.parent) {
-                for(let key of INTERACTABLE_KEYS) {
-                    let tool = (key != TOOL_AGNOSTIC) ? key : null;
-                    gripInteractableHandler.addInteractables(
-                        this._gripInteractables[key], tool);
-                    pointerInteractableHandler.addInteractables(
-                        this._pointerInteractables[key], tool);
-                }
-            }
-        } else {
-            for(let key of INTERACTABLE_KEYS) {
-                let tool = (key != TOOL_AGNOSTIC) ? key : null;
-                gripInteractableHandler.removeInteractables(
-                    this._gripInteractables[key], tool);
-                pointerInteractableHandler.removeInteractables(
-                    this._pointerInteractables[key], tool);
-            }
-        }
-    }
-
-    makeTranslucent() {
-        this._object.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                if (node.material) {
-                    if (node.material instanceof THREE.MeshFaceMaterial || node.material instanceof THREE.MultiMaterial) {
-                        node.material.materials.forEach(function (mtrl, idx) {
-                            let newMaterial = mtrl.clone();
-                            makeMaterialTranslucent(newMaterial);
-                            newMaterial.userData['oldMaterial'] = mtrl;
-                            node.material.materials[idx] = newMaterial;
-                        });
-                    }
-                    else {
-                        let newMaterial = node.material.clone();
-                        makeMaterialTranslucent(newMaterial);
-                        newMaterial.userData['oldMaterial'] = node.material;
-                        node.material = newMaterial;
-                    }
-                }
-            }
-        });
-    }
-
-    returnTransparency() {
-        this._object.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                if (node.material) {
-                    if (node.material instanceof THREE.MeshFaceMaterial || node.material instanceof THREE.MultiMaterial) {
-                        node.material.materials.forEach(function (mtrl, idx) {
-                            node.material.materials[idx] =
-                                mtrl.userData['oldMaterial'];
-                            disposeMaterial(mtrl);
-                        });
-                    }
-                    else {
-                        let oldMaterial = node.material;
-                        node.material = node.material.userData['oldMaterial'];
-                        disposeMaterial(oldMaterial);
-                    }
-                }
-            }
-        });
-    }
-
-    roundAttributes() {
-        this._object.position.roundWithPrecision(5);
-        this._object.rotation.roundWithPrecision(5);
-        this._object.scale.roundWithPrecision(5);
-    }
-
-    _fetchCloneParams(enableInteractablesOverride) {
-        let params = this.exportParams();
-        let enableInteractables = (enableInteractablesOverride != null)
-            ? enableInteractablesOverride
-            : this.enableInteractables;
-        let position = this._object.getWorldPosition(vector3s[0]).toArray();
-        let rotation = euler.setFromQuaternion(
-            this._object.getWorldQuaternion(quaternion)).toArray();
-        params['enableInteractions'] = enableInteractables;
-        params['position'] = position;
-        params['rotation'] = rotation;
-        delete params['id'];
-        return params;
-    }
-
-    preview() {
-        let params = this.exportParams();
-        params['enableInteractions'] = false;
-        params['isPreview'] = true;
-        delete params['id'];
-        return new this.constructor(params);
-    }
-
-    exportParams() {
-        return {
-            "id": this._id,
-            "name": this._name,
-            "assetId": this._assetId,
-            "position": this._object.position.toArray(),
-            "rotation": this._object.rotation.toArray(),
-            "scale": this._object.scale.toArray(),
-            "enableInteractions": this.enableInteractables,
-        };
-    }
-
-    setFromParams(params) {
-        this._object.position.fromArray(params["position"]);
-        this._object.rotation.fromArray(params["rotation"]);
-        this._object.scale.fromArray(params["scale"]);
-        this._updateInteractable(params["enableInteractions"]);
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-    }
-
-    getMenuFields(fields) {
-        if(this._menuFields) return this._menuFields;
-
-        let menuFieldsMap = this._getMenuFieldsMap();
-        let menuFields = [];
-        for(let field of fields) {
-            if(field.name in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.name]);
-            }
-        }
-        this._menuFields = menuFields;
-        return menuFields;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = {};
-        for(let field of FIELDS$l) {
-            let params = {};
-            if(field.type == CheckboxInput) {
-                params['title'] = field.name;
-                params['initialValue'] = this.enableInteractables;
-                params['getFromSource'] =
-                    () => { return this.enableInteractables; };
-                params['setToSource'] = (v) => { this._updateInteractable(v); };
-            } else if(field.type == EulerInput) {
-                params['title'] = field.name;
-                params['euler'] = this._object[field.objParam];
-            } else if(field.type == Vector3Input) {
-                params['title'] = field.name;
-                params['vector3'] = this._object[field.objParam];
-            }
-            let menuField = new field.type(params);
-            menuFieldsMap[field.name] = menuField;
-        }
-        return menuFieldsMap;
-    }
-
-    place(intersection) {
-        let point = intersection.point;
-        this._object.position.copy(point);
-        this.roundAttributes();
-    }
-
-    addToScene(scene) {
-        scene.add(this._object);
-        if(!this.enableInteractables) return;
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            gripInteractableHandler.addInteractables(
-                this._gripInteractables[key], tool);
-            pointerInteractableHandler.addInteractables(
-                this._pointerInteractables[key], tool);
-        }
-    }
-
-    removeFromScene() {
-        this._object.parent.remove(this._object);
-        global$1.scene.remove(this._boundingBoxObj);
-        fullDispose(this._object);
-        fullDispose(this._boundingBoxObj);
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            gripInteractableHandler.removeInteractables(
-                this._gripInteractables[key], tool);
-            pointerInteractableHandler.removeInteractables(
-                this._pointerInteractables[key], tool);
-        }
-    }
-
-    getId() {
-        return this._id;
-    }
-
-    getAssetId() {
-        return this._assetId;
-    }
-
-    getName() {
-        return this._name;
-    }
-
-    setName(newName, isUndoRedo) {
-        if(newName == null || this._name == newName) return;
-        let oldName = this._name;
-        this._name = newName;
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-        if(!isUndoRedo) {
-            undoRedoHandler.addAction(() => {
-                this.setName(oldName, true);
-            }, () => {
-                this.setName(newName, true);
-            });
-        }
-    }
-}
-
-function makeMaterialTranslucent(material) {
-    material.opacity = 0.5;
-    material.transparent = true;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-const FIELDS$k = [
-    { "name": "Visually Edit" },
-    { "name": "Double Sided", "type": CheckboxInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
-
-class ClampedTexturePlane extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._createMesh(params['assetId']);
-        this._doubleSided = !(params.doubleSided == false);
-        if(!this._doubleSided) this._updateDoubleSided(false);
-        this._transparent = params['transparent'] != false;
-        if(!this._transparent) this._updateTransparent(false);
-        if(params['isPreview']) this.makeTranslucent();
-    }
-
-    _createMesh(assetId) {
-        this._mesh = libraryHandler.cloneMesh(assetId);
-        this._object.add(this._mesh);
-    }
-
-    _updateDoubleSided(isDoubleSided) {
-        if(!this._materialAlreadyCloned) {
-            this._mesh.material = this._mesh.material.clone();
-            this._materialAlreadyCloned = true;
-        }
-        this._mesh.material.side = (isDoubleSided)
-            ? THREE.DoubleSide
-            : THREE.FrontSide;
-        this._doubleSided = isDoubleSided;
-    }
-
-    _updateTransparent(isTransparent) {
-        if(!this._materialAlreadyCloned) {
-            this._mesh.material = this._mesh.material.clone();
-            this._materialAlreadyCloned = true;
-        }
-        this._mesh.material.transparent = isTransparent;
-        this._transparent = isTransparent;
-     }
-
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes();
-    }
-
-    clone(enableInteractablesOverride) {
-        let params = this._fetchCloneParams(enableInteractablesOverride);
-        return projectHandler.addImage(params);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['doubleSided'] = this._mesh.material.side == THREE.DoubleSide;
-        params['transparent'] = this._transparent;
-        return params;
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$k);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$k) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.name == "Double Sided") {
-                let params = {};
-                params['title'] = field.name;
-                params['initialValue'] =
-                    this._mesh.material.side == THREE.DoubleSide;
-                params['getFromSource'] = () => {
-                    return this._mesh.material.side == THREE.DoubleSide; };
-                params['setToSource'] = (v) => { this._updateDoubleSided(v); };
-                params['suppressMenuFocusEvent'] = true;
-                let menuField = new field.type(params);
-                menuFieldsMap[field.name] = menuField;
-            }
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const FIELDS$j = [
-    { "name": "Visually Edit", "type": CheckboxInput },
-    { "name": "Position", "objParam": "position", "type": Vector3Input },
-    { "name": "Rotation", "objParam": "rotation", "type": EulerInput },
-    { "name": "Scale", "objParam": "scale", "type": Vector3Input },
-];
-
-class GLTFAsset extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._createMesh(params['assetId']);
-        if(params['isPreview']) this.makeTranslucent();
-    }
-
-    _createMesh(assetId) {
-        this._mesh = libraryHandler.cloneMesh(assetId);
-        this._object.add(this._mesh);
-    }
-
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
-    clone(enableInteractablesOverride) {
-        let params = this._fetchCloneParams(enableInteractablesOverride);
-        return projectHandler.addGLTF(params);
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$j);
-    }
-}
-
-const TextureTypes = {
-    BASIC: "BASIC",
-    CUBE: "CUBE",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Texture {
-    constructor(params = {}) {
-        this._id = params['id'] || uuidv4();
-        this._name = ('name' in params)
-            ? params['name']
-            : this._getDefaultName();
-    }
-
-    _getDefaultName() {
-        console.error("Texture._getDefaultName() should be overridden");
-        return;
-    }
-
-    _createTexture() {
-        console.error("Texture._createTexture() should be overridden");
-        return;
-    }
-
-    exportParams() {
-        return {
-            "id": this._id,
-            "name": this._name,
-        };
-    }
-
-    setFromParams(params) {
-        console.warn("Unexpectedly trying to setFromParams() for Texture...");
-        //PubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
-    }
-
-    getMenuFields(fields) {
-        if(this._menuFields) return this._menuFields;
-
-        let menuFieldsMap = this._getMenuFieldsMap();
-        let menuFields = [];
-        for(let field of fields) {
-            if(field.name in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.name]);
-            }
-        }
-        this._menuFields = menuFields;
-        return menuFields;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = {};
-        return menuFieldsMap;
-    }
-
-    _updateEnum(parameter, option, map) {
-        let val;
-        if(map) {
-            val = map[option];
-        } else {
-            val = option;
-        }
-        this._texture[parameter] = val;
-        this['_' + parameter] = val;
-        this._updateTexture();
-    }
-
-    _updateTexture() {
-        let oldTexture = this._texture;
-        this._createTexture();
-        setTimeout(() => {
-            oldTexture.dispose();
-        }, 20);
-        pubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
-    }
-
-    dispose() {
-        setTimeout(() => {
-            this._texture.dispose();
-        }, 20);
-    }
-
-    getTexture() {
-        return this._texture;
-    }
-
-    getPreviewTexture() {
-        return this._texture;
-    }
-
-    getAssetIds() {
-        console.error("Texture.getAssetIds() should be overridden");
-        return;
-    }
-
-    getTextureType() {
-        console.error("Texture.getTextureType() should be overridden");
-        return;
-    }
-
-    getId() {
-        return this._id;
-    }
-
-    getName() {
-        return this._name;
-    }
-
-    setName(newName, isUndoRedo) {
-        if(!newName || this._name == newName) return;
-        let oldName = this._name;
-        this._name = newName;
-        pubSub.publish(this._id, PubSubTopics.TEXTURE_UPDATED, this);
-        if(!isUndoRedo) {
-            undoRedoHandler.addAction(() => {
-                this.setName(oldName, true);
-            }, () => {
-                this.setName(newName, true);
-            });
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$6 = 0.05;
-const WIDTH$6 = 0.31;
-const TITLE_WIDTH$6 = 0.13;
-const FIELD_HEIGHT$4 = 0.03;
-const FIELD_WIDTH$4 = 0.17;
-const FIELD_MARGIN$4 = 0.01;
-const FIELD_MAX_LENGTH$9 = 13;
-
-class EnumInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
-        this._lastValue =  params['initialValue'];
-        let title = params['title'] || 'Missing Field Name...';
-        let options = params['options'] || [];
-        this._createInputs(title, options);
-    }
-
-    _createInputs(title, options) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$6,
-            'width': WIDTH$6,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$6,
-            'width': TITLE_WIDTH$6,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._optionSelection = ThreeMeshUIHelper.createButtonBlock({
-            'text': stringWithMaxLength(this._lastValue, FIELD_MAX_LENGTH$9),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$4,
-            'width': FIELD_WIDTH$4,
-            'margin': FIELD_MARGIN$4,
-        });
-        this._optionsContainer = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': FIELD_HEIGHT$4 * options.length,
-            'width': FIELD_WIDTH$4,
-            'backgroundOpacity': 0,
-            //'offset': 0,
-        });
-        this._optionsInteractable = new PointerInteractable(
-            this._optionsContainer);
-        for(let option of options) {
-            let optionButton = ThreeMeshUIHelper.createButtonBlock({
-                'text': option,
-                'fontSize': FontSizes.body,
-                'height': FIELD_HEIGHT$4,
-                'width': FIELD_WIDTH$4,
-                'margin': 0,
-            });
-            this._optionsContainer.add(optionButton);
-            let interactable = new PointerInteractable(optionButton, () => {
-                this._handleSelection(option);
-            });
-            this._optionsInteractable.addChild(interactable);
-        }
-        this._object.add(titleBlock);
-        this._object.add(this._optionSelection);
-        this._selectionInteractable = new PointerInteractable(
-            this._optionSelection, () => {
-                if(options.length == 0) return;
-                this._optionSelection.add(this._optionsContainer);
-                this._selectionInteractable.addChild(this._optionsInteractable);
-            });
-        this._pointerInteractable.addChild(this._selectionInteractable);
-    }
-
-    _handleSelection(option) {
-        let preValue = this._lastValue;
-        this._setToSource(option);
-        this._updateOption(option);
-        undoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateOption(preValue);
-        }, () => {
-            this._setToSource(option);
-            this._updateOption(option);
-        });
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id,
-            'targetOnlyMenu': true,
-        });
-        this.deactivate();
-    }
-
-    _updateOption(option) {
-        this._lastValue = option;
-        option = stringWithMaxLength(option, FIELD_MAX_LENGTH$9);
-        let textComponent = this._optionSelection.children[1];
-        textComponent.set({ content: option });
-    }
-
-    getWidth() {
-        return WIDTH$6;
-    }
-
-    getHeight() {
-        return HEIGHT$6;
-    }
-
-    deactivate() {
-        //Required method
-        this._optionSelection.remove(this._optionsContainer);
-        this._selectionInteractable.removeChild(this._optionsInteractable);
-    }
-
-    updateFromSource() {
-        //Required method
-    }
-}
-
-const MenuPages = {
-    ASSET: "ASSET",
-    ASSETS: "ASSETS",
-    ASSET_SELECT: "ASSET_SELECT",
-    COLOR_WHEEL: "COLOR_WHEEL",
-    EDITOR_SETTINGS: "EDITOR_SETTINGS",
-    HANDS: "HANDS",
-    INSTANCE: "INSTANCE",
-    LIBRARY: "LIBRARY",
-    LIBRARY_SEARCH: "LIBRARY_SEARCH",
-    LOAD_GDRIVE: "LOAD_GDRIVE",
-    MATERIAL: "MATERIAL",
-    MATERIALS: "MATERIALS",
-    NAVIGATION: "NAVIGATION",
-    NEW_MATERIAL: "NEW_MATERIAL",
-    NEW_TEXTURE: "NEW_TEXTURE",
-    PROJECT: "PROJECT",
-    SETTINGS: "SETTINGS",
-    SKYBOX: "SKYBOX",
-    TEXTURE: "TEXTURE",
-    TEXTURES: "TEXTURES",
-    TEXT_INPUT: "TEXT_INPUT",
-    UPLOAD: "UPLOAD",
-    USER_SETTINGS: "USER_SETTINGS",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$5 = 0.05;
-const WIDTH$5 = 0.31;
-const TITLE_WIDTH$5 = 0.13;
-const FIELD_HEIGHT$3 = 0.03;
-const FIELD_WIDTH$3 = 0.17;
-const FIELD_MARGIN$3 = 0.01;
-const FIELD_MAX_LENGTH$8 = 13;
-
-const STATE_COLORS$2 = {};
-STATE_COLORS$2[InteractableStates.IDLE] = Colors.defaultIdle;
-STATE_COLORS$2[InteractableStates.HOVERED] = Colors.defaultHovered;
-STATE_COLORS$2[InteractableStates.SELECTED] = Colors.defaultHovered;
-
-class ImageInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
-        this._lastValue =  params['initialValue'];
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInputs(title);
-        this._updateImage(this._lastValue);
-    }
-
-    _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$5,
-            'width': WIDTH$5,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$5,
-            'width': TITLE_WIDTH$5,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._imageSelection = ThreeMeshUIHelper.createButtonBlock({
-            'text': ' ',
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$3,
-            'width': FIELD_WIDTH$3,
-            'margin': FIELD_MARGIN$3,
-            'idleOpacity': 0.9,
-            'hoveredOpacity': 1,
-            'selectedOpacity': 1,
-        });
-        this._updateImage();
-        this._object.add(titleBlock);
-        this._object.add(this._imageSelection);
-        let interactable = new PointerInteractable(this._imageSelection, () => {
-            let library = libraryHandler.getLibrary();
-            let filteredAssets = {};
-            filteredAssets["null\n"] = { Name: "Blank" };
-            for(let assetId in library) {
-                let asset = library[assetId];
-                if(asset['Type'] == AssetTypes.IMAGE)
-                    filteredAssets[assetId] = asset;
-            }
-            let page = global$1.menuController.getPage(MenuPages.ASSET_SELECT);
-            page.setContent(filteredAssets, (assetId) => {
-                if(assetId == "null\n") assetId = null;
-                this._handleAssetSelection(assetId);
-            }, () => {
-                uploadHandler.triggerUpload();
-            }, () => {
-                uploadHandler.stopListening();
-            });
-            global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
-            uploadHandler.listenForAssets((assetIds) => {
-                if(assetIds.length > 0) this._handleAssetSelection(assetIds[0]);
-            }, false, AssetTypes.IMAGE);
-        });
-        this._pointerInteractable.addChild(interactable);
-    }
-
-    _handleAssetSelection(assetId) {
-        if(assetId == "null\n") assetId = null;
-        let preValue = this._lastValue;
-        this._setToSource(assetId);
-        this._updateImage(assetId);
-        global$1.menuController.back();
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id,
-            'targetOnlyMenu': true,
-        });
-        if(preValue == assetId) return;
-        undoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateImage(preValue);
-        }, () => {
-            this._setToSource(assetId);
-            this._updateImage(assetId);
-        });
-    }
-
-    _updateImage(assetId) {
-        this._lastValue = assetId;
-        let imageName = this._lastValue
-            ? libraryHandler.getAssetName(this._lastValue)
-            : " ";
-        imageName = stringWithMaxLength(imageName, FIELD_MAX_LENGTH$8);
-        let textComponent = this._imageSelection.children[1];
-        textComponent.set({ content: imageName });
-        if(this._lastValue) {
-            for(let interactableState in InteractableStates) {
-                let state = this._imageSelection.states[interactableState];
-                state.attributes.backgroundColor = Colors.white;
-            }
-            this._imageSelection.set({
-                backgroundTexture: libraryHandler.getTexture(this._lastValue),
-                backgroundColor: Colors.white,
-            });
-        } else {
-            for(let interactableState in InteractableStates) {
-                let state = this._imageSelection.states[interactableState];
-                state.attributes.backgroundColor =
-                    STATE_COLORS$2[interactableState];
-            }
-            this._imageSelection.set({
-                backgroundTexture: null,
-                backgroundColor: Colors.defaultIdle,
-            });
-        }
-    }
-
-    getWidth() {
-        return WIDTH$5;
-    }
-
-    getHeight() {
-        return HEIGHT$5;
-    }
-
-    deactivate() {
-        //Required method
-    }
-
-    updateFromSource() {
-        if(!this._getFromSource) return;
-        let image = this._getFromSource();
-        if(this._lastValue != image) this._updateImage(image);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$4 = 0.05;
-const WIDTH$4 = 0.31;
-const TITLE_WIDTH$4 = 0.13;
-const FIELD_HEIGHT$2 = 0.03;
-const FIELD_WIDTH$2 = 0.17;
-const FIELD_MARGIN$2 = 0.01;
-const FIELD_MAX_LENGTH$7 = 13;
-
-class NumberInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
-        this._minValue = numberOr(params['minValue'], -Infinity);
-        this._maxValue = numberOr(params['maxValue'], Infinity);
-        this._lastValue = params['initialValue'] || 0;
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInput(title);
-    }
-
-    _createInput(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$4,
-            'width': WIDTH$4,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$4,
-            'width': TITLE_WIDTH$4,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._numberField = new NumberField({
-            'initialText': String(this._lastValue),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$2,
-            'width': FIELD_WIDTH$2,
-            'margin': FIELD_MARGIN$2,
-            'maxLength': FIELD_MAX_LENGTH$7,
-            'minValue': this._minValue,
-            'maxValue': this._maxValue,
-            'onBlur': () => { this._onBlur(); },
-            'onUpdate': () => { this._onUpdate(); },
-        });
-        this._object.add(titleBlock);
-        this._numberField.addToScene(this._object, this._pointerInteractable);
-    }
-
-    _onUpdate() {
-        if(this._setToSource && this._validate()) {
-            this._setToSource(this.getValue());
-        }
-    }
-
-    _onBlur() {
-        if(this._setToSource && this._validate()) {
-            let preValue = this._lastValue;
-            let postValue = this.getValue();
-            if(preValue != postValue) {
-                undoRedoHandler.addAction(() => {
-                    this._setToSource(preValue);
-                    this.updateFromSource();
-                }, () => {
-                    this._setToSource(postValue);
-                    this.updateFromSource();
-                });
-                this._lastValue = postValue;
-            }
-            this._setToSource(postValue);
-        }
-    }
-
-    _validate() {
-        let number = this.getValue();
-        return !isNaN(number) && number <= this._maxValue
-            && number >= this._minValue;
-    }
-
-    getValue() {
-        return Number.parseFloat(this._numberField.content);
-    }
-
-    getWidth() {
-        return WIDTH$4;
-    }
-
-    getHeight() {
-        return HEIGHT$4;
-    }
-
-    deactivate() {
-        this._numberField.deactivate();
-    }
-
-    reset() {
-        this._numberField.reset();
-    }
-
-    updateFromSource() {
         if(this._getFromSource) {
             this._lastValue = this._getFromSource();
-            this._numberField.setContent(String(this._lastValue));
+            this._color.setHex(this._lastValue);
+            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
+            colorPage.updateColor(this._id, this._color);
         }
     }
 }
@@ -14013,150 +14719,10 @@ class NumberInput extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELDS$i = [
-    { "name": "Image", "type": ImageInput },
-    { "name": "Horizontal Wrapping", "parameter": "wrapS", "type": EnumInput,
-        "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
-        "reverseMap": REVERSE_WRAP_MAP },
-    { "name": "Vertical Wrapping", "parameter": "wrapT", "type": EnumInput,
-        "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
-        "reverseMap": REVERSE_WRAP_MAP },
-    { "name": "Horizontal Repeat", "parameter": "repeat", "parameter2": "x",
-        "type": NumberInput },
-    { "name": "Vertical Repeat", "parameter": "repeat", "parameter2": "y",
-        "type": NumberInput },
-    { "name": "Horizontal Offset", "parameter": "offset", "parameter2": "x",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Vertical Offset", "parameter": "offset", "parameter2": "y",
-        "min": 0, "max": 1, "type": NumberInput },
-];
-
-class BasicTexture extends Texture {
-    constructor(params = {}) {
-        super(params);
-        this._image = params['image'];
-        this._wrapS = params['wrapS'] || THREE.ClampToEdgeWrapping;
-        this._wrapT = params['wrapT'] || THREE.ClampToEdgeWrapping;
-        this._repeatX = params['repeatX'] || 1;
-        this._repeatY = params['repeatY'] || 1;
-        this._offsetX = params['offsetX'] || 0;
-        this._offsetY = params['offsetY'] || 0;
-        this._createTexture();
-    }
-
-    _getDefaultName() {
-        return "Texture";
-    }
-
-    _createTexture() {
-        if(this._image) {
-            this._texture = libraryHandler.cloneTexture(this._image);
-        } else {
-            this._texture = Textures.blackPixel.clone();
-        }
-        this._texture.wrapS = this._wrapS;
-        this._texture.wrapT = this._wrapT;
-        this._texture.repeat.x = this._repeatX;
-        this._texture.repeat.y = this._repeatY;
-        this._texture.offset.x = this._offsetX;
-        this._texture.offset.y = this._offsetY;
-        this._texture.needsUpdate = true;
-    }
-
-    _updateImage(assetId) {
-        if(assetId == this._image) return;
-        this._wrapS = this._texture.wrapS;
-        this._wrapT = this._texture.wrapT;
-        this._repeatX = this._texture.repeat.x;
-        this._repeatY = this._texture.repeat.y;
-        this._offsetX = this._texture.offset.x;
-        this._offsetY = this._texture.offset.y;
-        this._image = assetId;
-        this._updateTexture();
-    }
-
-    getAssetIds() {
-        if(this._image) return [this._image];
-        return [];
-    }
-
-    getTextureType() {
-        return TextureTypes.BASIC;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['image'] = this._image;
-        params['wrapS'] = this._texture.wrapS;
-        params['wrapT'] = this._texture.wrapT;
-        params['repeatX'] = this._texture.repeat.x;
-        params['repeatY'] = this._texture.repeat.y;
-        params['offsetX'] = this._texture.offset.x;
-        params['offsetY'] = this._texture.offset.y;
-        return params;
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$i);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$i) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == ImageInput) {
-                menuFieldsMap[field.name] = new ImageInput({
-                    'title': field.name,
-                    'initialValue': this._image,
-                    'getFromSource': () => { return this._image; },
-                    'setToSource': (v) => { this._updateImage(v); },
-                });
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'initialValue':
-                        this._texture[field.parameter][field.parameter2],
-                    'getFromSource': () => {
-                        return this._texture[field.parameter][field.parameter2];
-                    },
-                    'setToSource': (v) => {
-                        this._texture[field.parameter][field.parameter2] = v;
-                        this['_' + field.parameter +
-                            field.parameter2.toUpperCase()] = v;
-                    },
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                });
-            } else if(field.type == EnumInput) {
-                menuFieldsMap[field.name] = new EnumInput({
-                    'title': field.name,
-                    'initialValue':
-                        field.reverseMap[this._texture[field.parameter]],
-                    'getFromSource': () => {
-                        return field.reverseMap[this._texture[field.parameter]];
-                    },
-                    'setToSource': (v) => {
-                        this._updateEnum(field.parameter, v, field.map);
-                    },
-                    'options': field.options,
-                });
-            }
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$3 = 0.2;
-const WIDTH$3 = 0.31;
+const HEIGHT$8 = 0.2;
+const WIDTH$8 = 0.31;
 const TITLE_HEIGHT = 0.04;
-const TITLE_WIDTH$3 = 0.31;
+const TITLE_WIDTH$8 = 0.31;
 const SIDES = [
     CubeSides.TOP,
     CubeSides.LEFT,
@@ -14177,8 +14743,13 @@ class CubeImageInput extends PointerInteractableEntity {
     constructor(params) {
         super();
         this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
-        this._lastValues =  params['initialValue'] || {};
+        this._onUpdate = params['onUpdate'];
+        this._lastValues = {};
+        if(params['initialValue']) {
+            for(let key in params['initialValue']) {
+                this._lastValues[key] = params['initialValue'][key];
+            }
+        }
         this._title = params['title'] || null;
         this._buttons = [];
         this._createInputs();
@@ -14191,8 +14762,8 @@ class CubeImageInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$3,
-            'width': WIDTH$3,
+            'height': HEIGHT$8,
+            'width': WIDTH$8,
             'contentDirection': 'column',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -14203,7 +14774,7 @@ class CubeImageInput extends PointerInteractableEntity {
                 'text': this._title,
                 'fontSize': FontSizes.body,
                 'height': TITLE_HEIGHT,
-                'width': TITLE_WIDTH$3,
+                'width': TITLE_WIDTH$8,
                 'margin': 0,
             });
             this._object.add(titleBlock);
@@ -14285,21 +14856,14 @@ class CubeImageInput extends PointerInteractableEntity {
 
     _handleAssetSelection(side, assetId) {
         if(assetId == "null\n") assetId = null;
-        let preValue = this._lastValues[side];
-        this._setToSource(side, assetId);
-        this._updateImage(side, assetId);
+        if(this._lastValues[side] != assetId) {
+            if(this._onUpdate) this._onUpdate(side, assetId);
+            this._updateImage(side, assetId);
+        }
         global$1.menuController.back();
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+        pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
-        });
-        if(preValue == assetId) return;
-        undoRedoHandler.addAction(() => {
-            this._setToSource(side, preValue);
-            this._updateImage(side, preValue);
-        }, () => {
-            this._setToSource(side, assetId);
-            this._updateImage(side, assetId);
         });
     }
 
@@ -14316,12 +14880,12 @@ class CubeImageInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$3;
+        return WIDTH$8;
     }
 
     getHeight() {
-        if(this._title) return HEIGHT$3 + TITLE_HEIGHT;
-        return HEIGHT$3;
+        if(this._title) return HEIGHT$8 + TITLE_HEIGHT;
+        return HEIGHT$8;
     }
 
     deactivate() {
@@ -14345,156 +14909,123 @@ class CubeImageInput extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELDS$h = [
-    { "name": "Images", "type": CubeImageInput },
-    { "name": "Mapping", "parameter": "mapping", "type": EnumInput,
-        "options": [ "Reflection", "Refraction" ], "map": MAPPING_MAP,
-        "reverseMap": REVERSE_MAPPING_MAP },
-];
+const HEIGHT$7 = 0.05;
+const WIDTH$7 = 0.31;
+const TITLE_WIDTH$7 = 0.13;
+const FIELD_HEIGHT$7 = 0.03;
+const FIELD_WIDTH$7 = 0.17;
+const FIELD_MARGIN$7 = 0.01;
+const FIELD_MAX_LENGTH$c = 13;
 
-class CubeTexture extends Texture {
-    constructor(params = {}) {
-        super(params);
-        this._images = params['images'] || {};
-        this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
-        this._createTexture();
+class EnumInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._getFromSource = params['getFromSource'];
+        this._onUpdate = params['onUpdate'];
+        this._lastValue =  params['initialValue'];
+        let title = params['title'] || 'Missing Field Name...';
+        let options = params['options'] || [];
+        this._createInputs(title, options);
     }
 
-    _getDefaultName() {
-        return "Cube Texture";
-    }
-
-    _createTexture() {
-        let images = [
-            this._getImageFromSide(CubeSides.RIGHT),
-            this._getImageFromSide(CubeSides.LEFT),
-            this._getImageFromSide(CubeSides.TOP),
-            this._getImageFromSide(CubeSides.BOTTOM),
-            this._getImageFromSide(CubeSides.FRONT),
-            this._getImageFromSide(CubeSides.BACK),
-        ];
-        //textures must be square, same size, and power of 2, otherwise
-        //use no images
-        if(!this._validateImageList(images))
-            images = Array(6).fill(Textures.blackPixel.image);
-        this._texture = new THREE.CubeTexture(images, this._mapping);
-        this._texture.needsUpdate = true;
-    }
-
-    _getImageFromSide(side) {
-        if(this._images[side]) {
-            return libraryHandler.getImage(this._images[side]);
+    _createInputs(title, options) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$7,
+            'width': WIDTH$7,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$7,
+            'width': TITLE_WIDTH$7,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._optionSelection = ThreeMeshUIHelper.createButtonBlock({
+            'text': stringWithMaxLength(this._lastValue, FIELD_MAX_LENGTH$c),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$7,
+            'width': FIELD_WIDTH$7,
+            'margin': FIELD_MARGIN$7,
+        });
+        this._optionsContainer = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': FIELD_HEIGHT$7 * options.length,
+            'width': FIELD_WIDTH$7,
+            'backgroundOpacity': 0,
+            //'offset': 0,
+        });
+        this._optionsInteractable = new PointerInteractable(
+            this._optionsContainer);
+        for(let option of options) {
+            let optionButton = ThreeMeshUIHelper.createButtonBlock({
+                'text': option,
+                'fontSize': FontSizes.body,
+                'height': FIELD_HEIGHT$7,
+                'width': FIELD_WIDTH$7,
+                'margin': 0,
+            });
+            this._optionsContainer.add(optionButton);
+            let interactable = new PointerInteractable(optionButton, () => {
+                this._handleSelection(option);
+            });
+            this._optionsInteractable.addChild(interactable);
         }
-        return Textures.blackPixel.image;
+        this._object.add(titleBlock);
+        this._object.add(this._optionSelection);
+        this._selectionInteractable = new PointerInteractable(
+            this._optionSelection, () => {
+                if(options.length == 0) return;
+                this._optionSelection.add(this._optionsContainer);
+                this._selectionInteractable.addChild(this._optionsInteractable);
+            });
+        this._pointerInteractable.addChild(this._selectionInteractable);
     }
 
-    _validateImageList(images) {
-        let width;
-        let isValid = true;
-        for(let image of images) {
-            if(image == Textures.blackPixel.image) {
-                isValid = false;
-                continue;
-            } else if(image.width != image.height) {
-                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Images must be of same width and height',
-                    sustainTime: 3,
-                });
-                return false;
-            } else if(!powerOf2(image.width)) {
-                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Image lengths must be a power of 2',
-                    sustainTime: 3,
-                });
-                return false;
-            } else if(width && image.width != width) {
-                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'All images must be the same size',
-                    sustainTime: 3,
-                });
-                return false;
-            }
-            width = image.width;
+    _handleSelection(option) {
+        if(this._lastValue != option) {
+            if(this._onUpdate) this._onUpdate(option);
+            this._updateOption(option);
+            pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
+                'id': this._id,
+                'targetOnlyMenu': true,
+            });
         }
-        return isValid;
+        this.deactivate();
     }
 
-    _updateImage(side, assetId) {
-        if(assetId == this._images[side]) return;
-        this._wrapS = this._texture.wrapS;
-        this._wrapT = this._texture.wrapT;
-        this._repeatX = this._texture.repeat.x;
-        this._repeatY = this._texture.repeat.y;
-        this._offsetX = this._texture.offset.x;
-        this._offsetY = this._texture.offset.y;
-        this._images[side] = assetId;
-        this._updateTexture();
+    _updateOption(option) {
+        this._lastValue = option;
+        option = stringWithMaxLength(option, FIELD_MAX_LENGTH$c);
+        let textComponent = this._optionSelection.children[1];
+        textComponent.set({ content: option });
     }
 
-    getPreviewTexture() {
-        let imageId = this._images[CubeSides.FRONT];
-        if(imageId) return libraryHandler.getTexture(imageId);
-        return Textures.blackPixel;
+    getWidth() {
+        return WIDTH$7;
     }
 
-    getAssetIds() {
-        let assetIds = [];
-        for(let side in CubeSides) {
-            if(this._images[side]) assetIds.push(this._images[side]);
-        }
-        return assetIds;
+    getHeight() {
+        return HEIGHT$7;
     }
 
-    getTextureType() {
-        return TextureTypes.CUBE;
+    deactivate() {
+        this._optionSelection.remove(this._optionsContainer);
+        this._selectionInteractable.removeChild(this._optionsInteractable);
     }
 
-    exportParams() {
-        let params = super.exportParams();
-        params['images'] = this._images;
-        params['mapping'] = this._texture.mapping;
-        return params;
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        let newValue = this._getFromSource();
+        if(newValue != this._lastValue) this._updateOption(newValue);
     }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$h);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$h) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == CubeImageInput) {
-                menuFieldsMap[field.name] = new CubeImageInput({
-                    'initialValue': this._images,
-                    'getFromSource': () => { return this._images; },
-                    'setToSource': (s, v) => { this._updateImage(s, v); },
-                });
-            } else if(field.type == EnumInput) {
-                menuFieldsMap[field.name] = new EnumInput({
-                    'title': field.name,
-                    'options': field.options,
-                    'initialValue':
-                        field.reverseMap[this._texture[field.parameter]],
-                    'getFromSource': () => {
-                        return field.reverseMap[this._texture[
-                            field.parameter]];
-                    },
-                    'setToSource': (v) => {
-                        this._updateEnum(field.parameter, v, field.map);
-                        this._updateTexture();
-                    },
-                });
-            }
-        }
-        return menuFieldsMap;
-    }
-}
-
-//https://stackoverflow.com/a/30924333
-function powerOf2(v) {
-    return v && !(v & (v - 1));
 }
 
 /*
@@ -14503,117 +15034,656 @@ function powerOf2(v) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const TEXTURE_TYPE_TO_ADD_FUNCTION = {};
-TEXTURE_TYPE_TO_ADD_FUNCTION[TextureTypes.BASIC] = "addBasicTexture";
-TEXTURE_TYPE_TO_ADD_FUNCTION[TextureTypes.CUBE] = "addCubeTexture";
+const HEIGHT$6 = 0.11;
+const WIDTH$6 = 0.31;
+const TITLE_WIDTH$6 = 0.09;
+const FIELD_HEIGHT$6 = 0.03;
+const FIELD_WIDTH$6 = 0.17;
+const FIELD_MARGIN$6 = 0.0025;
+const FIELD_MAX_LENGTH$b = 13;
 
-class TexturesHandler {
-    constructor() {
-        this._textures = {};
+class EulerInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._lastValue = params['initialValue'] || [0, 0, 0];
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInputs(title);
     }
 
-    addBasicTexture(params, ignoreUndoRedo) {
-        let texture = new BasicTexture(params);
-        this._addTexture(texture, ignoreUndoRedo);
-        return texture;
-    }
-
-    addCubeTexture(params, ignoreUndoRedo) {
-        let texture = new CubeTexture(params);
-        this._addTexture(texture, ignoreUndoRedo);
-        return texture;
-    }
-
-    _addTexture(texture, ignoreUndoRedo) {
-        this._textures[texture.getId()] = texture;
-        if(!ignoreUndoRedo) {
-            undoRedoHandler.addAction(() => {
-                this.deleteTexture(texture, true);
-            }, () => {
-                this._addTexture(texture, true);
-            });
-        }
-        pubSub.publish(this._id, PubSubTopics.TEXTURE_ADDED, texture);
-    }
-
-    deleteTexture(texture, ignoreUndoRedo) {
-        let undoRedoAction;
-        if(!ignoreUndoRedo) {
-            undoRedoAction = undoRedoHandler.addAction(() => {
-                this._addTexture(texture, true);
-            }, () => {
-                this.deleteTexture(texture, true);
-            });
-        }
-        texture.dispose();
-        delete this._textures[texture.getId()];
-        pubSub.publish(this._id, PubSubTopics.TEXTURE_DELETED, {
-            texture: texture,
-            undoRedoAction: undoRedoAction,
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$6,
+            'width': WIDTH$6,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'margin': 0,
+            'offset': 0,
         });
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': HEIGHT$6,
+            'width': WIDTH$6 - TITLE_WIDTH$6,
+            'contentDirection': 'column',
+            'justifyContent': 'center',
+            'alignItems': 'end',
+            'backgroundOpacity': 0,
+            'margin': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$6,
+            'width': TITLE_WIDTH$6,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._xField = new NumberField({
+            'initialText': toDegrees(this._lastValue[0]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$6,
+            'width': FIELD_WIDTH$6,
+            'margin': FIELD_MARGIN$6,
+            'maxLength': FIELD_MAX_LENGTH$b,
+            'onBlur': () => { this._blur(0); },
+            'onUpdate': () => { this._update(0); },
+        });
+        this._yField = new NumberField({
+            'initialText': toDegrees(this._lastValue[1]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$6,
+            'width': FIELD_WIDTH$6,
+            'margin': FIELD_MARGIN$6,
+            'maxLength': FIELD_MAX_LENGTH$b,
+            'onBlur': () => { this._blur(1); },
+            'onUpdate': () => { this._update(1); },
+        });
+        this._zField = new NumberField({
+            'initialText': toDegrees(this._lastValue[2]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$6,
+            'width': FIELD_WIDTH$6,
+            'margin': FIELD_MARGIN$6,
+            'maxLength': FIELD_MAX_LENGTH$b,
+            'onBlur': () => { this._blur(2); },
+            'onUpdate': () => { this._update(2); },
+        });
+        let xRow = createLabelRow$2("X:");
+        let yRow = createLabelRow$2("Y:");
+        let zRow = createLabelRow$2("Z:");
+        this._xField.addToScene(xRow, this._pointerInteractable);
+        this._yField.addToScene(yRow, this._pointerInteractable);
+        this._zField.addToScene(zRow, this._pointerInteractable);
+        this._object.add(titleBlock);
+        this._object.add(columnBlock);
+        columnBlock.add(xRow);
+        columnBlock.add(yRow);
+        columnBlock.add(zRow);
     }
 
-    load(textures) {
-        if(!textures) return;
-        for(let textureType in textures) {
-            if(!(textureType in TEXTURE_TYPE_TO_ADD_FUNCTION)) {
-                console.error("Unrecognized texture found");
-                continue;
-            }
-            for(let params of textures[textureType]) {
-                this[TEXTURE_TYPE_TO_ADD_FUNCTION[textureType]](params, true);
-            }
+    _update(index) {
+        let newValue = [this.getX(), this.getY(), this.getZ()];
+        if(!isNaN(newValue[index])) {
+            newValue.forEach((v, i) => newValue[i] = MathUtils.degToRad(v));
+            if(this._onUpdate) this._onUpdate(newValue);
         }
     }
 
-    getTextures() {
-        return this._textures;
+    _blur(index) {
+        let newValue = [this.getX(), this.getY(), this.getZ()];
+        newValue.forEach((v, i) => newValue[i] = MathUtils.degToRad(v));
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
     }
 
-    getTexture(textureId) {
-        return this._textures[textureId];
+    getX() {
+        return Number.parseFloat(this._xField.content);
     }
 
-    getTextureName(textureId) {
-        if(textureId in this._textures)
-            return this._textures[textureId].getName();
-        return null;
+    getY() {
+        return Number.parseFloat(this._yField.content);
     }
 
-    getType(textureId) {
-        return this._textures[textureId].getTextureType();
+    getZ() {
+        return Number.parseFloat(this._zField.content);
+    }
+
+    getWidth() {
+        return WIDTH$6;
+    }
+
+    getHeight() {
+        return HEIGHT$6;
+    }
+
+    deactivate() {
+        this._xField.deactivate();
+        this._yField.deactivate();
+        this._zField.deactivate();
     }
 
     reset() {
-        this._textures = {};
+        this._xField.reset();
+        this._yField.reset();
+        this._zField.reset();
     }
 
-    getTexturesAssetIds() {
-        let assetIds = new Set();
-        for(let textureId in this._textures) {
-            let texture = this._textures[textureId];
-            let textureAssetIds = texture.getAssetIds();
-            for(let assetId of textureAssetIds) {
-                assetIds.add(assetId);
-            }
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        let value = this._getFromSource();
+        if(value[0] != this._lastValue[0] || value[1] != this._lastValue[1]
+                || value[2] != this._lastValue[2]) {
+            this._lastValue = value;
+            this._xField.setContent(toDegrees(value[0]));
+            this._yField.setContent(toDegrees(value[1]));
+            this._zField.setContent(toDegrees(value[2]));
         }
-        return assetIds;
-    }
-
-    getTexturesDetails() {
-        let texturesDetails = {};
-        for(let textureId in this._textures) {
-            let texture = this._textures[textureId];
-            let type = texture.getTextureType();
-            let params = texture.exportParams();
-            if(!(type in texturesDetails)) texturesDetails[type] = [];
-            texturesDetails[type].push(params);
-        }
-        return texturesDetails;
     }
 }
 
-let texturesHandler = new TexturesHandler();
+////////////////////////////
+
+function createLabelRow$2(label) {
+    let row = new ThreeMeshUI.Block({
+        'height': FIELD_HEIGHT$6,
+        'width': WIDTH$6 - TITLE_WIDTH$6,
+        'contentDirection': 'row',
+        'justifyContent': 'start',
+        'backgroundOpacity': 0,
+        'margin': FIELD_MARGIN$6,
+        'offset': 0,
+    });
+    let labelBlock = ThreeMeshUIHelper.createTextBlock({
+        'text': label,
+        'fontSize': FontSizes.body,
+        'height': FIELD_HEIGHT$6,
+        'width': WIDTH$6 - TITLE_WIDTH$6 - FIELD_WIDTH$6,
+        'margin': 0,
+    });
+    row.add(labelBlock);
+    return row;
+}
+
+function toDegrees(radians) {
+    return String(roundWithPrecision(MathUtils.radToDeg(radians), 5));
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const HEIGHT$5 = 0.05;
+const WIDTH$5 = 0.31;
+const TITLE_WIDTH$5 = 0.13;
+const FIELD_HEIGHT$5 = 0.03;
+const FIELD_WIDTH$5 = 0.17;
+const FIELD_MARGIN$5 = 0.01;
+const FIELD_MAX_LENGTH$a = 13;
+
+const STATE_COLORS$2 = {};
+STATE_COLORS$2[InteractableStates.IDLE] = Colors.defaultIdle;
+STATE_COLORS$2[InteractableStates.HOVERED] = Colors.defaultHovered;
+STATE_COLORS$2[InteractableStates.SELECTED] = Colors.defaultHovered;
+
+class ImageInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._getFromSource = params['getFromSource'];
+        this._onUpdate = params['onUpdate'];
+        this._lastValue =  params['initialValue'];
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInputs(title);
+        this._updateImage(this._lastValue);
+    }
+
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$5,
+            'width': WIDTH$5,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$5,
+            'width': TITLE_WIDTH$5,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._imageSelection = ThreeMeshUIHelper.createButtonBlock({
+            'text': ' ',
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$5,
+            'width': FIELD_WIDTH$5,
+            'margin': FIELD_MARGIN$5,
+            'idleOpacity': 0.9,
+            'hoveredOpacity': 1,
+            'selectedOpacity': 1,
+        });
+        this._updateImage();
+        this._object.add(titleBlock);
+        this._object.add(this._imageSelection);
+        let interactable = new PointerInteractable(this._imageSelection, () => {
+            let library = libraryHandler.getLibrary();
+            let filteredAssets = {};
+            filteredAssets["null\n"] = { Name: "Blank" };
+            for(let assetId in library) {
+                let asset = library[assetId];
+                if(asset['Type'] == AssetTypes.IMAGE)
+                    filteredAssets[assetId] = asset;
+            }
+            let page = global$1.menuController.getPage(MenuPages.ASSET_SELECT);
+            page.setContent(filteredAssets, (assetId) => {
+                if(assetId == "null\n") assetId = null;
+                this._handleAssetSelection(assetId);
+            }, () => {
+                uploadHandler.triggerUpload();
+            }, () => {
+                uploadHandler.stopListening();
+            });
+            global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
+            uploadHandler.listenForAssets((assetIds) => {
+                if(assetIds.length > 0) this._handleAssetSelection(assetIds[0]);
+            }, false, AssetTypes.IMAGE);
+        });
+        this._pointerInteractable.addChild(interactable);
+    }
+
+    _handleAssetSelection(assetId) {
+        if(assetId == "null\n") assetId = null;
+        if(this._lastValue != assetId) {
+            if(this._onUpdate) this._onUpdate(assetId);
+            this._updateImage(assetId);
+        }
+        global$1.menuController.back();
+        pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
+            'id': this._id,
+            'targetOnlyMenu': true,
+        });
+    }
+
+    _updateImage(assetId) {
+        this._lastValue = assetId;
+        let imageName = this._lastValue
+            ? libraryHandler.getAssetName(this._lastValue)
+            : " ";
+        imageName = stringWithMaxLength(imageName, FIELD_MAX_LENGTH$a);
+        let textComponent = this._imageSelection.children[1];
+        textComponent.set({ content: imageName });
+        if(this._lastValue) {
+            for(let interactableState in InteractableStates) {
+                let state = this._imageSelection.states[interactableState];
+                state.attributes.backgroundColor = Colors.white;
+            }
+            this._imageSelection.set({
+                backgroundTexture: libraryHandler.getTexture(this._lastValue),
+                backgroundColor: Colors.white,
+            });
+        } else {
+            for(let interactableState in InteractableStates) {
+                let state = this._imageSelection.states[interactableState];
+                state.attributes.backgroundColor =
+                    STATE_COLORS$2[interactableState];
+            }
+            this._imageSelection.set({
+                backgroundTexture: null,
+                backgroundColor: Colors.defaultIdle,
+            });
+        }
+    }
+
+    getWidth() {
+        return WIDTH$5;
+    }
+
+    getHeight() {
+        return HEIGHT$5;
+    }
+
+    deactivate() {
+        //Required method
+    }
+
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        let image = this._getFromSource();
+        if(this._lastValue != image) this._updateImage(image);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const HEIGHT$4 = 0.05;
+const WIDTH$4 = 0.31;
+const TITLE_WIDTH$4 = 0.13;
+const FIELD_HEIGHT$4 = 0.03;
+const FIELD_WIDTH$4 = 0.13;
+const FIELD_MARGIN$4 = 0.01;
+const FIELD_MAX_LENGTH$9 = 9;
+const HSL$1 = {};
+
+const STATE_COLORS$1 = {};
+STATE_COLORS$1[InteractableStates.IDLE] = Colors.defaultIdle;
+STATE_COLORS$1[InteractableStates.HOVERED] = Colors.defaultHovered;
+STATE_COLORS$1[InteractableStates.SELECTED] = Colors.defaultHovered;
+
+class MaterialInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._getFromSource = params['getFromSource'];
+        this._onUpdate = params['onUpdate'];
+        this._lastValue =  params['initialValue'];
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInputs(title);
+        this._updateMaterial(this._lastValue);
+    }
+
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$4,
+            'width': WIDTH$4,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$4,
+            'width': TITLE_WIDTH$4,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._materialBlock = ThreeMeshUIHelper.createButtonBlock({
+            'text': ' ',
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$4,
+            'width': FIELD_WIDTH$4,
+            'margin': FIELD_MARGIN$4,
+            'idleBackgroundColor': Colors.white,
+            'hoveredBackgroundColor': Colors.white,
+            'selectedBackgroundColor': Colors.white,
+            'idleOpacity': 0.9,
+            'hoveredOpacity': 1,
+            'selectedOpacity': 1,
+        });
+        this._editButton = ThreeMeshUIHelper.createButtonBlock({
+            'backgroundTexture': Textures.pencilIcon,
+            'height': 0.03,
+            'width': 0.03,
+            'margin': 0,
+        });
+        this._object.add(titleBlock);
+        this._object.add(this._materialBlock);
+        this._object.add(this._editButton);
+        let interactable = new PointerInteractable(this._materialBlock, () => {
+            let materials = materialsHandler.getMaterials();
+            let filteredMaterials = {};
+            filteredMaterials["null\n"] = { Name: "Blank" };
+            for(let materialId in materials) {
+                filteredMaterials[materialId] =
+                    { Name: materials[materialId].getName() };
+            }
+            let page = global$1.menuController.getPage(MenuPages.ASSET_SELECT);
+            page.setContent(filteredMaterials, (materialId) => {
+                if(materialId == "null\n") materialId = null;
+                this._handleMaterialSelection(materialId);
+            }, () => {
+                this._selectNewMaterial();
+            });
+            global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
+        });
+        this._editInteractable = new PointerInteractable(this._editButton, () => {
+            if(!this._lastValue) return;
+            let material = materialsHandler.getMaterial(this._lastValue);
+            let materialPage = global$1.menuController.getPage(
+                MenuPages.MATERIAL);
+            materialPage.setMaterial(material);
+            global$1.menuController.pushPage(MenuPages.MATERIAL);
+        });
+        this._pointerInteractable.addChild(interactable);
+    }
+
+    _selectNewMaterial() {
+        let newMaterialPage = global$1.menuController.getPage(
+            MenuPages.NEW_MATERIAL);
+        newMaterialPage.setContent((material) => {
+            this._handleMaterialSelection(material.getId());
+            let materialPage = global$1.menuController.getPage(
+                MenuPages.MATERIAL);
+            materialPage.setMaterial(material);
+            global$1.menuController.pushPage(MenuPages.MATERIAL);
+        });
+        global$1.menuController.pushPage(MenuPages.NEW_MATERIAL);
+    }
+
+    _handleMaterialSelection(materialId) {
+        if(materialId == "null\n") materialId = null;
+        if(this._lastValue != materialId) {
+            if(this._onUpdate) this._onUpdate(materialId);
+            this._updateMaterial(materialId);
+        }
+        global$1.menuController.back();
+        pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
+            'id': this._id,
+            'targetOnlyMenu': true,
+        });
+    }
+
+    _updateMaterial(materialId) {
+        this._lastValue = materialId;
+        let material = materialsHandler.getMaterial(this._lastValue);
+        let materialName = material
+            ? material.getName()
+            : " ";
+        materialName = stringWithMaxLength(materialName, FIELD_MAX_LENGTH$9);
+        let textComponent = this._materialBlock.children[1];
+        textComponent.set({ content: materialName });
+        if(material) {
+            let color = material.getMaterial().color || Colors.white;
+            for(let interactableState in InteractableStates) {
+                let state = this._materialBlock.states[interactableState];
+                state.attributes.backgroundColor = color;
+            }
+            this._updateTextureAndColor(material.getSampleTexture(), color);
+            this._pointerInteractable.addChild(this._editInteractable);
+            this._editButton.visible = true;
+        } else {
+            for(let interactableState in InteractableStates) {
+                let state = this._materialBlock.states[interactableState];
+                state.attributes.backgroundColor =
+                    STATE_COLORS$1[interactableState];
+            }
+            this._updateTextureAndColor(null, Colors.defaultIdle);
+            this._pointerInteractable.removeChild(this._editInteractable);
+            this._editButton.visible = false;
+        }
+    }
+
+    _updateTextureAndColor(texture, color) {
+        if(this._materialBlock.backgroundTexture != texture)
+            this._materialBlock.set({ backgroundTexture: texture });
+        if(this._materialBlock.backgroundColor != color)
+            this._materialBlock.set({ backgroundColor: color });
+        this._materialBlock.backgroundColor.getHSL(HSL$1);
+        let fontColor = (!texture && HSL$1.l > 0.85)
+            ? Colors.black
+            : Colors.white;
+        if(this._materialBlock.children[1].fontColor != fontColor)
+            this._materialBlock.children[1].set({ fontColor: fontColor });
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED, (message) => {
+            if(this._lastValue == message.asset.getId())
+                this.updateFromSource();
+        });
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED);
+    }
+
+    getWidth() {
+        return WIDTH$4;
+    }
+
+    getHeight() {
+        return HEIGHT$4;
+    }
+
+    deactivate() {
+        //Required method
+    }
+
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        this._updateMaterial(this._getFromSource());
+    }
+
+    addToScene(scene, interactableParent) {
+        this.updateFromSource();
+        this._addSubscriptions();
+        super.addToScene(scene, interactableParent);
+    }
+
+    removeFromScene() {
+        this._removeSubscriptions();
+        super.removeFromScene();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const HEIGHT$3 = 0.05;
+const WIDTH$3 = 0.31;
+const TITLE_WIDTH$3 = 0.13;
+const FIELD_HEIGHT$3 = 0.03;
+const FIELD_WIDTH$3 = 0.17;
+const FIELD_MARGIN$3 = 0.01;
+const FIELD_MAX_LENGTH$8 = 13;
+
+class NumberInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._minValue = numberOr(params['minValue'], -Infinity);
+        this._maxValue = numberOr(params['maxValue'], Infinity);
+        this._lastValue = params['initialValue'] || 0;
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInput(title);
+    }
+
+    _createInput(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$3,
+            'width': WIDTH$3,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$3,
+            'width': TITLE_WIDTH$3,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._numberField = new NumberField({
+            'initialText': String(this._lastValue),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$3,
+            'width': FIELD_WIDTH$3,
+            'margin': FIELD_MARGIN$3,
+            'maxLength': FIELD_MAX_LENGTH$8,
+            'minValue': this._minValue,
+            'maxValue': this._maxValue,
+            'onBlur': () => { this._blur(); },
+            'onUpdate': () => { this._update(); },
+        });
+        this._object.add(titleBlock);
+        this._numberField.addToScene(this._object, this._pointerInteractable);
+    }
+
+    _update() {
+        if(this._onUpdate && this._validate()) {
+            this._onUpdate(this.getValue());
+        }
+    }
+
+    _blur() {
+        let newValue = this.getValue();
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
+    }
+
+    _validate() {
+        let number = this.getValue();
+        return !isNaN(number) && number <= this._maxValue
+            && number >= this._minValue;
+    }
+
+    getValue() {
+        return Number.parseFloat(this._numberField.content);
+    }
+
+    getWidth() {
+        return WIDTH$3;
+    }
+
+    getHeight() {
+        return HEIGHT$3;
+    }
+
+    deactivate() {
+        this._numberField.deactivate();
+    }
+
+    reset() {
+        this._numberField.reset();
+    }
+
+    updateFromSource() {
+        if(this._getFromSource) {
+            this._lastValue = this._getFromSource();
+            this._numberField.setContent(String(this._lastValue));
+        }
+    }
+}
+
+const TextureTypes = {
+    BASIC: "BASIC",
+    CUBE: "CUBE",
+};
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -14623,18 +15693,27 @@ let texturesHandler = new TexturesHandler();
 
 const HEIGHT$2 = 0.05;
 const WIDTH$2 = 0.31;
-const TITLE_WIDTH$2 = 0.14;
-const COLOR_BOX_WIDTH = 0.08;
-const COLOR_BOX_HEIGHT = 0.04;
+const TITLE_WIDTH$2 = 0.13;
+const FIELD_HEIGHT$2 = 0.03;
+const FIELD_WIDTH$2 = 0.13;
+const FIELD_MARGIN$2 = 0.01;
+const FIELD_MAX_LENGTH$7 = 9;
 
-class ColorInput extends PointerInteractableEntity {
+const STATE_COLORS = {};
+STATE_COLORS[InteractableStates.IDLE] = Colors.defaultIdle;
+STATE_COLORS[InteractableStates.HOVERED] = Colors.defaultHovered;
+STATE_COLORS[InteractableStates.SELECTED] = Colors.defaultHovered;
+
+class TextureInput extends PointerInteractableEntity {
     constructor(params) {
         super();
+        this._getFromSource = params['getFromSource'];
+        this._onUpdate = params['onUpdate'];
+        this._lastValue =  params['initialValue'];
+        this._filter =  params['filter'];
         let title = params['title'] || 'Missing Field Name...';
-        this._color = params['initialValue'] || new THREE.Color("#2abbd5");
-        this._lastValue = this._color.getHex();
-        this._onUpdate = params['onUpdate'] || (() => {});
         this._createInputs(title);
+        this._updateTexture(this._lastValue);
     }
 
     _createInputs(title) {
@@ -14656,121 +15735,12 @@ class ColorInput extends PointerInteractableEntity {
             'margin': 0,
             'textAlign': 'left',
         });
-        this._colorBlock = ThreeMeshUIHelper.createColorBlock({
-            'height': COLOR_BOX_HEIGHT,
-            'width': COLOR_BOX_WIDTH,
-            'margin': 0,
-            'selectedColor': this._color,
-        });
-        this._object.add(titleBlock);
-        this._object.add(this._colorBlock);
-        let interactable = new PointerInteractable(this._colorBlock, () => {
-            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
-            colorPage.setContent(this._color,
-                (color) => { this._onUpdate(color); },
-                ()      => {
-                    if(colorPage.isDraggingCursors()) return;
-                    let oldColor = this._lastValue;
-                    let newColor = this._color.getHex();
-                    this._onUpdate(newColor);
-                    this._lastValue = newColor;
-                    undoRedoHandler.addAction(() => {
-                        this._onUpdate(oldColor);
-                        colorPage.updateColor(this._color);
-                        this._lastValue = oldColor;
-                    }, () => {
-                        this._onUpdate(newColor);
-                        colorPage.updateColor(this._color);
-                        this._lastValue = newColor;
-                    });
-                });
-            global$1.menuController.pushPage(MenuPages.COLOR_WHEEL);
-            //this._onUpdate();
-            pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-                'id': this._id,
-                'targetOnlyMenu': true,
-            });
-        });
-        this._pointerInteractable.addChild(interactable);
-    }
-
-    setLastValue(color) {
-        this._lastValue = color;
-    }
-
-    getWidth() {
-        return WIDTH$2;
-    }
-
-    getHeight() {
-        return HEIGHT$2;
-    }
-
-    deactivate() {
-        //Required method
-    }
-
-    updateFromSource() {
-        //Required method
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$1 = 0.05;
-const WIDTH$1 = 0.31;
-const TITLE_WIDTH$1 = 0.13;
-const FIELD_HEIGHT$1 = 0.03;
-const FIELD_WIDTH$1 = 0.13;
-const FIELD_MARGIN$1 = 0.01;
-const FIELD_MAX_LENGTH$6 = 9;
-
-const STATE_COLORS$1 = {};
-STATE_COLORS$1[InteractableStates.IDLE] = Colors.defaultIdle;
-STATE_COLORS$1[InteractableStates.HOVERED] = Colors.defaultHovered;
-STATE_COLORS$1[InteractableStates.SELECTED] = Colors.defaultHovered;
-
-class TextureInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
-        this._lastValue =  params['initialValue'];
-        this._filter =  params['filter'];
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInputs(title);
-        this._updateTexture(this._lastValue);
-    }
-
-    _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$1,
-            'width': WIDTH$1,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$1,
-            'width': TITLE_WIDTH$1,
-            'margin': 0,
-            'textAlign': 'left',
-        });
         this._textureSelection = ThreeMeshUIHelper.createButtonBlock({
             'text': ' ',
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$1,
-            'width': FIELD_WIDTH$1,
-            'margin': FIELD_MARGIN$1,
+            'height': FIELD_HEIGHT$2,
+            'width': FIELD_WIDTH$2,
+            'margin': FIELD_MARGIN$2,
             'idleOpacity': 0.9,
             'hoveredOpacity': 1,
             'selectedOpacity': 1,
@@ -14818,9 +15788,7 @@ class TextureInput extends PointerInteractableEntity {
 
     _selectNewTexture() {
         if(this._filter) {
-            let texture = (this._filter == TextureTypes.BASIC)
-                ? texturesHandler.addBasicTexture()
-                : texturesHandler.addCubeTexture();
+            let texture = texturesHandler.addNewTexture(this._filter);
             this._handleTextureSelection(texture.getId());
             let texturePage = global$1.menuController.getPage(
                 MenuPages.TEXTURE);
@@ -14842,21 +15810,14 @@ class TextureInput extends PointerInteractableEntity {
 
     _handleTextureSelection(textureId) {
         if(textureId == "null\n") textureId = null;
-        let preValue = this._lastValue;
-        this._setToSource(textureId);
-        this._updateTexture(textureId);
+        if(this._lastValue != textureId) {
+            if(this._onUpdate) this._onUpdate(textureId);
+            this._updateTexture(textureId);
+        }
         global$1.menuController.back();
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+        pubSub.publish(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
-        });
-        if(preValue == textureId) return;
-        undoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateTexture(preValue);
-        }, () => {
-            this._setToSource(textureId);
-            this._updateTexture(textureId);
         });
     }
 
@@ -14866,7 +15827,7 @@ class TextureInput extends PointerInteractableEntity {
         let textureName = texture
             ? texture.getName()
             : " ";
-        textureName = stringWithMaxLength(textureName, FIELD_MAX_LENGTH$6);
+        textureName = stringWithMaxLength(textureName, FIELD_MAX_LENGTH$7);
         let textComponent = this._textureSelection.children[1];
         textComponent.set({ content: textureName });
         if(texture) {
@@ -14882,7 +15843,7 @@ class TextureInput extends PointerInteractableEntity {
             for(let interactableState in InteractableStates) {
                 let state = this._textureSelection.states[interactableState];
                 state.attributes.backgroundColor =
-                    STATE_COLORS$1[interactableState];
+                    STATE_COLORS[interactableState];
             }
             this._updateTextureAndColor(null, Colors.defaultIdle);
             this._pointerInteractable.removeChild(this._editInteractable);
@@ -14898,11 +15859,11 @@ class TextureInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$1;
+        return WIDTH$2;
     }
 
     getHeight() {
-        return HEIGHT$1;
+        return HEIGHT$2;
     }
 
     deactivate() {
@@ -14921,63 +15882,472 @@ class TextureInput extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELDS$g = [
-    { "name": "Transparent", "parameter": "transparent", "type": CheckboxInput},
-    { "name": "Opacity", "parameter": "opacity", "min": 0, "max": 1,
-        "type": NumberInput },
-    { "name": "Display", "parameter": "side", "type": EnumInput,
-        "options": [ "Front Side", "Back Side", "Both Sides" ],
-        "map": SIDE_MAP, "reverseMap": REVERSE_SIDE_MAP },
-];
+const HEIGHT$1 = 0.085;
+const WIDTH$1 = 0.31;
+const TITLE_WIDTH$1 = 0.09;
+const FIELD_HEIGHT$1 = 0.03;
+const FIELD_WIDTH$1 = 0.17;
+const FIELD_MARGIN$1 = 0.0025;
+const FIELD_MAX_LENGTH$6 = 13;
 
-class Material {
-    constructor(params = {}) {
-        this._id = params['id'] || uuidv4();
-        this._name = ('name' in params)
-            ? params['name']
-            : this._getDefaultName();
-        this._transparent = params['transparent'] || false;
-        this._opacity = params['opacity'] || 1;
-        this._side = params['display'] || THREE.FrontSide;
-        this._addSubscriptions();
+class Vector2Input extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._lastValue = params['initialValue'] || [0, 0];
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInputs(title);
     }
 
-    _getDefaultName() {
-        console.error("Material._getDefaultName() should be overridden");
-        return;
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$1,
+            'width': WIDTH$1,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'margin': 0,
+            'offset': 0,
+        });
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': HEIGHT$1,
+            'width': WIDTH$1 - TITLE_WIDTH$1,
+            'contentDirection': 'column',
+            'justifyContent': 'center',
+            'alignItems': 'end',
+            'backgroundOpacity': 0,
+            'margin': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$1,
+            'width': TITLE_WIDTH$1,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._xField = new NumberField({
+            'initialText': String(this._lastValue[0]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$1,
+            'width': FIELD_WIDTH$1,
+            'margin': FIELD_MARGIN$1,
+            'maxLength': FIELD_MAX_LENGTH$6,
+            'onBlur': () => { this._blur(0); },
+            'onUpdate': () => { this._update(0); },
+        });
+        this._yField = new NumberField({
+            'initialText': String(this._lastValue[1]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$1,
+            'width': FIELD_WIDTH$1,
+            'margin': FIELD_MARGIN$1,
+            'maxLength': FIELD_MAX_LENGTH$6,
+            'onBlur': () => { this._blur(1); },
+            'onUpdate': () => { this._update(1); },
+        });
+        let xRow = createLabelRow$1("X:");
+        let yRow = createLabelRow$1("Y:");
+        this._xField.addToScene(xRow, this._pointerInteractable);
+        this._yField.addToScene(yRow, this._pointerInteractable);
+        this._object.add(titleBlock);
+        this._object.add(columnBlock);
+        columnBlock.add(xRow);
+        columnBlock.add(yRow);
     }
 
-    _createMaterial() {
-        console.error("Material._createMaterial() should be overridden");
-        return;
+    _update(index) {
+        let newValue = [this.getX(), this.getY()];
+        if(!isNaN(newValue[index])) {
+            if(this._onUpdate) this._onUpdate(newValue);
+        }
     }
 
-    exportParams() {
-        return {
-            "id": this._id,
-            "name": this._name,
-            "transparent": this._material.transparent,
-            "opacity": this._material.opacity,
-            "display": this._material.side,
-        };
+    _blur(index) {
+        let newValue = [this.getX(), this.getY()];
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
     }
 
-    setFromParams(params) {
-        console.warn("Unexpectedly trying to setFromParams() for Material...");
-        //this._material.transparent = params['Transparent'];
-        //this._material.opacity = params['Opacity'];
-        //this._material.side = params['Display'];
-        //PubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, this);
+    getX() {
+        return Number.parseFloat(this._xField.content);
+    }
+
+    getY() {
+        return Number.parseFloat(this._yField.content);
+    }
+
+    getWidth() {
+        return WIDTH$1;
+    }
+
+    getHeight() {
+        return HEIGHT$1;
+    }
+
+    deactivate() {
+        this._xField.deactivate();
+        this._yField.deactivate();
+    }
+
+    reset() {
+        this._xField.reset();
+        this._yField.reset();
+    }
+
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        let value = this._getFromSource();
+        if(value[0] != this._lastValue[0] || value[1] != this._lastValue[1]) {
+            this._lastValue = value;
+            this._xField.setContent(String(value[0]));
+            this._yField.setContent(String(value[1]));
+        }
+    }
+}
+
+////////////////////////////
+
+function createLabelRow$1(label) {
+    let row = new ThreeMeshUI.Block({
+        'height': FIELD_HEIGHT$1,
+        'width': WIDTH$1 - TITLE_WIDTH$1,
+        'contentDirection': 'row',
+        'justifyContent': 'start',
+        'backgroundOpacity': 0,
+        'margin': FIELD_MARGIN$1,
+        'offset': 0,
+    });
+    let labelBlock = ThreeMeshUIHelper.createTextBlock({
+        'text': label,
+        'fontSize': FontSizes.body,
+        'height': FIELD_HEIGHT$1,
+        'width': WIDTH$1 - TITLE_WIDTH$1 - FIELD_WIDTH$1,
+        'margin': 0,
+    });
+    row.add(labelBlock);
+    return row;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const HEIGHT = 0.11;
+const WIDTH = 0.31;
+const TITLE_WIDTH = 0.09;
+const FIELD_HEIGHT = 0.03;
+const FIELD_WIDTH = 0.17;
+const FIELD_MARGIN = 0.0025;
+const FIELD_MAX_LENGTH$5 = 13;
+
+class Vector3Input extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._lastValue = params['initialValue'] || [0, 0, 0];
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInputs(title);
+    }
+
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT,
+            'width': WIDTH,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'margin': 0,
+            'offset': 0,
+        });
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': HEIGHT,
+            'width': WIDTH - TITLE_WIDTH,
+            'contentDirection': 'column',
+            'justifyContent': 'center',
+            'alignItems': 'end',
+            'backgroundOpacity': 0,
+            'margin': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT,
+            'width': TITLE_WIDTH,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._xField = new NumberField({
+            'initialText': String(this._lastValue[0]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT,
+            'width': FIELD_WIDTH,
+            'margin': FIELD_MARGIN,
+            'maxLength': FIELD_MAX_LENGTH$5,
+            'onBlur': () => { this._blur(0); },
+            'onUpdate': () => { this._update(0); },
+        });
+        this._yField = new NumberField({
+            'initialText': String(this._lastValue[1]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT,
+            'width': FIELD_WIDTH,
+            'margin': FIELD_MARGIN,
+            'maxLength': FIELD_MAX_LENGTH$5,
+            'onBlur': () => { this._blur(1); },
+            'onUpdate': () => { this._update(1); },
+        });
+        this._zField = new NumberField({
+            'initialText': String(this._lastValue[2]),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT,
+            'width': FIELD_WIDTH,
+            'margin': FIELD_MARGIN,
+            'maxLength': FIELD_MAX_LENGTH$5,
+            'onBlur': () => { this._blur(2); },
+            'onUpdate': () => { this._update(2); },
+        });
+        let xRow = createLabelRow("X:");
+        let yRow = createLabelRow("Y:");
+        let zRow = createLabelRow("Z:");
+        this._xField.addToScene(xRow, this._pointerInteractable);
+        this._yField.addToScene(yRow, this._pointerInteractable);
+        this._zField.addToScene(zRow, this._pointerInteractable);
+        this._object.add(titleBlock);
+        this._object.add(columnBlock);
+        columnBlock.add(xRow);
+        columnBlock.add(yRow);
+        columnBlock.add(zRow);
+    }
+
+    _update(index) {
+        let newValue = [this.getX(), this.getY(), this.getZ()];
+        if(!isNaN(newValue[index])) {
+            if(this._onUpdate) this._onUpdate(newValue);
+        }
+    }
+
+    _blur(index) {
+        let newValue = [this.getX(), this.getY(), this.getZ()];
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
+    }
+
+    getX() {
+        return Number.parseFloat(this._xField.content);
+    }
+
+    getY() {
+        return Number.parseFloat(this._yField.content);
+    }
+
+    getZ() {
+        return Number.parseFloat(this._zField.content);
+    }
+
+    getWidth() {
+        return WIDTH;
+    }
+
+    getHeight() {
+        return HEIGHT;
+    }
+
+    deactivate() {
+        this._xField.deactivate();
+        this._yField.deactivate();
+        this._zField.deactivate();
+    }
+
+    reset() {
+        this._xField.reset();
+        this._yField.reset();
+        this._zField.reset();
+    }
+
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        let value = this._getFromSource();
+        if(value[0] != this._lastValue[0] || value[1] != this._lastValue[1]
+                || value[2] != this._lastValue[2]) {
+            this._lastValue = value;
+            this._xField.setContent(String(value[0]));
+            this._yField.setContent(String(value[1]));
+            this._zField.setContent(String(value[2]));
+        }
+    }
+}
+
+////////////////////////////
+
+function createLabelRow(label) {
+    let row = new ThreeMeshUI.Block({
+        'height': FIELD_HEIGHT,
+        'width': WIDTH - TITLE_WIDTH,
+        'contentDirection': 'row',
+        'justifyContent': 'start',
+        'backgroundOpacity': 0,
+        'margin': FIELD_MARGIN,
+        'offset': 0,
+    });
+    let labelBlock = ThreeMeshUIHelper.createTextBlock({
+        'text': label,
+        'fontSize': FontSizes.body,
+        'height': FIELD_HEIGHT,
+        'width': WIDTH - TITLE_WIDTH - FIELD_WIDTH,
+        'margin': 0,
+    });
+    row.add(labelBlock);
+    return row;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const INPUT_TYPE_TO_CREATE_FUNCTION = {
+    CheckboxInput: "_createCheckboxInput",
+    ColorInput: "_createColorInput",
+    CubeImageInput: "_createCubeImageInput",
+    EnumInput: "_createEnumInput",
+    EulerInput: "_createEulerInput",
+    ImageInput: "_createImageInput",
+    MaterialInput: "_createMaterialInput",
+    NumberInput: "_createNumberInput",
+    TextureInput: "_createTextureInput",
+    Vector2Input: "_createVector2Input",
+    Vector3Input: "_createVector3Input",
+};
+
+class EditorHelper {
+    constructor(asset, updatedTopic) {
+        this._asset = asset;
+        this._id = asset.getId();
+        this._updatedTopic = updatedTopic;
+    }
+
+    _publish(params) {
+        let message = { asset: this._asset, fields: params };
+        pubSub.publish(this._id, this._updatedTopic, message);
+    }
+
+    _updateCubeImage(param, side, newValue, ignoreUndoRedo, ignorePublish,
+                     oldValue) {
+        let capitalizedParam = capitalizeFirstLetter(param);
+        let currentValue = this._asset['get' + capitalizedParam]()[side];
+        if(currentValue != newValue) {
+            this._asset['set' + capitalizedParam](newValue, side);
+            if(!ignorePublish)
+                this._publish([param]);
+        }
+        if(!oldValue) oldValue = currentValue;
+        if(!ignoreUndoRedo && oldValue != newValue) {
+            undoRedoHandler.addAction(() => {
+                this._updateCubeImage(param, side, oldValue, true,
+                                      ignorePublish);
+                this.updateMenuField(param);
+            }, () => {
+                this._updateCubeImage(param, side, newValue, true,
+                                      ignorePublish);
+                this.updateMenuField(param);
+            });
+        }
+    }
+
+    _updateEuler(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+        this._updateVector3(param, newValue, ignoreUndoRedo, ignorePublish,
+            oldValue);
+    }
+
+    _updateVector2(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+        this._updateVector3(param, newValue, ignoreUndoRedo, ignorePublish,
+            oldValue);
+    }
+
+    _updateVector3(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+        let capitalizedParam = capitalizeFirstLetter(param);
+        let currentValue = this._asset['get' + capitalizedParam]();
+        if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
+            this._asset['set' + capitalizedParam](newValue);
+            if(!ignorePublish)
+                this._publish([param]);
+        }
+        if(!oldValue) oldValue = currentValue;
+        if(!ignoreUndoRedo && !oldValue
+                .reduce((a,v,i) => a && newValue[i] == v,true))
+        {
+            undoRedoHandler.addAction(() => {
+                this._updateVector3(param, oldValue, true, ignorePublish);
+                this.updateMenuField(param);
+            }, () => {
+                this._updateVector3(param, newValue, true, ignorePublish);
+                this.updateMenuField(param);
+            });
+        }
+    }
+
+    _updateParameter(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+        let capitalizedParam = capitalizeFirstLetter(param);
+        let currentValue = this._asset['get' + capitalizedParam]();
+        if(currentValue != newValue) {
+            this._asset['set' + capitalizedParam](newValue);
+            if(!ignorePublish)
+                this._publish([param]);
+        }
+        if(oldValue == null) oldValue = currentValue;
+        if(!ignoreUndoRedo && oldValue != newValue) {
+            undoRedoHandler.addAction(() => {
+                this._updateParameter(param, oldValue, true, ignorePublish);
+                this.updateMenuField(param);
+            }, () => {
+                this._updateParameter(param, newValue, true, ignorePublish);
+                this.updateMenuField(param);
+            });
+        }
+    }
+
+    updateMenuField(param) {
+        if(!this._menuFields) return;
+        let menuField = this._menuFieldsMap[param];
+        if(menuField) menuField.updateFromSource();
+    }
+
+    updateName(newName, ignoreUndoRedo) {
+        let oldName = this._asset.getName();
+        if(oldName == newName) return;
+        this._asset.setName(newName);
+        this._publish(['name']);
+        if(!ignoreUndoRedo) {
+            undoRedoHandler.addAction(() => {
+                this.updateName(oldName, true);
+            }, () => {
+                this.updateName(newName, true);
+            });
+        }
     }
 
     getMenuFields(fields) {
         if(this._menuFields) return this._menuFields;
 
-        let menuFieldsMap = this._getMenuFieldsMap();
+        this._menuFieldsMap = this._getMenuFieldsMap();
         let menuFields = [];
         for(let field of fields) {
-            if(field.name in menuFieldsMap) {
-                menuFields.push(menuFieldsMap[field.name]);
+            if(field.parameter in this._menuFieldsMap) {
+                menuFields.push(this._menuFieldsMap[field.parameter]);
             }
         }
         this._menuFields = menuFields;
@@ -14985,168 +16355,567 @@ class Material {
     }
 
     _getMenuFieldsMap() {
-        let menuFieldsMap = {};
-        for(let field of FIELDS$g) {
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
+        return {};
+    }
+
+    _createStandardInput(field) {
+        if(field.type.name in INPUT_TYPE_TO_CREATE_FUNCTION) {
+            return this[INPUT_TYPE_TO_CREATE_FUNCTION[field.type.name]](field);
+        }
+    }
+
+    _createCheckboxInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new CheckboxInput({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'suppressMenuFocusEvent': field.suppressMenuFocusEvent == true,
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
+            },
+        });
+    }
+
+    _createColorInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new ColorInput({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onBlur': (oldValue, newValue) => {
+                this._updateParameter(field.parameter, newValue, false, false,
+                                      oldValue);
+            },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue, true);
+            },
+        });
+    }
+
+    _createCubeImageInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new CubeImageInput({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (side, newValue) => {
+                this._updateCubeImage(field.parameter, side, newValue);
+            },
+        });
+    }
+
+    _createEnumInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new EnumInput({
+            'title': field.name,
+            'initialValue': field.reverseMap[this._asset[getFunction]()],
+            'options': field.options,
+            'getFromSource': () => {
+                return field.reverseMap[this._asset[getFunction]()];
+            },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, field.map[newValue]);
+            },
+        });
+    }
+
+    _createEulerInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new EulerInput({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onBlur': (oldValue, newValue) => {
+                this._updateEuler(field.parameter, newValue, false, false,
+                                  oldValue);
+            },
+            'onUpdate': (newValue) => {
+                this._updateEuler(field.parameter, newValue, true);
+            },
+        });
+    }
+
+    _createImageInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new ImageInput({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
+            },
+        });
+    }
+
+    _createMaterialInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new MaterialInput({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
+            },
+        });
+    }
+
+    _createNumberInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new NumberInput({
+            'title': field.name,
+            'minValue': field.min,
+            'maxValue': field.max,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onBlur': (oldValue, newValue) => {
+                this._updateParameter(field.parameter, newValue, false, false,
+                                      oldValue);
+            },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue, true);
+            },
+        });
+    }
+
+    _createTextureInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new TextureInput({
+            'title': field.name,
+            'filter': field.filter,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
+            },
+        });
+    }
+
+    _createVector2Input(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new Vector2Input({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onBlur': (oldValue, newValue) => {
+                this._updateVector2(field.parameter, newValue, false, false,
+                                  oldValue);
+            },
+            'onUpdate': (newValue) => {
+                this._updateVector2(field.parameter, newValue, true);
+            },
+        });
+    }
+
+    _createVector3Input(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new Vector3Input({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onBlur': (oldValue, newValue) => {
+                this._updateVector3(field.parameter, newValue, false, false,
+                                  oldValue);
+            },
+            'onUpdate': (newValue) => {
+                this._updateVector3(field.parameter, newValue, true);
+            },
+        });
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const TOOL_AGNOSTIC = "TOOL_AGNOSTIC";
+const INTERACTABLE_KEYS = [
+    TOOL_AGNOSTIC,
+    HandTools.EDIT,
+    HandTools.COPY_PASTE,
+    HandTools.DELETE,
+];
+const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
+const FIELDS$m = [
+    { "parameter": "position", "name": "Position", "type": Vector3Input },
+    { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
+    { "parameter": "scale", "name": "Scale", "type": Vector3Input },
+    { "parameter": "visualEdit", "name": "Visually Edit",
+        "type": CheckboxInput },
+];
+
+class AssetHelper extends EditorHelper {
+    constructor(asset) {
+        super(asset, PubSubTopics$1.INSTANCE_UPDATED);
+        this._object = asset.getObject();
+        this._attachedPeers = new Set();
+        this._gripInteractables = {};
+        this._pointerInteractables = {};
+        for(let key of INTERACTABLE_KEYS) {
+            this._pointerInteractables[key] = [];
+            this._gripInteractables[key] = [];
+        }
+        this._boundingBox = new THREE.Box3();
+        this._boundingBoxObj = new Box3Helper(this._boundingBox);
+        this._createInteractables();
+    }
+
+    _createInteractables() {
+        if(global$1.deviceType == "XR") {
+            let interactable = new GripInteractable(this._object,
+                (hand) => {
+                    transformControlsHandler.attach(this._asset, hand);
+                }, (hand) => {
+                    transformControlsHandler.detach(hand);
+                }
+            );
+            this._gripInteractables[HandTools.EDIT].push(interactable);
+            let deleteInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    projectHandler.deleteAssetInstance(this._asset);
+                },
+                () => {}
+            );
+            this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
+            deleteInteractable = new PointerInteractable(this._object,
+                (hand) => {
+                    projectHandler.deleteAssetInstance(this._asset);
+                },
+                true,
+                true
+            );
+            this._pointerInteractables[HandTools.DELETE]
+                .push(deleteInteractable);
+            let copyInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    copyPasteControlsHandler.copy(this._asset);
+                },
+                () => {},
+                Hands.LEFT
+            );
+            this._gripInteractables[HandTools.COPY_PASTE]
+                .push(copyInteractable);
+            copyInteractable = new PointerInteractable(this._object,
+                (hand) => {
+                    copyPasteControlsHandler.copy(this._asset);
+                },
+                true,
+                true,
+                Hands.LEFT
+            );
+            this._pointerInteractables[HandTools.COPY_PASTE]
+                .push(copyInteractable);
+        } else {
+            this._object.states = InteractableStates;
+            this._object.setState = (state) => {
+                if(state == InteractableStates.HOVERED
+                    && this._object != transformControlsHandler.getObject())
+                {
+                    this._boundingBox.setFromObject(this._object);
+                    global$1.scene.add(this._boundingBoxObj);
+                } else {
+                    global$1.scene.remove(this._boundingBoxObj);
+                }
+            };
+            let interactable = new PointerInteractable(this._object,
+                () => {
+                    transformControlsHandler.attach(this._asset);
+                },
+                true,
+                true
+            );
+            this._pointerInteractables[TOOL_AGNOSTIC].push(interactable);
+        }
+    }
+
+    _addInteractables() {
+        for(let key of INTERACTABLE_KEYS) {
+            let tool = (key != TOOL_AGNOSTIC) ? key : null;
+            gripInteractableHandler.addInteractables(
+                this._gripInteractables[key], tool);
+            pointerInteractableHandler.addInteractables(
+                this._pointerInteractables[key], tool);
+        }
+    }
+
+    _removeInteractables() {
+        for(let key of INTERACTABLE_KEYS) {
+            let tool = (key != TOOL_AGNOSTIC) ? key : null;
+            gripInteractableHandler.removeInteractables(
+                this._gripInteractables[key], tool);
+            pointerInteractableHandler.removeInteractables(
+                this._pointerInteractables[key], tool);
+        }
+    }
+
+    updateVisualEdit(isVisualEdit, ignoreUndoRedo, ignorePublish) {
+        if(isVisualEdit == this._asset.visualEdit) return;
+        this._asset.visualEdit = isVisualEdit;
+        if(isVisualEdit) {
+            if(this._object.parent && this._attachedPeers.size == 0) {
+                this._addInteractables();
+            }
+        } else {
+            this._removeInteractables();
+        }
+        if(!ignorePublish)
+            this._publish(['visualEdit']);
+        if(!ignoreUndoRedo) {
+            undoRedoHandler.addAction(() => {
+                this.updateVisualEdit(!isVisualEdit, true, ignorePublish);
+                this.updateMenuField('visualEdit');
+            }, () => {
+                this.updateVisualEdit(isVisualEdit, true, ignorePublish);
+                this.updateMenuField('visualEdit');
+            });
+        }
+    }
+
+    attachToPeer(peer, message) {
+        this._attachedPeers.add(peer.id + ':' + message.option);
+        if(message.isXR) {
+            if(this._attachedPeers.size == 1) {
+                if(message.option in Hands && peer.controller) {
+                    peer.controller.hands[message.option].attach(this._object);
+                    this._asset.setPosition(message.position);
+                    this._asset.setRotation(message.rotation);
+                }
+            } else {
+                global$1.scene.attach(this._object);
+                this._asset.setPosition(message.position);
+                this._asset.setRotation(message.rotation);
+                return;
+            }
+        }
+        if(!this._asset.visualEdit) return;
+
+        this._removeInteractables();
+    }
+
+    detachFromPeer(peer, message) {
+        this._attachedPeers.delete(peer.id + ':' + message.option);
+        if(message.isXR) {
+            if(this._attachedPeers.size == 0) {
+                global$1.scene.attach(this._object);
+                this._asset.setPosition(message.position);
+                this._asset.setRotation(message.rotation);
+            } else {
+                let firstId = this._attachedPeers.values().next().value;
+                let [firstPeerId, option] = firstId.split(':');
+                let firstPeer = partyHandler.getPeer(firstPeerId);
+                if(option in Hands && firstPeer && firstPeer.controller) {
+                    firstPeer.controller.hands[option].attach(this._object);
+                    this._asset.setPosition(message.position);
+                    this._asset.setRotation(message.rotation);
+                }
+                return;
+            }
+        }
+        if(!this._asset.visualEdit) return;
+
+        this._addInteractables();
+    }
+
+    getObjectTransformation() {
+        return {
+            "position": this._object.position.toArray(),
+            "rotation": this._object.rotation.toArray(),
+            "scale": this._object.scale.toArray(),
+        };
+    }
+
+    setObjectTransformation(oldValues, newValues, ignoreUndoRedo,
+                            ignorePublish) {
+        let updated = [];
+        for(let param of OBJECT_TRANSFORM_PARAMS) {
+            let oldValue = (oldValues)
+                ? oldValues[param]
+                : this._object[param].toArray();
+            let newValue = newValues[param];
+            if(oldValue.reduce((a,v,i) => a && newValue[i] == v,true)) continue;
+            this._object[param].fromArray(newValue);
+            this.updateMenuField(param);
+            updated.push(param);
+        }
+        if(updated.length == 0) return;
+        if(!ignorePublish)
+            this._publish(updated);
+        if(!ignoreUndoRedo) {
+            undoRedoHandler.addAction(() => {
+                this.setObjectTransformation(null, oldValues, true,
+                    ignorePublish);
+            }, () => {
+                this.setObjectTransformation(null, newValues, true,
+                    ignorePublish);
+            });
+        }
+    }
+
+    roundAttributes(ignorePublish) {
+        let updated = [];
+        for(let param of OBJECT_TRANSFORM_PARAMS) {
+            if(this._object[param].roundWithPrecision(5)) {
+                updated.push(param);
+                this.updateMenuField(param);
+            }
+        }
+        if(updated.length == 0) return;
+        if(!ignorePublish)
+            this._publish(updated);
+    }
+
+    place(intersection) {
+        let point = intersection.point;
+        this._object.position.copy(point);
+        this.roundAttributes(true);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$m) {
+            if(field.parameter in menuFieldsMap) continue;
+            if(field.type == CheckboxInput) {
+                menuFieldsMap[field.parameter] = new CheckboxInput({
+                    title: field.name,
+                    initialValue: this._asset.visualEdit,
+                    getFromSource: () => { return this._asset.visualEdit; },
+                    onUpdate: (v) => { this.updateVisualEdit(v); },
+                });
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
         }
         return menuFieldsMap;
     }
 
-    _createMenuField(field) {
-        if(field.type == CheckboxInput) {
-            return new CheckboxInput({
-                'title': field.name,
-                'initialValue': this._material[field.parameter],
-                'getFromSource': () => {
-                    return this._material[field.parameter]; },
-                'setToSource': (v) => {
-                    this._material[field.parameter] = v;
-                    this._material.needsUpdate = true;
-                    this['_' + field.parameter] = v;
-                },
-            });
-        } else if(field.type == ColorInput) {
-            return new ColorInput({
-                'title': field.name,
-                'initialValue': this._material[field.parameter],
-                'onUpdate': (color) => {
-                    this._material[field.parameter].set(color);
-                },
-            });
-        } else if(field.type == EnumInput) {
-            return new EnumInput({
-                'title': field.name,
-                'options': field.options,
-                'initialValue':
-                    field.reverseMap[this._material[field.parameter]],
-                'getFromSource': () => {
-                    return field.reverseMap[this._material[
-                        field.parameter]];
-                },
-                'setToSource': (v) => {
-                    this._updateEnum(field.parameter, v, field.map);
-                },
-            });
-        } else if(field.type == NumberInput) {
-            return new NumberInput({
-                'title': field.name,
-                'minValue': field.min,
-                'maxValue': field.max,
-                'initialValue': this._material[field.parameter],
-                'getFromSource': () => {
-                    return this._material[field.parameter]; },
-                'setToSource': (v) => {
-                    this._material[field.parameter] = v;
-                    this['_' + field.parameter] = v;
-                },
-            });
-        } else if(field.type == TextureInput) {
-            return new TextureInput({
-                'title': field.name,
-                'initialValue': this['_' + field.parameter],
-                'filter': field.filter,
-                'getFromSource': () => {
-                    return this['_' + field.parameter]; },
-                'setToSource': (v) => {
-                    this._updateTexture(field.parameter, v);
-                },
-            });
-        }
+    addToScene(scene) {
+        if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
+        this._addInteractables();
     }
 
-    _updateEnum(parameter, option, map) {
-        if(map) {
-            this._material[parameter] = map[option];
-            this['_' + parameter] = map[option];
-        } else {
-            this._material[parameter] = option;
-            this['_' + parameter] = option;
-        }
-        this._material.needsUpdate = true;
+    removeFromScene() {
+        global$1.scene.remove(this._boundingBoxObj);
+        fullDispose(this._boundingBoxObj);
+        this._removeInteractables();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class Asset extends Entity {
+    constructor(params = {}) {
+        super();
+        this._id = params['id'] || this._id;
+        this._assetId = params['assetId'];
+        this._name = ('name' in params) ? params['name'] : 'Object';
+        let position = (params['position']) ? params['position'] : [0,0,0];
+        let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
+        let scale = (params['scale']) ? params['scale'] : [1,1,1];
+        this.visualEdit = params['visualEdit'] || false;
+        this._object.position.fromArray(position);
+        this._object.rotation.fromArray(rotation);
+        this._object.scale.fromArray(scale);
+        if(global$1.isEditor) this._createEditorHelper();
     }
 
-    _addSubscriptions() {
-        let maps = this._getMaps();
-        pubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (e) => {
-            let updatedMaps = [];
-            for(let map of maps) {
-                if(this['_' + map] == e.texture.getId()) {
-                    this._updateTexture(map, null);
-                    updatedMaps.push(map);
-                }
-            }
-            if(e.undoRedoAction && updatedMaps.length > 0) {
-                let undo = e.undoRedoAction.undo;
-                e.undoRedoAction.undo = () => {
-                    undo();
-                    for(let map of updatedMaps) {
-                        this._updateTexture(map, e.texture.getId());
+    _createEditorHelper() {
+        this._editorHelper = new AssetHelper(this);
+    }
+
+    makeTranslucent() {
+        this._object.traverse(function (node) {
+            if (node instanceof THREE.Mesh) {
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        for(let i = 0; i < node.material.length; i++) {
+                            let mtrl = node.material[i];
+                            let newMaterial = mtrl.clone();
+                            makeMaterialTranslucent(newMaterial);
+                            newMaterial.userData['oldMaterial'] = mtrl;
+                            node.material[i] = newMaterial;
+                        }
                     }
-                };
-            }
-        });
-        pubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (texture) => {
-            let textureId = texture.getId();
-            for(let map of maps) {
-                if(this['_' + map] == textureId) {
-                    this._updateTexture(map, textureId);
+                    else {
+                        let newMaterial = node.material.clone();
+                        makeMaterialTranslucent(newMaterial);
+                        newMaterial.userData['oldMaterial'] = node.material;
+                        node.material = newMaterial;
+                    }
                 }
             }
         });
     }
 
-    _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
-        pubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
-    }
-
-    _updateMaterialParamsWithMaps(params, maps) {
-        for(let map of maps) {
-            if(this['_' + map]) {
-                let texture = texturesHandler.getTexture(this['_' + map]);
-                if(texture) params[map] = texture.getTexture();
+    returnTransparency() {
+        this._object.traverse(function (node) {
+            if (node instanceof THREE.Mesh) {
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        for(let i = 0; i < node.material.length; i++) {
+                            let mtrl = node.material[i];
+                            node.material[i] =
+                                mtrl.userData['oldMaterial'];
+                            disposeMaterial(mtrl);
+                        }
+                    }
+                    else {
+                        let oldMaterial = node.material;
+                        node.material = node.material.userData['oldMaterial'];
+                        disposeMaterial(oldMaterial);
+                    }
+                }
             }
-        }
+        });
     }
 
-    _updateTexture(parameter, textureId) {
-        this['_' + parameter] = textureId;
-        let texture = texturesHandler.getTexture(textureId);
-
-        this._material[parameter] = (texture)
-            ? texture.getTexture()
-            : null;
-        this._material.needsUpdate = true;
-        pubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, this);
+    _fetchCloneParams(visualEditOverride) {
+        let params = this.exportParams();
+        let visualEdit = (visualEditOverride != null)
+            ? visualEditOverride
+            : this.visualEdit;
+        let position = this._object.getWorldPosition(vector3s$1[0]).toArray();
+        let rotation = euler.setFromQuaternion(
+            this._object.getWorldQuaternion(quaternion)).toArray();
+        params['visualEdit'] = visualEdit;
+        params['position'] = position;
+        params['rotation'] = rotation;
+        delete params['id'];
+        return params;
     }
 
-    dispose() {
-        this._removeSubscriptions();
-        disposeMaterial(this._material);
+    preview() {
+        let params = this.exportParams();
+        params['visualEdit'] = false;
+        params['isPreview'] = true;
+        delete params['id'];
+        return new this.constructor(params);
     }
 
-    undoDispose() {
-        this._addSubscriptions();
+    exportParams() {
+        return {
+            "id": this._id,
+            "name": this._name,
+            "assetId": this._assetId,
+            "position": this.getPosition(),
+            "rotation": this.getRotation(),
+            "scale": this.getScale(),
+            "visualEdit": this.visualEdit,
+        };
     }
 
-    _getMaps() {
-        console.error("Material.getMaps() should be overridden");
-        return;
+    getAssetId() {
+        return this._assetId;
     }
 
-    getMaterial() {
-        return this._material;
-    }
-
-    getMaterialType() {
-        console.error("Material.getMaterialType() should be overridden");
-        return;
-    }
-
-    getSampleTexture() {
-        console.error("Material.getSampleTexture() should be overridden");
-        return;
+    getEditorHelper() {
+        return this._editorHelper;
     }
 
     getId() {
@@ -15157,974 +16926,226 @@ class Material {
         return this._name;
     }
 
-    setName(newName, isUndoRedo) {
-        if(!newName || this._name == newName) return;
-        let oldName = this._name;
-        this._name = newName;
-        pubSub.publish(this._id, PubSubTopics.MATERIAL_UPDATED, this);
-        if(!isUndoRedo) {
-            undoRedoHandler.addAction(() => {
-                this.setName(oldName, true);
-            }, () => {
-                this.setName(newName, true);
-            });
-        }
-    }
-}
-
-const MaterialTypes = {
-    BASIC: "BASIC",
-    LAMBERT: "LAMBERT",
-    NORMAL: "NORMAL",
-    PHONG: "PHONG",
-    STANDARD: "STANDARD",
-    TOON: "TOON",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const FIELDS$f = [
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Texture Map", "parameter": "map",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Alpha Map", "parameter": "alphaMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Environment Map", "parameter": "envMap",
-        "filter": TextureTypes.CUBE, "type": TextureInput },
-    { "name": "Color & Environment Blend", "parameter": "combine",
-        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
-        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
-    { "name": "Reflectivity", "parameter": "reflectivity",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Refraction Ratio", "parameter": "refractionRatio",
-        "min": 0, "max": 1, "type": NumberInput },
-];
-
-const MAPS$5 = ["map", "alphaMap", "envMap"];
-
-class BasicMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this._color = new THREE.Color(params['color'] || 0x3d9970);
-        this._wireframe = params['wireframe'] || false;
-        this._map = params['map'];
-        this._alphaMap = params['alphaMap'];
-        this._envMap = params['envMap'];
-        this._combine = params['combine']
-            || THREE.MultiplyOperation;
-        this._reflectivity = numberOr(params['reflectivity'], 1);
-        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
-        this._createMaterial();
+    getPosition() {
+        return this._object.position.toArray();
     }
 
-    _getDefaultName() {
-        return "Basic Material";
+    getRotation() {
+        return this._object.rotation.toArray();
     }
 
-    _createMaterial() {
-        let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
-            "color": this._color,
-            "wireframe": this._wireframe,
-            "combine": this._combine,
-            "reflectivity": this._reflectivity,
-            "refractionRatio": this._refractionRatio,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS$5);
-        this._material = new THREE.MeshBasicMaterial(materialParams);
+    getScale() {
+        return this._object.scale.toArray();
     }
 
-    _getMaps() {
-        return MAPS$5;
+    getVisualEdit() {
+        return this.visualEdit;
     }
 
-    getMaterialType() {
-        return MaterialTypes.BASIC;
+    setPosition(position) {
+        this._object.position.fromArray(position);
     }
 
-    getSampleTexture() {
-        return this._material.map;
+    setRotation(rotation) {
+        this._object.rotation.fromArray(rotation);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$f);
+    setScale(scale) {
+        this._object.scale.fromArray(scale);
     }
 
-    exportParams() {
-        let params = super.exportParams();
-        params['color'] = this._material.color.getHex();
-        params['wireframe'] = this._wireframe;
-        params['map'] = this._map;
-        params['alphaMap'] = this._alphaMap;
-        params['envMap'] = this._envMap;
-        params['combine'] = this._combine;
-        params['reflectivity'] = this._reflectivity;
-        params['refractionRatio'] = this._refractionRatio;
-        return params;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$f) {
-            if(field.name in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const FIELDS$e = [
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Texture Map", "parameter": "map",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Alpha Map", "parameter": "alphaMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Emissive Color", "parameter": "emissive", "type": ColorInput },
-    { "name": "Emissive Map", "parameter": "emissiveMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Emissive Intensity", "parameter": "emissiveIntensity",
-        "min": 0, "type": NumberInput },
-    { "name": "Environment Map", "parameter": "envMap",
-        "filter": TextureTypes.CUBE, "type": TextureInput },
-    { "name": "Color & Environment Blend", "parameter": "combine",
-        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
-        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
-    { "name": "Reflectivity", "parameter": "reflectivity",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Refraction Ratio", "parameter": "refractionRatio",
-        "min": 0, "max": 1, "type": NumberInput },
-];
-
-const MAPS$4 = ["map", "alphaMap", "emissiveMap", "envMap", "specularMap"];
-
-class LambertMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this._color = new THREE.Color(params['color'] || 0x3d9970);
-        this._wireframe = params['wireframe'] || false;
-        this._map = params['map'];
-        this._alphaMap = params['alphaMap'];
-        this._emissive = new THREE.Color(params['emissive']
-            || 0x000000);
-        this._emissiveMap = params['emissiveMap'];
-        this._emissiveIntensity = numberOr(params['emissiveIntensity'],
-            1);
-        this._envMap = params['envMap'];
-        this._combine = params['combine']
-            || THREE.MultiplyOperation;
-        this._reflectivity = numberOr(params['reflectivity'], 1);
-        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return "Lambert Material";
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
-            "color": this._color,
-            "wireframe": this._wireframe,
-            "emissive": this._emissive,
-            "emissiveIntensity": this._emissiveIntensity,
-            "combine": this._combine,
-            "reflectivity": this._reflectivity,
-            "refractionRatio": this._refractionRatio,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS$4);
-        this._material = new THREE.MeshLambertMaterial(materialParams);
-    }
-
-    _getMaps() {
-        return MAPS$4;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.LAMBERT;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$e);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['color'] = this._material.color.getHex();
-        params['wireframe'] = this._wireframe;
-        params['map'] = this._map;
-        params['alphaMap'] = this._alphaMap;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
-        params['emissiveIntensity'] = this._emissiveIntensity;
-        params['envMap'] = this._envMap;
-        params['combine'] = this._combine;
-        params['reflectivity'] = this._reflectivity;
-        params['refractionRatio'] = this._refractionRatio;
-        return params;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$e) {
-            if(field.name in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const FIELDS$d = [
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Flat Shading", "parameter": "flatShading",
-        "type": CheckboxInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Bump Map", "parameter": "bumpMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Bump Scale", "parameter": "bumpScale",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Displacement Map", "parameter": "displacementMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Displacement Scale", "parameter": "displacementScale",
-        "type": NumberInput },
-    { "name": "Displacement Bias", "parameter": "displacementBias",
-        "type": NumberInput },
-    { "name": "Normal Map", "parameter": "normalMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Normal Type", "parameter": "normalMapType",
-        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
-        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
-    //{ "name": "Normal Scale", "parameter": "normalScale",
-    //    "min": 0, "max": 1, "type": Vector2Input },
-];
-
-const MAPS$3 = ["bumpMap", "displacementMap", "normalMap"];
-
-class NormalMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this._wireframe = params['wireframe'] || false;
-        this._flatShading = params['flatShading'] || false;
-        this._bumpMap = params['bumpMap'];
-        this._bumpScale = numberOr(params['bumpScale'], 1);
-        this._displacementMap = params['displacementMap'];
-        this._displacementScale = numberOr(params['displacementScale'], 1);
-        this._displacementBias = numberOr(params['displacementBias'], 0);
-        this._normalMap = params['normalMap'];
-        this._normalMapType = params['normalMapType']
-            || THREE.TangentSpaceNormalMap;
-        //this._normalScale = params['normalScale'] || [1,1];
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return "Normal Material";
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
-            "wireframe": this._wireframe,
-            "flatShading": this._flatShading,
-            "bumpScale": this._bumpScale,
-            "displacementScale": this._displacementScale,
-            "displacementBias": this._displacementBias,
-            "normalMapType": this._normalMapType,
-            //"normalScale": this._normalScale,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS$3);
-        this._material = new THREE.MeshNormalMaterial(materialParams);
-    }
-
-    _getMaps() {
-        return MAPS$3;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.NORMAL;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$d);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['wireframe'] = this._wireframe;
-        params['flatShading'] = this._flatShading;
-        params['bumpMap'] = this._bumpMap;
-        params['bumpScale'] = this._bumpScale;
-        params['displacementMap'] = this._displacementMap;
-        params['displacementScale'] = this._displacementScale;
-        params['displacementBias'] = this._displacementBias;
-        params['normalMap'] = this._normalMap;
-        params['normalMapType'] = this._normalMapType;
-        //params['normalScale'] = this._normalScale;
-        return params;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$d) {
-            if(field.name in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const FIELDS$c = [
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Texture Map", "parameter": "map",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Alpha Map", "parameter": "alphaMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Flat Shading", "parameter": "flatShading",
-        "type": CheckboxInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Bump Map", "parameter": "bumpMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Bump Scale", "parameter": "bumpScale",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Displacement Map", "parameter": "displacementMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Displacement Scale", "parameter": "displacementScale",
-        "type": NumberInput },
-    { "name": "Displacement Bias", "parameter": "displacementBias",
-        "type": NumberInput },
-    { "name": "Emissive Color", "parameter": "emissive", "type": ColorInput },
-    { "name": "Emissive Map", "parameter": "emissiveMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Emissive Intensity", "parameter": "emissiveIntensity",
-        "min": 0, "type": NumberInput },
-    { "name": "Environment Map", "parameter": "envMap",
-        "filter": TextureTypes.CUBE, "type": TextureInput },
-    { "name": "Environment-Color Blend", "parameter": "combine",
-        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
-        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
-    { "name": "Reflectivity", "parameter": "reflectivity",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Refraction Ratio", "parameter": "refractionRatio",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Normal Map", "parameter": "normalMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Normal Type", "parameter": "normalMapType",
-        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
-        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
-    //{ "name": "Normal Scale", "parameter": "normalScale",
-    //    "min": 0, "max": 1, "type": Vector2Input },
-    { "name": "Shininess", "parameter": "shininess", "min": 0,
-        "type": NumberInput },
-    { "name": "Specular Color", "parameter": "specular", "type": ColorInput },
-    { "name": "Specular Map", "parameter": "specularMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-];
-
-const MAPS$2 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "normalMap", "specularMap"];
-
-class PhongMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this._color = new THREE.Color(params['color'] || 0x3d9970);
-        this._wireframe = params['wireframe'] || false;
-        this._flatShading = params['flatShading'] || false;
-        this._map = params['map'];
-        this._alphaMap = params['alphaMap'];
-        this._bumpMap = params['bumpMap'];
-        this._bumpScale = numberOr(params['bumpScale'], 1);
-        this._displacementMap = params['displacementMap'];
-        this._displacementScale = numberOr(params['displacementScale'], 1);
-        this._displacementBias = numberOr(params['displacementBias'], 0);
-        this._emissive = new THREE.Color(params['emissive'] || 0x000000);
-        this._emissiveMap = params['emissiveMap'];
-        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
-        this._envMap = params['envMap'];
-        this._combine = params['combine']
-            || THREE.MultiplyOperation;
-        this._reflectivity = numberOr(params['reflectivity'], 1);
-        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
-        this._normalMap = params['normalMap'];
-        this._normalMapType = params['normalMapType']
-            || THREE.TangentSpaceNormalMap;
-        //this._normalScale = params['normalScale'] || [1,1];
-        this._shininess = numberOr(params['shininess'], 30);
-        this._specular = new THREE.Color(params['specular'] || 0x111111);
-        this._specularMap = params['specularMap'];
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return "Phong Material";
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
-            "color": this._color,
-            "wireframe": this._wireframe,
-            "flatShading": this._flatShading,
-            "bumpScale": this._bumpScale,
-            "displacementScale": this._displacementScale,
-            "displacementBias": this._displacementBias,
-            "emissive": this._emissive,
-            "emissiveIntensity": this._emissiveIntensity,
-            "combine": this._combine,
-            "reflectivity": this._reflectivity,
-            "refractionRatio": this._refractionRatio,
-            "normalMapType": this._normalMapType,
-            //"normalScale": this._normalScale,
-            "shininess": this._shininess,
-            "specular": this._specular,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS$2);
-        this._material = new THREE.MeshPhongMaterial(materialParams);
-    }
-
-    _getMaps() {
-        return MAPS$2;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.PHONG;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$c);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['color'] = this._material.color.getHex();
-        params['wireframe'] = this._wireframe;
-        params['flatShading'] = this._flatShading;
-        params['map'] = this._map;
-        params['alphaMap'] = this._alphaMap;
-        params['bumpMap'] = this._bumpMap;
-        params['bumpScale'] = this._bumpScale;
-        params['displacementMap'] = this._displacementMap;
-        params['displacementScale'] = this._displacementScale;
-        params['displacementBias'] = this._displacementBias;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
-        params['emissiveIntensity'] = this._emissiveIntensity;
-        params['envMap'] = this._envMap;
-        params['combine'] = this._combine;
-        params['reflectivity'] = this._reflectivity;
-        params['refractionRatio'] = this._refractionRatio;
-        params['normalMap'] = this._normalMap;
-        params['normalMapType'] = this._normalMapType;
-        //params['normalScale'] = this._normalScale;
-        params['shininess'] = this._shininess;
-        params['specular'] = this._material.specular.getHex();
-        params['specularMap'] = this._specularMap;
-        return params;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$c) {
-            if(field.name in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const FIELDS$b = [
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Texture Map", "parameter": "map",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Alpha Map", "parameter": "alphaMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Flat Shading", "parameter": "flatShading",
-        "type": CheckboxInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Bump Map", "parameter": "bumpMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Bump Scale", "parameter": "bumpScale",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Displacement Map", "parameter": "displacementMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Displacement Scale", "parameter": "displacementScale",
-        "type": NumberInput },
-    { "name": "Displacement Bias", "parameter": "displacementBias",
-        "type": NumberInput },
-    { "name": "Emissive Color", "parameter": "emissive", "type": ColorInput },
-    { "name": "Emissive Map", "parameter": "emissiveMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Emissive Intensity", "parameter": "emissiveIntensity",
-        "min": 0, "type": NumberInput },
-    { "name": "Environment Map", "parameter": "envMap",
-        "filter": TextureTypes.CUBE, "type": TextureInput },
-    { "name": "Environment Intensity", "parameter": "envMapIntensity",
-        "min": 0, "type": NumberInput },
-    { "name": "Metalness", "parameter": "metalness",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Metalness Map", "parameter": "metalnessMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Normal Map", "parameter": "normalMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Normal Type", "parameter": "normalMapType",
-        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
-        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
-    //{ "name": "Normal Scale", "parameter": "normalScale",
-    //    "min": 0, "max": 1, "type": Vector2Input },
-    { "name": "Roughness", "parameter": "roughness",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Roughness Map", "parameter": "roughnessMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-
-];
-
-const MAPS$1 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "metalnessMap", "normalMap", "roughnessMap"];
-
-class StandardMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this._color = new THREE.Color(params['color'] || 0x3d9970);
-        this._wireframe = params['wireframe'] || false;
-        this._flatShading = params['flatShading'] || false;
-        this._map = params['map'];
-        this._alphaMap = params['alphaMap'];
-        this._bumpMap = params['bumpMap'];
-        this._bumpScale = numberOr(params['bumpScale'], 1);
-        this._displacementMap = params['displacementMap'];
-        this._displacementScale = numberOr(params['displacementScale'], 1);
-        this._displacementBias = numberOr(params['displacementBias'], 0);
-        this._emissive = new THREE.Color(params['emissive'] || 0x000000);
-        this._emissiveMap = params['emissiveMap'];
-        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
-        this._envMap = params['envMap'];
-        this._envMapIntensity = numberOr(params['envMapIntensity'], 1);
-        this._metalness = numberOr(params['metalness'], 0);
-        this._metalnessMap = params['metalnessMap'];
-        this._normalMap = params['normalMap'];
-        this._normalMapType = params['normalMapType']
-            || THREE.TangentSpaceNormalMap;
-        //this._normalScale = params['normalScale'] || [1,1];
-        this._roughness = numberOr(params['roughness'], 1);
-        this._roughnessMap = params['roughnessMap'];
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return "Standard Material";
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
-            "color": this._color,
-            "wireframe": this._wireframe,
-            "flatShading": this._flatShading,
-            "bumpScale": this._bumpScale,
-            "displacementScale": this._displacementScale,
-            "displacementBias": this._displacementBias,
-            "emissive": this._emissive,
-            "emissiveIntensity": this._emissiveIntensity,
-            "envMapIntensity": this._envMapIntensity,
-            "metalness": this._metalness,
-            "normalMapType": this._normalMapType,
-            //"normalScale": this._normalScale,
-            "roughness": this._roughness,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS$1);
-        this._material = new THREE.MeshStandardMaterial(materialParams);
-    }
-
-    _getMaps() {
-        return MAPS$1;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.STANDARD;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$b);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['color'] = this._material.color.getHex();
-        params['wireframe'] = this._wireframe;
-        params['map'] = this._map;
-        params['flatShading'] = this._flatShading;
-        params['alphaMap'] = this._alphaMap;
-        params['bumpMap'] = this._bumpMap;
-        params['bumpScale'] = this._bumpScale;
-        params['displacementMap'] = this._displacementMap;
-        params['displacementScale'] = this._displacementScale;
-        params['displacementBias'] = this._displacementBias;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
-        params['emissiveIntensity'] = this._emissiveIntensity;
-        params['envMap'] = this._envMap;
-        params['envMapIntensity'] = this._envMapIntensity;
-        params['metalness'] = this._metalness;
-        params['metalnessMap'] = this._metalnessMap;
-        params['normalMap'] = this._normalMap;
-        params['normalMapType'] = this._normalMapType;
-        //params['normalScale'] = this._normalScale;
-        params['roughness'] = this._roughness;
-        params['roughnessMap'] = this._roughnessMap;
-        return params;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$b) {
-            if(field.name in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const FIELDS$a = [
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Texture Map", "parameter": "map",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Display" },
-    { "name": "Transparent" },
-    { "name": "Opacity" },
-    { "name": "Alpha Map", "parameter": "alphaMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Wireframe", "parameter": "wireframe", "type": CheckboxInput },
-    { "name": "Bump Map", "parameter": "bumpMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Bump Scale", "parameter": "bumpScale",
-        "min": 0, "max": 1, "type": NumberInput },
-    { "name": "Displacement Map", "parameter": "displacementMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Displacement Scale", "parameter": "displacementScale",
-        "type": NumberInput },
-    { "name": "Displacement Bias", "parameter": "displacementBias",
-        "type": NumberInput },
-    { "name": "Emissive Color", "parameter": "emissive", "type": ColorInput },
-    { "name": "Emissive Map", "parameter": "emissiveMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Emissive Intensity", "parameter": "emissiveIntensity",
-        "min": 0, "type": NumberInput },
-    { "name": "Normal Map", "parameter": "normalMap",
-        "filter": TextureTypes.BASIC, "type": TextureInput },
-    { "name": "Normal Type", "parameter": "normalMapType",
-        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
-        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
-    //{ "name": "Normal Scale", "parameter": "normalScale",
-    //    "min": 0, "max": 1, "type": Vector2Input },
-];
-
-const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
-
-class ToonMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this._color = new THREE.Color(params['color'] || 0x3d9970);
-        this._wireframe = params['wireframe'] || false;
-        this._map = params['map'];
-        this._alphaMap = params['alphaMap'];
-        this._bumpMap = params['bumpMap'];
-        this._bumpScale = numberOr(params['bumpScale'], 1);
-        this._displacementMap = params['displacementMap'];
-        this._displacementScale = numberOr(params['displacementScale'], 1);
-        this._displacementBias = numberOr(params['displacementBias'], 0);
-        this._emissive = new THREE.Color(params['emissive'] || 0x000000);
-        this._emissiveMap = params['emissiveMap'];
-        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
-        this._normalMap = params['normalMap'];
-        this._normalMapType = params['normalMapType']
-            || THREE.TangentSpaceNormalMap;
-        //this._normalScale = params['normalScale'] || [1,1];
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return "Toon Material";
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "transparent": this._transparent,
-            "side": this._side,
-            "opacity": this._opacity,
-            "color": this._color,
-            "wireframe": this._wireframe,
-            "bumpScale": this._bumpScale,
-            "displacementScale": this._displacementScale,
-            "displacementBias": this._displacementBias,
-            "emissive": this._emissive,
-            "emissiveIntensity": this._emissiveIntensity,
-            "normalMapType": this._normalMapType,
-            //"normalScale": this._normalScale,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS);
-        this._material = new THREE.MeshToonMaterial(materialParams);
-    }
-
-    _getMaps() {
-        return MAPS;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.TOON;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$a);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['color'] = this._material.color.getHex();
-        params['wireframe'] = this._wireframe;
-        params['map'] = this._map;
-        params['alphaMap'] = this._alphaMap;
-        params['bumpMap'] = this._bumpMap;
-        params['bumpScale'] = this._bumpScale;
-        params['displacementMap'] = this._displacementMap;
-        params['displacementScale'] = this._displacementScale;
-        params['displacementBias'] = this._displacementBias;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
-        params['emissiveIntensity'] = this._emissiveIntensity;
-        params['normalMap'] = this._normalMap;
-        params['normalMapType'] = this._normalMapType;
-        //params['normalScale'] = this._normalScale;
-        return params;
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$a) {
-            if(field.name in menuFieldsMap) continue;
-            let menuField = this._createMenuField(field);
-            if(menuField) menuFieldsMap[field.name] = menuField;
-        }
-        return menuFieldsMap;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const MATERIAL_TYPE_TO_ADD_FUNCTION = {};
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.BASIC] = "addBasicMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.LAMBERT] = "addLambertMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.NORMAL] = "addNormalMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.PHONG] = "addPhongMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.STANDARD] = "addStandardMaterial";
-MATERIAL_TYPE_TO_ADD_FUNCTION[MaterialTypes.TOON] = "addToonMaterial";
-
-class MaterialsHandler {
-    constructor() {
-        this._materials = {};
-    }
-
-    addBasicMaterial(params, ignoreUndoRedo) {
-        let material = new BasicMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addLambertMaterial(params, ignoreUndoRedo) {
-        let material = new LambertMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addNormalMaterial(params, ignoreUndoRedo) {
-        let material = new NormalMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addPhongMaterial(params, ignoreUndoRedo) {
-        let material = new PhongMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addStandardMaterial(params, ignoreUndoRedo) {
-        let material = new StandardMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    addToonMaterial(params, ignoreUndoRedo) {
-        let material = new ToonMaterial(params);
-        this._addMaterial(material, ignoreUndoRedo);
-        return material;
-    }
-
-    _addMaterial(material, ignoreUndoRedo) {
-        this._materials[material.getId()] = material;
-        if(!ignoreUndoRedo) {
-            undoRedoHandler.addAction(() => {
-                this.deleteMaterial(material, true);
-            }, () => {
-                this._addMaterial(material, true);
-            });
+    setVisualEdit(visualEdit) {
+        if(this._editorHelper) {
+            this._editorHelper.updateVisualEdit(visualEdit, true, true);
         } else {
-            material.undoDispose();
-        }
-        pubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
-    }
-
-    deleteMaterial(material, ignoreUndoRedo) {
-        let undoRedoAction;
-        if(!ignoreUndoRedo) {
-            undoRedoAction = undoRedoHandler.addAction(() => {
-                this._addMaterial(material, true);
-            }, () => {
-                this.deleteMaterial(material, true);
-            });
-        }
-        material.dispose();
-        delete this._materials[material.getId()];
-        pubSub.publish(this._id, PubSubTopics.MATERIAL_DELETED, {
-            material: material,
-            undoRedoAction: undoRedoAction,
-        });
-    }
-
-    load(materials) {
-        if(!materials) return;
-        for(let materialType in materials) {
-            if(!(materialType in MATERIAL_TYPE_TO_ADD_FUNCTION)) {
-                console.error("Unrecognized material found");
-                continue;
-            }
-            for(let params of materials[materialType]) {
-                this[MATERIAL_TYPE_TO_ADD_FUNCTION[materialType]](params, true);
-            }
+            this.visualEdit = visualEdit;
         }
     }
 
-    getMaterials() {
-        return this._materials;
+    setName(name) {
+        if(name == null || this._name == name) return;
+        this._name = name;
     }
 
-    getMaterial(materialId) {
-        return this._materials[materialId];
+    addToScene(scene) {
+        super.addToScene(scene);
+        if(global$1.isEditor) this._editorHelper.addToScene();
     }
 
-    getType(materialId) {
-        return this._materials[materialId].getMaterialType();
-    }
-
-    reset() {
-        this._materials = {};
-    }
-
-    getMaterialsAssetIds() {
-        let assetIds = new Set();
-        //TODO: Fetch assetIds of each material
-        return assetIds;
-    }
-
-    getMaterialsDetails() {
-        let materialsDetails = {};
-        for(let materialId in this._materials) {
-            let material = this._materials[materialId];
-            let type = material.getMaterialType();
-            let params = material.exportParams();
-            if(!(type in materialsDetails)) materialsDetails[type] = [];
-            materialsDetails[type].push(params);
-        }
-        return materialsDetails;
+    removeFromScene() {
+        super.removeFromScene();
+        if(global$1.isEditor) this._editorHelper.removeFromScene();
     }
 }
 
-let materialsHandler = new MaterialsHandler();
+function makeMaterialTranslucent(material) {
+    material.opacity = 0.5;
+    material.transparent = true;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$l = [
+    { "parameter": "visualEdit" },
+    { "parameter": "doubleSided", "name": "Double Sided",
+        "suppressMenuFocusEvent": true, "type": CheckboxInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class ClampedTexturePlaneHelper extends AssetHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    place(intersection) {
+        let object = intersection.object;
+        let point = intersection.point;
+        intersection.face;
+        object.updateMatrixWorld();
+        let normal = intersection.face.normal.clone()
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global$1.camera.getWorldDirection(vector3s$1[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(point);
+        this._object.lookAt(normal.add(this._object.position));
+        this.roundAttributes(true);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$l);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        menuFieldsMap['doubleSided'] = this._createCheckboxInput({
+            name: 'Double Sided',
+            parameter: 'doubleSided',
+            suppressMenuFocusEvent: true
+        });
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class ClampedTexturePlane extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._createMesh(params['assetId']);
+        this._doubleSided = !(params.doubleSided == false);
+        if(!this._doubleSided) this._updateDoubleSided(false);
+        this._transparent = params['transparent'] != false;
+        if(!this._transparent) this._updateTransparent(false);
+        if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new ClampedTexturePlaneHelper(this);
+    }
+
+    _createMesh(assetId) {
+        this._mesh = libraryHandler.cloneMesh(assetId);
+        this._object.add(this._mesh);
+    }
+
+    _updateTransparent(isTransparent) {
+        if(!this._materialAlreadyCloned) {
+            this._mesh.material = this._mesh.material.clone();
+            this._materialAlreadyCloned = true;
+        }
+        this._mesh.material.transparent = isTransparent;
+        this._transparent = isTransparent;
+     }
+
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
+        return projectHandler.addImage(params);
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['doubleSided'] = this._mesh.material.side == THREE.DoubleSide;
+        params['transparent'] = this._transparent;
+        return params;
+    }
+
+    getDoubleSided() {
+        return this._mesh.material.side == THREE.DoubleSide;
+    }
+
+    setDoubleSided(doubleSided) {
+        if(doubleSided == this._doubleSided) return;
+        if(!this._materialAlreadyCloned) {
+            this._mesh.material = this._mesh.material.clone();
+            this._materialAlreadyCloned = true;
+        }
+        this._mesh.material.side = (doubleSided)
+            ? THREE.DoubleSide
+            : THREE.FrontSide;
+        this._doubleSided = doubleSided;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$k = [
+    { "parameter": "visualEdit" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class GLTFAssetHelper extends AssetHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$k);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class GLTFAsset extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._createMesh(params['assetId']);
+        if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new GLTFAssetHelper(this);
+    }
+
+    _createMesh(assetId) {
+        this._mesh = libraryHandler.cloneMesh(assetId);
+        this._object.add(this._mesh);
+    }
+
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
+        return projectHandler.addGLTF(params);
+    }
+}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -16142,6 +17163,7 @@ class ProjectHandler {
         this._scene = scene;
         this._id = uuidv4();
         this._objects = [];
+        this._sessionInstances = {};
         this.project = {};
         settingsHandler.init(scene);
     }
@@ -16185,13 +17207,13 @@ class ProjectHandler {
                             let instances = projectDetails['assets'][assetId];
                             let type = libraryHandler.getType(assetId);
                             if(type == AssetTypes.IMAGE) {
-                                this._addImages(instances, true);
+                                this._addImages(instances, true, true);
                             } else if(type == AssetTypes.MODEL) {
-                                this._addGLTFs(instances, true);
+                                this._addGLTFs(instances, true, true);
                             } else if(type == AssetTypes.LIGHT) {
-                                this._addLights(instances, assetId, true);
+                                this._addLights(instances, assetId, true, true);
                             } else if(type == AssetTypes.SHAPE) {
-                                this._addShapes(instances, assetId, true);
+                                this._addShapes(instances, assetId, true, true);
                             }
                         }
                     } catch(error) {
@@ -16199,53 +17221,71 @@ class ProjectHandler {
                         this._handleLoadingError(errorCallback);
                         return;
                     }
-                    pubSub.publish(this._id, PubSubTopics.PROJECT_LOADING,true);
+                    pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING,true);
                     if(successCallback) successCallback();
                 }, () => { this._handleLoadingError(errorCallback); });
             }, () => { this._handleLoadingError(errorCallback); });
     }
 
     _handleLoadingError(errorCallback) {
-        pubSub.publish(this._id, PubSubTopics.PROJECT_LOADING, true);
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, true);
         if(errorCallback) errorCallback();
     }
 
-    _addImages(instancesParams, ignoreUndoRedo) {
+    addInstance(params, ignoreUndoRedo, ignorePublish) {
+        let assetId = params.assetId;
+        let type = libraryHandler.getType(assetId);
+        let instance;
+        if(type == AssetTypes.IMAGE) {
+            instance = this.addImage(params, ignoreUndoRedo, ignorePublish);
+        } else if(type == AssetTypes.MODEL) {
+            instance = this.addGLTF(params, ignoreUndoRedo, ignorePublish);
+        } else if(type == AssetTypes.LIGHT) {
+            instance = this.addLight(params, assetId, ignoreUndoRedo,
+                                        ignorePublish);
+        } else if(type == AssetTypes.SHAPE) {
+            instance = this.addShape(params, assetId, ignoreUndoRedo,
+                                        ignorePublish);
+        }
+        return instance;
+    }
+
+    _addImages(instancesParams, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addImage(params, ignoreUndoRedo);
+            this.addImage(params, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addImage(params, ignoreUndoRedo) {
+    addImage(params, ignoreUndoRedo, ignorePublish) {
         let image = new ClampedTexturePlane(params);
         image.addToScene(this._scene);
-        this._addAsset(image, ignoreUndoRedo);
+        this.addAsset(image, ignoreUndoRedo, ignorePublish);
         return image;
     }
 
-    _addGLTFs(instancesParams, ignoreUndoRedo) {
+    _addGLTFs(instancesParams, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addGLTF(params, ignoreUndoRedo);
+            this.addGLTF(params, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addGLTF(params, ignoreUndoRedo) {
+    addGLTF(params, ignoreUndoRedo, ignorePublish) {
         let gltf = new GLTFAsset(params);
         gltf.addToScene(this._scene);
-        this._addAsset(gltf, ignoreUndoRedo);
+        this.addAsset(gltf, ignoreUndoRedo, ignorePublish);
         return gltf;
     }
 
-    _addLights(instancesParams, assetId, ignoreUndoRedo) {
+    _addLights(instancesParams, assetId, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addLight(params, assetId, ignoreUndoRedo);
+            this.addLight(params, assetId, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addLight(params, assetId, ignoreUndoRedo) {
+    addLight(params, assetId, ignoreUndoRedo, ignorePublish) {
         let instance = new this._lightClassMap[assetId](params);
         instance.addToScene(this._scene);
-        this._addAsset(instance, ignoreUndoRedo);
+        this.addAsset(instance, ignoreUndoRedo, ignorePublish);
         return instance;
     }
 
@@ -16254,16 +17294,16 @@ class ProjectHandler {
         libraryHandler.loadLight(assetId, assetName);
     }
 
-    _addShapes(instancesParams, assetId, ignoreUndoRedo) {
+    _addShapes(instancesParams, assetId, ignoreUndoRedo, ignorePublish) {
         for(let params of instancesParams) {
-            this.addShape(params, assetId, ignoreUndoRedo);
+            this.addShape(params, assetId, ignoreUndoRedo, ignorePublish);
         }
     }
 
-    addShape(params, assetId, ignoreUndoRedo) {
+    addShape(params, assetId, ignoreUndoRedo, ignorePublish) {
         let instance = new this._shapeClassMap[assetId](params);
         instance.addToScene(this._scene);
-        this._addAsset(instance, ignoreUndoRedo);
+        this.addAsset(instance, ignoreUndoRedo, ignorePublish);
         return instance;
     }
 
@@ -16280,12 +17320,16 @@ class ProjectHandler {
         return this.project[assetId] || {};
     }
 
-    deleteAssetInstance(instance, ignoreUndoRedo) {
+    getSessionInstance(id) {
+        return this._sessionInstances[id];
+    }
+
+    deleteAssetInstance(instance, ignoreUndoRedo, ignorePublish) {
         let undoRedoAction;
         if(!ignoreUndoRedo) {
             undoRedoAction = undoRedoHandler.addAction(() => {
                 instance.addToScene(this._scene);
-                this._addAsset(instance, true);
+                this.addAsset(instance, true);
             }, () => {
                 this.deleteAssetInstance(instance, true);
             });
@@ -16299,38 +17343,48 @@ class ProjectHandler {
                     break;
                 }
             }
+            if(instance.getObject().parent != this._scene) {
+                this._scene.attach(instance.getObject());
+            }
             delete this.project[assetId][id];
             instance.removeFromScene();
-            pubSub.publish(this._id, PubSubTopics.INSTANCE_DELETED, {
+            if(ignorePublish) return;
+            let topic = PubSubTopics$1.INSTANCE_DELETED + ":" + instance.getId();
+            pubSub.publish(this._id, topic, {
                 instance: instance,
                 undoRedoAction: undoRedoAction,
             });
         }
     }
 
-    _addAsset(instance, ignoreUndoRedo) {
+    addAsset(instance, ignoreUndoRedo, ignorePublish) {
         if(!ignoreUndoRedo) {
             undoRedoHandler.addAction(() => {
-                this.deleteAssetInstance(instance, true);
+                this.deleteAssetInstance(instance, true, ignorePublish);
             }, () => {
                 instance.addToScene(this._scene);
-                this._addAsset(instance, true);
+                this.addAsset(instance, true, ignorePublish);
             });
         }
         let assetId = instance.getAssetId();
         let id = instance.getId();
         if(!(assetId in this.project)) this.project[assetId] = {};
+        if(this.project[assetId][id]) return; //Prevent multi-user collisions
+                                              //caused by undo/redo
         this.project[assetId][id] = instance;
-
         this._objects.push(instance.getObject());
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
+        this._sessionInstances[id] = instance;
+
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ADDED, instance);
     }
 
     reset() {
+        this._sessionInstances = {};
         for(let assetId in this.project) {
             let instances = this.project[assetId];
             for(let instanceId in instances) {
-                this.deleteAssetInstance(instances[instanceId], true);
+                this.deleteAssetInstance(instances[instanceId], true, true);
             }
         }
         if(!global$1.disableImmersion) undoRedoHandler.reset();
@@ -16395,7 +17449,7 @@ let projectHandler = new ProjectHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const BACKGROUND_OPACITY = 0.5;
+const BACKGROUND_OPACITY = 0.8;
 const FONT_OPACITY = 1;
 const FADE_TIME = 1;
 const SUSTAIN_TIME = 3;
@@ -16419,6 +17473,7 @@ class NotificationHub extends Entity {
         this._container = new ThreeMeshUI.Block({
             height: 0.04,
             width: 0.3,
+            interline: 0.01,
             backgroundColor: Colors.defaultMenuBackground,
             backgroundOpacity: BACKGROUND_OPACITY,
             justifyContent: 'center',
@@ -16430,7 +17485,7 @@ class NotificationHub extends Entity {
         this._textComponent = new ThreeMeshUI.Text({
             content: 'Notificaton Placeholder',
             fontColor: Colors.white,
-            fontSize: 0.025,
+            fontSize: FontSizes.body,
             fontOpacity: FONT_OPACITY,
             offset: 0,
         });
@@ -16454,7 +17509,7 @@ class NotificationHub extends Entity {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MENU_NOTIFICATION,
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_NOTIFICATION,
             (notification) => { this._handleNotification(notification); });
     }
 
@@ -16464,6 +17519,8 @@ class NotificationHub extends Entity {
         if(notification.state == NOTIFICATION_STATES.FADE_IN) {
             if(notification.timeInState == 0) {
                 this._container.visible = true;
+                let height = Math.ceil(notification.text.length/20) * 0.02+0.02;
+                this._container.set({ height: height });
                 this._textComponent.set({ content: notification.text });
                 this._object.position.setY(this._notificationHeight);
             }
@@ -16498,6 +17555,278 @@ class NotificationHub extends Entity {
                 this._container.visible = false;
             }
         }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class MenuGripInteractable extends GripInteractable {
+    constructor(threeObj, border, selectedFunc, releasedFunc, specificOption) {
+        super(threeObj, selectedFunc, releasedFunc, specificOption);
+        this._border = border;
+    }
+
+    _createBoundingObject() {
+        this._boundingPlane = new THREE.Plane();
+    }
+
+    _getBoundingObject() {
+        this._threeObj.getWorldPosition(vector3s$1[0]);
+        this._threeObj.getWorldQuaternion(quaternion);
+        vector3s$1[1].set(0,0,1).applyQuaternion(quaternion);
+        this._boundingPlane.setFromNormalAndCoplanarPoint(vector3s$1[1],
+            vector3s$1[0]);
+        return this._boundingPlane;
+    }
+
+    _displayBoundingObject() {
+        this._threeObj.add(this._border);
+    }
+
+    _hideBoundingObject() {
+        this._threeObj.remove(this._border);
+    }
+
+    intersectsSphere(sphere) {
+        let boundingPlane = this._getBoundingObject();
+        let intersects;
+        if(boundingPlane) {
+            //We already have threeObj's world position in vector3s[0]
+            intersects = sphere.intersectsPlane(boundingPlane)
+                && sphere.distanceToPoint(vector3s$1[0]) < 0.45;
+        } else {
+            intersects = false;
+        }
+        return intersects;
+    }
+
+    // Assumes intersectsSphere(sphere) is called first so we don't update the
+    // bounding plane by calling _getBoundingObject()
+    distanceToSphere(sphere) {
+        return this._boundingPlane.distanceToPoint(sphere.center);
+    }
+
+    static emptyGroup() {
+        return new MenuGripInteractable();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class MenuController extends PointerInteractableEntity {
+    constructor() {
+        super();
+        this._object.position.setZ(-100);
+        this._pages = {};
+        this._pageCalls = [];
+        this._gripInteractable = MenuGripInteractable.emptyGroup();
+        this._gripOwners = new Set();
+        this._eventAlreadyTriggered = false;
+        this._addEventListeners();
+        this._setupNotificationHub();
+        this._createInteractables();
+    }
+
+    _addEventListeners() {
+        let menuToggle = document.getElementById("mobile-menu-open-button");
+        menuToggle.addEventListener('click', () => { this._openMenu(); });
+    }
+
+    _setupNotificationHub() {
+        this._notificationHub = new NotificationHub();
+        this._notificationHub.addToScene(this._object);
+        this._notificationHub.setNotificationHeight(0.18);
+    }
+
+    _getCurrentPage() {
+        return this._pages[this._pageCalls[this._pageCalls.length-1]];
+    }
+
+    getPage(page) {
+        return this._pages[page];
+    }
+
+    setPage(page) {
+        let currentPage = this._getCurrentPage();
+        currentPage.removeFromScene();
+        this._pageCalls = [page];
+        currentPage = this._getCurrentPage();
+        currentPage.addToScene(this._object, this._pointerInteractable);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_PAGE_CHANGED);
+    }
+
+    pushPage(page) {
+        let currentPage = this._getCurrentPage();
+        currentPage.removeFromScene();
+        this._pageCalls.push(page);
+        this._pages[page].addToScene(this._object, this._pointerInteractable);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_PAGE_CHANGED);
+    }
+
+    popPage() {
+        let currentPage = this._getCurrentPage();
+        currentPage.removeFromScene();
+        this._pageCalls.pop();
+        currentPage = this._getCurrentPage();
+        currentPage.addToScene(this._object, this._pointerInteractable);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_PAGE_CHANGED);
+    }
+
+    popPagesPast(page) {
+        let poppedPage, currentPage;
+        do {
+            currentPage = this._getCurrentPage();
+            poppedPage = this._pageCalls[this._pageCalls.length-1];
+            currentPage.back();
+        } while(poppedPage != page);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_PAGE_CHANGED);
+    }
+
+    back() {
+        this._getCurrentPage().back();
+    }
+
+    _createBorder() {
+        let indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0]);
+		let positions = [0.225, 0.15, 0, -0.225, 0.15, 0, -0.225, -0.15, 0, 0.225, -0.15, 0];
+		let geometry = new THREE.BufferGeometry();
+		geometry.setIndex( new THREE.BufferAttribute( indices, 1 ) );
+		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+        let lineSegments = new THREE.LineSegments( geometry );
+        lineSegments.material.color.set(0xffff00);
+        return lineSegments;
+    }
+
+    _createInteractables() {
+        if(global$1.deviceType != 'XR') return;
+        let border = this._createBorder();
+        let interactable = new MenuGripInteractable(this._object,
+            border,
+            (hand) => {
+                userController.hands[hand].attach(this._object);
+                this._gripOwners.add(hand);
+            }, (hand) => {
+                userController.hands[hand].remove(this._object);
+                this._gripOwners.delete(hand);
+            }
+        );
+        this._gripInteractable.addChild(interactable);
+        keyboard.init(this._object);
+    }
+
+    getPosition(vector3) {
+        return this._object.getWorldPosition(vector3);
+    }
+
+    getPositionArray() {
+        return this._object.getWorldPosition(vector3s$1[0]).toArray();
+    }
+
+    getRotationArray() {
+        return euler.setFromQuaternion(this._object.getWorldQuaternion(quaternion).normalize()).toArray();
+    }
+
+    getDirection(vector3) {
+        return this._object.getWorldDirection(vector3);
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updateVR(timeDelta);
+            this.update = this._updateVR;
+        } else if(global$1.deviceType == "POINTER") {
+            this._updatePointer(timeDelta);
+            this.update = this._updatePointer;
+        } else if(global$1.deviceType == "MOBILE") {
+            this._updateMobile(timeDelta);
+            this.update = this._updateMobile;
+        }
+    }
+
+    _openMenu() {
+        global$1.renderer.getSize(vector2);
+        let aspectRatio = vector2.x / vector2.y;
+        let menuDistanceScale = (aspectRatio > 1.15)
+            ? 1.5
+            : 1.5 * aspectRatio;
+        global$1.camera.getWorldPosition(vector3s$1[0]);
+        global$1.camera.getWorldDirection(vector3s$1[1]);
+        vector3s$1[1].normalize().divideScalar(menuDistanceScale);
+        this._object.position.addVectors(vector3s$1[0], vector3s$1[1]);
+        this._object.lookAt(vector3s$1[0]);
+        this.addToScene(this._scene);
+    }
+
+    closeMenu() {
+        //this._object.remove(this._object);
+        this.removeFromScene();
+    }
+
+    _updateVR(timeDelta) {
+        if(global$1.sessionActive) {
+            let rightGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
+            let leftGamepad = inputHandler.getXRGamepad(Hands.LEFT);
+            if(rightGamepad?.buttons[4]?.pressed) {
+                if(!this._eventAlreadyTriggered) {
+                    this._eventAlreadyTriggered = true;
+                    if(this._gripOwners.size == 0) this._openMenu();
+                }
+            } else if(leftGamepad?.buttons[4]?.pressed) {
+                if(!this._eventAlreadyTriggered) {
+                    this._eventAlreadyTriggered = true;
+                    if(this._gripOwners.size == 0) this._openMenu();
+                }
+            } else {
+                this._eventAlreadyTriggered = false;
+            }
+        }
+        this._notificationHub.update(timeDelta);
+    }
+
+    _updatePointer(timeDelta) {
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            if(inputHandler.isKeyPressed("m")||inputHandler.isKeyPressed("M")) {
+                if(!this._eventAlreadyTriggered) {
+                    this._eventAlreadyTriggered = true;
+                    this._openMenu();
+                }
+            } else {
+                this._eventAlreadyTriggered = false;
+            }
+        }
+        this._notificationHub.update(timeDelta);
+    }
+
+    _updateMobile(timeDelta) {
+        this._notificationHub.update(timeDelta);
+    }
+
+    addToScene(scene) {
+        if(this._object.parent == scene) return;
+        super.addToScene(scene);
+        this._scene = scene;
+        this._getCurrentPage().addToScene(this._object,
+            this._pointerInteractable);
+        if(global$1.deviceType == "XR")
+            gripInteractableHandler.addInteractable(this._gripInteractable);
+        pointerInteractableHandler.addInteractable(this._pointerInteractable);
+    }
+
+    removeFromScene() {
+        super.removeFromScene();
+        let currentPage = this._getCurrentPage();
+        currentPage.removeFromScene();
+        if(global$1.deviceType == "XR")
+            gripInteractableHandler.removeInteractable(this._gripInteractable);
+        pointerInteractableHandler.removeInteractable(this._pointerInteractable);
     }
 }
 
@@ -16827,21 +18156,21 @@ class AssetPage extends PaginatedPage {
         addButtonParent.add(addButton);
         let interactable = new PointerInteractable(addButton, () => {
             this._controller
-                .getPosition(vector3s[0]);
+                .getPosition(vector3s$1[0]);
             this._controller
-                .getDirection(vector3s[1]).normalize()
+                .getDirection(vector3s$1[1]).normalize()
                 .divideScalar(4);
-            let position = vector3s[0].sub(vector3s[1]).toArray();
-            vector3s[0].set(0, 0, 1);
-            vector3s[1].setY(0).normalize();
-            quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+            let position = vector3s$1[0].sub(vector3s$1[1]).toArray();
+            vector3s$1[0].set(0, 0, 1);
+            vector3s$1[1].setY(0).normalize();
+            quaternion.setFromUnitVectors(vector3s$1[0], vector3s$1[1]);
             euler.setFromQuaternion(quaternion);
             let rotation = euler.toArray();
             let params = {
                 assetId: this._assetId,
                 position: position,
                 rotation: rotation,
-                enableInteractions: true,
+                visualEdit: true,
             };
             let type = libraryHandler.getType(this._assetId);
             if(type == AssetTypes.IMAGE) {
@@ -16883,31 +18212,37 @@ class AssetPage extends PaginatedPage {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_ADDED, (instance) => {
             if(instance.getAssetId() == this._assetId) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
-            if(instance.getAssetId() == this._assetId) {
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_UPDATED, (message) => {
+            if(message.asset.getAssetId() == this._assetId) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (e) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
             if(e.instance.getAssetId() == this._assetId &&
                     this._items.includes(e.instance.getId())) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }
         });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._controller.back();
+            this._controller.back();
+        });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {
@@ -16928,7 +18263,7 @@ class AssetPage extends PaginatedPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELD_MAX_LENGTH$5 = 25;
+const FIELD_MAX_LENGTH$4 = 25;
 
 class LightsPage extends PaginatedPage {
     constructor(controller) {
@@ -16976,8 +18311,8 @@ class LightsPage extends PaginatedPage {
 
     _getItemName(item) {
         let name = this._assets[item]['Name'];
-        if(name.length > FIELD_MAX_LENGTH$5)
-            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$5);
+        if(name.length > FIELD_MAX_LENGTH$4)
+            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$4);
         return name;
     }
 
@@ -17011,16 +18346,22 @@ class LightsPage extends PaginatedPage {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.ASSET_ADDED, (assetId) => {
             if(libraryHandler.getType(assetId) == this._assetType) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }
         });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.ASSET_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {
@@ -17041,7 +18382,7 @@ class LightsPage extends PaginatedPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELD_MAX_LENGTH$4 = 25;
+const FIELD_MAX_LENGTH$3 = 25;
 
 class AssetSelectPage extends PaginatedPage {
     constructor(controller) {
@@ -17094,8 +18435,8 @@ class AssetSelectPage extends PaginatedPage {
 
     _getItemName(item) {
         let name = this._assets[item]['Name'];
-        if(name.length > FIELD_MAX_LENGTH$4)
-            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$4);
+        if(name.length > FIELD_MAX_LENGTH$3)
+            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$3);
         return name;
     }
 
@@ -17304,11 +18645,9 @@ class ColorWheel {
         let [red, green, blue] = hslToRGB(hue, saturation, lightness);
         this._hue = hue;
         this._saturation = saturation;
-        //this._updateColorWheel();
         this._updateLightnessBar();
-        //this._colorTexture.needsUpdate = true;
         this._lightnessTexture.needsUpdate = true;
-        return "#" + rgbToHex(red) + rgbToHex(green) + rgbToHex(blue);
+        return rgbToHex(red, green, blue);
     }
 
     selectLightnessFromXY(height, x, y) {
@@ -17321,7 +18660,7 @@ class ColorWheel {
         this._lightness = lightness;
         this._updateColorWheel();
         this._colorTexture.needsUpdate = true;
-        return "#" + rgbToHex(red) + rgbToHex(green) + rgbToHex(blue);
+        return rgbToHex(red, green, blue);
     }
 }
 
@@ -17334,7 +18673,7 @@ let colorWheel = new ColorWheel();
  */
 
 const RADIUS = 0.1;
-const HSL$1 = {};
+const HSL = {};
 
 class ColorWheelPage extends MenuPage {
     constructor(controller) {
@@ -17403,10 +18742,10 @@ class ColorWheelPage extends MenuPage {
 
     _handleColorCursorDrag(point) {
         if(!point) return;
-        vector3s[0].copy(point);
-        this._colorBlock.worldToLocal(vector3s[0]);
-        let color = colorWheel.selectColorFromXY(RADIUS, vector3s[0].x,
-            vector3s[0].y);
+        vector3s$1[0].copy(point);
+        this._colorBlock.worldToLocal(vector3s$1[0]);
+        let color = colorWheel.selectColorFromXY(RADIUS, vector3s$1[0].x,
+            vector3s$1[0].y);
         if(color && this._onUpdate) {
             this._onUpdate(color);
             this._updateColorCursor();
@@ -17419,10 +18758,10 @@ class ColorWheelPage extends MenuPage {
 
     _handleLightnessCursorDrag(point) {
         if(!point) return;
-        vector3s[0].copy(point);
-        this._lightnessBlock.worldToLocal(vector3s[0]);
+        vector3s$1[0].copy(point);
+        this._lightnessBlock.worldToLocal(vector3s$1[0]);
         let color = colorWheel.selectLightnessFromXY(RADIUS * 2,
-            vector3s[0].x, vector3s[0].y);
+            vector3s$1[0].x, vector3s$1[0].y);
         if(color && this._onUpdate) {
             this._onUpdate(color);
             this._updateLightnessCursor();
@@ -17464,30 +18803,34 @@ class ColorWheelPage extends MenuPage {
 
     _updateColorCursor() {
         let [x, y] = colorWheel.getXY(RADIUS);
-        vector3s[0].set(x, -y, 0);
+        vector3s$1[0].set(x, -y, 0);
         this._object.worldToLocal(this._colorBlock.localToWorld(
-            vector3s[0]));
-        this._colorCursor.position.setX(vector3s[0].x);
-        this._colorCursor.position.setY(vector3s[0].y);
+            vector3s$1[0]));
+        this._colorCursor.position.setX(vector3s$1[0].x);
+        this._colorCursor.position.setY(vector3s$1[0].y);
     }
 
     _updateLightnessCursor() {
         let lightness = colorWheel.getLightness(RADIUS);
-        vector3s[0].set(0, (lightness - 0.5) * RADIUS * 2, 0);
+        vector3s$1[0].set(0, (lightness - 0.5) * RADIUS * 2, 0);
         this._object.worldToLocal(this._lightnessBlock.localToWorld(
-            vector3s[0]));
-        this._lightnessCursor.position.setX(vector3s[0].x);
-        this._lightnessCursor.position.setY(vector3s[0].y);
+            vector3s$1[0]));
+        this._lightnessCursor.position.setX(vector3s$1[0].x);
+        this._lightnessCursor.position.setY(vector3s$1[0].y);
     }
 
-    setContent(color, onUpdate, onEnter) {
-        this.updateColor(color);
+    setContent(requesterId, color, onUpdate, onEnter) {
+        colorWheel.setFromHSL(color.getHSL(HSL));
+        this._updateColorCursor();
+        this._updateLightnessCursor();
+        this._requesterId = requesterId;
         this._onUpdate = onUpdate;
         this._onEnter = onEnter;
     }
 
-    updateColor(color) {
-        colorWheel.setFromHSL(color.getHSL(HSL$1));
+    updateColor(requesterId, color) {
+        if(!this._object.parent || this._requesterId != requesterId) return;
+        colorWheel.setFromHSL(color.getHSL(HSL));
         this._updateColorCursor();
         this._updateLightnessCursor();
     }
@@ -17517,7 +18860,8 @@ class DynamicFieldsPage extends MenuPage {
     constructor(controller) {
         super(controller, false, true);
         this._firstItemIndex = 0;
-        this._lastItemIndex = 0;
+        this._lastItemIndex = -1;
+        this._fields = [];
         this._addPageContent();
     }
 
@@ -17584,6 +18928,7 @@ class DynamicFieldsPage extends MenuPage {
     }
 
     _setFields(fields) {
+        this._removeCurrentFields();
         this._firstItemIndex = 0;
         this._lastItemIndex = -1;
         this._fields = fields;
@@ -17594,6 +18939,28 @@ class DynamicFieldsPage extends MenuPage {
         }
     }
 
+    _removeField(field) {
+        let index = this._fields.indexOf(field);
+        field.deactivate();
+        field.removeFromScene();
+        this._fields.splice(index, 1);
+        if(index <= this._lastItemIndex) {
+            if(index < this._firstItemIndex) {
+                this._firstItemIndex--;
+            }
+            this._lastItemIndex--;
+            if(this._firstItemIndex == this._fields.length) {
+                this._loadPrevPage();
+            } else {
+                this._removeCurrentFields();
+                this._lastItemIndex = this._firstItemIndex - 1;
+                this._loadNextPage();
+            }
+        } else if(this._fields.length == this._lastItemIndex + 1) {
+            this._updateNavButtons();
+        }
+    }
+
     _loadNextPage() {
         this._removeCurrentFields();
         this._firstItemIndex = this._lastItemIndex + 1;
@@ -17601,7 +18968,8 @@ class DynamicFieldsPage extends MenuPage {
         for(let i = this._firstItemIndex; i < this._fields.length; i++) {
             let field = this._fields[i];
             availableHeight -= field.getHeight();
-            if(availableHeight >= 0) {
+            //Allow oversized fields if it's the first field
+            if(availableHeight >= 0 || i == this._firstItemIndex) {
                 field.addToScene(this._fieldsContainer,
                     this._containerInteractable);
                 this._lastItemIndex = i;
@@ -17621,7 +18989,8 @@ class DynamicFieldsPage extends MenuPage {
         for(let i = this._lastItemIndex; i >= 0; i--) {
             let field = this._fields[i];
             availableHeight -= field.getHeight();
-            if(availableHeight >= 0) {
+            //Allow oversized fields if it's the first field
+            if(availableHeight >= 0 || i == this._lastItemIndex) {
                 pendingFields.push(field);
                 this._firstItemIndex = i;
             } else {
@@ -17665,7 +19034,6 @@ class DynamicFieldsPage extends MenuPage {
             this._fields[i].deactivate();
         }
     }
-
 }
 
 /*
@@ -17694,9 +19062,10 @@ class EditorSettingsPage extends DynamicFieldsPage {
         fields.push(new NumberInput({
             'title': 'Movement Speed',
             'minValue': 0,
+            'maxValue': 1000,
             'initialValue': 4,
-            'setToSource': (value) => {
-                settingsHandler.setEditorSetting('Movement Speed', value);
+            'onBlur': (oldValue, newValue) => {
+                settingsHandler.setEditorSetting('Movement Speed', newValue);
             },
             'getFromSource': () => {
                 return settingsHandler.getEditorSettings()['Movement Speed'];
@@ -17705,7 +19074,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
-            'setToSource': (value) => {
+            'onUpdate': (value) => {
                 settingsHandler.setEditorSetting('Enable Flying', value);
             },
             'getFromSource': () => {
@@ -17716,9 +19085,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
             fields.push(new CheckboxInput({
                 'title': 'Swap Joysticks',
                 'initialValue': false,
-                'setToSource': (value) => {
-                    settingsHandler.setEditorSetting('Swap Joysticks',
-                        value);
+                'onUpdate': (value) => {
+                    settingsHandler.setEditorSetting('Swap Joysticks', value);
                 },
                 'getFromSource': () => {
                     let settings = settingsHandler.getEditorSettings();
@@ -17788,13 +19156,143 @@ class HandsPage extends MenuPage {
             let interactable = new PointerInteractable(button, () => {
                 if(HandTools.ACTIVE == hand.type) return;
                 HandTools.ACTIVE = hand.type;
-                pubSub.publish(this._id, PubSubTopics.HAND_TOOLS_SWITCH, hand.type);
+                pubSub.publish(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, hand.type);
             });
             this._containerInteractable.addChild(interactable);
         }
         this._container.add(columnBlock);
     }
 
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class HostPartyPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Host Party',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.2,
+        });
+        this._container.add(titleBlock);
+
+        this._contentBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        this._textField = new TextField({
+            'height': 0.03,
+            'width': 0.4,
+            'text': 'Party Name',
+            'onEnter': () => { this._hostParty(); },
+        });
+        this._textField.addToScene(this._contentBlock,
+            this._containerInteractable);
+        let button = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Submit",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.2,
+            'margin': 0.002,
+        });
+        this._contentBlock.add(button);
+        let interactable = new PointerInteractable(button, () => {
+            this._hostParty();
+        });
+        this._containerInteractable.addChild(interactable);
+        this._container.add(this._contentBlock);
+
+        this._connectingBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Connecting...',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+    }
+
+    _hostParty() {
+        let roomId = this._textField.content;
+        if(roomId.length == 0) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Missing Party Name',
+            });
+            return;
+        }
+        this._container.remove(this._contentBlock);
+        this._container.add(this._connectingBlock);
+        this._pointerInteractable.removeChild(this._containerInteractable);
+        this._isConnecting = true;
+        partyHandler.host(roomId, () => { this._successCallback(); },
+            (m) => { this._errorCallback(m); });
+    }
+
+    _successCallback() {
+        if(!this._isConnecting) return;
+        this._isConnecting = false;
+        this._pointerInteractable.addChild(this._containerInteractable);
+        this._container.remove(this._connectingBlock);
+        this._container.add(this._contentBlock);
+        this._container.update(false, false, true);
+        if(this._object.parent) this._controller.back();
+    }
+
+    _errorCallback(message) {
+        this._isConnecting = false;
+        let topic = message.topic;
+        if(topic == '409-room') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Party Name Already Taken',
+            });
+        } else if(topic == 'rtc-timeout') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Could not connect to all other users, please try again',
+            });
+        } else if(topic == 'bad-auth') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Could not authenticate with Server',
+            });
+        } else if(topic == 'error') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Unexpected Error',
+            });
+        } else {
+            console.error('Unexpected error message topic: ' + topic);
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Unexpected Error',
+            });
+        }
+        this._pointerInteractable.addChild(this._containerInteractable);
+        this._container.remove(this._connectingBlock);
+        this._container.add(this._contentBlock);
+        this._container.update(false, false, true);
+    }
+
+    //TODO: Instead of this, we should just call errorCallback if connecting
+    //      hangs in Party.js
+    addToScene(scene, interactableParent) {
+        if(this._isConnecting && !partyHandler.isPartyActive()) {
+            this._pointerInteractable.addChild(this._containerInteractable);
+            this._container.remove(this._connectingBlock);
+            this._container.add(this._contentBlock);
+            this._container.update(false, false, true);
+        }
+        super.addToScene(scene, interactableParent);
+    }
 }
 
 /*
@@ -17824,7 +19322,8 @@ class InstancePage extends DynamicFieldsPage {
             'fontSize': FontSizes.header,
             'margin': 0,
             'onBlur': () => {
-                this._instance.setName(this._titleField.content);
+                this._instance.getEditorHelper()
+                    .updateName(this._titleField.content);
             },
         });
         let deleteButton = ThreeMeshUIHelper.createButtonBlock({
@@ -17847,35 +19346,40 @@ class InstancePage extends DynamicFieldsPage {
         this._instance = instance;
         let name = instance.getName();
         this._titleField.setContent(name);
-        this._setFields(instance.getMenuFields());
+        this._setFields(instance.getEditorHelper().getMenuFields());
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (e) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
             if(e.instance == this._instance) {
                 this._controller.popPagesPast(MenuPages.INSTANCE);
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (instance)=> {
-            if(instance == this._instance) {
-                for(let field of this._fields) {
-                    field.updateFromSource();
-                }
-                this._titleField.setContent(instance.getName());
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_UPDATED, (message) => {
+            if(message.asset == this._instance) {
+                this._titleField.setContent(message.asset.getName());
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (params) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_ATTACHED, (params) => {
             let id = params.instance.getId();
             if(id == this._instance.getId()) {
                 this._unfocusFields();
             }
         });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._removeSubscriptions();
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            this._controller.setPage(MenuPages.NAVIGATION);
+        });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.INSTANCE_ATTACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PROJECT_LOADING);
     }
 
     back() {
@@ -17895,6 +19399,136 @@ class InstancePage extends DynamicFieldsPage {
         super.removeFromScene();
     }
 
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class JoinPartyPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Join Party',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.2,
+        });
+        this._container.add(titleBlock);
+
+        this._contentBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        this._textField = new TextField({
+            'height': 0.03,
+            'width': 0.4,
+            'text': 'Party Name',
+            'onEnter': () => { this._joinParty(); },
+        });
+        this._textField.addToScene(this._contentBlock,
+            this._containerInteractable);
+        let button = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Join",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.2,
+            'margin': 0.002,
+        });
+        this._contentBlock.add(button);
+        let interactable = new PointerInteractable(button, () => {
+            this._joinParty();
+        });
+        this._containerInteractable.addChild(interactable);
+        this._container.add(this._contentBlock);
+
+        this._connectingBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Connecting...',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+    }
+
+    _joinParty() {
+        let roomId = this._textField.content;
+        if(roomId.length == 0) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Missing Party Name',
+            });
+            return;
+        }
+        this._container.remove(this._contentBlock);
+        this._container.add(this._connectingBlock);
+        this._pointerInteractable.removeChild(this._containerInteractable);
+        this._isConnecting = true;
+        partyHandler.join(roomId, () => { this._successCallback(); },
+            (m) => { this._errorCallback(m); });
+    }
+
+    _successCallback() {
+        if(!this._isConnecting) return;
+        this._isConnecting = false;
+        this._pointerInteractable.addChild(this._containerInteractable);
+        this._container.remove(this._connectingBlock);
+        this._container.add(this._contentBlock);
+        this._container.update(false, false, true);
+        if(this._object.parent) this._controller.back();
+    }
+
+    _errorCallback(message) {
+        this._isConnecting = false;
+        let topic = message.topic;
+        if(topic == '404-room') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Party Name Not Found',
+            });
+        } else if(topic == 'rtc-timeout') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Could not connect to all other users, please try again',
+            });
+        } else if(topic == 'bad-auth') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Could not authenticate with Server',
+            });
+        } else if(topic == 'error') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Unexpected Error',
+            });
+        } else {
+            console.error('Unexpected error message topic: ' + topic);
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Unexpected Error',
+            });
+        }
+        this._pointerInteractable.addChild(this._containerInteractable);
+        this._container.remove(this._connectingBlock);
+        this._container.add(this._contentBlock);
+        this._container.update(false, false, true);
+    }
+
+    //TODO: Instead of this, we should just call errorCallback if connecting
+    //      hangs in Party.js
+    addToScene(scene, interactableParent) {
+        if(this._isConnecting && !partyHandler.isPartyActive()) {
+            this._pointerInteractable.addChild(this._containerInteractable);
+            this._container.remove(this._connectingBlock);
+            this._container.add(this._contentBlock);
+            this._container.update(false, false, true);
+        }
+        super.addToScene(scene, interactableParent);
+    }
 }
 
 /*
@@ -18180,7 +19814,7 @@ class LoadFromGDrivePage extends PaginatedPage {
             content: "Project Loading..."
         });
         this._updateLoadingSaving(false);
-        pubSub.publish(this._id, PubSubTopics.PROJECT_LOADING, false);
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, false);
         googleDrive.loadFile(this._instances[item]['id'],
             (jsZip) => { this._loadSuccessCallback(jsZip); },
             () => { this._loadErrorCallback(); });
@@ -18188,8 +19822,11 @@ class LoadFromGDrivePage extends PaginatedPage {
 
     _loadSuccessCallback(jsZip) {
         projectHandler.loadZip(jsZip, () => {
-            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION,
                 { text: 'Project Loaded', });
+            if(partyHandler.isPartyActive() && partyHandler.isHost()) {
+                partyHandler.sendProject();
+            }
         }, () => {
             this._loadErrorCallback();
         });
@@ -18197,8 +19834,8 @@ class LoadFromGDrivePage extends PaginatedPage {
 
     _loadErrorCallback() {
         this._updateLoadingSaving(true);
-        pubSub.publish(this._id, PubSubTopics.PROJECT_LOADING, true);
-        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, true);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
             text: 'Error Loading Project',
             sustainTime: 5,
         });
@@ -18236,13 +19873,13 @@ class LoadFromGDrivePage extends PaginatedPage {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (finished) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (finished) => {
             this._loadingSavingBlock.children[1].set({
                 content: "Project Loading..."
             });
             this._updateLoadingSaving(finished);
         });
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_SAVING, (finished) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_SAVING, (finished) => {
             this._loadingSavingBlock.children[1].set({
                 content: "Project Saving..."
             });
@@ -18515,7 +20152,7 @@ const ASSETS = [{
 
 class LibraryPage extends PaginatedIconsPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
         this._assets = libraryHandler.getLibrary();
         this._items = Object.keys(ASSETS);
         this._addPageContent();
@@ -18586,7 +20223,7 @@ class LibraryPage extends PaginatedIconsPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELD_MAX_LENGTH$3 = 25;
+const FIELD_MAX_LENGTH$2 = 25;
 
 class LibrarySearchPage extends PaginatedPage {
     constructor(controller) {
@@ -18616,8 +20253,8 @@ class LibrarySearchPage extends PaginatedPage {
 
     _getItemName(item) {
         let name = this._assets[item]['Name'];
-        if(name.length > FIELD_MAX_LENGTH$3)
-            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$3);
+        if(name.length > FIELD_MAX_LENGTH$2)
+            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$2);
         return name;
     }
 
@@ -18686,7 +20323,8 @@ class MaterialPage extends DynamicFieldsPage {
             'fontSize': FontSizes.header,
             'margin': 0,
             'onBlur': () => {
-                this._material.setName(this._titleField.content);
+                this._material.getEditorHelper()
+                    .updateName(this._titleField.content);
             },
         });
         let deleteButton = ThreeMeshUIHelper.createButtonBlock({
@@ -18709,28 +20347,33 @@ class MaterialPage extends DynamicFieldsPage {
         this._material = material;
         let name = material.getName();
         this._titleField.setContent(name);
-        this._setFields(material.getMenuFields());
+        this._setFields(material.getEditorHelper().getMenuFields());
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_DELETED, (e) => {
             if(e.material == this._material) {
                 this._controller.popPagesPast(MenuPages.MATERIAL);
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (material)=> {
-            if(material == this._material) {
-                for(let field of this._fields) {
-                    field.updateFromSource();
-                }
-                this._titleField.setContent(material.getName());
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED, (message) => {
+            if(message.asset == this._material) {
+                this._titleField.setContent(message.asset.getName());
             }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._removeSubscriptions();
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            this._controller.setPage(MenuPages.NAVIGATION);
         });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
-        pubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PROJECT_LOADING);
     }
 
     back() {
@@ -18758,7 +20401,7 @@ class MaterialPage extends DynamicFieldsPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELD_MAX_LENGTH$2 = 25;
+const FIELD_MAX_LENGTH$1 = 25;
 
 class MaterialsPage extends PaginatedPage {
     constructor(controller) {
@@ -18810,8 +20453,8 @@ class MaterialsPage extends PaginatedPage {
 
     _getItemName(item) {
         let name = this._materials[item].getName();
-        if(name.length > FIELD_MAX_LENGTH$2)
-            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$2);
+        if(name.length > FIELD_MAX_LENGTH$1)
+            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$1);
         return name;
     }
 
@@ -18827,24 +20470,30 @@ class MaterialsPage extends PaginatedPage {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (material) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_ADDED, (material) => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        pubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (instance)=> {
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED, (message) => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        pubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_DELETED, (e) => {
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(!done) return;
             this._refreshItems();
             this._updateItemsGUI();
         });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_ADDED);
-        pubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
-        pubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {
@@ -18865,11 +20514,12 @@ class MaterialsPage extends PaginatedPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const pages$1 = [
+const pages$3 = [
     { "title": "Hand Tools", "menuPage": MenuPages.HANDS },
     { "title": "Library", "menuPage": MenuPages.LIBRARY },
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
     { "title": "Project File", "menuPage": MenuPages.PROJECT },
+    { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
 ];
 
 class NavigationPage extends MenuPage {
@@ -18894,9 +20544,11 @@ class NavigationPage extends MenuPage {
             'justifyContent': 'start',
             'backgroundOpacity': 0,
         });
-        for(let page of pages$1) {
+        let supportsParty = global$1.authUrl && global$1.partyUrl;
+        for(let page of pages$3) {
             if(global$1.deviceType != 'XR' && page['menuPage'] == MenuPages.HANDS)
                 continue;
+            if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': page.title,
                 'fontSize': FontSizes.body,
@@ -18906,7 +20558,7 @@ class NavigationPage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
-                this._controller.setPage(page.menuPage);
+                this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);
         }
@@ -18915,6 +20567,15 @@ class NavigationPage extends MenuPage {
 
 }
 
+const MaterialTypes = {
+    BASIC: "BASIC",
+    LAMBERT: "LAMBERT",
+    NORMAL: "NORMAL",
+    PHONG: "PHONG",
+    STANDARD: "STANDARD",
+    TOON: "TOON",
+};
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18922,12 +20583,12 @@ class NavigationPage extends MenuPage {
  */
 
 const PAGES$1 = [
-    { "title": "Basic", "handlerFunction": "addBasicMaterial" },
-    { "title": "Lambert", "handlerFunction": "addLambertMaterial" },
-    { "title": "Normal", "handlerFunction": "addNormalMaterial" },
-    { "title": "Phong", "handlerFunction": "addPhongMaterial" },
-    { "title": "Standard", "handlerFunction": "addStandardMaterial" },
-    { "title": "Toon", "handlerFunction": "addToonMaterial" },
+    { "title": "Basic", "materialType": MaterialTypes.BASIC },
+    { "title": "Lambert", "materialType": MaterialTypes.LAMBERT },
+    { "title": "Normal", "materialType": MaterialTypes.NORMAL },
+    { "title": "Phong", "materialType": MaterialTypes.PHONG },
+    { "title": "Standard", "materialType": MaterialTypes.STANDARD },
+    { "title": "Toon", "materialType": MaterialTypes.TOON },
 ];
 
 class NewMaterialPage extends PaginatedPage {
@@ -18954,7 +20615,7 @@ class NewMaterialPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let material = materialsHandler[item.handlerFunction]();
+        let material = materialsHandler.addNewMaterial(item.materialType);
         this.back();
         if(this._additionalAction) this._additionalAction(material);
     }
@@ -18976,8 +20637,8 @@ class NewMaterialPage extends PaginatedPage {
  */
 
 const PAGES = [
-    { "title": "Basic", "handlerFunction": "addBasicTexture" },
-    { "title": "Cube", "handlerFunction": "addCubeTexture" },
+    { "title": "Basic", "textureType": TextureTypes.BASIC },
+    { "title": "Cube", "textureType": TextureTypes.CUBE },
 ];
 
 class NewTexturePage extends PaginatedPage {
@@ -19004,7 +20665,7 @@ class NewTexturePage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let texture = texturesHandler[item.handlerFunction]();
+        let texture = texturesHandler.addNewTexture(item.textureType);
         this.back();
         if(this._additionalAction) this._additionalAction(texture);
     }
@@ -19025,61 +20686,591 @@ class NewTexturePage extends PaginatedPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const ASSET_ID$9 = '7605bff2-8ca3-4a47-b6f7-311d745507de';
-const ASSET_NAME$9 = 'Ambient Light';
-const FIELDS$9 = [
-    { "name": "Visually Edit" },
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Intensity", "parameter": "_intensity", "min": 0,
-        "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+const pages$2 = [
+    { "title": "Host Party", "menuPage": MenuPages.HOST_PARTY },
+    { "title": "Join Party", "menuPage": MenuPages.JOIN_PARTY },
 ];
 
-class PrimitiveAmbientLight extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._assetId = ASSET_ID$9;
-        this._color = params['color'] || 0xffffff;
-        this._intensity = params['intensity'] || 1;
+const connectedOptions = [
+    { "title": "Display Usernames", "handler": "_handleDisplayUsernames" },
+    { "title": "Update Username", "handler": "_handleUpdateUsername" },
+    { "title": "Mute Myself", "handler": "_handleMuteMyself" },
+    { "title": "Mute Friends", "handler": "_handleMuteFriends" },
+    { "title": "Disconnect", "handler": "_handleDisconnect" },
+    { "title": "Users", "type": "label" },
+];
+
+class PartyPage extends DynamicFieldsPage {
+    constructor(controller) {
+        super(controller);
+        this._connected = false;
+        this._displayingUsernames = false;
+        this._mutedMyself = false;
+        this._mutedPeers = false;
+        this._fieldsContainer.set({ justifyContent: 'start' });
+        this._peerFields = {};
+        this._addFields();
+    }
+
+    _createTitleBlock() {
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Party',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.4,
+            'offset': 0,
+        });
+    }
+
+    _addFields() {
+        this._connectedFields = [];
+        this._disconnectedFields = [];
+        for(let page of pages$2) {
+            let entity = new ButtonEntity(page.title, () => {
+                this._controller.pushPage(page.menuPage);
+            });
+            this._disconnectedFields.push(entity);
+        }
+        for(let option of connectedOptions) {
+            let entity;
+            if(option.handler) {
+                entity = new ButtonEntity(option.title, () => {
+                    this[option.handler]();
+                });
+            } else if(option.type == 'label') {
+                entity = new TextEntity(option.title);
+            }
+            this._connectedFields.push(entity);
+        }
+        this._setFields(this._disconnectedFields);
+    }
+
+    _handleDisplayUsernames() {
+        this._displayingUsernames = !this._displayingUsernames;
+        let block = this._connectedFields[0].getObject();
+        if(this._displayingUsernames) {
+            block.children[1].set({ content: 'Hide Usernames' });
+        } else {
+            block.children[1].set({ content: 'Display Usernames' });
+        }
+        partyHandler.setDisplayingUsernames(this._displayingUsernames);
+    }
+
+    _handleUpdateUsername() {
+        let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
+        let username = partyHandler.getUsername();
+        inputPage.setContentWithInitialValue("Update Username", username,
+            "Update",
+            (username) => {
+                username = username.trim();
+                if(!username) {
+                    pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                        text: "Username can't be blank",
+                    });
+                    return;
+                }
+                partyHandler.setUsername(username);
+                this._controller.back();
+            }
+        );
+        this._controller.pushPage(MenuPages.TEXT_INPUT);
+    }
+
+    _handleDisconnect() {
+        party.disconnect();
+        this._updateFields();
+    }
+
+    _handleMuteMyself() {
+        this._mutedMyself = !this._mutedMyself;
+        let block = this._connectedFields[2].getObject();
+        if(this._mutedMyself) {
+            block.children[1].set({ content: 'Unmute Myself' });
+        } else {
+            block.children[1].set({ content: 'Mute Myself' });
+        }
+        for(let peerId in this._peerFields) {
+            this._peerFields[peerId].toggleMyselfMuted(this._mutedMyself);
+        }
+    }
+
+    _handleMuteFriends() {
+        this._mutedPeers = !this._mutedPeers;
+        let block = this._connectedFields[3].getObject();
+        if(this._mutedPeers) {
+            block.children[1].set({ content: 'Unmute Friends' });
+        } else {
+            block.children[1].set({ content: 'Mute Friends' });
+        }
+        for(let peerId in this._peerFields) {
+            this._peerFields[peerId].togglePeerMuted(this._mutedPeers);
+        }
+    }
+
+    _updateFields() {
+        if(partyHandler.isPartyActive()) {
+            if(!this._checkPeers() && this._connected) return;
+            this._setFields(this._connectedFields.concat(
+                Object.values(this._peerFields)));
+            this._connected = true;
+        } else {
+            for(let peerId in this._peerFields) {
+                delete this._peerFields[peerId];
+            }
+            this._setFields(this._disconnectedFields);
+            this._connected = false;
+        }
+    }
+
+    _checkPeers() {
+        let different = false;
+        let peers = partyHandler.getPeers();
+        for(let peerId in peers) {
+            if(!(peerId in this._peerFields) && peers[peerId].rtc) {
+                let peer = peers[peerId];
+                this._peerFields[peerId] = new PeerEntity(peer, peer.username,
+                    this._controller, (peerId) => this._abdicateHost(peerId));
+                if(this._mutedMyself)
+                    this._peerFields[peerId].toggleMyselfMuted(true);
+                if(this._mutedPeers)
+                    this._peerFields[peerId].togglePeerMuted(true);
+                different = true;
+            }
+        }
+        for(let peerId in this._peerFields) {
+            if(!(peerId in peers)) {
+                this._peerFields[peerId].removeFromScene();
+                delete this._peerFields[peerId];
+                different = true;
+            } else {
+                this._peerFields[peerId].setUsername(peers[peerId].username);
+            }
+        }
+        return different;
+    }
+
+    _abdicateHost(peerId) {
+        for(let peerId in this._peerFields) {
+            this._peerFields[peerId].toggleHost(false);
+        }
+    }
+
+    _handlePeerConnected(message) {
+        if(!this._connected) return;
+        let peer = message.peer;
+        let peerEntity = new PeerEntity(peer, peer.username,
+            this._controller, (peerId) => this._abdicateHost(peerId));
+        if(this._mutedMyself) peerEntity.toggleMyselfMuted(true);
+        if(this._mutedPeers) peerEntity.togglePeerMuted(true);
+        this._peerFields[peer.id] = peerEntity;
+        this._fields.push(peerEntity);
+        if(this._fields.length != this._lastItemIndex + 2) return;
+        this._removeCurrentFields();
+        this._lastItemIndex = this._firstItemIndex - 1;
+        this._loadNextPage();
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.BECOME_PARTY_HOST, () => {
+            for(let peerId in this._peerFields) {
+                this._peerFields[peerId].toggleHost(true);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PARTY_STARTED, () => {
+            if(!this._connected) this._updateFields();
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PARTY_ENDED, () => {
+            if(this._connected) this._updateFields();
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PEER_CONNECTED, (message) => {
+            this._handlePeerConnected(message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PEER_DISCONNECTED, (message) =>{
+            if(!this._connected) return;
+            let peer = message.peer;
+            let peerEntity = this._peerFields[peer.id];
+            if(!peerEntity) return;
+            this._removeField(peerEntity);
+            delete this._peerFields[peer.id];
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PEER_USERNAME_UPDATED,
+            (message) => {
+                if(!this._connected) return;
+                let peer = message.peer;
+                this._peerFields[peer.id].setUsername(peer.username);
+            }
+        );
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PARTY_STARTED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PARTY_ENDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PEER_CONNECTED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PEER_DISCONNECTED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PEER_USERNAME_UPDATED);
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._updateFields();
+        this._addSubscriptions();
+        super.addToScene(scene, parentInteractable);
+    }
+
+    removeFromScene() {
+        this._removeSubscriptions();
+        super.removeFromScene();
+    }
+}
+
+class MenuEntity extends PointerInteractableEntity {
+    constructor() {
+        super();
+    }
+
+    getHeight() {
+        return 0.039;
+    }
+
+    updateFromSource() {
+        //Do nothing
+    }
+
+    deactivate() {
+        //Do nothing
+    }
+}
+
+class ButtonEntity extends MenuEntity {
+    constructor(title, action) {
+        super();
+        this._object = ThreeMeshUIHelper.createButtonBlock({
+            'text': title,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.002,
+        });
+        this._pointerInteractable = new PointerInteractable(this._object,
+            action);
+    }
+}
+
+class TextEntity extends MenuEntity {
+    constructor(text) {
+        super();
+        this._object = ThreeMeshUIHelper.createTextBlock({
+            'text': text,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'offset': 0,
+            'margin': 0.002,
+        });
+    }
+
+    getHeight() {
+        return 0.045;
+    }
+}
+
+class PeerEntity extends MenuEntity {
+    constructor(peer, username, controller, designateHostCallback) {
+        super();
+        this._peer = peer;
+        this._controller = controller;
+        this._designateHostCallback = designateHostCallback;
+        this._mutedMyself = false;
+        this._mutedPeer = false;
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': 0.035,
+            'width': 0.31,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+            'margin': 0.002,
+        });
+        this._addContent(username);
+    }
+
+    _addContent(username) {
+        this._usernameBlock = ThreeMeshUIHelper.createButtonBlock({
+            'text': username || '...',
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.228,
+            'offset': 0,
+            'margin': 0.002,
+        });
+        let muteParams = {
+            'backgroundTexture': Textures.microphoneIcon,
+            'backgroundTextureScale': 0.85,
+            'height': 0.035,
+            'width': 0.035,
+            'margin': 0.002,
+        };
+        this._muteMyselfButton =ThreeMeshUIHelper.createButtonBlock(muteParams);
+        muteParams['backgroundTexture'] = Textures.headphonesIcon;
+        this._mutePeerButton = ThreeMeshUIHelper.createButtonBlock(muteParams);
+        this._muteMyselfButton.children[1].set({backgroundColor: Colors.green});
+        this._mutePeerButton.children[1].set({ backgroundColor: Colors.green });
+        if(!partyHandler.isHost()) {
+            this._usernameBlock.set({ backgroundOpacity: 0 });
+        }
+
+        this._object.add(this._usernameBlock);
+        this._object.add(this._muteMyselfButton);
+        this._object.add(this._mutePeerButton);
+        this._addInteractables();
+    }
+
+    _addInteractables() {
+        this._usernameInteractable = new PointerInteractable(
+            this._usernameBlock, () => {
+                let peerPage = this._controller.getPage(MenuPages.PEER);
+                peerPage.setContent(this._peer, this._designateHostCallback);
+                this._controller.pushPage(MenuPages.PEER);
+            });
+        this._muteMyselfInteractable = new PointerInteractable(
+            this._muteMyselfButton, () => { this.toggleMyselfMuted(); });
+        this._mutePeerInteractable = new PointerInteractable(
+            this._mutePeerButton, () => { this.togglePeerMuted(); });
+        if(partyHandler.isHost()) {
+            this._pointerInteractable.addChild(this._usernameInteractable);
+        }
+        this._pointerInteractable.addChild(this._muteMyselfInteractable);
+        this._pointerInteractable.addChild(this._mutePeerInteractable);
+    }
+
+    toggleHost(isHost) {
+        if(isHost) {
+            this._pointerInteractable.addChild(this._usernameInteractable);
+            this._usernameBlock.set({ backgroundOpacity: 0.7 });
+        } else {
+            this._pointerInteractable.removeChild(this._usernameInteractable);
+            this._usernameBlock.set({ backgroundOpacity: 0 });
+        }
+    }
+
+    toggleMyselfMuted(muted) {
+        if(muted == this._mutedMyself) return;
+        this._mutedMyself = !this._mutedMyself;
+        let color;
+        if(this._mutedMyself) {
+            color = Colors.red;
+        } else {
+            color = Colors.green;
+        }
+        this._peer.rtc.toggleMyselfMuted(this._mutedMyself);
+        this._muteMyselfButton.children[1].set({ backgroundColor: color });
+    }
+
+    togglePeerMuted(muted) {
+        if(muted == this._mutedPeer) return;
+        this._mutedPeer = !this._mutedPeer;
+        let color;
+        if(this._mutedPeer) {
+            color = Colors.red;
+        } else {
+            color = Colors.green;
+        }
+        this._peer.rtc.togglePeerMuted(this._mutedPeer);
+        this._mutePeerButton.children[1].set({ backgroundColor: color });
+    }
+
+    setUsername(username) {
+        username = stringWithMaxLength(username || '...', 12);
+        if(this._usernameBlock.children[1].content != username) {
+            this._usernameBlock.children[1].set({ content: username });
+        }
+    }
+
+    addToScene(scene, interactableParent) {
+        this.setUsername(this._peer.username);
+        super.addToScene(scene, interactableParent);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const options = [
+    { "title": "Make Host", "handler": "_handleMakeHost" },
+    { "title": "Kick Out", "handler": "_handleKickOut" },
+];
+
+class PeerPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': ' ',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.4,
+        });
+        this._container.add(this._titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        for(let option of options) {
+            let button = ThreeMeshUIHelper.createButtonBlock({
+                'text': option.title,
+                'fontSize': FontSizes.body,
+                'height': 0.035,
+                'width': 0.3,
+                'margin': 0.002,
+            });
+            let buttonInteractable = new PointerInteractable(button,
+                () => this[option.handler]() );
+            columnBlock.add(button);
+            this._containerInteractable.addChild(buttonInteractable);
+        }
+        this._container.add(columnBlock);
+    }
+
+    _handleMakeHost() {
+        if(this._designateHostCallback)
+            this._designateHostCallback(this._peer.id);
+        partyHandler.setIsHost(false);
+        party.designateHost(this._peer.id);
+        this._controller.back();
+    }
+
+    _handleKickOut() {
+        party.bootPeer(this._peer.id);
+        this._controller.back();
+    }
+
+    setContent(peer, designateHostCallback) {
+        let username = stringWithMaxLength(peer.username || '...', 12);
+        this._titleBlock.children[1].set({ content: username });
+        this._peer = peer;
+        this._designateHostCallback = designateHostCallback;
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.PARTY_ENDED, () => {
+            this._controller.back();
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PEER_DISCONNECTED, (message) =>{
+            if(this._peer == message.peer) this._controller.back();
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PEER_USERNAME_UPDATED,
+            (message) => {
+                if(this._peer == message.peer) this.setContent(this._peer);
+            }
+        );
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PARTY_ENDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PEER_DISCONNECTED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PEER_USERNAME_UPDATED);
+    }
+
+    back() {
+        this._removeSubscriptions();
+        super.back();
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._addSubscriptions();
+        super.addToScene(scene, parentInteractable);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$j = [
+    { "parameter": "visualEdit" },
+    { "parameter": "intensity", "name": "Intensity", "min": 0,
+        "type": NumberInput },
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveLightHelper extends AssetHelper {
+    constructor(asset) {
+        super(asset);
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {
-        this._light = new THREE.AmbientLight(this._color, this._intensity);
-        this._object.add(this._light);
-
-        let geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-        let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
-        this._mesh = new THREE.Mesh(geometry, material);
-        if(this.enableInteractables) this._object.add(this._mesh);
+        console.error(
+            "PrimitiveLightHelper._createMesh() should be overridden");
+        return;
     }
 
-    _updateLight() {
-        this._light.intensity = this._intensity;
-    }
-
-    _updateInteractable(isInteractable) {
-        if(isInteractable) {
+    _updateVisualEdit(isVisualEdit) {
+        if(isVisualEdit) {
             this._object.add(this._mesh);
         } else {
             this._object.remove(this._mesh);
             fullDispose(this._mesh);
         }
-        super._updateInteractable(isInteractable);
+        super._updateVisualEdit(isVisualEdit);
     }
 
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$j) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class PrimitiveLight extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._color = numberOr(params['color'], 0xffffff);
+        this._intensity = numberOr(params['intensity'], 1);
     }
 
-    clone(enableInteractablesOverride) {
-        let params = this._fetchCloneParams(enableInteractablesOverride);
-        let instance = new PrimitiveAmbientLight(params);
-        return projectHandler.addPrimitive(instance);
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveLightHelper(this);
+    }
+
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
+        return projectHandler.addLight(params, this._assetId);
     }
 
     exportParams() {
@@ -19089,43 +21280,138 @@ class PrimitiveAmbientLight extends Asset {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$9);
+    getColor() {
+        return this._color;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$9) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateLight();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            } else if(field.type == ColorInput) {
-                menuFieldsMap[field.name] = new ColorInput({
-                    'title': 'Color',
-                    'initialValue': this._light.color,
-                    'onUpdate': (color) => {
-                        this._light.color.set(color);
+    getIntensity() {
+        return this._intensity;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._light.color.setHex(color);
+    }
+
+    setIntensity(intensity) {
+        if(this._intensity == intensity) return;
+        this._intensity = intensity;
+        this._light.intensity = intensity;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$i = [
+    { "parameter": "visualEdit" },
+    { "parameter": "intensity" },
+    { "parameter": "color" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveAmbientLightHelper extends PrimitiveLightHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    _createMesh() {
+        let geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+        let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
+        this._mesh = new THREE.Mesh(geometry, material);
+        if(this._asset.visualEdit) this._object.add(this._mesh);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$i);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const ASSET_ID$9 = '7605bff2-8ca3-4a47-b6f7-311d745507de';
+const ASSET_NAME$9 = 'Ambient Light';
+
+class PrimitiveAmbientLight extends PrimitiveLight {
+    constructor(params = {}) {
+        super(params);
+        this._assetId = ASSET_ID$9;
+        this._createLight();
+        if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveAmbientLightHelper(this);
+    }
+
+    _createLight() {
+        this._light = new THREE.AmbientLight(this._color, this._intensity);
+        this._object.add(this._light);
+    }
+}
+
+projectHandler.registerLight(PrimitiveAmbientLight, ASSET_ID$9, ASSET_NAME$9);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class DelayedClickEventHandler {
+    constructor() {
+        this._triggerDelayedClickEvent = false;
+        this._addEventListeners();
+    }
+
+    _addEventListeners() {
+        if(global$1.deviceType != "XR") {
+            this._eventType = global$1.deviceType == "MOBILE"
+                ? 'touchend'
+                : 'click';
+            this._clickListener = (e) => {
+                setTimeout(() => {
+                    if(this._triggerDelayedClickEvent) {
+                        this._triggerDelayedClickEvent = false;
+                        if(this._callback) this._callback();
                     }
-                });
-            }
+                }, 20);
+            };
+            //Why this convoluted chain of event listener checking a variable
+            //set by interactable action (which uses polling)? Because we can't
+            //trigger a popup with a click event outside of an event listener on
+            //Safari :(
         }
-        return menuFieldsMap;
+    }
+
+    triggerEvent() {
+        this._triggerDelayedClickEvent = true;
+    }
+
+    listenForClick(callback) {
+        this._callback = callback;
+        document.addEventListener(this._eventType, this._clickListener);
+    }
+
+    stopListening() {
+        this._callback = null;
+        this._fileListenerActive = false;
+        document.removeEventListener(this._eventType, this._clickListener);
     }
 
 }
 
-projectHandler.registerLight(PrimitiveAmbientLight, ASSET_ID$9, ASSET_NAME$9);
+let delayedClickEventHandler = new DelayedClickEventHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -19144,7 +21430,7 @@ const OPTIONS = {
 
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
         this._items = Object.keys(OPTIONS).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
@@ -19188,33 +21474,48 @@ class ProjectPage extends PaginatedPage {
     }
 
     _newProject() {
+        if(partyHandler.isPartyActive() && !partyHandler.isHost()) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        }
         projectHandler.reset();
         let ambientLight = new PrimitiveAmbientLight({
-            'enableInteractions': false,
+            'visualEdit': false,
         });
         projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
         googleDrive.clearActiveFile();
+        if(partyHandler.isPartyActive() && partyHandler.isHost()) {
+            partyHandler.sendProject();
+        }
     }
 
     _localSave() {
         this._updateSaving(false);
-        pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
         let jsZip = projectHandler.exportProject();
         jsZip.generateAsync({type:"blob"}).then((blob) => {
             this._updateSaving(true);
-            pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, true);
+            pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, true);
             saveAs(blob, "Digital Bacon Project.zip");
         }, (err) => {
             console.error(err);
             this._updateSaving(true);
-            pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, true);
-            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+            pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, true);
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
                 text: 'Error Saving Project',
             });
         });
     }
 
     _localLoad() {
+        if(partyHandler.isPartyActive() && !partyHandler.isHost()) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        }
         uploadHandler.triggerUpload();
     }
 
@@ -19222,7 +21523,7 @@ class ProjectPage extends PaginatedPage {
         if(googleDrive.isSignedIn()) {
             if(googleDrive.hasActiveFile()) {
                 this._updateSaving(false);
-                pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+                pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
                 googleDrive.save(
                     projectHandler.exportProject(),
                     () => { this._saveSuccessCallback(); },
@@ -19233,7 +21534,7 @@ class ProjectPage extends PaginatedPage {
             inputPage.setContent("Save Project As", "Filename", "Save",
                 (projectName) => {
                     this._updateSaving(false);
-                    pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING,false);
+                    pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING,false);
                     googleDrive.saveAs(
                         projectName,
                         projectHandler.exportProject(),
@@ -19244,28 +21545,41 @@ class ProjectPage extends PaginatedPage {
             );
             this._controller.pushPage(MenuPages.TEXT_INPUT);
         } else {
-            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
-            googleDrive.handleAuthButton(
-                () => { this._handleGoogleAuthResponse(); });
+            this._googleDriveSignin(() => this._googleDriveSave());
         }
     }
 
     _googleDriveLoad() {
-        if(googleDrive.isSignedIn()) {
+        if(partyHandler.isPartyActive() && !partyHandler.isHost()) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        } else if(googleDrive.isSignedIn()) {
             let instancePage = this._controller.getPage(
                 MenuPages.LOAD_GDRIVE);
             instancePage.loadProjects();
             this._controller.pushPage(MenuPages.LOAD_GDRIVE);
         } else {
-            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+            this._googleDriveSignin(() => this._googleDriveLoad());
+        }
+    }
+
+    _googleDriveSignin(callback) {
+        this._googleSigninCallback = callback;
+        if(global$1.deviceType == 'XR') {
+            sessionHandler.exitXRSession();
             googleDrive.handleAuthButton(
                 () => { this._handleGoogleAuthResponse(); });
+        } else {
+            delayedClickEventHandler.triggerEvent();
         }
     }
 
     _handleGoogleAuthResponse() {
         this._refreshItems();
         this._updateItemsGUI();
+        if(this._googleSigninCallback) this._googleSigninCallback();
     }
 
     _googleDriveSignout() {
@@ -19279,12 +21593,15 @@ class ProjectPage extends PaginatedPage {
 
     _handleLocalFile(file) {
         this._updateLoading(false);
-        pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
         JSZip.loadAsync(file).then((jsZip) => {
             googleDrive.clearActiveFile();
             projectHandler.loadZip(jsZip, () => {
-                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
+                pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION,
                     { text: 'Project Loaded', });
+                if(partyHandler.isPartyActive() && partyHandler.isHost()) {
+                    partyHandler.sendProject();
+                }
             }, () => {
                 this._loadErrorCallback();
             });
@@ -19292,7 +21609,7 @@ class ProjectPage extends PaginatedPage {
     }
 
     _loadErrorCallback() {
-        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
             text: 'Error Loading Project',
             sustainTime: 5,
         });
@@ -19300,24 +21617,24 @@ class ProjectPage extends PaginatedPage {
 
     _saveSuccessCallback() {
         this._updateSaving(true);
-        pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, true);
-        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, true);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
             text: 'Project Saved',
         });
     }
 
     _saveErrorCallback() {
         this._updateSaving(true);
-        pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, true);
-        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, true);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
             text: 'Error Saving Project',
         });
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING,
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING,
             (finished) => { this._updateLoading(finished); });
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_SAVING,
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_SAVING,
             (finished) => { this._updateSaving(finished); });
     }
 
@@ -19347,6 +21664,10 @@ class ProjectPage extends PaginatedPage {
     }
 
     addToScene(scene, parentInteractable) {
+        delayedClickEventHandler.listenForClick(() => {
+            googleDrive.handleAuthButton(
+                () => { this._handleGoogleAuthResponse(); });
+        });
         uploadHandler.listenForProjectFile((file) => {
             this._handleLocalFile(file);
         });
@@ -19354,6 +21675,7 @@ class ProjectPage extends PaginatedPage {
     }
 
     removeFromScene() {
+        delayedClickEventHandler.stopListening();
         uploadHandler.stopListening();
         super.removeFromScene();
     }
@@ -19448,16 +21770,17 @@ let readyPlayerMe = new ReadyPlayerMe();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const pages = [
-    { "title": "Backdrop", "menuPage": MenuPages.SKYBOX},
-    { "title": "User Settings", "menuPage": MenuPages.USER_SETTINGS},
-    { "title": "Editor Settings", "menuPage": MenuPages.EDITOR_SETTINGS},
+const pages$1 = [
+    { "title": "Backdrop", "menuPage": MenuPages.SKYBOX, isEditorOnly: true },
+    { "title": "User Settings", "menuPage": MenuPages.USER_SETTINGS },
+    { "title": "Editor Settings", "menuPage": MenuPages.EDITOR_SETTINGS,
+        isEditorOnly: true },
     { "title": "Update Avatar" },
 ];
 
 class SettingsPage extends MenuPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
         this._addPageContent();
     }
 
@@ -19477,7 +21800,8 @@ class SettingsPage extends MenuPage {
             'justifyContent': 'start',
             'backgroundOpacity': 0,
         });
-        for(let page of pages) {
+        for(let page of pages$1) {
+            if(!global$1.isEditor && page.isEditorOnly) continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': page.title,
                 'fontSize': FontSizes.body,
@@ -19626,9 +21950,25 @@ class SkyboxPage extends MenuPage {
         }
     }
 
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.SETTINGS_UPDATED, (message) => {
+            this._setTextures();
+        });
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics$1.SETTINGS_UPDATED);
+    }
+
     addToScene(scene, parentInteractable) {
         super.addToScene(scene, parentInteractable);
         this._setTextures();
+        this._addSubscriptions();
+    }
+
+    removeFromScene() {
+        super.removeFromScene();
+        this._removeSubscriptions();
     }
 
 }
@@ -19660,7 +22000,8 @@ class TexturePage extends DynamicFieldsPage {
             'fontSize': FontSizes.header,
             'margin': 0,
             'onBlur': () => {
-                this._texture.setName(this._titleField.content);
+                this._texture.getEditorHelper()
+                    .updateName(this._titleField.content);
             },
         });
         let deleteButton = ThreeMeshUIHelper.createButtonBlock({
@@ -19683,28 +22024,33 @@ class TexturePage extends DynamicFieldsPage {
         this._texture = texture;
         let name = texture.getName();
         this._titleField.setContent(name);
-        this._setFields(texture.getMenuFields());
+        this._setFields(texture.getEditorHelper().getMenuFields());
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (e) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_DELETED, (e) => {
             if(e.texture == this._texture) {
                 this._controller.popPagesPast(MenuPages.TEXTURE);
             }
         });
-        pubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (texture)=> {
-            if(texture == this._texture) {
-                for(let field of this._fields) {
-                    field.updateFromSource();
-                }
-                this._titleField.setContent(texture.getName());
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED, (message) => {
+            if(message.asset == this._texture) {
+                this._titleField.setContent(message.asset.getName());
             }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(!done) return;
+            this._removeSubscriptions();
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            this._controller.setPage(MenuPages.NAVIGATION);
         });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
-        pubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PROJECT_LOADING);
     }
 
     back() {
@@ -19732,7 +22078,7 @@ class TexturePage extends DynamicFieldsPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const FIELD_MAX_LENGTH$1 = 25;
+const FIELD_MAX_LENGTH = 25;
 
 class TexturesPage extends PaginatedPage {
     constructor(controller) {
@@ -19784,8 +22130,8 @@ class TexturesPage extends PaginatedPage {
 
     _getItemName(item) {
         let name = this._textures[item].getName();
-        if(name.length > FIELD_MAX_LENGTH$1)
-            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH$1);
+        if(name.length > FIELD_MAX_LENGTH)
+            name = "..." + name.substring(name.length - FIELD_MAX_LENGTH);
         return name;
     }
 
@@ -19801,24 +22147,30 @@ class TexturesPage extends PaginatedPage {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.TEXTURE_ADDED, (texture) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_ADDED, (texture) => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        pubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (instance)=> {
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED, (message) => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        pubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (e) => {
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_DELETED, (e) => {
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(!done) return;
             this._refreshItems();
             this._updateItemsGUI();
         });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
-        pubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
-        pubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.PROJECT_LOADING);
     }
 
     addToScene(scene, parentInteractable) {
@@ -19895,6 +22247,13 @@ class TextInputPage extends MenuPage {
         this._textField.reset();
     }
 
+    setContentWithInitialValue(title, content, buttonText, action) {
+        this._titleBlock.children[1].set({ content: title });
+        this._button.children[1].set({ content: buttonText });
+        this._action = action;
+        this._textField.setContent(content);
+    }
+
     back() {
         this._textField.deactivate();
         super.back();
@@ -19946,14 +22305,14 @@ class UploadPage extends MenuPage {
 
     _uploadCallback(assetIds) {
         this._controller
-            .getPosition(vector3s[0]);
+            .getPosition(vector3s$1[0]);
         this._controller
-            .getDirection(vector3s[1]).normalize()
+            .getDirection(vector3s$1[1]).normalize()
             .divideScalar(4);
-        let position = vector3s[0].sub(vector3s[1]).toArray();
-        vector3s[0].set(0, 0, 1);
-        vector3s[1].setY(0).normalize();
-        quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
+        let position = vector3s$1[0].sub(vector3s$1[1]).toArray();
+        vector3s$1[0].set(0, 0, 1);
+        vector3s$1[1].setY(0).normalize();
+        quaternion.setFromUnitVectors(vector3s$1[0], vector3s$1[1]);
         euler.setFromQuaternion(quaternion);
         let rotation = euler.toArray();
         for(let assetId of assetIds) {
@@ -19965,14 +22324,14 @@ class UploadPage extends MenuPage {
                     "rotation": rotation,
                     "doubleSided": true,
                     "transparent": true,
-                    "enableInteractions": true,
+                    "visualEdit": true,
                 });
             } else if(type == AssetTypes.MODEL) {
                 projectHandler.addGLTF({
                     "assetId": assetId,
                     "position": position,
                     "rotation": rotation,
-                    "enableInteractions": true,
+                    "visualEdit": true,
                 });
             }
         }
@@ -20017,9 +22376,10 @@ class UserSettingsPage extends DynamicFieldsPage {
         fields.push(new NumberInput({
             'title': 'Movement Speed',
             'minValue': 0,
+            'maxValue': 1000,
             'initialValue': 4,
-            'setToSource': (value) => {
-                settingsHandler.setUserSetting('Movement Speed', value);
+            'onBlur': (oldValue, newValue) => {
+                settingsHandler.setUserSetting('Movement Speed', newValue);
             },
             'getFromSource': () => {
                 return settingsHandler.getUserSettings()['Movement Speed'];
@@ -20028,7 +22388,7 @@ class UserSettingsPage extends DynamicFieldsPage {
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
-            'setToSource': (value) => {
+            'onUpdate': (value) => {
                 settingsHandler.setUserSetting('Enable Flying', value);
             },
             'getFromSource': () => {
@@ -20038,7 +22398,20 @@ class UserSettingsPage extends DynamicFieldsPage {
         this._setFields(fields);
     }
 
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.SETTINGS_UPDATED, (message) => {
+            for(let field of this._fields) {
+                field.updateFromSource();
+            }
+        });
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics$1.SETTINGS_UPDATED);
+    }
+
     addToScene(scene, parentInteractable) {
+        this._addSubscriptions();
         for(let field of this._fields) {
             field.updateFromSource();
         }
@@ -20046,6 +22419,7 @@ class UserSettingsPage extends DynamicFieldsPage {
     }
 
     removeFromScene() {
+        this._removeSubscriptions();
         super.removeFromScene();
     }
 
@@ -20057,74 +22431,17 @@ class UserSettingsPage extends DynamicFieldsPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class MenuGripInteractable extends GripInteractable {
-    constructor(threeObj, border, selectedFunc, releasedFunc, specificOption) {
-        super(threeObj, selectedFunc, releasedFunc, specificOption);
-        this._border = border;
-    }
-
-    _createBoundingObject() {
-        this._boundingPlane = new THREE.Plane();
-    }
-
-    _getBoundingObject() {
-        this._threeObj.getWorldPosition(vector3s[0]);
-        this._threeObj.getWorldQuaternion(quaternion);
-        vector3s[1].set(0,0,1).applyQuaternion(quaternion);
-        this._boundingPlane.setFromNormalAndCoplanarPoint(vector3s[1],
-            vector3s[0]);
-        return this._boundingPlane;
-    }
-
-    _displayBoundingObject() {
-        this._threeObj.add(this._border);
-    }
-
-    _hideBoundingObject() {
-        this._threeObj.remove(this._border);
-    }
-
-    intersectsSphere(sphere) {
-        let boundingPlane = this._getBoundingObject();
-        let intersects;
-        if(boundingPlane) {
-            //We already have threeObj's world position in vector3s[0]
-            intersects = sphere.intersectsPlane(boundingPlane)
-                && sphere.distanceToPoint(vector3s[0]) < 0.45;
-        } else {
-            intersects = false;
-        }
-        return intersects;
-    }
-
-    // Assumes intersectsSphere(sphere) is called first so we don't update the
-    // bounding plane by calling _getBoundingObject()
-    distanceToSphere(sphere) {
-        return this._boundingPlane.distanceToPoint(sphere.center);
-    }
-
-    static emptyGroup() {
-        return new MenuGripInteractable();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class MenuController extends PointerInteractableEntity {
+class EditorMenuController extends MenuController {
     constructor() {
         super();
-        this._object.position.setZ(-100);
-        this._pages = {};
         this._pages[MenuPages.ASSET] = new AssetPage(this);
         this._pages[MenuPages.ASSETS] = new LightsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
         this._pages[MenuPages.COLOR_WHEEL] = new ColorWheelPage(this);
         this._pages[MenuPages.EDITOR_SETTINGS] = new EditorSettingsPage(this);
+        this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.INSTANCE] = new InstancePage(this);
+        this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
         this._pages[MenuPages.LIBRARY] = new LibraryPage(this);
         this._pages[MenuPages.LIBRARY_SEARCH] = new LibrarySearchPage(this);
         this._pages[MenuPages.LOAD_GDRIVE] = new LoadFromGDrivePage(this);
@@ -20133,6 +22450,8 @@ class MenuController extends PointerInteractableEntity {
         this._pages[MenuPages.NAVIGATION] = new NavigationPage(this);
         this._pages[MenuPages.NEW_MATERIAL] = new NewMaterialPage(this);
         this._pages[MenuPages.NEW_TEXTURE] = new NewTexturePage(this);
+        this._pages[MenuPages.PARTY] = new PartyPage(this);
+        this._pages[MenuPages.PEER] = new PeerPage(this);
         this._pages[MenuPages.PROJECT] = new ProjectPage(this);
         this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
         this._pages[MenuPages.SKYBOX] = new SkyboxPage(this);
@@ -20141,210 +22460,89 @@ class MenuController extends PointerInteractableEntity {
         this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
         this._pages[MenuPages.UPLOAD] = new UploadPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
-        this._pageCalls = [MenuPages.NAVIGATION];
-        this._gripInteractable = MenuGripInteractable.emptyGroup();
-        this._gripOwners = new Set();
-        this._eventAlreadyTriggered = false;
-        this._addEventListeners();
-        this._setupNotificationHub();
-        this._createPointerInteractables();
+        this._pageCalls.push(MenuPages.NAVIGATION);
         if(global$1.deviceType == 'XR') {
             this._pages[MenuPages.HANDS] = new HandsPage(this);
-            this._createGripInteractables();
-            keyboard.init(this._object);
         }
     }
 
-    _addEventListeners() {
-        let menuToggle = document.getElementById("mobile-menu-open-button");
-        menuToggle.addEventListener('click', () => { this._openMenu(); });
-    }
-
-    _setupNotificationHub() {
-        this._notificationHub = new NotificationHub();
-        this._notificationHub.addToScene(this._object);
-        this._notificationHub.setNotificationHeight(0.18);
-    }
-
-    _getCurrentPage() {
-        return this._pages[this._pageCalls[this._pageCalls.length-1]];
-    }
-
-    getPage(page) {
-        return this._pages[page];
-    }
-
-    setPage(page) {
-        let currentPage = this._getCurrentPage();
-        currentPage.removeFromScene();
-        this._pageCalls = [page];
-        currentPage = this._getCurrentPage();
-        currentPage.addToScene(this._object, this._pointerInteractable);
-    }
-
-    pushPage(page) {
-        let currentPage = this._getCurrentPage();
-        currentPage.removeFromScene();
-        this._pageCalls.push(page);
-        this._pages[page].addToScene(this._object, this._pointerInteractable);
-    }
-
-    popPage() {
-        let currentPage = this._getCurrentPage();
-        currentPage.removeFromScene();
-        this._pageCalls.pop();
-        currentPage = this._getCurrentPage();
-        currentPage.addToScene(this._object, this._pointerInteractable);
-    }
-
-    popPagesPast(page) {
-        let poppedPage, currentPage;
-        do {
-            currentPage = this._getCurrentPage();
-            poppedPage = this._pageCalls[this._pageCalls.length-1];
-            currentPage.back();
-        } while(poppedPage != page);
-    }
-
-    back() {
-        this._getCurrentPage().back();
-    }
-
-    _createBorder() {
-        let indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0]);
-		let positions = [0.225, 0.15, 0, -0.225, 0.15, 0, -0.225, -0.15, 0, 0.225, -0.15, 0];
-		let geometry = new THREE.BufferGeometry();
-		geometry.setIndex( new THREE.BufferAttribute( indices, 1 ) );
-		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-        let lineSegments = new THREE.LineSegments( geometry );
-        lineSegments.material.color.set(0xffff00);
-        return lineSegments;
-    }
-
-    _createPointerInteractables() {
+    _createInteractables() {
+        super._createInteractables();
         undoRedoHandler.addButtons(this._object, this._pointerInteractable);
     }
+}
 
-    _createGripInteractables() {
-        let border = this._createBorder();
-        let interactable = new MenuGripInteractable(this._object,
-            border,
-            (hand) => {
-                userController.hands[hand].attach(this._object);
-                this._gripOwners.add(hand);
-            }, (hand) => {
-                userController.hands[hand].remove(this._object);
-                this._gripOwners.delete(hand);
-            }
-        );
-        this._gripInteractable.addChild(interactable);
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const pages = [
+    { "title": "Settings", "menuPage": MenuPages.SETTINGS },
+    { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
+];
+
+class HomePage extends MenuPage {
+    constructor(controller) {
+        super(controller, false);
+        this._addPageContent();
     }
 
-    getPosition(vector3) {
-        return this._object.getWorldPosition(vector3);
-    }
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Home',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.2,
+        });
+        this._container.add(titleBlock);
 
-    getPositionArray() {
-        return this._object.getWorldPosition(vector3s[0]).toArray();
-    }
-
-    getRotationArray() {
-        return euler.setFromQuaternion(this._object.getWorldQuaternion(quaternion).normalize()).toArray();
-    }
-
-    getDirection(vector3) {
-        return this._object.getWorldDirection(vector3);
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updateVR(timeDelta);
-            this.update = this._updateVR;
-        } else if(global$1.deviceType == "POINTER") {
-            this._updatePointer(timeDelta);
-            this.update = this._updatePointer;
-        } else if(global$1.deviceType == "MOBILE") {
-            this._updateMobile(timeDelta);
-            this.update = this._updateMobile;
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        let supportsParty = global$1.authUrl && global$1.partyUrl;
+        for(let page of pages) {
+            if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
+            let button = ThreeMeshUIHelper.createButtonBlock({
+                'text': page.title,
+                'fontSize': FontSizes.body,
+                'height': 0.035,
+                'width': 0.3,
+                'margin': 0.002,
+            });
+            columnBlock.add(button);
+            let interactable = new PointerInteractable(button, () => {
+                this._controller.pushPage(page.menuPage);
+            });
+            this._containerInteractable.addChild(interactable);
         }
+        this._container.add(columnBlock);
     }
 
-    _openMenu() {
-        global$1.renderer.getSize(vector2);
-        let aspectRatio = vector2.x / vector2.y;
-        let menuDistanceScale = (aspectRatio > 1.15)
-            ? 1.5
-            : 1.5 * aspectRatio;
-        global$1.camera.getWorldPosition(vector3s[0]);
-        global$1.camera.getWorldDirection(vector3s[1]);
-        vector3s[1].normalize().divideScalar(menuDistanceScale);
-        this._object.position.addVectors(vector3s[0], vector3s[1]);
-        this._object.lookAt(vector3s[0]);
-        this.addToScene(this._scene);
-    }
+}
 
-    closeMenu() {
-        //this._object.remove(this._object);
-        this.removeFromScene();
-    }
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
-    _updateVR(timeDelta) {
-        if(global$1.sessionActive) {
-            let rightGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
-            let leftGamepad = inputHandler.getXRGamepad(Hands.LEFT);
-            if(rightGamepad?.buttons[4]?.pressed) {
-                if(!this._eventAlreadyTriggered) {
-                    this._eventAlreadyTriggered = true;
-                    if(this._gripOwners.size == 0) this._openMenu();
-                }
-            } else if(leftGamepad?.buttons[4]?.pressed) {
-                if(!this._eventAlreadyTriggered) {
-                    this._eventAlreadyTriggered = true;
-                    if(this._gripOwners.size == 0) this._openMenu();
-                }
-            } else {
-                this._eventAlreadyTriggered = false;
-            }
-        }
-        this._notificationHub.update(timeDelta);
-    }
-
-    _updatePointer(timeDelta) {
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            if(inputHandler.isKeyPressed("m")||inputHandler.isKeyPressed("M")) {
-                if(!this._eventAlreadyTriggered) {
-                    this._eventAlreadyTriggered = true;
-                    this._openMenu();
-                }
-            } else {
-                this._eventAlreadyTriggered = false;
-            }
-        }
-        this._notificationHub.update(timeDelta);
-    }
-
-    _updateMobile(timeDelta) {
-        this._notificationHub.update(timeDelta);
-    }
-
-    addToScene(scene) {
-        if(this._object.parent == scene) return;
-        super.addToScene(scene);
-        this._scene = scene;
-        this._getCurrentPage().addToScene(this._object,
-            this._pointerInteractable);
-        if(global$1.deviceType == "XR")
-            gripInteractableHandler.addInteractable(this._gripInteractable);
-        pointerInteractableHandler.addInteractable(this._pointerInteractable);
-    }
-
-    removeFromScene() {
-        super.removeFromScene();
-        let currentPage = this._getCurrentPage();
-        currentPage.removeFromScene();
-        if(global$1.deviceType == "XR")
-            gripInteractableHandler.removeInteractable(this._gripInteractable);
-        pointerInteractableHandler.removeInteractable(this._pointerInteractable);
+class LiveMenuController extends MenuController {
+    constructor() {
+        super();
+        this._pages[MenuPages.HOME] = new HomePage(this);
+        this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
+        this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
+        this._pages[MenuPages.PARTY] = new PartyPage(this);
+        this._pages[MenuPages.PEER] = new PeerPage(this);
+        this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
+        this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
+        this._pageCalls.push(MenuPages.HOME);
     }
 }
 
@@ -20599,13 +22797,15 @@ class Main {
 
     _createClients() {
         if(global$1.disableImmersion) return;
-        googleDrive.init();
+        if(global$1.isEditor) googleDrive.init();
         readyPlayerMe.init(this._container);
     }
 
     _createAssets(projectFilePath) {
         if(!global$1.disableImmersion) {
-            this._menuController = new MenuController();
+            this._menuController = global$1.isEditor
+                ? new EditorMenuController()
+                : new LiveMenuController();
             this._menuController.addToScene(this._scene);
             global$1.menuController = this._menuController;
 
@@ -20628,7 +22828,7 @@ class Main {
             });
         } else {
             let ambientLight = new PrimitiveAmbientLight({
-                'enableInteractions': false,
+                'visualEdit': false,
             });
             projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
         }
@@ -20699,6 +22899,7 @@ class Main {
             this._dynamicAssets.push(pointerInteractableHandler);
             this._dynamicAssets.push(pubSub);
             this._dynamicAssets.push(ThreeMeshUI);
+            this._dynamicAssets.push(partyHandler);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "
@@ -20735,212 +22936,50 @@ class Main {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const HEIGHT = 0.05;
-const WIDTH = 0.31;
-const TITLE_WIDTH = 0.13;
-const FIELD_HEIGHT = 0.03;
-const FIELD_WIDTH = 0.13;
-const FIELD_MARGIN = 0.01;
-const FIELD_MAX_LENGTH = 9;
-const HSL = {};
-
-const STATE_COLORS = {};
-STATE_COLORS[InteractableStates.IDLE] = Colors.defaultIdle;
-STATE_COLORS[InteractableStates.HOVERED] = Colors.defaultHovered;
-STATE_COLORS[InteractableStates.SELECTED] = Colors.defaultHovered;
-
-class MaterialInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._setToSource = params['setToSource'];
-        this._lastValue =  params['initialValue'];
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInputs(title);
-        this._updateMaterial(this._lastValue);
+class PrimitiveMeshHelper extends AssetHelper {
+    constructor(asset) {
+        super(asset);
     }
 
-    _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT,
-            'width': WIDTH,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        menuFieldsMap['material'] = this._createMaterialInput({
+            'parameter': 'material',
+            'name': 'Material',
         });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT,
-            'width': TITLE_WIDTH,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._materialBlock = ThreeMeshUIHelper.createButtonBlock({
-            'text': ' ',
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT,
-            'width': FIELD_WIDTH,
-            'margin': FIELD_MARGIN,
-            'idleBackgroundColor': Colors.white,
-            'hoveredBackgroundColor': Colors.white,
-            'selectedBackgroundColor': Colors.white,
-            'idleOpacity': 0.9,
-            'hoveredOpacity': 1,
-            'selectedOpacity': 1,
-        });
-        this._editButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.pencilIcon,
-            'height': 0.03,
-            'width': 0.03,
-            'margin': 0,
-        });
-        this._object.add(titleBlock);
-        this._object.add(this._materialBlock);
-        this._object.add(this._editButton);
-        let interactable = new PointerInteractable(this._materialBlock, () => {
-            let materials = materialsHandler.getMaterials();
-            let filteredMaterials = {};
-            filteredMaterials["null\n"] = { Name: "Blank" };
-            for(let materialId in materials) {
-                filteredMaterials[materialId] =
-                    { Name: materials[materialId].getName() };
-            }
-            let page = global$1.menuController.getPage(MenuPages.ASSET_SELECT);
-            page.setContent(filteredMaterials, (materialId) => {
-                if(materialId == "null\n") materialId = null;
-                this._handleMaterialSelection(materialId);
-            }, () => {
-                this._selectNewMaterial();
-            });
-            global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
-        });
-        this._editInteractable = new PointerInteractable(this._editButton, () => {
-            if(!this._lastValue) return;
-            let material = materialsHandler.getMaterial(this._lastValue);
-            let materialPage = global$1.menuController.getPage(
-                MenuPages.MATERIAL);
-            materialPage.setMaterial(material);
-            global$1.menuController.pushPage(MenuPages.MATERIAL);
-        });
-        this._pointerInteractable.addChild(interactable);
-    }
-
-    _selectNewMaterial() {
-        let newMaterialPage = global$1.menuController.getPage(
-            MenuPages.NEW_MATERIAL);
-        newMaterialPage.setContent((material) => {
-            this._handleMaterialSelection(material.getId());
-            let materialPage = global$1.menuController.getPage(
-                MenuPages.MATERIAL);
-            materialPage.setMaterial(material);
-            global$1.menuController.pushPage(MenuPages.MATERIAL);
-        });
-        global$1.menuController.pushPage(MenuPages.NEW_MATERIAL);
-    }
-
-    _handleMaterialSelection(materialId) {
-        if(materialId == "null\n") materialId = null;
-        let preValue = this._lastValue;
-        this._setToSource(materialId);
-        this._updateMaterial(materialId);
-        global$1.menuController.back();
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id,
-            'targetOnlyMenu': true,
-        });
-        if(preValue == materialId) return;
-        undoRedoHandler.addAction(() => {
-            this._setToSource(preValue);
-            this._updateMaterial(preValue);
-        }, () => {
-            this._setToSource(materialId);
-            this._updateMaterial(materialId);
-        });
-    }
-
-    _updateMaterial(materialId) {
-        this._lastValue = materialId;
-        let material = materialsHandler.getMaterial(this._lastValue);
-        let materialName = material
-            ? material.getName()
-            : " ";
-        materialName = stringWithMaxLength(materialName, FIELD_MAX_LENGTH);
-        let textComponent = this._materialBlock.children[1];
-        textComponent.set({ content: materialName });
-        if(material) {
-            let color = material.getMaterial().color || Colors.white;
-            for(let interactableState in InteractableStates) {
-                let state = this._materialBlock.states[interactableState];
-                state.attributes.backgroundColor = color;
-            }
-            this._updateTextureAndColor(material.getSampleTexture(), color);
-            this._pointerInteractable.addChild(this._editInteractable);
-            this._editButton.visible = true;
-        } else {
-            for(let interactableState in InteractableStates) {
-                let state = this._materialBlock.states[interactableState];
-                state.attributes.backgroundColor =
-                    STATE_COLORS[interactableState];
-            }
-            this._updateTextureAndColor(null, Colors.defaultIdle);
-            this._pointerInteractable.removeChild(this._editInteractable);
-            this._editButton.visible = false;
-        }
-    }
-
-    _updateTextureAndColor(texture, color) {
-        if(this._materialBlock.backgroundTexture != texture)
-            this._materialBlock.set({ backgroundTexture: texture });
-        if(this._materialBlock.backgroundColor != color)
-            this._materialBlock.set({ backgroundColor: color });
-        this._materialBlock.backgroundColor.getHSL(HSL);
-        let fontColor = (!texture && HSL.l > 0.85)
-            ? Colors.black
-            : Colors.white;
-        if(this._materialBlock.children[1].fontColor != fontColor)
-            this._materialBlock.children[1].set({ fontColor: fontColor });
+        return menuFieldsMap;
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (material) =>{
-            if(this._lastValue == material.getId()) this.updateFromSource();
+        pubSub.subscribe(this._id, PubSubTopics$1.MATERIAL_DELETED, (e) => {
+            if(this._asset.getMaterial() == e.material.getId()) {
+                this._updateParameter('material', null, true);
+                this.updateMenuField('material');
+                if(e.undoRedoAction) {
+                    let undo = e.undoRedoAction.undo;
+                    e.undoRedoAction.undo = () => {
+                        undo();
+                        this._updateParameter('material', e.material.getId(),
+                            true);
+                        this.updateMenuField('material');
+                    };
+                }
+            }
         });
     }
 
     _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.MATERIAL_DELETED);
     }
 
-    getWidth() {
-        return WIDTH;
-    }
-
-    getHeight() {
-        return HEIGHT;
-    }
-
-    deactivate() {
-        //Required method
-    }
-
-    updateFromSource() {
-        if(!this._getFromSource) return;
-        this._updateMaterial(this._getFromSource());
-    }
-
-    addToScene(scene, interactableParent) {
-        this.updateFromSource();
+    addToScene(scene) {
+        super.addToScene(scene);
         this._addSubscriptions();
-        super.addToScene(scene, interactableParent);
     }
 
     removeFromScene() {
-        this._removeSubscriptions();
         super.removeFromScene();
+        this._removeSubscriptions();
     }
 }
 
@@ -20954,7 +22993,14 @@ class PrimitiveMesh extends Asset {
     constructor(params = {}) {
         super(params);
         this._material = params['material'];
-        this._addSubscriptions();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveMeshHelper(this);
+    }
+
+    _updateGeometry() {
+        console.error("PrimitiveMesh._updateGeometry() should be overridden");
     }
 
     _getMaterial() {
@@ -20965,25 +23011,9 @@ class PrimitiveMesh extends Asset {
         }
     }
 
-    _updateMaterial(materialId) {
-        if(materialId == this._material) return;
-        let wasTranslucent = this._mesh.material.userData['oldMaterial'];
-        if(wasTranslucent) this.returnTransparency();
-
-        this._material = materialId;
-        let oldMaterial = this._mesh.material;
-        let material = this._getMaterial();
-        this._mesh.material = material;
-        oldMaterial.dispose();
-
-        if(wasTranslucent) this.makeTranslucent();
-        pubSub.publish(this._id, PubSubTopics.INSTANCE_UPDATED, this);
-    }
-
-    clone(enableInteractablesOverride) {
-        let params = this._fetchCloneParams(enableInteractablesOverride);
-        let instance = new this.constructor(params);
-        return projectHandler.addPrimitive(instance);
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
+        return projectHandler.addShape(params, this._assetId);
     }
 
     exportParams() {
@@ -20992,39 +23022,68 @@ class PrimitiveMesh extends Asset {
         return params;
     }
 
+    getMaterial() {
+        return this._material;
+    }
+
+    setMaterial(newValue) {
+        if(newValue == this._material) return;
+        let wasTranslucent = this._mesh.material.userData['oldMaterial'];
+        if(wasTranslucent) this.returnTransparency();
+
+        this._material = newValue;
+        let oldMaterial = this._mesh.material;
+        let material = this._getMaterial();
+        this._mesh.material = material;
+        oldMaterial.dispose();
+
+        if(wasTranslucent) this.makeTranslucent();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$h = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
+    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
+    { "parameter": "depth", "name": "Depth", "min": 0, "type": NumberInput },
+    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveBoxHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$h);
+    }
+
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
-        menuFieldsMap['Material'] = new MaterialInput({
-            'title': 'Material',
-            'initialValue': this._material,
-            'getFromSource': () => { return this._material; },
-            'setToSource': (v) => { this._updateMaterial(v); },
-        });
-        return menuFieldsMap;
-    }
-
-    _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
-            if(this._material == e.material.getId()) {
-                this._updateMaterial(null);
-                if(e.undoRedoAction) {
-                    let undo = e.undoRedoAction.undo;
-                    e.undoRedoAction.undo = () => {
-                        undo();
-                        this._updateMaterial(e.material.getId());
-                    };
-                }
+        for(let field of FIELDS$h) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
             }
-        });
-    }
-
-    _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
-    }
-
-    dispose() {
-        this._removeSubscriptions();
-        super.dispose();
+        }
+        return menuFieldsMap;
     }
 }
 
@@ -21036,35 +23095,23 @@ class PrimitiveMesh extends Asset {
 
 const ASSET_ID$8 = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
 const ASSET_NAME$8 = 'Box';
-const FIELDS$8 = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
-    { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },
-    { "name": "Depth", "parameter": "_depth", "min": 0, "type": NumberInput },
-    { "name": "Width Segments", "parameter": "_widthSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Height Segments", "parameter": "_heightSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Depth Segments", "parameter": "_depthSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitiveBox extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID$8;
-        this._width = params['width'] || 0.1;
-        this._height = params['height'] || 0.1;
-        this._depth = params['depth'] || 0.1;
+        this._width = numberOr(params['width'], 0.1);
+        this._height = numberOr(params['height'], 0.1);
+        this._depth = numberOr(params['depth'], 0.1);
         this._widthSegments = params['widthSegments'] || 1;
         this._heightSegments = params['heightSegments'] || 1;
         this._depthSegments = params['depthSegments'] || 1;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveBoxHelper(this);
     }
 
     _createMesh() {
@@ -21082,11 +23129,6 @@ class PrimitiveBox extends PrimitiveMesh {
             this._depthSegments);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
-    }
-
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
     }
 
     exportParams() {
@@ -21100,32 +23142,65 @@ class PrimitiveBox extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$8);
+    getDepth() {
+        return this._depth;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$8) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getHeight() {
+        return this._height;
     }
 
+    getWidth() {
+        return this._width;
+    }
+
+    getDepthSegments() {
+        return this._depthSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getWidthSegments() {
+        return this._widthSegments;
+    }
+
+    setDepth(depth) {
+        if(this._depth == depth) return;
+        this._depth = depth;
+        this._updateGeometry();
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setWidth(width) {
+        if(this._width == width) return;
+        this._width = width;
+        this._updateGeometry();
+    }
+
+    setDepthSegments(depthSegments) {
+        if(this._depthSegments == depthSegments) return;
+        this._depthSegments = depthSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
 }
 
 projectHandler.registerShape(PrimitiveBox, ASSET_ID$8, ASSET_NAME$8);
@@ -21136,30 +23211,78 @@ projectHandler.registerShape(PrimitiveBox, ASSET_ID$8, ASSET_NAME$8);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const FIELDS$g = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "radius", "name": "Radius", "min": 0, "type": NumberInput },
+    { "parameter": "segments", "name": "Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
+        "type": NumberInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveCircleHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    place(intersection) {
+        let object = intersection.object;
+        let point = intersection.point;
+        intersection.face;
+        object.updateMatrixWorld();
+        let normal = intersection.face.normal.clone()
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(point);
+        this._object.lookAt(normal.add(this._object.position));
+        this.roundAttributes(true);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$g);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$g) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ASSET_ID$7 = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
 const ASSET_NAME$7 = 'Circle';
-const FIELDS$7 = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Radius", "parameter": "_radius", "min": 0, "type": NumberInput },
-    { "name": "Sides", "parameter": "_segments", "min": 3,
-        "type": NumberInput },
-    { "name": "Degrees", "parameter": "_thetaLength", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitiveCircle extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID$7;
-        this._radius = params['radius'] || 0.1;
+        this._radius = numberOr(params['radius'], 0.1);
         this._segments = params['segments'] || 32;
-        this._thetaLength = params['thetaLength'] || 360;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveCircleHelper(this);
     }
 
     _createMesh() {
@@ -21179,20 +23302,6 @@ class PrimitiveCircle extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes();
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['radius'] = this._radius;
@@ -21201,30 +23310,34 @@ class PrimitiveCircle extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$7);
+    getRadius() {
+        return this._radius;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$7) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getSegments() {
+        return this._segments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setSegments(segments) {
+        if(this._segments == segments) return;
+        this._segments = segments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
     }
 }
 
@@ -21236,39 +23349,73 @@ projectHandler.registerShape(PrimitiveCircle, ASSET_ID$7, ASSET_NAME$7);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const FIELDS$f = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "height", "name": "Height", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radius", "name": "Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radialSegments", "name": "Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
+        "type": NumberInput },
+    { "parameter": "openEnded", "name": "Open Ended", "type": CheckboxInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveConeHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$f);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$f) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ASSET_ID$6 = '42779f01-e2cc-495a-a4b3-b286197fa762';
 const ASSET_NAME$6 = 'Cone';
-const FIELDS$6 = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Height", "parameter": "_height", "min": 0,
-        "type": NumberInput },
-    { "name": "Radius", "parameter": "_radius", "min": 0,
-        "type": NumberInput },
-    { "name": "Sides", "parameter": "_radialSegments", "min": 3,
-        "type": NumberInput },
-    { "name": "Height Segments", "parameter": "_heightSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Degrees", "parameter": "_thetaLength", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "name": "Open Ended", "parameter": "_openEnded", "type": CheckboxInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitiveCone extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID$6;
-        this._height = params['height'] || 0.2;
-        this._radius = params['radius'] || 0.1;
+        this._height = numberOr(params['height'], 0.2);
+        this._radius = numberOr(params['radius'], 0.1);
         this._radialSegments = params['radialSegments'] || 32;
         this._heightSegments = params['heightSegments'] || 1;
-        this._thetaLength = params['thetaLength'] || 360;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
         this._openEnded = params['openEnded'] || false;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveConeHelper(this);
     }
 
     _createMesh() {
@@ -21288,11 +23435,6 @@ class PrimitiveCone extends PrimitiveMesh {
             thetaLength);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
-    }
-
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
     }
 
     exportParams() {
@@ -21306,43 +23448,65 @@ class PrimitiveCone extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$6);
+    getHeight() {
+        return this._height;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$6) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            } else if(field.type == CheckboxInput) {
-                let update = (value) => {
-                    this[field.parameter] = value;
-                    this._updateGeometry();
-                };
-                menuFieldsMap[field.name] = new CheckboxInput({
-                    'title': field.name,
-                    'initialValue': this[field.parameter],
-                    'setToSource': update,
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getRadius() {
+        return this._radius;
     }
 
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    getOpenEnded() {
+        return this._openEnded;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    setOpenEnded(openEnded) {
+        if(this._openEnded == openEnded) return;
+        this._openEnded = openEnded;
+        this._updateGeometry();
+    }
 }
 
 projectHandler.registerShape(PrimitiveCone, ASSET_ID$6, ASSET_NAME$6);
@@ -21353,42 +23517,76 @@ projectHandler.registerShape(PrimitiveCone, ASSET_ID$6, ASSET_NAME$6);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const FIELDS$e = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "height", "name": "Height", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radiusTop", "name": "Top Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radiusBottom", "name": "Bottom Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radialSegments", "name": "Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
+        "type": NumberInput },
+    { "parameter": "openEnded", "name": "Open Ended", "type": CheckboxInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveCylinderHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$e);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$e) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ASSET_ID$5 = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
 const ASSET_NAME$5 = 'Cylinder';
-const FIELDS$5 = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Height", "parameter": "_height", "min": 0,
-        "type": NumberInput },
-    { "name": "Top Radius", "parameter": "_radiusTop", "min": 0,
-        "type": NumberInput },
-    { "name": "Bottom Radius", "parameter": "_radiusBottom", "min": 0,
-        "type": NumberInput },
-    { "name": "Sides", "parameter": "_radialSegments", "min": 3,
-        "type": NumberInput },
-    { "name": "Height Segments", "parameter": "_heightSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Degrees", "parameter": "_thetaLength", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "name": "Open Ended", "parameter": "_openEnded", "type": CheckboxInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitiveCylinder extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID$5;
-        this._height = params['height'] || 0.2;
-        this._radiusTop = params['radiusTop'] || 0.1;
-        this._radiusBottom = params['radiusBottom'] || 0.1;
+        this._height = numberOr(params['height'], 0.2);
+        this._radiusTop = numberOr(params['radiusTop'], 0.1);
+        this._radiusBottom = numberOr(params['radiusBottom'], 0.1);
         this._radialSegments = params['radialSegments'] || 32;
         this._heightSegments = params['heightSegments'] || 1;
-        this._thetaLength = params['thetaLength'] || 360;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
         this._openEnded = params['openEnded'] || false;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveCylinderHelper(this);
     }
 
     _createMesh() {
@@ -21408,11 +23606,6 @@ class PrimitiveCylinder extends PrimitiveMesh {
             this._heightSegments, this._openEnded, 0, thetaLength);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
-    }
-
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
     }
 
     exportParams() {
@@ -21427,41 +23620,74 @@ class PrimitiveCylinder extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$5);
+    getHeight() {
+        return this._height;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$5) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            } else if(field.type == CheckboxInput) {
-                let update = (value) => {
-                    this[field.parameter] = value;
-                    this._updateGeometry();
-                };
-                menuFieldsMap[field.name] = new CheckboxInput({
-                    'title': field.name,
-                    'initialValue': this[field.parameter],
-                    'setToSource': update,
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getRadiusTop() {
+        return this._radiusTop;
+    }
+
+    getRadiusBottom() {
+        return this._radiusBottom;
+    }
+
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    getOpenEnded() {
+        return this._openEnded;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setRadiusTop(radiusTop) {
+        if(this._radiusTop == radiusTop) return;
+        this._radiusTop = radiusTop;
+        this._updateGeometry();
+    }
+
+    setRadiusBottom(radiusBottom) {
+        if(this._radiusBottom == radiusBottom) return;
+        this._radiusBottom = radiusBottom;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    setOpenEnded(openEnded) {
+        if(this._openEnded == openEnded) return;
+        this._openEnded = openEnded;
+        this._updateGeometry();
     }
 
 }
@@ -21474,32 +23700,80 @@ projectHandler.registerShape(PrimitiveCylinder, ASSET_ID$5, ASSET_NAME$5);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const FIELDS$d = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
+    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
+    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitivePlaneHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    place(intersection) {
+        let object = intersection.object;
+        let point = intersection.point;
+        intersection.face;
+        object.updateMatrixWorld();
+        let normal = intersection.face.normal.clone()
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(point);
+        this._object.lookAt(normal.add(this._object.position));
+        this.roundAttributes(true);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$d);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$d) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ASSET_ID$4 = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
 const ASSET_NAME$4 = 'Plane';
-const FIELDS$4 = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Width", "parameter": "_width", "min": 0, "type": NumberInput },
-    { "name": "Height", "parameter": "_height", "min": 0, "type": NumberInput },
-    { "name": "Width Segments", "parameter": "_widthSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Height Segments", "parameter": "_heightSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitivePlane extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID$4;
-        this._width = params['width'] || 0.1;
-        this._height = params['height'] || 0.1;
+        this._width = numberOr(params['width'], 0.1);
+        this._height = numberOr(params['height'], 0.1);
         this._widthSegments = params['widthSegments'] || 1;
         this._heightSegments = params['heightSegments'] || 1;
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitivePlaneHelper(this);
     }
 
     _createMesh() {
@@ -21515,20 +23789,6 @@ class PrimitivePlane extends PrimitiveMesh {
             this._widthSegments, this._heightSegments);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
-    }
-
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes();
     }
 
     exportParams() {
@@ -21540,32 +23800,45 @@ class PrimitivePlane extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$4);
+    getHeight() {
+        return this._height;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$4) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getWidth() {
+        return this._width;
     }
 
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getWidthSegments() {
+        return this._widthSegments;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setWidth(width) {
+        if(this._width == width) return;
+        this._width = width;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
 }
 
 projectHandler.registerShape(PrimitivePlane, ASSET_ID$4, ASSET_NAME$4);
@@ -21576,115 +23849,110 @@ projectHandler.registerShape(PrimitivePlane, ASSET_ID$4, ASSET_NAME$4);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const ASSET_ID$3 = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
-const ASSET_NAME$3 = 'Basic Light';
-const FIELDS$3 = [
-    { "name": "Visually Edit" },
-    { "name": "Color", "parameter": "color", "type": ColorInput },
-    { "name": "Intensity", "parameter": "_intensity", "min": 0,
+const FIELDS$c = [
+    { "parameter": "visualEdit" },
+    { "parameter": "color" },
+    { "parameter": "intensity" },
+    { "parameter": "distance", "name": "Distance", "min": 0,
         "type": NumberInput },
-    { "name": "Distance", "parameter": "_distance", "min": 0,
+    { "parameter": "decay", "name": "Decay", "min": 0,
         "type": NumberInput },
-    { "name": "Decay", "parameter": "_decay", "min": 0,
-        "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
 ];
 
-class PrimitivePointLight extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._assetId = ASSET_ID$3;
-        this._color = params['color'] || 0xffffff;
-        this._intensity = params['intensity'] || 1;
-        this._distance = params['distance'] || 0;
-        this._decay = params['decay'] || 1;
-        this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
+class PrimitivePointLightHelper extends PrimitiveLightHelper {
+    constructor(asset) {
+        super(asset);
     }
 
     _createMesh() {
-        this._light = new THREE.PointLight(this._color, this._intensity,
-            this._distance, this._decay);
-        this._object.add(this._light);
-
         let geometry = new THREE.SphereGeometry(0.07);
         let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
         this._mesh = new THREE.Mesh(geometry, material);
-        if(this.enableInteractables) this._object.add(this._mesh);
+        if(this._asset.visualEdit) this._object.add(this._mesh);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$c);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$c) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const ASSET_ID$3 = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
+const ASSET_NAME$3 = 'Basic Light';
+
+class PrimitivePointLight extends PrimitiveLight {
+    constructor(params = {}) {
+        super(params);
+        this._assetId = ASSET_ID$3;
+        this._distance = numberOr(params['distance'], 0);
+        this._decay = numberOr(params['decay'], 2);
+        this._createLight();
+        if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitivePointLightHelper(this);
+    }
+
+    _createLight() {
+        this._light = new THREE.PointLight(this._color, this._intensity,
+            this._distance, this._decay);
+        this._object.add(this._light);
     }
 
     _updateLight() {
-        this._light.intensity = this._intensity;
+        super._updateLight();
         this._light.distance = this._distance;
         this._light.decay = this._decay;
     }
 
-    _updateInteractable(isInteractable) {
-        if(isInteractable) {
-            this._object.add(this._mesh);
-        } else {
-            this._object.remove(this._mesh);
-            fullDispose(this._mesh);
-        }
-        super._updateInteractable(isInteractable);
-    }
-
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
-    clone(enableInteractablesOverride) {
-        let params = this._fetchCloneParams(enableInteractablesOverride);
-        let instance = new PrimitivePointLight(params);
-        return projectHandler.addPrimitive(instance);
-    }
-
     exportParams() {
         let params = super.exportParams();
-        params['color'] = this._light.color.getHex();
-        params['intensity'] = this._intensity;
         params['distance'] = this._distance;
         params['decay'] = this._decay;
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$3);
+    getDistance() {
+        return this._distance;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$3) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateLight();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            } else if(field.type == ColorInput) {
-                menuFieldsMap[field.name] = new ColorInput({
-                    'title': 'Color',
-                    'initialValue': this._light.color,
-                    'onUpdate': (color) => {
-                        this._light.color.set(color);
-                    }
-                });
-            }
-        }
-        return menuFieldsMap;
+    getDecay() {
+        return this._decay;
     }
 
+    setDistance(distance) {
+        if(this._distance == distance) return;
+        this._distance = distance;
+        this._light.distance = distance;
+    }
+
+    setDecay(decay) {
+        if(this._decay == decay) return;
+        this._decay = decay;
+        this._light.decay = decay;
+    }
 }
 
 projectHandler.registerLight(PrimitivePointLight, ASSET_ID$3, ASSET_NAME$3);
@@ -21695,37 +23963,85 @@ projectHandler.registerLight(PrimitivePointLight, ASSET_ID$3, ASSET_NAME$3);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const FIELDS$b = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "thetaSegments", "name": "Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "phiSegments", "name": "Radius Segments", "min": 1,
+        "type": NumberInput },
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
+        "type": NumberInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveRingHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    place(intersection) {
+        let object = intersection.object;
+        let point = intersection.point;
+        intersection.face;
+        object.updateMatrixWorld();
+        let normal = intersection.face.normal.clone()
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(point);
+        this._object.lookAt(normal.add(this._object.position));
+        this.roundAttributes(true);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$b);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$b) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ASSET_ID$2 = '534f29c3-1e85-4510-bb84-459011de6722';
 const ASSET_NAME$2 = 'Ring';
-const FIELDS$2 = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Inner Radius", "parameter": "_innerRadius", "min": 0,
-        "type": NumberInput },
-    { "name": "Outer Radius", "parameter": "_outerRadius", "min": 0,
-        "type": NumberInput },
-    { "name": "Sides", "parameter": "_thetaSegments", "min": 3,
-        "type": NumberInput },
-    { "name": "Radius Segments", "parameter": "_phiSegments", "min": 1,
-        "type": NumberInput },
-    { "name": "Degrees", "parameter": "_thetaLength", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitiveRing extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID$2;
-        this._innerRadius = params['innerRadius'] || 0.05;
-        this._outerRadius = params['outerRadius'] || 0.1;
+        this._innerRadius = numberOr(params['innerRadius'], 0.05);
+        this._outerRadius = numberOr(params['outerRadius'], 0.1);
         this._thetaSegments = params['thetaSegments'] || 32;
         this._phiSegments = params['phiSegments'] || 1;
-        this._thetaLength = params['thetaLength'] || 360;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveRingHelper(this);
     }
 
     _createMesh() {
@@ -21745,20 +24061,6 @@ class PrimitiveRing extends PrimitiveMesh {
             thetaLength);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
-    }
-
-    place(intersection) {
-        let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
-        object.updateMatrixWorld();
-        let normal = intersection.face.normal.clone()
-            .transformDirection(object.matrixWorld);
-        this._object.position.copy(normal)
-            .clampLength(0, 0.001)
-            .add(point);
-        this._object.lookAt(normal.add(this._object.position));
-        this.roundAttributes();
     }
 
     exportParams() {
@@ -21771,32 +24073,55 @@ class PrimitiveRing extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$2);
+    getInnerRadius() {
+        return this._innerRadius;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$2) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getOuterRadius() {
+        return this._outerRadius;
     }
 
+    getThetaSegments() {
+        return this._thetaSegments;
+    }
+
+    getPhiSegments() {
+        return this._phiSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setInnerRadius(innerRadius) {
+        if(this._innerRadius == innerRadius) return;
+        this._innerRadius = innerRadius;
+        this._updateGeometry();
+    }
+
+    setOuterRadius(outerRadius) {
+        if(this._outerRadius == outerRadius) return;
+        this._outerRadius = outerRadius;
+        this._updateGeometry();
+    }
+
+    setThetaSegments(thetaSegments) {
+        if(this._thetaSegments == thetaSegments) return;
+        this._thetaSegments = thetaSegments;
+        this._updateGeometry();
+    }
+
+    setPhiSegments(phiSegments) {
+        if(this._phiSegments == phiSegments) return;
+        this._phiSegments = phiSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
 }
 
 projectHandler.registerShape(PrimitiveRing, ASSET_ID$2, ASSET_NAME$2);
@@ -21807,37 +24132,71 @@ projectHandler.registerShape(PrimitiveRing, ASSET_ID$2, ASSET_NAME$2);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const FIELDS$a = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "radius", "name": "Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "heightSegments", "name": "Vertical Sides", "min": 2,
+        "type": NumberInput },
+    { "parameter": "phiLength", "name": "Horizontal Degrees", "min": 0,
+        "max": 360, "type": NumberInput },
+    { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
+        "max": 180, "type": NumberInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveSphereHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$a);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$a) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ASSET_ID$1 = '423c9506-52f4-4725-b848-69913cce2b00';
 const ASSET_NAME$1 = 'Sphere';
-const FIELDS$1 = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Radius", "parameter": "_radius", "min": 0,
-        "type": NumberInput },
-    { "name": "Horizontal Sides", "parameter": "_widthSegments", "min": 3,
-        "type": NumberInput },
-    { "name": "Vertical Sides", "parameter": "_heightSegments", "min": 2,
-        "type": NumberInput },
-    { "name": "Horizontal Degrees", "parameter": "_phiLength", "min": 0,
-        "max": 360, "type": NumberInput },
-    { "name": "Vertical Degrees", "parameter": "_thetaLength", "min": 0,
-        "max": 180, "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitiveSphere extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID$1;
-        this._radius = params['radius'] || 0.1;
+        this._radius = numberOr(params['radius'], 0.1);
         this._widthSegments = params['widthSegments'] || 32;
         this._heightSegments = params['heightSegments'] || 16;
-        this._phiLength = params['phiLength'] || 360;
-        this._thetaLength = params['thetaLength'] || 180;
+        this._phiLength = numberOr(params['phiLength'], 360);
+        this._thetaLength = numberOr(params['thetaLength'], 180);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveSphereHelper(this);
     }
 
     _createMesh() {
@@ -21859,11 +24218,6 @@ class PrimitiveSphere extends PrimitiveMesh {
             thetaLength);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
-    }
-
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
     }
 
     exportParams() {
@@ -21876,32 +24230,55 @@ class PrimitiveSphere extends PrimitiveMesh {
         return params;
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS$1);
+    getRadius() {
+        return this._radius;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS$1) {
-            if(field.name in menuFieldsMap) {
-                continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
-            }
-        }
-        return menuFieldsMap;
+    getWidthSegments() {
+        return this._widthSegments;
     }
 
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getPhiLength() {
+        return this._phiLength;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setPhiLength(phiLength) {
+        if(this._phiLength == phiLength) return;
+        this._phiLength = phiLength;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
 }
 
 projectHandler.registerShape(PrimitiveSphere, ASSET_ID$1, ASSET_NAME$1);
@@ -21912,37 +24289,71 @@ projectHandler.registerShape(PrimitiveSphere, ASSET_ID$1, ASSET_NAME$1);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const FIELDS$9 = [
+    { "parameter": "visualEdit" },
+    { "parameter": "material" },
+    { "parameter": "radius", "name": "Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "tube", "name": "Tube Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radialSegments", "name": "Radial Sides", "min": 2,
+        "type": NumberInput },
+    { "parameter": "tubularSegments", "name": "Tubular Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
+        "type": NumberInput },
+    { "parameter": "position" },
+    { "parameter": "rotation" },
+    { "parameter": "scale" },
+];
+
+class PrimitiveTorusHelper extends PrimitiveMeshHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$9);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$9) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
 const ASSET_NAME = 'Torus';
-const FIELDS = [
-    { "name": "Visually Edit" },
-    { "name": "Material" },
-    { "name": "Radius", "parameter": "_radius", "min": 0,
-        "type": NumberInput },
-    { "name": "Tube Radius", "parameter": "_tube", "min": 0,
-        "type": NumberInput },
-    { "name": "Radial Sides", "parameter": "_radialSegments", "min": 2,
-        "type": NumberInput },
-    { "name": "Tubular Sides", "parameter": "_tubularSegments", "min": 3,
-        "type": NumberInput },
-    { "name": "Degrees", "parameter": "_arc", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "name": "Position" },
-    { "name": "Rotation" },
-    { "name": "Scale" },
-];
 
 class PrimitiveTorus extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
-        this._radius = params['radius'] || 0.1;
-        this._tube = params['tube'] || 0.05;
+        this._radius = numberOr(params['radius'], 0.1);
+        this._tube = numberOr(params['tube'], 0.05);
         this._radialSegments = params['radialSegments'] || 16;
         this._tubularSegments = params['tubularSegments'] || 32;
-        this._arc = params['arc'] || 360;
+        this._arc = numberOr(params['arc'], 360);
         this._createMesh();
         if(params['isPreview']) this.makeTranslucent();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PrimitiveTorusHelper(this);
     }
 
     _createMesh() {
@@ -21962,11 +24373,6 @@ class PrimitiveTorus extends PrimitiveMesh {
         oldGeometry.dispose();
     }
 
-    place(intersection) {
-        //TODO: Depenetrate from the face using normal and bounding box
-        super.place(intersection);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['radius'] = this._radius;
@@ -21977,6 +24383,2343 @@ class PrimitiveTorus extends PrimitiveMesh {
         return params;
     }
 
+    getRadius() {
+        return this._radius;
+    }
+
+    getTube() {
+        return this._tube;
+    }
+
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getTubularSegments() {
+        return this._tubularSegments;
+    }
+
+    getArc() {
+        return this._arc;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setTube(tube) {
+        if(this._tube == tube) return;
+        this._tube = tube;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setTubularSegments(tubularSegments) {
+        if(this._tubularSegments == tubularSegments) return;
+        this._tubularSegments = tubularSegments;
+        this._updateGeometry();
+    }
+
+    setArc(arc) {
+        if(this._arc == arc) return;
+        this._arc = arc;
+        this._updateGeometry();
+    }
+
+}
+
+projectHandler.registerShape(PrimitiveTorus, ASSET_ID, ASSET_NAME);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$8 = [
+    { "parameter": "transparent", "name": "Transparent", "type": CheckboxInput},
+    { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
+        "type": NumberInput },
+    { "parameter": "side", "name": "Display", "type": EnumInput,
+        "options": [ "Front Side", "Back Side", "Both Sides" ],
+        "map": SIDE_MAP, "reverseMap": REVERSE_SIDE_MAP },
+];
+
+class MaterialHelper extends EditorHelper {
+    constructor(asset) {
+        super(asset, PubSubTopics$1.MATERIAL_UPDATED);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$8) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+
+    _addSubscriptions() {
+        let maps = this._asset.getMaps();
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_DELETED, (e) => {
+            let updatedMaps = [];
+            for(let map of maps) {
+                let capitalizedMap = capitalizeFirstLetter(map);
+                if(this._asset['get' + capitalizedMap]() == e.texture.getId()) {
+                    this._updateParameter(map, null, true);
+                    this.updateMenuField(map);
+                    updatedMaps.push(map);
+                }
+            }
+            if(e.undoRedoAction && updatedMaps.length > 0) {
+                let undo = e.undoRedoAction.undo;
+                e.undoRedoAction.undo = () => {
+                    undo();
+                    for(let map of updatedMaps) {
+                        this._updateParameter(map, e.texture.getId(), true);
+                        this.updateMenuField(map);
+                    }
+                };
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED, (message) => {
+            let textureId = message.asset.getId();
+            for(let map of maps) {
+                let capitalizedMap = capitalizeFirstLetter(map);
+                if(this._asset['get' + capitalizedMap]() == textureId) {
+                    this._asset._setTexture(map, textureId);
+                    this.updateMenuField(map);
+                }
+            }
+        });
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_DELETED);
+        pubSub.unsubscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED);
+    }
+
+    dispose() {
+        this._removeSubscriptions();
+    }
+
+    undoDispose() {
+        this._addSubscriptions();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class Material {
+    constructor(params = {}) {
+        this._id = params['id'] || uuidv4();
+        this._name = ('name' in params)
+            ? params['name']
+            : this._getDefaultName();
+        this._opacity = numberOr(params['opacity'], 1);
+        this._side = params['side'] || THREE.FrontSide;
+        this._transparent = params['transparent'] || false;
+        if(global$1.isEditor) this._createEditorHelper();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new MaterialHelper(this);
+    }
+
+    _getDefaultName() {
+        console.error("Material._getDefaultName() should be overridden");
+        return;
+    }
+
+    _createMaterial() {
+        console.error("Material._createMaterial() should be overridden");
+        return;
+    }
+
+    _setTexture(param, newValue) {
+        this['_' + param] = newValue;
+        let texture = texturesHandler.getTexture(newValue);
+        this._material[param] = (texture)
+            ? texture.getTexture()
+            : null;
+        this._material.needsUpdate = true;
+    }
+
+    exportParams() {
+        return {
+            "id": this._id,
+            "name": this._name,
+            "opacity": this._material.opacity,
+            "side": this._material.side,
+            "transparent": this._material.transparent,
+        };
+    }
+
+    _updateMaterialParamsWithMaps(params, maps) {
+        for(let map of maps) {
+            if(this['_' + map]) {
+                let texture = texturesHandler.getTexture(this['_' + map]);
+                if(texture) params[map] = texture.getTexture();
+            }
+        }
+    }
+
+    dispose() {
+        disposeMaterial(this._material);
+        if(global$1.isEditor) this._editorHelper.dispose();
+    }
+
+    undoDispose() {
+        if(global$1.isEditor) this._editorHelper.undoDispose();
+    }
+
+    getMaps() {
+        console.error("Material.getMaps() should be overridden");
+        return;
+    }
+
+    getMaterial() {
+        return this._material;
+    }
+
+    getMaterialType() {
+        console.error("Material.getMaterialType() should be overridden");
+        return;
+    }
+
+    getSampleTexture() {
+        console.error("Material.getSampleTexture() should be overridden");
+        return;
+    }
+
+    getId() {
+        return this._id;
+    }
+
+    getEditorHelper() {
+        return this._editorHelper;
+    }
+
+    getName() {
+        return this._name;
+    }
+
+    getOpacity() {
+        return this._opacity;
+    }
+
+    getSide() {
+        return this._side;
+    }
+
+    getTransparent() {
+        return this._transparent;
+    }
+
+    setName(name) {
+        if(name == null || this._name == name) return;
+        this._name = name;
+    }
+
+    setOpacity(opacity) {
+        if(this._opacity == opacity) return;
+        this._opacity = opacity;
+        this._material.opacity = opacity;
+    }
+
+    setSide(side) {
+        if(this._side == side) return;
+        this._side = side;
+        this._material.side = side;
+        this._material.needsUpdate = true;
+    }
+
+    setTransparent(transparent) {
+        if(this._transparent == transparent) return;
+        this._transparent = transparent;
+        this._material.transparent = transparent;
+        this._material.needsUpdate = true;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$7 = [
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "map","name": "Texture Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "alphaMap","name": "Alpha Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "envMap","name": "Environment Map",
+        "filter": TextureTypes.CUBE, "type": TextureInput },
+    { "parameter": "combine","name": "Color & Environment Blend",
+        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
+        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
+    { "parameter": "reflectivity","name": "Reflectivity",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "refractionRatio","name": "Refraction Ratio",
+        "min": 0, "max": 1, "type": NumberInput },
+];
+
+class BasicMaterialHelper$1 extends MaterialHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$7);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$7) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const MAPS$5 = ["map", "alphaMap", "envMap"];
+
+class BasicMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this._alphaMap = params['alphaMap'];
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._combine = params['combine'] || THREE.MultiplyOperation;
+        this._envMap = params['envMap'];
+        this._map = params['map'];
+        this._reflectivity = numberOr(params['reflectivity'], 1);
+        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new BasicMaterialHelper$1(this);
+    }
+
+    _getDefaultName() {
+        return "Basic Material";
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "color": this._color,
+            "combine": this._combine,
+            "reflectivity": this._reflectivity,
+            "refractionRatio": this._refractionRatio,
+            "side": this._side,
+            "transparent": this._transparent,
+            "opacity": this._opacity,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS$5);
+        this._material = new THREE.MeshBasicMaterial(materialParams);
+    }
+
+    getMaps() {
+        return MAPS$5;
+    }
+
+    getMaterialType() {
+        return MaterialTypes.BASIC;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['color'] = this._color;
+        params['combine'] = this._combine;
+        params['envMap'] = this._envMap;
+        params['map'] = this._map;
+        params['reflectivity'] = this._reflectivity;
+        params['refractionRatio'] = this._refractionRatio;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getCombine() {
+        return this._combine;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getReflectivity() {
+        return this._reflectivity;
+    }
+
+    getRefractionRatio() {
+        return this._refractionRatio;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setCombine(combine) {
+        if(this._combine == combine) return;
+        this._combine = combine;
+        this._material.combine = combine;
+        this._material.needsUpdate = true;
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setReflectivity(reflectivity) {
+        if(this._reflectivity == reflectivity) return;
+        this._reflectivity = reflectivity;
+        this._material.reflectivity = reflectivity;
+    }
+
+    setRefractionRatio(refractionRatio) {
+        if(this._refractionRatio == refractionRatio) return;
+        this._refractionRatio = refractionRatio;
+        this._material.refractionRatio = refractionRatio;
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+}
+
+materialsHandler.registerMaterial(BasicMaterial, MaterialTypes.BASIC);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$6 = [
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "map","name": "Texture Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "alphaMap","name": "Alpha Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
+    { "parameter": "emissiveMap","name": "Emissive Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "emissiveIntensity","name": "Emissive Intensity",
+        "min": 0, "type": NumberInput },
+    { "parameter": "envMap","name": "Environment Map",
+        "filter": TextureTypes.CUBE, "type": TextureInput },
+    { "parameter": "combine","name": "Color & Environment Blend",
+        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
+        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
+    { "parameter": "reflectivity","name": "Reflectivity",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "refractionRatio","name": "Refraction Ratio",
+        "min": 0, "max": 1, "type": NumberInput },
+];
+
+class LambertMaterialHelper extends MaterialHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$6);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$6) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const MAPS$4 = ["map", "alphaMap", "emissiveMap", "envMap"];
+
+class LambertMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this._alphaMap = params['alphaMap'];
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._combine = params['combine'] || THREE.MultiplyOperation;
+        this._emissive = params['emissive'] || 0x000000;
+        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
+        this._emissiveMap = params['emissiveMap'];
+        this._envMap = params['envMap'];
+        this._map = params['map'];
+        this._reflectivity = numberOr(params['reflectivity'], 1);
+        this._refractionRatio = numberOr(params['refractionRatio'], 0.98);
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new LambertMaterialHelper(this);
+    }
+
+    _getDefaultName() {
+        return "Lambert Material";
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "color": this._color,
+            "combine": this._combine,
+            "emissive": this._emissive,
+            "emissiveIntensity": this._emissiveIntensity,
+            "opacity": this._opacity,
+            "reflectivity": this._reflectivity,
+            "refractionRatio": this._refractionRatio,
+            "side": this._side,
+            "transparent": this._transparent,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS$4);
+        this._material = new THREE.MeshLambertMaterial(materialParams);
+    }
+
+    getMaps() {
+        return MAPS$4;
+    }
+
+    getMaterialType() {
+        return MaterialTypes.LAMBERT;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['color'] = this._color;
+        params['combine'] = this._combine;
+        params['emissive'] = this._emissive;
+        params['emissiveIntensity'] = this._emissiveIntensity;
+        params['emissiveMap'] = this._emissiveMap;
+        params['envMap'] = this._envMap;
+        params['map'] = this._map;
+        params['reflectivity'] = this._reflectivity;
+        params['refractionRatio'] = this._refractionRatio;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getCombine() {
+        return this._combine;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getReflectivity() {
+        return this._reflectivity;
+    }
+
+    getRefractionRatio() {
+        return this._refractionRatio;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setCombine(combine) {
+        if(this._combine == combine) return;
+        this._combine = combine;
+        this._material.combine = combine;
+        this._material.needsUpdate = true;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setReflectivity(reflectivity) {
+        if(this._reflectivity == reflectivity) return;
+        this._reflectivity = reflectivity;
+        this._material.reflectivity = reflectivity;
+    }
+
+    setRefractionRatio(refractionRatio) {
+        if(this._refractionRatio == refractionRatio) return;
+        this._refractionRatio = refractionRatio;
+        this._material.refractionRatio = refractionRatio;
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+}
+
+materialsHandler.registerMaterial(LambertMaterial, MaterialTypes.LAMBERT);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$5 = [
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "flatShading","name": "Flat Shading",
+        "type": CheckboxInput },
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "bumpMap","name": "Bump Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "bumpScale","name": "Bump Scale",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "displacementMap","name": "Displacement Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "displacementScale","name": "Displacement Scale",
+        "type": NumberInput },
+    { "parameter": "displacementBias","name": "Displacement Bias",
+        "type": NumberInput },
+    { "parameter": "normalMap","name": "Normal Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "normalMapType","name": "Normal Type",
+        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
+        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
+    { "parameter": "normalScale","name": "Normal Scale",
+        "min": 0, "max": 1, "type": Vector2Input },
+];
+
+class NormalMaterialHelper extends MaterialHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$5);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$5) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const MAPS$3 = ["bumpMap", "displacementMap", "normalMap"];
+
+class NormalMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this._bumpMap = params['bumpMap'];
+        this._bumpScale = numberOr(params['bumpScale'], 1);
+        this._displacementMap = params['displacementMap'];
+        this._displacementScale = numberOr(params['displacementScale'], 1);
+        this._displacementBias = numberOr(params['displacementBias'], 0);
+        this._flatShading = params['flatShading'] || false;
+        this._normalMap = params['normalMap'];
+        this._normalMapType = params['normalMapType']
+            || THREE.TangentSpaceNormalMap;
+        this._normalScale = params['normalScale'] || [1,1];
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new NormalMaterialHelper(this);
+    }
+
+    _getDefaultName() {
+        return "Normal Material";
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "bumpScale": this._bumpScale,
+            "displacementScale": this._displacementScale,
+            "displacementBias": this._displacementBias,
+            "flatShading": this._flatShading,
+            "normalMapType": this._normalMapType,
+            "normalScale": new THREE.Vector2().fromArray(this._normalScale),
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS$3);
+        this._material = new THREE.MeshNormalMaterial(materialParams);
+    }
+
+    getMaps() {
+        return MAPS$3;
+    }
+
+    getMaterialType() {
+        return MaterialTypes.NORMAL;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['bumpMap'] = this._bumpMap;
+        params['bumpScale'] = this._bumpScale;
+        params['displacementBias'] = this._displacementBias;
+        params['displacementMap'] = this._displacementMap;
+        params['displacementScale'] = this._displacementScale;
+        params['flatShading'] = this._flatShading;
+        params['normalMap'] = this._normalMap;
+        params['normalMapType'] = this._normalMapType;
+        params['normalScale'] = this._normalScale;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getFlatShading() {
+        return this._flatShading;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setFlatShading(flatShading) {
+        if(this._flatShading == flatShading) return;
+        this._flatShading = flatShading;
+        this._material.flatShading = flatShading;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        if(this._normalScale == normalScale) return;
+        this._normalScale = normalScale;
+        this._material.normalScale.fromArray(normalScale);
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+}
+
+materialsHandler.registerMaterial(NormalMaterial, MaterialTypes.NORMAL);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$4 = [
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "map","name": "Texture Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "alphaMap","name": "Alpha Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "flatShading","name": "Flat Shading",
+        "type": CheckboxInput },
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "bumpMap","name": "Bump Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "bumpScale","name": "Bump Scale",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "displacementMap","name": "Displacement Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "displacementScale","name": "Displacement Scale",
+        "type": NumberInput },
+    { "parameter": "displacementBias","name": "Displacement Bias",
+        "type": NumberInput },
+    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
+    { "parameter": "emissiveMap","name": "Emissive Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "emissiveIntensity","name": "Emissive Intensity",
+        "min": 0, "type": NumberInput },
+    { "parameter": "envMap","name": "Environment Map",
+        "filter": TextureTypes.CUBE, "type": TextureInput },
+    { "parameter": "combine","name": "Environment-Color Blend",
+        "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
+        "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
+    { "parameter": "reflectivity","name": "Reflectivity",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "refractionRatio","name": "Refraction Ratio",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "normalMap","name": "Normal Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "normalMapType","name": "Normal Type",
+        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
+        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
+    { "parameter": "normalScale","name": "Normal Scale",
+        "min": 0, "max": 1, "type": Vector2Input },
+    { "parameter": "shininess", "name": "Shininess", "min": 0,
+        "type": NumberInput },
+    { "parameter": "specular", "name": "Specular Color", "type": ColorInput },
+    { "parameter": "specularMap","name": "Specular Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+];
+
+class PhongMaterialHelper extends MaterialHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$4);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$4) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const MAPS$2 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "normalMap", "specularMap"];
+
+class PhongMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this._alphaMap = params['alphaMap'];
+        this._bumpMap = params['bumpMap'];
+        this._bumpScale = numberOr(params['bumpScale'], 1);
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._combine = params['combine']
+            || THREE.MultiplyOperation;
+        this._displacementMap = params['displacementMap'];
+        this._displacementScale = numberOr(params['displacementScale'], 1);
+        this._displacementBias = numberOr(params['displacementBias'], 0);
+        this._emissive = params['emissive'] || 0x000000;
+        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
+        this._emissiveMap = params['emissiveMap'];
+        this._envMap = params['envMap'];
+        this._flatShading = params['flatShading'] || false;
+        this._map = params['map'];
+        this._normalMap = params['normalMap'];
+        this._normalMapType = params['normalMapType']
+            || THREE.TangentSpaceNormalMap;
+        this._normalScale = params['normalScale'] || [1,1];
+        this._reflectivity = numberOr(params['reflectivity'], 1);
+        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
+        this._shininess = numberOr(params['shininess'], 30);
+        this._specular = numberOr(params['specular'], 0x111111);
+        this._specularMap = params['specularMap'];
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new PhongMaterialHelper(this);
+    }
+
+    _getDefaultName() {
+        return "Phong Material";
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "color": this._color,
+            "bumpScale": this._bumpScale,
+            "combine": this._combine,
+            "displacementScale": this._displacementScale,
+            "displacementBias": this._displacementBias,
+            "emissive": this._emissive,
+            "emissiveIntensity": this._emissiveIntensity,
+            "flatShading": this._flatShading,
+            "normalMapType": this._normalMapType,
+            "normalScale": this._normalScale,
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
+            "reflectivity": this._reflectivity,
+            "refractionRatio": this._refractionRatio,
+            "shininess": this._shininess,
+            "specular": this._specular,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS$2);
+        this._material = new THREE.MeshPhongMaterial(materialParams);
+    }
+
+    getMaps() {
+        return MAPS$2;
+    }
+
+    getMaterialType() {
+        return MaterialTypes.PHONG;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['bumpMap'] = this._bumpMap;
+        params['bumpScale'] = this._bumpScale;
+        params['color'] = this._color;
+        params['combine'] = this._combine;
+        params['displacementMap'] = this._displacementMap;
+        params['displacementScale'] = this._displacementScale;
+        params['displacementBias'] = this._displacementBias;
+        params['emissive'] = this._emissive;
+        params['emissiveIntensity'] = this._emissiveIntensity;
+        params['emissiveMap'] = this._emissiveMap;
+        params['envMap'] = this._envMap;
+        params['flatShading'] = this._flatShading;
+        params['map'] = this._map;
+        params['normalMap'] = this._normalMap;
+        params['normalMapType'] = this._normalMapType;
+        params['normalScale'] = this._normalScale;
+        params['reflectivity'] = this._reflectivity;
+        params['refractionRatio'] = this._refractionRatio;
+        params['shininess'] = this._shininess;
+        params['specular'] = this._specular;
+        params['specularMap'] = this._specularMap;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getCombine() {
+        return this._combine;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getFlatShading() {
+        return this._flatShading;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getReflectivity() {
+        return this._reflectivity;
+    }
+
+    getRefractionRatio() {
+        return this._refractionRatio;
+    }
+
+    getShininess() {
+        return this._shininess;
+    }
+
+    getSpecular() {
+        return this._specular;
+    }
+
+    getSpecularMap() {
+        return this._specularMap;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setCombine(combine) {
+        if(this._combine == combine) return;
+        this._combine = combine;
+        this._material.combine = combine;
+        this._material.needsUpdate = true;
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setFlatShading(flatShading) {
+        if(this._flatShading == flatShading) return;
+        this._flatShading = flatShading;
+        this._material.flatShading = flatShading;
+        this._material.needsUpdate = true;
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        if(this._normalScale == normalScale) return;
+        this._normalScale = normalScale;
+        this._material.normalScale = normalScale;
+    }
+
+    setReflectivity(reflectivity) {
+        if(this._reflectivity == reflectivity) return;
+        this._reflectivity = reflectivity;
+        this._material.reflectivity = reflectivity;
+    }
+
+    setRefractionRatio(refractionRatio) {
+        if(this._refractionRatio == refractionRatio) return;
+        this._refractionRatio = refractionRatio;
+        this._material.refractionRatio = refractionRatio;
+    }
+
+    setShininess(shininess) {
+        if(this._shininess == shininess) return;
+        this._shininess = shininess;
+        this._material.shininess = shininess;
+    }
+
+    setSpecular(specular) {
+        if(this._specular == specular) return;
+        this._specular = specular;
+        this._material.specular.setHex(specular);
+    }
+
+    setSpecularMap(specularMap) {
+        if(this._specularMap == specularMap) return;
+        this._setTexture('specularMap', specularMap);
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+}
+
+materialsHandler.registerMaterial(PhongMaterial, MaterialTypes.PHONG);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$3 = [
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "map","name": "Texture Map", 
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "alphaMap","name": "Alpha Map", 
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "flatShading","name": "Flat Shading",
+        "type": CheckboxInput },
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "bumpMap","name": "Bump Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "bumpScale","name": "Bump Scale",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "displacementMap","name": "Displacement Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "displacementScale","name": "Displacement Scale",
+        "type": NumberInput },
+    { "parameter": "displacementBias","name": "Displacement Bias",
+        "type": NumberInput },
+    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
+    { "parameter": "emissiveMap","name": "Emissive Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "emissiveIntensity","name": "Emissive Intensity",
+        "min": 0, "type": NumberInput },
+    { "parameter": "envMap","name": "Environment Map",
+        "filter": TextureTypes.CUBE, "type": TextureInput },
+    { "parameter": "envMapIntensity","name": "Environment Intensity",
+        "min": 0, "type": NumberInput },
+    { "parameter": "metalness","name": "Metalness",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "metalnessMap","name": "Metalness Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "normalMap","name": "Normal Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "normalMapType","name": "Normal Type",
+        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
+        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
+    { "parameter": "normalScale","name": "Normal Scale",
+        "min": 0, "max": 1, "type": Vector2Input },
+    { "parameter": "roughness","name": "Roughness",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "roughnessMap","name": "Roughness Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+];
+
+class StandardMaterialHelper extends MaterialHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$3);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$3) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const MAPS$1 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "metalnessMap", "normalMap", "roughnessMap"];
+
+class StandardMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._alphaMap = params['alphaMap'];
+        this._bumpMap = params['bumpMap'];
+        this._bumpScale = numberOr(params['bumpScale'], 1);
+        this._displacementMap = params['displacementMap'];
+        this._displacementScale = numberOr(params['displacementScale'], 1);
+        this._displacementBias = numberOr(params['displacementBias'], 0);
+        this._emissive = params['emissive'] || 0x000000;
+        this._emissiveMap = params['emissiveMap'];
+        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
+        this._envMap = params['envMap'];
+        this._envMapIntensity = numberOr(params['envMapIntensity'], 1);
+        this._flatShading = params['flatShading'] || false;
+        this._map = params['map'];
+        this._metalness = numberOr(params['metalness'], 0);
+        this._metalnessMap = params['metalnessMap'];
+        this._normalMap = params['normalMap'];
+        this._normalMapType = params['normalMapType']
+            || THREE.TangentSpaceNormalMap;
+        this._normalScale = params['normalScale'] || [1,1];
+        this._roughness = numberOr(params['roughness'], 1);
+        this._roughnessMap = params['roughnessMap'];
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new StandardMaterialHelper(this);
+    }
+
+    _getDefaultName() {
+        return "Standard Material";
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "color": this._color,
+            "bumpScale": this._bumpScale,
+            "displacementScale": this._displacementScale,
+            "displacementBias": this._displacementBias,
+            "emissive": this._emissive,
+            "emissiveIntensity": this._emissiveIntensity,
+            "envMapIntensity": this._envMapIntensity,
+            "flatShading": this._flatShading,
+            "metalness": this._metalness,
+            "normalMapType": this._normalMapType,
+            "normalScale": this._normalScale,
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
+            "roughness": this._roughness,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS$1);
+        this._material = new THREE.MeshStandardMaterial(materialParams);
+    }
+
+    getMaps() {
+        return MAPS$1;
+    }
+
+    getMaterialType() {
+        return MaterialTypes.STANDARD;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['bumpMap'] = this._bumpMap;
+        params['bumpScale'] = this._bumpScale;
+        params['color'] = this._material.color.getHex();
+        params['displacementMap'] = this._displacementMap;
+        params['displacementScale'] = this._displacementScale;
+        params['displacementBias'] = this._displacementBias;
+        params['emissive'] = this._material.emissive.getHex();
+        params['emissiveMap'] = this._emissiveMap;
+        params['emissiveIntensity'] = this._emissiveIntensity;
+        params['envMap'] = this._envMap;
+        params['envMapIntensity'] = this._envMapIntensity;
+        params['flatShading'] = this._flatShading;
+        params['map'] = this._map;
+        params['metalness'] = this._metalness;
+        params['metalnessMap'] = this._metalnessMap;
+        params['normalMap'] = this._normalMap;
+        params['normalMapType'] = this._normalMapType;
+        params['normalScale'] = this._normalScale;
+        params['roughness'] = this._roughness;
+        params['roughnessMap'] = this._roughnessMap;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getEnvMapIntensity() {
+        return this._envMapIntensity;
+    }
+
+    getFlatShading() {
+        return this._flatShading;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getMetalness() {
+        return this._metalness;
+    }
+
+    getMetalnessMap() {
+        return this._metalnessMap;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getRoughness() {
+        return this._roughness;
+    }
+
+    getRoughnessMap() {
+        return this._roughnessMap;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setEnvMapIntensity(envMapIntensity) {
+        if(this._envMapIntensity == envMapIntensity) return;
+        this._envMapIntensity = envMapIntensity;
+        this._material.envMapIntensity = envMapIntensity;
+    }
+
+    setFlatShading(flatShading) {
+        if(this._flatShading == flatShading) return;
+        this._flatShading = flatShading;
+        this._material.flatShading = flatShading;
+        this._material.needsUpdate = true;
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setMetalness(metalness) {
+        if(this._metalness == metalness) return;
+        this._metalness = metalness;
+        this._material.metalness = metalness;
+    }
+
+    setMetalnessMap(metalnessMap) {
+        if(this._metalnessMap == metalnessMap) return;
+        this._setTexture('metalnessMap', metalnessMap);
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        if(this._normalScale == normalScale) return;
+        this._normalScale = normalScale;
+        this._material.normalScale = normalScale;
+    }
+
+    setRoughness(roughness) {
+        if(this._roughness == roughness) return;
+        this._roughness = roughness;
+        this._material.roughness = roughness;
+    }
+
+    setRoughnessMap(roughnessMap) {
+        if(this._roughnessMap == roughnessMap) return;
+        this._setTexture('roughnessMap', roughnessMap);
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+}
+
+materialsHandler.registerMaterial(StandardMaterial, MaterialTypes.STANDARD);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$2 = [
+    { "parameter": "color", "name": "Color", "type": ColorInput },
+    { "parameter": "map","name": "Texture Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "side" },
+    { "parameter": "transparent" },
+    { "parameter": "opacity" },
+    { "parameter": "alphaMap","name": "Alpha Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxInput },
+    { "parameter": "bumpMap","name": "Bump Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "bumpScale","name": "Bump Scale",
+        "min": 0, "max": 1, "type": NumberInput },
+    { "parameter": "displacementMap","name": "Displacement Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "displacementScale","name": "Displacement Scale",
+        "type": NumberInput },
+    { "parameter": "displacementBias","name": "Displacement Bias",
+        "type": NumberInput },
+    { "parameter": "emissive", "name": "Emissive Color", "type": ColorInput },
+    { "parameter": "emissiveMap","name": "Emissive Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "emissiveIntensity","name": "Emissive Intensity",
+        "min": 0, "type": NumberInput },
+    { "parameter": "normalMap","name": "Normal Map",
+        "filter": TextureTypes.BASIC, "type": TextureInput },
+    { "parameter": "normalMapType","name": "Normal Type",
+        "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
+        "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
+    { "parameter": "normalScale","name": "Normal Scale",
+        "min": 0, "max": 1, "type": Vector2Input },
+];
+
+class BasicMaterialHelper extends MaterialHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$2);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$2) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
+
+class ToonMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this._alphaMap = params['alphaMap'];
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._bumpMap = params['bumpMap'];
+        this._bumpScale = numberOr(params['bumpScale'], 1);
+        this._displacementMap = params['displacementMap'];
+        this._displacementScale = numberOr(params['displacementScale'], 1);
+        this._displacementBias = numberOr(params['displacementBias'], 0);
+        this._emissive = params['emissive'] || 0x000000;
+        this._emissiveMap = params['emissiveMap'];
+        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
+        this._map = params['map'];
+        this._normalMap = params['normalMap'];
+        this._normalMapType = params['normalMapType']
+            || THREE.TangentSpaceNormalMap;
+        this._normalScale = params['normalScale'] || [1,1];
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new BasicMaterialHelper(this);
+    }
+
+    _getDefaultName() {
+        return "Toon Material";
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "bumpScale": this._bumpScale,
+            "color": this._color,
+            "displacementScale": this._displacementScale,
+            "displacementBias": this._displacementBias,
+            "emissive": this._emissive,
+            "emissiveIntensity": this._emissiveIntensity,
+            "normalMapType": this._normalMapType,
+            "normalScale": this._normalScale,
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS);
+        this._material = new THREE.MeshToonMaterial(materialParams);
+    }
+
+    getMaps() {
+        return MAPS;
+    }
+
+    getMaterialType() {
+        return MaterialTypes.TOON;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['bumpMap'] = this._bumpMap;
+        params['bumpScale'] = this._bumpScale;
+        params['color'] = this._material.color.getHex();
+        params['displacementMap'] = this._displacementMap;
+        params['displacementScale'] = this._displacementScale;
+        params['displacementBias'] = this._displacementBias;
+        params['emissive'] = this._material.emissive.getHex();
+        params['emissiveMap'] = this._emissiveMap;
+        params['emissiveIntensity'] = this._emissiveIntensity;
+        params['map'] = this._map;
+        params['normalMap'] = this._normalMap;
+        params['normalMapType'] = this._normalMapType;
+        params['normalScale'] = this._normalScale;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        if(this._normalScale == normalScale) return;
+        this._normalScale = normalScale;
+        this._material.normalScale = normalScale;
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+}
+
+materialsHandler.registerMaterial(ToonMaterial, MaterialTypes.TOON);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class Texture {
+    constructor(params = {}) {
+        this._id = params['id'] || uuidv4();
+        this._name = ('name' in params)
+            ? params['name']
+            : this._getDefaultName();
+        if(global$1.isEditor) this._createEditorHelper();
+    }
+
+    _createEditorHelper() {
+        console.error("Texture._createEditorHelper() should be overridden");
+        return;
+    }
+
+    _getDefaultName() {
+        console.error("Texture._getDefaultName() should be overridden");
+        return;
+    }
+
+    _createTexture() {
+        console.error("Texture._createTexture() should be overridden");
+        return;
+    }
+
+    exportParams() {
+        return {
+            "id": this._id,
+            "name": this._name,
+        };
+    }
+
+    setFromParams(params) {
+        console.warn("Unexpectedly trying to setFromParams() for Texture...");
+    }
+
+    _updateTexture() {
+        let oldTexture = this._texture;
+        this._createTexture();
+        setTimeout(() => {
+            oldTexture.dispose();
+        }, 20);
+    }
+
+    dispose() {
+        setTimeout(() => {
+            this._texture.dispose();
+        }, 20);
+    }
+
+    getTexture() {
+        return this._texture;
+    }
+
+    getPreviewTexture() {
+        return this._texture;
+    }
+
+    getAssetIds() {
+        console.error("Texture.getAssetIds() should be overridden");
+        return;
+    }
+
+    getTextureType() {
+        console.error("Texture.getTextureType() should be overridden");
+        return;
+    }
+
+    getId() {
+        return this._id;
+    }
+
+    getEditorHelper() {
+        return this._editorHelper;
+    }
+
+    getName() {
+        return this._name;
+    }
+
+    setName(name) {
+        if(name == null || this._name == name) return;
+        this._name = name;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS$1 = [
+    { "parameter": "image", "name": "Image", "type": ImageInput },
+    { "parameter": "wrapS", "name": "Horizontal Wrapping", "type": EnumInput,
+        "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
+        "reverseMap": REVERSE_WRAP_MAP },
+    { "parameter": "wrapT", "name": "Vertical Wrapping", "type": EnumInput,
+        "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
+        "reverseMap": REVERSE_WRAP_MAP },
+    { "parameter": "repeat", "name": "Repeat", "type": Vector2Input },
+    { "parameter": "offset", "name": "Offset", "type": Vector2Input },
+];
+
+class BasicTextureHelper extends EditorHelper {
+    constructor(asset) {
+        super(asset, PubSubTopics$1.TEXTURE_UPDATED);
+    }
+
+    getMenuFields() {
+        return super.getMenuFields(FIELDS$1);
+    }
+
+    _getMenuFieldsMap() {
+        let menuFieldsMap = super._getMenuFieldsMap();
+        for(let field of FIELDS$1) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class BasicTexture extends Texture {
+    constructor(params = {}) {
+        super(params);
+        this._image = params['image'];
+        this._wrapS = params['wrapS'] || THREE.ClampToEdgeWrapping;
+        this._wrapT = params['wrapT'] || THREE.ClampToEdgeWrapping;
+        this._repeat = params['repeat'] || [1, 1];
+        this._offset = params['offset'] || [0, 0];
+        this._createTexture();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new BasicTextureHelper(this);
+    }
+
+    _getDefaultName() {
+        return "Texture";
+    }
+
+    _createTexture() {
+        if(this._image) {
+            this._texture = libraryHandler.cloneTexture(this._image);
+        } else {
+            this._texture = Textures.blackPixel.clone();
+        }
+        this._texture.wrapS = this._wrapS;
+        this._texture.wrapT = this._wrapT;
+        this._texture.repeat.fromArray(this._repeat);
+        this._texture.offset.fromArray(this._offset);
+        this._texture.needsUpdate = true;
+    }
+
+    getAssetIds() {
+        if(this._image) return [this._image];
+        return [];
+    }
+
+    getTextureType() {
+        return TextureTypes.BASIC;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['image'] = this._image;
+        params['wrapS'] = this._texture.wrapS;
+        params['wrapT'] = this._texture.wrapT;
+        params['repeat'] = this._texture.repeat.toArray();
+        params['offset'] = this._texture.offset.toArray();
+        return params;
+    }
+
+    getImage() {
+        return this._image;
+    }
+
+    getOffset() {
+        return this._offset
+    }
+
+    getRepeat() {
+        return this._repeat
+    }
+
+    getWrapS() {
+        return this._wrapS
+    }
+
+    getWrapT() {
+        return this._wrapT
+    }
+
+    setImage(image) {
+        if(this._image == image) return;
+        this._image = image;
+        this._updateTexture();
+    }
+
+    setOffset(offset) {
+        if(compareLists(this._offset, offset)) return;
+        this._offset = offset;
+        this._updateTexture();
+    }
+
+    setRepeat(repeat) {
+        if(compareLists(this._repeat, repeat)) return;
+        this._repeat = repeat;
+        this._updateTexture();
+    }
+
+    setWrapS(wrapS) {
+        if(this._wrapS == wrapS) return;
+        this._wrapS = wrapS;
+        this._updateTexture();
+    }
+
+    setWrapT(wrapT) {
+        if(this._wrapT == wrapT) return;
+        this._wrapT = wrapT;
+        this._updateTexture();
+    }
+}
+
+texturesHandler.registerTexture(BasicTexture, TextureTypes.BASIC);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const FIELDS = [
+    { "parameter": "images", "name": "Images", "type": CubeImageInput },
+    { "parameter": "mapping", "name": "Mapping", "type": EnumInput,
+        "options": [ "Reflection", "Refraction" ], "map": MAPPING_MAP,
+        "reverseMap": REVERSE_MAPPING_MAP },
+];
+
+class CubeTextureHelper extends EditorHelper {
+    constructor(asset) {
+        super(asset, PubSubTopics$1.TEXTURE_UPDATED);
+    }
+
     getMenuFields() {
         return super.getMenuFields(FIELDS);
     }
@@ -21984,28 +26727,158 @@ class PrimitiveTorus extends PrimitiveMesh {
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
-            if(field.name in menuFieldsMap) {
+            if(field.parameter in menuFieldsMap) {
                 continue;
-            } else if(field.type == NumberInput) {
-                menuFieldsMap[field.name] = new NumberInput({
-                    'title': field.name,
-                    'minValue': field.min,
-                    'maxValue': field.max,
-                    'initialValue': this[field.parameter],
-                    'setToSource': (value) => {
-                        this[field.parameter] = value;
-                        this._updateGeometry();
-                    },
-                    'getFromSource': () => { return this[field.parameter]; },
-                });
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
             }
         }
         return menuFieldsMap;
     }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class CubeTexture extends Texture {
+    constructor(params = {}) {
+        super(params);
+        this._images = params['images'] || {};
+        this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
+        this._createTexture();
+    }
+
+    _createEditorHelper() {
+        this._editorHelper = new CubeTextureHelper(this);
+    }
+
+    _getDefaultName() {
+        return "Cube Texture";
+    }
+
+    _createTexture() {
+        let images = [
+            this._getImageFromSide(CubeSides.RIGHT),
+            this._getImageFromSide(CubeSides.LEFT),
+            this._getImageFromSide(CubeSides.TOP),
+            this._getImageFromSide(CubeSides.BOTTOM),
+            this._getImageFromSide(CubeSides.FRONT),
+            this._getImageFromSide(CubeSides.BACK),
+        ];
+        //textures must be square, same size, and power of 2, otherwise
+        //use no images
+        if(!this._validateImageList(images))
+            images = Array(6).fill(Textures.blackPixel.image);
+        this._texture = new THREE.CubeTexture(images, this._mapping);
+        this._texture.needsUpdate = true;
+    }
+
+    _getImageFromSide(side) {
+        if(this._images[side]) {
+            return libraryHandler.getImage(this._images[side]);
+        }
+        return Textures.blackPixel.image;
+    }
+
+    _validateImageList(images) {
+        let width;
+        let isValid = true;
+        for(let image of images) {
+            if(image == Textures.blackPixel.image) {
+                isValid = false;
+                continue;
+            } else if(image.width != image.height) {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'Images must be of same width and height',
+                    sustainTime: 3,
+                });
+                return false;
+            } else if(!powerOf2(image.width)) {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'Image lengths must be a power of 2',
+                    sustainTime: 3,
+                });
+                return false;
+            } else if(width && image.width != width) {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'All images must be the same size',
+                    sustainTime: 3,
+                });
+                return false;
+            }
+            width = image.width;
+        }
+        return isValid;
+    }
+
+    getPreviewTexture() {
+        let imageId = this._images[CubeSides.FRONT];
+        if(imageId) return libraryHandler.getTexture(imageId);
+        return Textures.blackPixel;
+    }
+
+    getAssetIds() {
+        let assetIds = [];
+        for(let side in CubeSides) {
+            if(this._images[side]) assetIds.push(this._images[side]);
+        }
+        return assetIds;
+    }
+
+    getTextureType() {
+        return TextureTypes.CUBE;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['images'] = this._images;
+        params['mapping'] = this._texture.mapping;
+        return params;
+    }
+
+    getImages() {
+        return this._images;
+    }
+
+    getMapping() {
+        return this._mapping;
+    }
+
+    setImages(images, side) {
+        if(side) {
+            if(this._images[side] == images) return;
+            this._images[side] = images;
+            this._updateTexture();
+        } else {
+            let hasDiff = false;
+            for(let s in this._images) {
+                if(this._images[s] != images[s]) {
+                    this._images[s] = images[s];
+                    hasDiff = true;
+                }
+            }
+            if(hasDiff) this._updateTexture();
+        }
+    }
+
+    setMapping(mapping) {
+        if(this._mapping == mapping) return;
+        this._mapping = mapping;
+        this._updateTexture();
+    }
 
 }
 
-projectHandler.registerShape(PrimitiveTorus, ASSET_ID, ASSET_NAME);
+//https://stackoverflow.com/a/30924333
+function powerOf2(v) {
+    return v && !(v & (v - 1));
+}
+
+texturesHandler.registerTexture(CubeTexture, TextureTypes.CUBE);
 
 /*
 * FileSaver.js
@@ -33853,6 +38726,10 @@ function setupContainer(containerId) {
 #container .hidden {
     display: none;
 }
+
+#container > canvas {
+    outline: none;
+}
     `.replaceAll("container", containerId);
     if(global$1.deviceType == "MOBILE")
         style.innerHTML += `
@@ -33893,17 +38770,23 @@ function setupContainer(containerId) {
         <button id="mobile-flying-up-button">UP</button>
         <button id="mobile-flying-down-button">DOWN</button>
       </div>`;
-    container.style.outline = 'none';
     container.style.position = 'relative';
 }
 
-function setupEditor(containerId, projectFilePath) {
+function setupEditor(containerId, projectFilePath, authUrl, partyUrl) {
     global$1.isEditor = true;
-    return setup(containerId, projectFilePath);
+    return setup(containerId, projectFilePath, authUrl, partyUrl);
 }
 
-function setup(containerId, projectFilePath) {
+function setup(containerId, projectFilePath, authUrl, partyUrl) {
+    global$1.authUrl = authUrl;
+    global$1.partyUrl = partyUrl;
     let promise = new Promise((resolve) => {
+        //Check mobile override for VR capable phones
+        if(localStorage.getItem('DigitalBacon:MobileOverride')) {
+            start(resolve, containerId, projectFilePath);
+            return;
+        }
         if('xr' in navigator) {
             navigator.xr.isSessionSupported( 'immersive-vr' )
                 .then(function (supported) {
@@ -33931,7 +38814,7 @@ function setup(containerId, projectFilePath) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const version = "0.0.2";
+const version = "0.0.3";
 
 function getDeviceType() {
     return global$1.deviceType;

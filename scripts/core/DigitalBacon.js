@@ -8,7 +8,7 @@ import global from '/scripts/core/global.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 
-const version = "0.0.2";
+const version = "0.0.3";
 
 function getDeviceType() {
     return global.deviceType;
