@@ -49,7 +49,7 @@ export default {
             format: 'es',
             name: 'version',
             plugins: [
-                terser({mangle: { keep_classnames: true }}),
+                terser({mangle: { keep_classnames: true, keep_fnames: true }}),
                 header()
             ],
         },
