@@ -1,6 +1,6 @@
 {
   "name": "digitalbacon",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Content management system for 3D websites",
   "main": "/build/DigitalBacon.min.js",
   "license": "MPL 2.0",
