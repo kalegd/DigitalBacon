@@ -2,7 +2,7 @@ import fs from 'fs';
 import mime from 'mime';
 import replace from '@rollup/plugin-replace';
 import rootImport from 'rollup-plugin-root-import';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 
 function base64Encode(file) {
     let base64Encoded = fs.readFileSync(file, 'base64');
@@ -26,6 +26,19 @@ for(let file of filesToReplace) {
     replacementMap[file] = base64Encode(file);
 }
 
+function header() {
+    return {
+        renderChunk(code) {
+            return `/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+${ code }`;
+        }
+    };
+}
+
 export default {
     input: 'scripts/core/DigitalBacon.js',
     output: [{
@@ -35,7 +48,10 @@ export default {
             file: 'build/DigitalBacon.min.js',
             format: 'es',
             name: 'version',
-            plugins: [terser()],
+            plugins: [
+                terser({mangle: { keep_classnames: true }}),
+                header()
+            ],
         },
     ],
     external: [

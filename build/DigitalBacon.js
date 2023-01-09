@@ -64,7 +64,7 @@ const PubSubTopics$1 = {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class PubSub$1 {
+let PubSub$1 = class PubSub {
     constructor() {
         this._topics = {};
         this._toPublish = [];
@@ -123,7 +123,7 @@ class PubSub$1 {
         }
         this._toPublish = [];
     }
-}
+};
 
 let pubSub = new PubSub$1();
 
@@ -11195,7 +11195,7 @@ class TransformControlsHandler {
         let data = e.clipboardData.getData('text/digitalbacon');
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
-        let instances = projectHandler.getInstancesForAssetId(assetId);
+        let instances = ProjectHandler$1.getInstancesForAssetId(assetId);
         let instance = instances[instanceId];
         //Maybe we should store parameters in case object has been deleted so we
         //can still paste it back? Definitily! But later...
@@ -11221,7 +11221,7 @@ class TransformControlsHandler {
             for(let assetId of assetIds) {
                 let type = libraryHandler.getType(assetId);
                 if(type == AssetTypes.IMAGE) {
-                    projectHandler.addImage({
+                    ProjectHandler$1.addImage({
                         "assetId": assetId,
                         "position": position,
                         "rotation": rotation,
@@ -11230,7 +11230,7 @@ class TransformControlsHandler {
                         "visualEdit": true,
                     });
                 } else if(type == AssetTypes.MODEL) {
-                    projectHandler.addGLTF({
+                    ProjectHandler$1.addGLTF({
                         "assetId": assetId,
                         "position": position,
                         "rotation": rotation,
@@ -11267,7 +11267,7 @@ class TransformControlsHandler {
         option = option || global$1.deviceType;
         let asset = this._attachedAssets[option];
         if(asset) {
-            projectHandler.deleteAssetInstance(asset);
+            ProjectHandler$1.deleteAssetInstance(asset);
         }
     }
 
@@ -11279,13 +11279,13 @@ class TransformControlsHandler {
             let isPressed = controller['isPressed'];
             let intersections = (global$1.deviceType == 'XR')
                 ? this._intersectRelevantObjects(raycaster, option)
-                : raycaster.intersectObjects(projectHandler.getObjects(), true);
+                : raycaster.intersectObjects(ProjectHandler$1.getObjects(), true);
             let attachedAsset = this._attachedAssets[option];
             if(intersections.length > 0) {
                 controller['closestPoint'] = intersections[0].point;
                 if(isPressed) {
                     if(global$1.deviceType == 'XR') {
-                        userController.hands[option]
+                        UserController$1.hands[option]
                             .remove(attachedAsset.getObject());
                     } else {
                         $("#transform-controls > button")
@@ -11312,7 +11312,7 @@ class TransformControlsHandler {
     }
 
     scaleWithTwoHands() {
-        let distance = userController.getDistanceBetweenHands();
+        let distance = UserController$1.getDistanceBetweenHands();
         let factor = distance / this._initialScalingDistance;
         this._attachedAssets[Hands.LEFT].getObject().scale.set(
             factor * this._initialScalingValues.x,
@@ -11327,7 +11327,7 @@ class TransformControlsHandler {
     //Slightly modified version of Raycaster::intersectObjects
     _intersectRelevantObjects(raycaster, option) {
         let intersects = [];
-        let objects = projectHandler.getObjects();
+        let objects = ProjectHandler$1.getObjects();
         let attachedObject = this._attachedAssets[option].getObject();
         for(let i = 0, l = objects.length; i < l; i++) {
             if(objects[i] != attachedObject) {
@@ -11358,16 +11358,16 @@ class TransformControlsHandler {
             this._placingObject[option] = true;
             let otherOption = this._getOtherHand(option);
             if(asset == this._attachedAssets[otherOption]) {
-                userController.hands[option].remove(asset.getObject());
-                userController.hands[otherOption].remove(asset.getObject());
+                UserController$1.hands[option].remove(asset.getObject());
+                UserController$1.hands[otherOption].remove(asset.getObject());
                 this._twoHandScaling = true;
                 this._initialScalingDistance =
-                    userController.getDistanceBetweenHands();
+                    UserController$1.getDistanceBetweenHands();
                 this._initialScalingValues = asset.getObject().scale.clone();
             } else {
                 this._preTransformStates[asset.getId()]
                     = asset.getEditorHelper().getObjectTransformation();
-                userController.hands[option].attach(asset.getObject());
+                UserController$1.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
             undoRedoHandler.disable(this._id);
@@ -11389,10 +11389,10 @@ class TransformControlsHandler {
             option: option,
         });
         if(global$1.deviceType == 'XR') {
-            userController.hands[option].remove(asset.getObject());
+            UserController$1.hands[option].remove(asset.getObject());
             let otherOption = this._getOtherHand(option);
             if(this._attachedAssets[otherOption] == asset) {
-                userController.hands[otherOption].attach(asset.getObject());
+                UserController$1.hands[otherOption].attach(asset.getObject());
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
@@ -11780,7 +11780,7 @@ class PointerInteractableHandler extends InteractableHandler {
 
         this._updateInteractables(controllers);
         if(controllers[Hands.RIGHT].closestPoint == null)
-            copyPasteControlsHandler.checkPlacement(controllers[Hands.RIGHT]);
+            CopyPasteControlsHandler$1.checkPlacement(controllers[Hands.RIGHT]);
         for(let option in controllers) {
             this._updateCursor(controllers[option]);
         }
@@ -12120,6 +12120,7 @@ class UserController {
 }
 
 let userController = new UserController();
+var UserController$1 = userController;
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12144,8 +12145,8 @@ class CopyPasteControlsHandler {
         if(this._copiedAsset) this._clear();
         this._copiedAsset = asset;
         this._previewAsset = asset.preview();
-        userController.hands[Hands.LEFT].attach(this._previewAsset.getObject());
-        userController.hands[Hands.RIGHT].add(this._previewAsset.getObject());
+        UserController$1.hands[Hands.LEFT].attach(this._previewAsset.getObject());
+        UserController$1.hands[Hands.RIGHT].add(this._previewAsset.getObject());
     }
 
     _paste() {
@@ -12159,7 +12160,7 @@ class CopyPasteControlsHandler {
         let raycaster = controller['raycaster'];
         raycaster.far = Infinity;
         let isPressed = controller['isPressed'];
-        let intersections = raycaster.intersectObjects(projectHandler.getObjects(), true);
+        let intersections = raycaster.intersectObjects(ProjectHandler$1.getObjects(), true);
         if(this._assetAlreadyPastedByTrigger) {
             if(isPressed) return;
             this._assetAlreadyPastedByTrigger = false;
@@ -12195,6 +12196,7 @@ class CopyPasteControlsHandler {
 }
 
 let copyPasteControlsHandler = new CopyPasteControlsHandler();
+var CopyPasteControlsHandler$1 = copyPasteControlsHandler;
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12342,8 +12344,8 @@ class GripInteractableHandler extends InteractableHandler {
             closestPointDistance: Number.MAX_SAFE_INTEGER,
         };
 
-        if(copyPasteControlsHandler.hasCopiedObject()) {
-            copyPasteControlsHandler.checkGripPlacement(
+        if(CopyPasteControlsHandler$1.hasCopiedObject()) {
+            CopyPasteControlsHandler$1.checkGripPlacement(
                 this._isControllerPressed(Hands.RIGHT));
         } else {
             controllers[Hands.RIGHT] = {
@@ -13336,21 +13338,21 @@ class PartyMessageHelper {
     }
 
     _handleInstanceAdded(peer, message) {
-        let instance = projectHandler.getSessionInstance(message.instance.id);
+        let instance = ProjectHandler$1.getSessionInstance(message.instance.id);
         if(instance) {
             instance.addToScene(global$1.scene);
-            projectHandler.addAsset(instance, true, true);
+            ProjectHandler$1.addAsset(instance, true, true);
         } else {
-            instance = projectHandler.addInstance(message.instance, true, true);
+            instance = ProjectHandler$1.addInstance(message.instance, true, true);
         }
         pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ADDED, instance);
     }
 
     _handleInstanceDeleted(peer, peerMessage) {
-        let assets = projectHandler.getInstancesForAssetId(peerMessage.assetId);
+        let assets = ProjectHandler$1.getInstancesForAssetId(peerMessage.assetId);
         let instance = assets[peerMessage.id];
         if(instance) {
-            projectHandler.deleteAssetInstance(instance, true, true);
+            ProjectHandler$1.deleteAssetInstance(instance, true, true);
             let topic = PubSubTopics$1.INSTANCE_DELETED + ":" + peerMessage.id;
             let message = { instance: instance };
             pubSub.publish(this._id, topic, message, true);
@@ -13361,7 +13363,7 @@ class PartyMessageHelper {
 
     _handleInstanceUpdated(peer, message) {
         let params = message.instance;
-        let instance = projectHandler.getSessionInstance(params.id);
+        let instance = ProjectHandler$1.getSessionInstance(params.id);
         if(instance) {
             this._handleAssetUpdate(instance, params,
                 PubSubTopics$1.INSTANCE_UPDATED);
@@ -13369,7 +13371,7 @@ class PartyMessageHelper {
     }
 
     _handleInstanceAttached(peer, message) {
-        let instance = projectHandler.getSessionInstance(message.id);
+        let instance = ProjectHandler$1.getSessionInstance(message.id);
         if(instance) {
             let editorHelper = instance.getEditorHelper();
             if(editorHelper) editorHelper.attachToPeer(peer, message);
@@ -13377,7 +13379,7 @@ class PartyMessageHelper {
     }
 
     _handleInstanceDetached(peer, message) {
-        let instance = projectHandler.getSessionInstance(message.id);
+        let instance = ProjectHandler$1.getSessionInstance(message.id);
         if(instance) {
             let editorHelper = instance.getEditorHelper();
             if(editorHelper) editorHelper.detachFromPeer(peer, message);
@@ -13821,7 +13823,7 @@ class PartyHandler {
             partyMessageHelper.handlePeerConnected(peer);
             rtc.sendData(JSON.stringify({
                 "topic": "avatar",
-                "url": userController.getAvatarUrl(),
+                "url": UserController$1.getAvatarUrl(),
                 "isXR": global$1.deviceType == "XR",
             }));
             rtc.sendData(JSON.stringify({
@@ -13894,7 +13896,7 @@ class PartyHandler {
 
     _sendProject(rtcs, parts) {
         if(!parts) {
-            let zip = projectHandler.exportProject();
+            let zip = ProjectHandler$1.exportProject();
             zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
                 let parts = [];
                 let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
@@ -13926,7 +13928,7 @@ class PartyHandler {
                 let buffer = concatenateArrayBuffers(parts);
                 let zip = new JSZip();
                 zip.loadAsync(buffer).then((zip) => {
-                    projectHandler.loadZip(zip);
+                    ProjectHandler$1.loadZip(zip);
                 });
             }
         };
@@ -14037,7 +14039,7 @@ class PartyHandler {
         let timestamp = new Date().getTime() % TWO_BYTE_MOD;
         let buffer = new Uint16Array([timestamp]).buffer;
         buffer = concatenateArrayBuffers(
-            [buffer, ...userController.getDataForRTC()]);
+            [buffer, ...UserController$1.getDataForRTC()]);
         for(let peerId in this._peers) {
             let peer = this._peers[peerId];
             if(peer.controller) {
@@ -16574,14 +16576,14 @@ class AssetHelper extends EditorHelper {
             this._gripInteractables[HandTools.EDIT].push(interactable);
             let deleteInteractable = new GripInteractable(this._object,
                 (hand) => {
-                    projectHandler.deleteAssetInstance(this._asset);
+                    ProjectHandler$1.deleteAssetInstance(this._asset);
                 },
                 () => {}
             );
             this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
             deleteInteractable = new PointerInteractable(this._object,
                 (hand) => {
-                    projectHandler.deleteAssetInstance(this._asset);
+                    ProjectHandler$1.deleteAssetInstance(this._asset);
                 },
                 true,
                 true
@@ -16590,7 +16592,7 @@ class AssetHelper extends EditorHelper {
                 .push(deleteInteractable);
             let copyInteractable = new GripInteractable(this._object,
                 (hand) => {
-                    copyPasteControlsHandler.copy(this._asset);
+                    CopyPasteControlsHandler$1.copy(this._asset);
                 },
                 () => {},
                 Hands.LEFT
@@ -16599,7 +16601,7 @@ class AssetHelper extends EditorHelper {
                 .push(copyInteractable);
             copyInteractable = new PointerInteractable(this._object,
                 (hand) => {
-                    copyPasteControlsHandler.copy(this._asset);
+                    CopyPasteControlsHandler$1.copy(this._asset);
                 },
                 true,
                 true,
@@ -17069,7 +17071,7 @@ class ClampedTexturePlane extends Asset {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addImage(params);
+        return ProjectHandler$1.addImage(params);
     }
 
     exportParams() {
@@ -17143,7 +17145,7 @@ class GLTFAsset extends Asset {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addGLTF(params);
+        return ProjectHandler$1.addGLTF(params);
     }
 }
 
@@ -17442,6 +17444,7 @@ class ProjectHandler {
 }
 
 let projectHandler = new ProjectHandler();
+var ProjectHandler$1 = projectHandler;
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -17711,10 +17714,10 @@ class MenuController extends PointerInteractableEntity {
         let interactable = new MenuGripInteractable(this._object,
             border,
             (hand) => {
-                userController.hands[hand].attach(this._object);
+                UserController$1.hands[hand].attach(this._object);
                 this._gripOwners.add(hand);
             }, (hand) => {
-                userController.hands[hand].remove(this._object);
+                UserController$1.hands[hand].remove(this._object);
                 this._gripOwners.delete(hand);
             }
         );
@@ -18176,13 +18179,13 @@ class AssetPage extends PaginatedPage {
             if(type == AssetTypes.IMAGE) {
                 params['doubleSided'] = true;
                 params['transparent'] = true;
-                projectHandler.addImage(params);
+                ProjectHandler$1.addImage(params);
             } else if(type == AssetTypes.MODEL) {
-                projectHandler.addGLTF(params);
+                ProjectHandler$1.addGLTF(params);
             } else if(type == AssetTypes.SHAPE) {
-                projectHandler.addShape(params, this._assetId);
+                ProjectHandler$1.addShape(params, this._assetId);
             } else if(type == AssetTypes.LIGHT) {
-                projectHandler.addLight(params, this._assetId);
+                ProjectHandler$1.addLight(params, this._assetId);
             }
         });
         this._containerInteractable.addChild(interactable);
@@ -18200,7 +18203,7 @@ class AssetPage extends PaginatedPage {
     }
 
     _refreshItems() {
-        this._instances = projectHandler.getInstancesForAssetId(this._assetId);
+        this._instances = ProjectHandler$1.getInstancesForAssetId(this._assetId);
         this._items = Object.keys(this._instances);
     }
 
@@ -18208,7 +18211,7 @@ class AssetPage extends PaginatedPage {
         let asset = libraryHandler.library[assetId];
         this._assetId = assetId;
         this._titleBlock.children[1].set({ content: asset['Name'] });
-        this._instances = projectHandler.getInstancesForAssetId(assetId);
+        this._instances = ProjectHandler$1.getInstancesForAssetId(assetId);
     }
 
     _addSubscriptions() {
@@ -19337,7 +19340,7 @@ class InstancePage extends DynamicFieldsPage {
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
         let interactable = new PointerInteractable(deleteButton, () => {
-            projectHandler.deleteAssetInstance(this._instance);
+            ProjectHandler$1.deleteAssetInstance(this._instance);
         });
         this._containerInteractable.addChild(interactable);
     }
@@ -19821,7 +19824,7 @@ class LoadFromGDrivePage extends PaginatedPage {
     }
 
     _loadSuccessCallback(jsZip) {
-        projectHandler.loadZip(jsZip, () => {
+        ProjectHandler$1.loadZip(jsZip, () => {
             pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION,
                 { text: 'Project Loaded', });
             if(partyHandler.isPartyActive() && partyHandler.isHost()) {
@@ -20276,7 +20279,7 @@ class LibrarySearchPage extends PaginatedPage {
             if(this._assets[assetId]['Name'].toLowerCase().includes(content)) {
                 items.push(assetId);
             } else {
-                let instances = projectHandler.getInstancesForAssetId(assetId);
+                let instances = ProjectHandler$1.getInstancesForAssetId(assetId);
                 for(let instanceId in instances) {
                     if(instances[instanceId].getName().toLowerCase()
                             .includes(content)) {
@@ -21270,7 +21273,7 @@ class PrimitiveLight extends Asset {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addLight(params, this._assetId);
+        return ProjectHandler$1.addLight(params, this._assetId);
     }
 
     exportParams() {
@@ -21360,7 +21363,7 @@ class PrimitiveAmbientLight extends PrimitiveLight {
     }
 }
 
-projectHandler.registerLight(PrimitiveAmbientLight, ASSET_ID$9, ASSET_NAME$9);
+ProjectHandler$1.registerLight(PrimitiveAmbientLight, ASSET_ID$9, ASSET_NAME$9);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -21480,11 +21483,11 @@ class ProjectPage extends PaginatedPage {
             });
             return;
         }
-        projectHandler.reset();
+        ProjectHandler$1.reset();
         let ambientLight = new PrimitiveAmbientLight({
             'visualEdit': false,
         });
-        projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+        ProjectHandler$1.addLight(ambientLight, ambientLight.getAssetId(), true);
         googleDrive.clearActiveFile();
         if(partyHandler.isPartyActive() && partyHandler.isHost()) {
             partyHandler.sendProject();
@@ -21494,7 +21497,7 @@ class ProjectPage extends PaginatedPage {
     _localSave() {
         this._updateSaving(false);
         pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
-        let jsZip = projectHandler.exportProject();
+        let jsZip = ProjectHandler$1.exportProject();
         jsZip.generateAsync({type:"blob"}).then((blob) => {
             this._updateSaving(true);
             pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, true);
@@ -21525,7 +21528,7 @@ class ProjectPage extends PaginatedPage {
                 this._updateSaving(false);
                 pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
                 googleDrive.save(
-                    projectHandler.exportProject(),
+                    ProjectHandler$1.exportProject(),
                     () => { this._saveSuccessCallback(); },
                     () => { this._saveErrorCallback(); });
                 return;
@@ -21537,7 +21540,7 @@ class ProjectPage extends PaginatedPage {
                     pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING,false);
                     googleDrive.saveAs(
                         projectName,
-                        projectHandler.exportProject(),
+                        ProjectHandler$1.exportProject(),
                         () => { this._saveSuccessCallback(); },
                         () => { this._saveErrorCallback(); });
                     this._controller.back();
@@ -21596,7 +21599,7 @@ class ProjectPage extends PaginatedPage {
         pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
         JSZip.loadAsync(file).then((jsZip) => {
             googleDrive.clearActiveFile();
-            projectHandler.loadZip(jsZip, () => {
+            ProjectHandler$1.loadZip(jsZip, () => {
                 pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION,
                     { text: 'Project Loaded', });
                 if(partyHandler.isPartyActive() && partyHandler.isHost()) {
@@ -21732,7 +21735,7 @@ class ReadyPlayerMe {
 
         // Get avatar GLB URL
         if(json.eventName === 'v1.avatar.exported') {
-            userController.updateAvatar(json.data.url);
+            UserController$1.updateAvatar(json.data.url);
             this._close();
         }
 
@@ -22318,7 +22321,7 @@ class UploadPage extends MenuPage {
         for(let assetId of assetIds) {
             let type = libraryHandler.getType(assetId);
             if(type == AssetTypes.IMAGE) {
-                projectHandler.addImage({
+                ProjectHandler$1.addImage({
                     "assetId": assetId,
                     "position": position,
                     "rotation": rotation,
@@ -22327,7 +22330,7 @@ class UploadPage extends MenuPage {
                     "visualEdit": true,
                 });
             } else if(type == AssetTypes.MODEL) {
-                projectHandler.addGLTF({
+                ProjectHandler$1.addGLTF({
                     "assetId": assetId,
                     "position": position,
                     "rotation": rotation,
@@ -22785,7 +22788,7 @@ class Main {
     }
 
     _createHandlers() {
-        projectHandler.init(this._scene);
+        ProjectHandler$1.init(this._scene);
         if(global$1.disableImmersion) return;
         sessionHandler.init(this._container);
         inputHandler.init(this._container, this._renderer, this._userObj);
@@ -22809,17 +22812,17 @@ class Main {
             this._menuController.addToScene(this._scene);
             global$1.menuController = this._menuController;
 
-            userController.init({
+            UserController$1.init({
                 'User Object': this._userObj,
                 'Flight Enabled': true,
             });
-            userController.addToScene(this._userObj);
+            UserController$1.addToScene(this._userObj);
         }
 
         if(projectFilePath) {
             let lock = uuidv4();
             global$1.loadingLocks.add(lock);
-            projectHandler.load(projectFilePath, () => {
+            ProjectHandler$1.load(projectFilePath, () => {
                 global$1.loadingLocks.delete(lock);
             }, (error) => {
                 $(this._loadingMessage).removeClass("loading");
@@ -22830,7 +22833,7 @@ class Main {
             let ambientLight = new PrimitiveAmbientLight({
                 'visualEdit': false,
             });
-            projectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+            ProjectHandler$1.addLight(ambientLight, ambientLight.getAssetId(), true);
         }
     }
 
@@ -22895,7 +22898,7 @@ class Main {
                 });
             }
             this._dynamicAssets.push(this._menuController);
-            this._dynamicAssets.push(userController);
+            this._dynamicAssets.push(UserController$1);
             this._dynamicAssets.push(pointerInteractableHandler);
             this._dynamicAssets.push(pubSub);
             this._dynamicAssets.push(ThreeMeshUI);
@@ -23013,7 +23016,7 @@ class PrimitiveMesh extends Asset {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addShape(params, this._assetId);
+        return ProjectHandler$1.addShape(params, this._assetId);
     }
 
     exportParams() {
@@ -23203,7 +23206,7 @@ class PrimitiveBox extends PrimitiveMesh {
     }
 }
 
-projectHandler.registerShape(PrimitiveBox, ASSET_ID$8, ASSET_NAME$8);
+ProjectHandler$1.registerShape(PrimitiveBox, ASSET_ID$8, ASSET_NAME$8);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -23341,7 +23344,7 @@ class PrimitiveCircle extends PrimitiveMesh {
     }
 }
 
-projectHandler.registerShape(PrimitiveCircle, ASSET_ID$7, ASSET_NAME$7);
+ProjectHandler$1.registerShape(PrimitiveCircle, ASSET_ID$7, ASSET_NAME$7);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -23509,7 +23512,7 @@ class PrimitiveCone extends PrimitiveMesh {
     }
 }
 
-projectHandler.registerShape(PrimitiveCone, ASSET_ID$6, ASSET_NAME$6);
+ProjectHandler$1.registerShape(PrimitiveCone, ASSET_ID$6, ASSET_NAME$6);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -23692,7 +23695,7 @@ class PrimitiveCylinder extends PrimitiveMesh {
 
 }
 
-projectHandler.registerShape(PrimitiveCylinder, ASSET_ID$5, ASSET_NAME$5);
+ProjectHandler$1.registerShape(PrimitiveCylinder, ASSET_ID$5, ASSET_NAME$5);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -23841,7 +23844,7 @@ class PrimitivePlane extends PrimitiveMesh {
     }
 }
 
-projectHandler.registerShape(PrimitivePlane, ASSET_ID$4, ASSET_NAME$4);
+ProjectHandler$1.registerShape(PrimitivePlane, ASSET_ID$4, ASSET_NAME$4);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -23955,7 +23958,7 @@ class PrimitivePointLight extends PrimitiveLight {
     }
 }
 
-projectHandler.registerLight(PrimitivePointLight, ASSET_ID$3, ASSET_NAME$3);
+ProjectHandler$1.registerLight(PrimitivePointLight, ASSET_ID$3, ASSET_NAME$3);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24124,7 +24127,7 @@ class PrimitiveRing extends PrimitiveMesh {
     }
 }
 
-projectHandler.registerShape(PrimitiveRing, ASSET_ID$2, ASSET_NAME$2);
+ProjectHandler$1.registerShape(PrimitiveRing, ASSET_ID$2, ASSET_NAME$2);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24281,7 +24284,7 @@ class PrimitiveSphere extends PrimitiveMesh {
     }
 }
 
-projectHandler.registerShape(PrimitiveSphere, ASSET_ID$1, ASSET_NAME$1);
+ProjectHandler$1.registerShape(PrimitiveSphere, ASSET_ID$1, ASSET_NAME$1);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24435,7 +24438,7 @@ class PrimitiveTorus extends PrimitiveMesh {
 
 }
 
-projectHandler.registerShape(PrimitiveTorus, ASSET_ID, ASSET_NAME);
+ProjectHandler$1.registerShape(PrimitiveTorus, ASSET_ID, ASSET_NAME);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24684,7 +24687,7 @@ const FIELDS$7 = [
         "min": 0, "max": 1, "type": NumberInput },
 ];
 
-class BasicMaterialHelper$1 extends MaterialHelper {
+let BasicMaterialHelper$1 = class BasicMaterialHelper extends MaterialHelper {
     constructor(asset) {
         super(asset);
     }
@@ -24705,7 +24708,7 @@ class BasicMaterialHelper$1 extends MaterialHelper {
         }
         return menuFieldsMap;
     }
-}
+};
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -38824,4 +38827,4 @@ function disableImmersion() {
     global$1.disableImmersion = true;
 }
 
-export { libraryHandler as LibraryHandler, projectHandler as ProjectHandler, disableImmersion, getDeviceType, setup, setupEditor, version };
+export { libraryHandler as LibraryHandler, ProjectHandler$1 as ProjectHandler, disableImmersion, getDeviceType, setup, setupEditor, version };
