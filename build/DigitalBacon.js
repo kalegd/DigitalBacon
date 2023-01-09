@@ -38817,7 +38817,7 @@ function setup(containerId, projectFilePath, authUrl, partyUrl) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const version = "0.0.4";
+const version = "0.0.5";
 
 function getDeviceType() {
     return global$1.deviceType;
