@@ -37,6 +37,8 @@ class JoinPartyPage extends MenuPage {
             'contentDirection': 'column',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
         });
         this._textField = new TextField({
             'height': 0.03,

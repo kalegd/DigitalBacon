@@ -17,12 +17,13 @@ const SIXTY_FOUR_KB = 1024 * 64;
 const TIMEOUT = 20000; //20 Seconds
 
 export default class RTCPeer {
-    constructor(peerId, polite, socket, onTimeout) {
+    constructor(peerId, polite, socket, mediaStream, onTimeout) {
         this._peerId = peerId;
         this._polite = polite;
         this._socket = socket;
         this._onTimeout = onTimeout;
-        this._myAudioTrack;
+        this._myAudioStream = mediaStream;
+        this._myAudioTrack = mediaStream.getAudioTracks()[0];
         this._peerAudioTrack;
         this._connection = new RTCPeerConnection(CONFIGURATION);
         this._audio = createAudioElement();
@@ -34,6 +35,7 @@ export default class RTCPeer {
         if(!polite) this._timeoutId = setTimeout(() => this._timeout(),TIMEOUT);
         this._setupConnection();
         this._sendDataQueue = new Queue();
+        if(!this._polite) this._setupDataChannel();
     }
 
     _setupConnection() {
@@ -67,7 +69,7 @@ export default class RTCPeer {
             }
         }
         this._connection.ondatachannel = (e) => {
-            if(this._polite) return;
+            if(!this._polite) return;
             this._dataChannel = e.channel;
             this._dataChannel.binaryType = "arraybuffer";
             this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
@@ -85,7 +87,8 @@ export default class RTCPeer {
             let state = this._connection.connectionState;
             if(state == "connected" && !this._hasConnected) {
                 this._hasConnected = true;
-                if(this._polite) this._setupDataChannel();
+                if(this._myAudioTrack)
+                    this._addAudioTrack();
                 if(!this._polite) clearTimeout(this._timeoutId);
             } else if(state == "disconnected" || state == "failed") {
                 if(!this._polite) clearTimeout(this._timeoutId);
@@ -115,16 +118,17 @@ export default class RTCPeer {
     }
 
     toggleMyselfMuted(muted) {
+        if(!this._myAudioTrack) return;
         this._myAudioTrack.enabled = !muted;
     }
 
     togglePeerMuted(muted) {
+        if(!this._peerAudioTrack) return;
         this._peerAudioTrack.enabled = !muted;
     }
 
-    addAudioTrack(track, srcObject) {
-        this._myAudioTrack = track;
-        this._connection.addTrack(track, srcObject);
+    _addAudioTrack(track, srcObject) {
+        this._connection.addTrack(this._myAudioTrack, this._myAudioStream);
     }
 
     close() {

@@ -294,6 +294,7 @@ export default class AssetHelper extends EditorHelper {
     }
 
     removeFromScene() {
+        this._attachedPeers.clear();
         global.scene.remove(this._boundingBoxObj);
         fullDispose(this._boundingBoxObj);
         this._removeInteractables();

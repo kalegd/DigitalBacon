@@ -101,6 +101,11 @@ class Party {
         fetch(global.authUrl)
             .then((response) => response.json())
             .then((body) => {
+                if(!body.authToken) {
+                    this.disconnect();
+                    errorCallback({ topic: 'bad-auth' });
+                    return;
+                }
                 this._authToken = body.authToken;
                 successCallback();
             })
@@ -194,10 +199,7 @@ class Party {
         let peerId = message.peerId;
         let polite = message.polite;
         this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket,
-            () => this._onRTCTimeout());
-        let streamClone = this._userAudio.srcObject.clone();
-        this._peers[peerId].addAudioTrack(streamClone.getAudioTracks()[0],
-            streamClone);
+            this._userAudio.srcObject.clone(), () => this._onRTCTimeout());
         if(this._onSetupPeer) this._onSetupPeer(this._peers[peerId]);
     }
 }
