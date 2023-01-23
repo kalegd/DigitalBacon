@@ -69,6 +69,7 @@ export default class RTCPeer {
         this._connection.ondatachannel = (e) => {
             if(this._polite) return;
             this._dataChannel = e.channel;
+            this._dataChannel.binaryType = "arraybuffer";
             this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
             this._dataChannel.onopen = (e) => {
                 if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
@@ -96,6 +97,7 @@ export default class RTCPeer {
     _setupDataChannel() {
         this._dataChannel = this._connection.createDataChannel(
             this._peerId);
+        this._dataChannel.binaryType = "arraybuffer";
         this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
         this._dataChannel.onopen = (e) => {
             if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
@@ -136,9 +138,9 @@ export default class RTCPeer {
         return this._peerId;
     }
 
-    handleCandidate(message) {
+    async handleCandidate(message) {
         try {
-            this._connection.addIceCandidate(message.candidate);
+            await this._connection.addIceCandidate(message.candidate);
         } catch(error) {
             if(!this._ignoreOffer) console.error(error);
         }
@@ -183,7 +185,11 @@ export default class RTCPeer {
     _sendData() {
         let channel = this._dataChannel;
         while(channel.bufferedAmount <= channel.bufferedAmountLowThreshold) {
-            channel.send(this._sendDataQueue.dequeue());
+            try {
+                channel.send(this._sendDataQueue.dequeue());
+            } catch(err) {
+                if(!err.message.includes("readyState is not 'open'")) throw err;
+            }
             if(this._sendDataQueue.length == 0) return;
         }
         channel.onbufferedamountlow = () => {
