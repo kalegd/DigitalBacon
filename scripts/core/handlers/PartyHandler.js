@@ -175,7 +175,7 @@ class PartyHandler {
         if(peer && peer.rtc) {
             peer.rtc.close();
         } else {
-            console.error("Error: couldn't boot peer. Maybe a race condition?");
+            console.warn("Warn: couldn't boot peer because peer's rtc connection does not exist. Likely a race condition where the peer disconnecting from their end already closed the connection");
         }
     }
 

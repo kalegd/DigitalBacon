@@ -42,7 +42,7 @@ class NavigationPage extends MenuPage {
             'justifyContent': 'start',
             'backgroundOpacity': 0,
         });
-        let supportsParty = global.authUrl && global.partyUrl;
+        let supportsParty = global.authUrl && global.socketUrl;
         for(let page of pages) {
             if(global.deviceType != 'XR' && page['menuPage'] == MenuPages.HANDS)
                 continue;

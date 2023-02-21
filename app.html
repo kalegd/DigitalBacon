@@ -35,30 +35,30 @@
           ProjectHandler
       } from 'DigitalBacon';
 
-      let authUrl =
-          'https://efjdkvjusd.execute-api.us-east-1.amazonaws.com/prod/auth';
-      let partyUrl =
-          'wss://4qwv60mhml.execute-api.us-east-1.amazonaws.com/prod';
+      let params = {
+          projectFilePath: '/projects/default-project.zip',
+          authUrl: 'https://efjdkvjusd.execute-api.us-east-1.amazonaws.com/prod/auth',
+          socketUrl: 'wss://4qwv60mhml.execute-api.us-east-1.amazonaws.com/prod',
+      };
 
-      setupEditor("container", "/projects/default-project.zip", authUrl,
-          partyUrl).then(() => {
-              let imagePath;
-              let deviceType = getDeviceType();
-              if(deviceType == "XR") {
-                  imagePath = "images/vr_controls.png";
-              } else if(deviceType == "MOBILE") {
-                  imagePath = "images/mobile_controls.png";
-              } else if(deviceType == "POINTER") {
-                  imagePath = "images/computer_controls.png";
-              }
-              LibraryHandler.loadAsset(imagePath, (assetId) => {
-                  ProjectHandler.addImage({
-                      "assetId": assetId,
-                      "position": [0, 1.35, -4.72],
-                      "scale": [3.77, 3.77, 3.77],
-                  }, true);
-              });
+      setupEditor("container", params).then(() => {
+          let imagePath;
+          let deviceType = getDeviceType();
+          if(deviceType == "XR") {
+              imagePath = "images/vr_controls.png";
+          } else if(deviceType == "MOBILE") {
+              imagePath = "images/mobile_controls.png";
+          } else if(deviceType == "POINTER") {
+              imagePath = "images/computer_controls.png";
+          }
+          LibraryHandler.loadAsset(imagePath, (assetId) => {
+              ProjectHandler.addImage({
+                  "assetId": assetId,
+                  "position": [0, 1.35, -4.72],
+                  "scale": [3.77, 3.77, 3.77],
+              }, true);
           });
+      });
     </script>
     <!--<script>
         //For setting up ServiceWorker

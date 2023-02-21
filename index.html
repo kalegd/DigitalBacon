@@ -184,21 +184,22 @@
       }
 
       disableImmersion();
-      setup("container", "/projects/default-project.zip").then((App) => {
-          addControlsPanel();
-          app = App;
-          camera = App.getCamera();
-          cameraFocus = new Object3D();
-          scene = App.getScene();
-          scene.add(cameraFocus);
-          cameraFocus.add(camera);
-          camera.position.set(0, 8, 23);
-          camera.rotation.set(-Math.PI / 10, 0, 0);
-          setInterval(() => {
-              cameraFocus.rotateY(Math.PI / 5000);
-          }, 10);
-          window.addEventListener('resize', onResize);
-          onResize();
+      setup("container", { projectFilePath: "/projects/default-project.zip" })
+          .then((App) => {
+              addControlsPanel();
+              app = App;
+              camera = App.getCamera();
+              cameraFocus = new Object3D();
+              scene = App.getScene();
+              scene.add(cameraFocus);
+              cameraFocus.add(camera);
+              camera.position.set(0, 8, 23);
+              camera.rotation.set(-Math.PI / 10, 0, 0);
+              setInterval(() => {
+                  cameraFocus.rotateY(Math.PI / 5000);
+              }, 10);
+              window.addEventListener('resize', onResize);
+              onResize();
       });
     </script>
   </body>

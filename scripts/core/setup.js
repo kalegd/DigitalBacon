@@ -246,18 +246,19 @@ function setupContainer(containerId) {
     container.style.position = 'relative';
 }
 
-function setupEditor(containerId, projectFilePath, authUrl, partyUrl) {
+function setupEditor(containerId, params) {
     global.isEditor = true;
-    return setup(containerId, projectFilePath, authUrl, partyUrl);
+    return setup(containerId, params);
 }
 
-function setup(containerId, projectFilePath, authUrl, partyUrl) {
-    global.authUrl = authUrl;
-    global.partyUrl = partyUrl;
+function setup(containerId, params) {
+    params = params || {};
+    global.authUrl = params.authUrl;
+    global.socketUrl = params.socketUrl;
     let promise = new Promise((resolve) => {
         //Check mobile override for VR capable phones
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
-            start(resolve, containerId, projectFilePath);
+            start(resolve, containerId, params.projectFilePath);
             return;
         }
         if('xr' in navigator) {
@@ -271,11 +272,11 @@ function setup(containerId, projectFilePath, authUrl, partyUrl) {
                 }).catch(function() {
                     checkIfPointer();
                 }).finally(function() {
-                    start(resolve, containerId, projectFilePath);
+                    start(resolve, containerId, params.projectFilePath);
                 });
         } else {
             checkIfPointer();
-            start(resolve, containerId, projectFilePath);
+            start(resolve, containerId, params.projectFilePath);
         }
     });
     return promise;

@@ -12,6 +12,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 const CONSTRAINTS = { audio: true, video: false };
 const NINE_MINUTES = 60000 * 9;
+const FIFTY_MINUTES = 60000 * 50;
 
 class Party {
     constructor() {
@@ -21,6 +22,7 @@ class Party {
         this._userAudio.defaultMuted = true;
         this._userAudio.muted = true;
         this._pingIntervalId = null;
+        this._authIntervalId = null;
     }
 
     host(roomId, successCallback, errorCallback) {
@@ -66,6 +68,10 @@ class Party {
             clearInterval(this._pingIntervalId);
             this._pingIntervalId = null;
         }
+        if(this._authIntervalId) {
+            clearInterval(this._authIntervalId);
+            this._authIntervalId = null;
+        }
         this._socket = null;
         this._isHost = false;
         for(let peerId in this._peers) {
@@ -98,20 +104,20 @@ class Party {
     }
 
     _fetchAuthToken(successCallback, errorCallback) {
-        fetch(global.authUrl)
+        fetch(global.authUrl, { cache: "no-store" })
             .then((response) => response.json())
             .then((body) => {
                 if(!body.authToken) {
                     this.disconnect();
-                    errorCallback({ topic: 'bad-auth' });
+                    if(errorCallback) errorCallback({ topic: 'bad-auth' });
                     return;
                 }
                 this._authToken = body.authToken;
-                successCallback();
+                if(successCallback) successCallback();
             })
             .catch((error) => {
                 this.disconnect();
-                errorCallback({ topic: 'bad-auth' });
+                if(errorCallback) errorCallback({ topic: 'bad-auth' });
             });
     }
 
@@ -126,7 +132,7 @@ class Party {
     }
 
     _setupWebSocket() {
-        this._socket = new WebSocket(global.partyUrl);
+        this._socket = new WebSocket(global.socketUrl);
         this._socket.onopen = (e) => { this._onSocketOpen(e); };
         this._socket.onclose = (e) => { this._onSocketClose(e); };
         this._socket.onmessage = (e) => { this._onSocketMessage(e); };
@@ -148,6 +154,13 @@ class Party {
         this._pingIntervalId = setInterval(() => {
             this._socket.send({ topic: "ping" });
         }, NINE_MINUTES);
+        this._authIntervalId = setInterval(() => {
+            this._fetchAuthToken(null, () => {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'Could not authenticate with Server',
+                });
+            });
+        }, FIFTY_MINUTES);
     }
 
     _onSocketClose(e) {
