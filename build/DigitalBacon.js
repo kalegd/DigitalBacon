@@ -12622,6 +12622,7 @@ function createAudioElement$1() {
 
 const CONSTRAINTS = { audio: true, video: false };
 const NINE_MINUTES = 60000 * 9;
+const FIFTY_MINUTES = 60000 * 50;
 
 class Party {
     constructor() {
@@ -12631,6 +12632,7 @@ class Party {
         this._userAudio.defaultMuted = true;
         this._userAudio.muted = true;
         this._pingIntervalId = null;
+        this._authIntervalId = null;
     }
 
     host(roomId, successCallback, errorCallback) {
@@ -12676,6 +12678,10 @@ class Party {
             clearInterval(this._pingIntervalId);
             this._pingIntervalId = null;
         }
+        if(this._authIntervalId) {
+            clearInterval(this._authIntervalId);
+            this._authIntervalId = null;
+        }
         this._socket = null;
         this._isHost = false;
         for(let peerId in this._peers) {
@@ -12708,20 +12714,20 @@ class Party {
     }
 
     _fetchAuthToken(successCallback, errorCallback) {
-        fetch(global$1.authUrl)
+        fetch(global$1.authUrl, { cache: "no-store" })
             .then((response) => response.json())
             .then((body) => {
                 if(!body.authToken) {
                     this.disconnect();
-                    errorCallback({ topic: 'bad-auth' });
+                    if(errorCallback) errorCallback({ topic: 'bad-auth' });
                     return;
                 }
                 this._authToken = body.authToken;
-                successCallback();
+                if(successCallback) successCallback();
             })
             .catch((error) => {
                 this.disconnect();
-                errorCallback({ topic: 'bad-auth' });
+                if(errorCallback) errorCallback({ topic: 'bad-auth' });
             });
     }
 
@@ -12736,7 +12742,7 @@ class Party {
     }
 
     _setupWebSocket() {
-        this._socket = new WebSocket(global$1.partyUrl);
+        this._socket = new WebSocket(global$1.socketUrl);
         this._socket.onopen = (e) => { this._onSocketOpen(e); };
         this._socket.onclose = (e) => { this._onSocketClose(e); };
         this._socket.onmessage = (e) => { this._onSocketMessage(e); };
@@ -12758,6 +12764,13 @@ class Party {
         this._pingIntervalId = setInterval(() => {
             this._socket.send({ topic: "ping" });
         }, NINE_MINUTES);
+        this._authIntervalId = setInterval(() => {
+            this._fetchAuthToken(null, () => {
+                pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                    text: 'Could not authenticate with Server',
+                });
+            });
+        }, FIFTY_MINUTES);
     }
 
     _onSocketClose(e) {
@@ -13957,7 +13970,7 @@ class PartyHandler {
         if(peer && peer.rtc) {
             peer.rtc.close();
         } else {
-            console.error("Error: couldn't boot peer. Maybe a race condition?");
+            console.warn("Warn: couldn't boot peer because peer's rtc connection does not exist. Likely a race condition where the peer disconnecting from their end already closed the connection");
         }
     }
 
@@ -20564,7 +20577,7 @@ class NavigationPage extends MenuPage {
             'justifyContent': 'start',
             'backgroundOpacity': 0,
         });
-        let supportsParty = global$1.authUrl && global$1.partyUrl;
+        let supportsParty = global$1.authUrl && global$1.socketUrl;
         for(let page of pages$3) {
             if(global$1.deviceType != 'XR' && page['menuPage'] == MenuPages.HANDS)
                 continue;
@@ -22525,7 +22538,7 @@ class HomePage extends MenuPage {
             'justifyContent': 'start',
             'backgroundOpacity': 0,
         });
-        let supportsParty = global$1.authUrl && global$1.partyUrl;
+        let supportsParty = global$1.authUrl && global$1.socketUrl;
         for(let page of pages) {
             if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
@@ -38968,18 +38981,19 @@ function setupContainer(containerId) {
     container.style.position = 'relative';
 }
 
-function setupEditor(containerId, projectFilePath, authUrl, partyUrl) {
+function setupEditor(containerId, params) {
     global$1.isEditor = true;
-    return setup(containerId, projectFilePath, authUrl, partyUrl);
+    return setup(containerId, params);
 }
 
-function setup(containerId, projectFilePath, authUrl, partyUrl) {
-    global$1.authUrl = authUrl;
-    global$1.partyUrl = partyUrl;
+function setup(containerId, params) {
+    params = params || {};
+    global$1.authUrl = params.authUrl;
+    global$1.socketUrl = params.socketUrl;
     let promise = new Promise((resolve) => {
         //Check mobile override for VR capable phones
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
-            start(resolve, containerId, projectFilePath);
+            start(resolve, containerId, params.projectFilePath);
             return;
         }
         if('xr' in navigator) {
@@ -38993,11 +39007,11 @@ function setup(containerId, projectFilePath, authUrl, partyUrl) {
                 }).catch(function() {
                     checkIfPointer();
                 }).finally(function() {
-                    start(resolve, containerId, projectFilePath);
+                    start(resolve, containerId, params.projectFilePath);
                 });
         } else {
             checkIfPointer();
-            start(resolve, containerId, projectFilePath);
+            start(resolve, containerId, params.projectFilePath);
         }
     });
     return promise;
@@ -39009,7 +39023,7 @@ function setup(containerId, projectFilePath, authUrl, partyUrl) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const version = "0.0.5";
+const version = "0.0.6";
 
 function getDeviceType() {
     return global$1.deviceType;
