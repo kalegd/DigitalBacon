@@ -26,32 +26,20 @@ class Party {
     }
 
     host(roomId, successCallback, errorCallback) {
-        if(!this._authToken) {
-            this._fetchAuthToken(() => {
-                this.host(roomId, successCallback, errorCallback);
-            }, errorCallback);
-            return;
-        }
-        if(this._socket) this.disconnect();
-        this._isHost = true;
-        this._roomId = roomId;
-        this._successCallback = successCallback;
-        this._errorCallback = errorCallback;
-        if(this._userAudio.srcObject) {
-            this._setupWebSocket();
-        } else {
-            this._setupUserMedia();
-        }
+        this._fetchAuthToken(() => {
+            this.connect(true, roomId, successCallback, errorCallback);
+        }, errorCallback);
     }
 
     join(roomId, successCallback, errorCallback) {
-        if(!this._authToken) {
-            this._fetchAuthToken(() => {
-                this.join(roomId, successCallback, errorCallback);
-            }, errorCallback);
-            return;
-        }
+        this._fetchAuthToken(() => {
+            this.connect(false, roomId, successCallback, errorCallback);
+        }, errorCallback);
+    }
+
+    connect(isHost, roomId, successCallback, errorCallback) {
         if(this._socket) this.disconnect();
+        this._isHost = isHost;
         this._roomId = roomId;
         this._successCallback = successCallback;
         this._errorCallback = errorCallback;
