@@ -116,8 +116,8 @@ export const Colors = {
 };
 
 export const Fonts = {
-    "defaultFamily": '/fonts/OpenSans-Regular-msdf.json',
-    "defaultTexture": '/fonts/OpenSans-Regular-msdf.png',
+    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.json',
+    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.png',
 };
 
 export const FontSizes = {
