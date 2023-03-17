@@ -25,6 +25,7 @@ class PartyHandler {
             project: (p, m) => { this._handleProject(p, m); },
         };
         PartyMessageHelper.init(this);
+        Party.setOnPeerIdUpdate((o, n) => { this._updatePeerId(o, n); });
         Party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
         Party.setOnDisconnect(() => { this._onDisconnect(); });
     }
@@ -83,6 +84,12 @@ class PartyHandler {
                 this._handleArrayBuffer(peer, message);
             }
         });
+    }
+
+    _updatePeerId(oldPeerId, newPeerId) {
+        this._peers[oldPeerId].id = newPeerId;
+        this._peers[newPeerId] = this._peers[oldPeerId];
+        delete this._peers[oldPeerId];
     }
 
     _handleJSON(peer, message) {

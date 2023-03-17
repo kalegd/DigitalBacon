@@ -52,6 +52,7 @@ class Party {
 
     disconnect() {
         if(this._socket) this._socket.close();
+        if(this._replacementSocket) this._replacementSocket.close();
         if(this._pingIntervalId) {
             clearInterval(this._pingIntervalId);
             this._pingIntervalId = null;
@@ -83,6 +84,10 @@ class Party {
         });
     }
 
+    setOnPeerIdUpdate(f) {
+        this._onPeerIdUpdate = f;
+    }
+
     setOnSetupPeer(f) {
         this._onSetupPeer = f;
     }
@@ -109,6 +114,39 @@ class Party {
             });
     }
 
+    _initiateUpdateSocket() {
+        this._socket.send({
+            topic: "update-connection",
+            initiate: true,
+        });
+    }
+
+    _updateSocket(code) {
+        this._replacementSocket.send({
+            topic: "update-connection",
+            code: code,
+        });
+    }
+
+    _updateSocketSuccess() {
+        let oldSocket = this._socket;
+        this._socket = this._replacementSocket;
+        this._socket.send = (body) => {
+            body['authToken'] = this._authToken;
+            this._socket._send(JSON.stringify(body));
+        };
+        oldSocket.onclose = () => {};
+        oldSocket.close();
+        this._replacementSocket = null;
+    }
+
+    _replacePeerId(oldPeerId, newPeerId) {
+        this._peers[oldPeerId].setPeerId(newPeerId);
+        this._peers[newPeerId] = this._peers[oldPeerId];
+        delete this._peers[oldPeerId];
+        if(this._onPeerIdUpdate) this._onPeerIdUpdate(oldPeerId, newPeerId);
+    }
+
     _setupUserMedia() {
         navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
             this._userAudio.srcObject = stream;
@@ -132,6 +170,19 @@ class Party {
         };
     }
 
+    _setupReplacementSocket() {
+        this._replacementSocket = new WebSocket(global.socketUrl);
+        this._replacementSocket.onopen = () => { this._initiateUpdateSocket();};
+        this._replacementSocket.onclose = this._socket.onclose;
+        this._replacementSocket.onmessage = this._socket.onmessage;
+        this._replacementSocket.onerror = this._socket.onerror;
+        this._replacementSocket._send = this._replacementSocket.send;
+        this._replacementSocket.send = (body) => {
+            body['authToken'] = this._authToken;
+            this._replacementSocket._send(JSON.stringify(body));
+        };
+    }
+
     _onSocketOpen(e) {
         this._socket.send({
             topic: "identify",
@@ -143,11 +194,12 @@ class Party {
             this._socket.send({ topic: "ping" });
         }, NINE_MINUTES);
         this._authIntervalId = setInterval(() => {
-            this._fetchAuthToken(null, () => {
-                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Could not authenticate with Server',
+            this._fetchAuthToken(() => { this._setupReplacementSocket(); },
+                () => {
+                    PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Could not authenticate with Server',
+                    });
                 });
-            });
         }, FIFTY_MINUTES);
     }
 
@@ -166,6 +218,12 @@ class Party {
             this._peers[message.from].handleDescription(message);
         } else if(topic == "hosting") {
             if(this._successCallback) this._successCallback();
+        } else if(topic == "update-connection-ready") {
+            this._updateSocket(message.code);
+        } else if(topic == "update-connection-success") {
+            this._updateSocketSuccess();
+        } else if(topic == "replace-connection") {
+            this._replacePeerId(message.oldPeerId, message.newPeerId);
         } else if(topic == "designate-host") {
             PubSub.publish(this._id, PubSubTopics.BECOME_PARTY_HOST);
         } else if(topic == "boot-peer") {
@@ -181,6 +239,11 @@ class Party {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: "Error: Couldn't make user host",
             });
+        } else if(topic == "error" && message.requestTopic == "update-connection"){
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Could not reinitiate connection with Server',
+            });
+            this.disconnect();
         } else {
             this.disconnect();
             if(this._errorCallback) this._errorCallback(message);

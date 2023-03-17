@@ -142,6 +142,10 @@ export default class RTCPeer {
         return this._peerId;
     }
 
+    setPeerId(peerId) {
+        this._peerId = peerId;
+    }
+
     async handleCandidate(message) {
         try {
             await this._connection.addIceCandidate(message.candidate);
