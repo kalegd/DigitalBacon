@@ -21,8 +21,8 @@
     "jszip": "3.10.1",
     "jszip-utils": "0.1.0",
     "nipplejs": "0.9.1",
-    "three": "0.147.0",
-    "three-mesh-ui": "6.5.2"
+    "three": "0.150.0",
+    "three-mesh-ui": "6.5.3"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "5.0.2",
