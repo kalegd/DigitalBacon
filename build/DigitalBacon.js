@@ -56,6 +56,7 @@ const PubSubTopics$1 = {
     TEXTURE_ADDED: "TEXTURE_ADDED",
     TEXTURE_DELETED: "TEXTURE_DELETED",
     TEXTURE_UPDATED: "TEXTURE_UPDATED",
+    USER_SCALE_UPDATED: "USER_SCALE_UPDATED",
 };
 
 /*
@@ -8199,11 +8200,11 @@ class SessionHandler {
     }
 
     enableOrbit() {
-        this._controls.enableRotate = true;
+        if(this._controls) this._controls.enableRotate = true;
     }
 
     disableOrbit() {
-        this._controls.enableRotate = false;
+        if(this._controls) this._controls.enableRotate = false;
     }
 
     getControlsUpdateNumber() {
@@ -8355,7 +8356,7 @@ class Avatar {
     }
 
     _createMesh(filename) {
-        if(/\.glb$/.test(filename)) {
+        if(/\.glb/.test(filename)) {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(filename, (gltf) => {
                 gltf.scene.rotateY(Math.PI);
@@ -8447,12 +8448,18 @@ class Avatar {
                 if(Array.isArray(node.material)) {
                     for(let i = 0; i < node.material.length; i++) {
                         let material = node.material[i];
-                        if(!material.transparent) material.transparent = true;
+                        if(!material.transparent) {
+                            material.transparent = true;
+                            material.needsUpdate = true;
+                        }
                         material.opacity = material.userData['opacity']*percent;
                     }
                 } else {
                     let material = node.material;
-                    if(!material.transparent) material.transparent = true;
+                    if(!material.transparent) {
+                        material.transparent = true;
+                        material.needsUpdate = true;
+                    }
                     material.opacity = material.userData['opacity'] * percent;
                 }
             }
@@ -8466,14 +8473,20 @@ class Avatar {
             if(node instanceof THREE.Mesh && node.material) {
                 if(Array.isArray(node.material)) {
                     for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.transparent = material.userData['transparent'];
-                        material.opacity = material.userData['opacity'];
+                        let mtrl = node.material[i];
+                        if(mtrl.transparent != mtrl.userData['transparent']) {
+                            mtrl.transparent = mtrl.userData['transparent'];
+                            mtrl.needsUpdate = true;
+                        }
+                        mtrl.opacity = mtrl.userData['opacity'];
                     }
                 } else {
-                    let material = node.material;
-                    material.transparent = material.userData['transparent'];
-                    material.opacity = material.userData['opacity'];
+                    let mtrl = node.material;
+                    if(mtrl.transparent != mtrl.userData['transparent']) {
+                        mtrl.transparent = mtrl.userData['transparent'];
+                        mtrl.needsUpdate = true;
+                    }
+                    mtrl.opacity = mtrl.userData['opacity'];
                 }
             }
         });
@@ -8603,6 +8616,7 @@ class SettingsHandler {
         };
         this.editorSettings = {
             "Movement Speed": 3,
+            "User Scale": 1,
             "Enable Flying": true,
             "Swap Joysticks": false,
         };
@@ -8695,6 +8709,13 @@ class SettingsHandler {
             : this.settings['User Settings']['Movement Speed'];
     }
 
+    getUserScale() {
+        return (global$1.isEditor)
+            ? this.editorSettings['User Scale']
+            : 1;//TODO: allow users to access menu and configure a specific
+                    //      set of settings
+    }
+
     isFlyingEnabled() {
         return (global$1.isEditor)
             ? this.editorSettings['Enable Flying']
@@ -8772,6 +8793,7 @@ class BasicMovement {
     };
 
     _moveUp(velocity, timeDelta) {
+        velocity = this._userObj.scale.y * velocity;
         this._worldVelocity.setY(velocity);
         vector3s$1[0].fromArray([0, velocity * timeDelta, 0]);
         this._userObj.position.add(vector3s$1[0]);
@@ -8845,7 +8867,7 @@ class BasicMovement {
             vector3s$1[1].copy(vector3s$1[0]);
             this._moveForward(this._velocity.z, timeDelta);
             vector3s$1[1].add(vector3s$1[0]);
-            if(vector3s$1[1].length() > 0.001) {
+            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
                 vector3s$1[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s$1[1]);
             }
@@ -8889,7 +8911,7 @@ class BasicMovement {
             vector3s$1[1].copy(vector3s$1[0]);
             this._moveForward(this._velocity.z, timeDelta);
             vector3s$1[1].add(vector3s$1[0]);
-            if(vector3s$1[1].length() > 0.001) {
+            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
                 vector3s$1[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s$1[1]);
             }
@@ -9530,7 +9552,7 @@ class ThreeMeshUIHelper {
  */
 
 class UndoRedoHandler {
-    constructor() {
+    init() {
         this._currentAction = {};
         this._disableOwners = new Set();
         this._setupButtons();
@@ -11238,6 +11260,11 @@ class TransformControlsHandler {
                 }
             }
         });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let option in this._attachedAssets) {
+                this._detachDeleted(option);
+            }
+        });
     }
 
     _addEventListeners() {
@@ -11396,7 +11423,6 @@ class TransformControlsHandler {
         vector3s$1[1].y = 0;
         vector3s$1[1].setLength(0.2);
         vector3s$1[1].applyAxisAngle(vector3s$1[0], -Math.PI / 4);
-        object.worldToLocal(vector3s$1[1]);
         object.position.add(vector3s$1[1]);
 
         instance.getEditorHelper().roundAttributes(true);
@@ -12101,6 +12127,7 @@ const UserMessageCodes = {
 const AVATAR_KEY = "DigitalBacon:Avatar";
 const FADE_START = 0.6;
 const FADE_END = 0.2;
+//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
 const FADE_RANGE = FADE_START - FADE_END;
 const EPSILON = 0.00000000001;
   
@@ -12109,6 +12136,7 @@ class UserController {
         if(params == null) {
             params = {};
         }
+        this._id = uuidv4();
         this._dynamicAssets = [];
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
@@ -12117,6 +12145,7 @@ class UserController {
         this._avatarFadeUpdateNumber = 0;
 
         this._setup();
+        this._addSubscriptions();
     }
 
     _setup() {
@@ -12139,6 +12168,12 @@ class UserController {
         this._dynamicAssets.push(this._basicMovement);
     }
 
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.USER_SCALE_UPDATED, (scale) => {
+            this._userObj.scale.set(scale, scale, scale);
+        });
+    }
+
     getAvatarUrl() {
         return this._avatarUrl;
     }
@@ -12159,9 +12194,11 @@ class UserController {
 
     _pushXRDataForRTC(data) {
         let codes = 0;
+        let userScale = settingsHandler.getUserScale();
         global$1.camera.getWorldPosition(vector3s$1[0]);
         this._userObj.getWorldPosition(vector3s$1[1]);
-        let position = vector3s$1[0].sub(vector3s$1[1]).toArray();
+        let position = vector3s$1[0].sub(vector3s$1[1]).divideScalar(userScale)
+            .toArray();
 
         global$1.camera.getWorldQuaternion(quaternion);
         quaternion.normalize();
@@ -12176,7 +12213,8 @@ class UserController {
         for(let hand of [Hands.LEFT, Hands.RIGHT]) {
             let userHand = this.hands[hand];
             if(userHand.isInScene()) {
-                position = userHand.getWorldPosition().sub(vector3s$1[1]);
+                position = userHand.getWorldPosition().sub(vector3s$1[1])
+                    .divideScalar(userScale);
                 rotation = userHand.getWorldRotation().toArray();
                 rotation.pop();
                 data.push(...position.toArray());
@@ -12233,6 +12271,7 @@ class UserController {
         if(cameraDistance > FADE_START * 2) return;
         let diff = cameraDistance - this._avatarFadeCameraDistance;
         if(Math.abs(diff) < EPSILON) return;
+        //Fade Logic Start
         this._avatarFadeCameraDistance = cameraDistance;
         let object = this._avatar.getObject();
         let fadePercent = Math.max(cameraDistance, FADE_END);
@@ -12246,6 +12285,16 @@ class UserController {
         (fadePercent < 1)
             ? this._avatar.fade(fadePercent)
             : this._avatar.endFade();
+        //Fade Logic end
+
+        //Disappear Logic start
+        //let object = this._avatar.getObject();
+        //if(cameraDistance < FADE_MIDDLE) {
+        //    if(object.parent) this._avatar.removeFromScene();
+        //} else if(!object.parent) {
+        //    this._avatar.addToScene(global.cameraFocus);
+        //}
+        //Disappear Logic end
     }
 
     update(timeDelta) {
@@ -12618,7 +12667,11 @@ class RTCPeer {
                     this._addAudioTrack();
                 if(!this._polite) clearTimeout(this._timeoutId);
             } else if(state == "disconnected" || state == "failed") {
-                if(!this._polite) clearTimeout(this._timeoutId);
+                if(!this._polite) {
+                    clearTimeout(this._timeoutId);
+                    if(!this._hasConnected && this._onFailedImpoliteConnect)
+                        this._onFailedImpoliteConnect();
+                }
                 if(this._onDisconnect) this._onDisconnect();
             }
         };
@@ -12641,7 +12694,10 @@ class RTCPeer {
     }
 
     _timeout() {
-        if(this._onTimeout) this._onTimeout();
+        if(this._onTimeout) {
+            this._onFailedImpoliteConnect = null;
+            this._onTimeout();
+        }
     }
 
     toggleMyselfMuted(muted) {
@@ -12735,6 +12791,10 @@ class RTCPeer {
 
     setOnDisconnect(f) {
         this._onDisconnect = f;
+    }
+
+    setOnFailedImpoliteConnect(f) {
+        this._onFailedImpoliteConnect = f;
     }
 
     setOnMessage(f) {
@@ -13173,6 +13233,10 @@ class PeerController extends Entity {
         }
     }
 
+    updateScale(scale) {
+        this._object.scale.set(scale, scale, scale);
+    }
+
     updateUsername(username) {
         if(this._username == username) return;
         this._username = username;
@@ -13501,6 +13565,7 @@ class PartyMessageHelper {
             avatar: (p, m) => { this._handleAvatar(p, m); },
             asset_added: (p, m) => { this._handleAssetAdded(p, m); },
             username: (p, m) => { this._handleUsername(p, m); },
+            user_scale: (p, m) => { this._handleUserScale(p,m);},
         };
         for(let topic in BLOCKABLE_HANDLERS_MAP) {
             let handler = BLOCKABLE_HANDLERS_MAP[topic];
@@ -13716,6 +13781,11 @@ class PartyMessageHelper {
         });
     }
 
+    _handleUserScale(peer, message) {
+        let scale = message.scale;
+        if(peer.controller) peer.controller.updateScale(scale);
+    }
+
     handlePartyStarted() {
         pubSub.publish(this._id, PubSubTopics$1.PARTY_STARTED);
     }
@@ -13890,6 +13960,16 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishUserScaleUpdated(scale) {
+        let message = {
+            topic: 'user_scale',
+            scale: scale,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+
     addSubscriptions() {
         pubSub.subscribe(this._id, PubSubTopics$1.ASSET_ADDED, (assetId) => {
             this._publishQueue.enqueue(() => {
@@ -13965,6 +14045,11 @@ class PartyMessageHelper {
         pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED, (message) => {
             this._publishQueue.enqueue(() => {
                 return this._publishAssetUpdate(message, "texture");
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.USER_SCALE_UPDATED, (scale) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishUserScaleUpdated(scale);
             });
         });
     }
@@ -14050,6 +14135,10 @@ class PartyHandler {
                 topic: 'username',
                 username: this._username,
             }));
+            rtc.sendData(JSON.stringify({
+                topic: 'user_scale',
+                scale: settingsHandler.getUserScale(),
+            }));
             if(this._isHost) {
                 if(global$1.isEditor) {
                     this._sendProject([rtc]);
@@ -14065,6 +14154,11 @@ class PartyHandler {
                 delete this._peers[peer.id];
                 partyMessageHelper.handlePeerDisconnected(peer);
             }
+        });
+        rtc.setOnFailedImpoliteConnect(() => {
+            if(this._errorCallback)
+                this._errorCallback({ topic: 'could-not-connect' });
+            party.disconnect();
         });
         rtc.setOnMessage((message) => {
             if(typeof message == "string") {
@@ -17414,6 +17508,7 @@ class ProjectHandler {
     }
 
     loadZip(jsZip, successCallback, errorCallback) {
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, false, true);
         this.reset();
         let lock = uuidv4();
         global$1.loadingLocks.add(lock);
@@ -17982,6 +18077,7 @@ class MenuController extends PointerInteractableEntity {
     }
 
     _openMenu() {
+        let userScale = settingsHandler.getUserScale();
         global$1.renderer.getSize(vector2);
         let aspectRatio = vector2.x / vector2.y;
         let menuDistanceScale = (aspectRatio > 1.15)
@@ -17989,9 +18085,10 @@ class MenuController extends PointerInteractableEntity {
             : 1.5 * aspectRatio;
         global$1.camera.getWorldPosition(vector3s$1[0]);
         global$1.camera.getWorldDirection(vector3s$1[1]);
-        vector3s$1[1].normalize().divideScalar(menuDistanceScale);
+        vector3s$1[1].normalize().divideScalar(menuDistanceScale).multiplyScalar(userScale);
         this._object.position.addVectors(vector3s$1[0], vector3s$1[1]);
         this._object.lookAt(vector3s$1[0]);
+        this._object.scale.set(userScale, userScale, userScale);
         this.addToScene(this._scene);
     }
 
@@ -19301,6 +19398,20 @@ class EditorSettingsPage extends DynamicFieldsPage {
                 return settingsHandler.getEditorSettings()['Movement Speed'];
             },
         }));
+        fields.push(new NumberInput({
+            'title': 'User Scale',
+            'minValue': 0.001,
+            'maxValue': 1000,
+            'initialValue': 1,
+            'onBlur': (oldValue, newValue) => {
+                pubSub.publish(this._id, PubSubTopics$1.USER_SCALE_UPDATED,
+                    newValue);
+                settingsHandler.setEditorSetting('User Scale', newValue);
+            },
+            'getFromSource': () => {
+                return settingsHandler.getEditorSettings()['User Scale'];
+            },
+        }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
@@ -19730,6 +19841,10 @@ class JoinPartyPage extends MenuPage {
             });
         } else if(topic == 'rtc-timeout') {
             pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Could not connect to all other users in time, please try again',
+            });
+        } else if(topic == 'could-not-connect') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
                 text: 'Could not connect to all other users, please try again',
             });
         } else if(topic == 'bad-auth') {
@@ -20048,7 +20163,6 @@ class LoadFromGDrivePage extends PaginatedPage {
             content: "Project Loading..."
         });
         this._updateLoadingSaving(false);
-        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, false);
         googleDrive.loadFile(this._instances[item]['id'],
             (jsZip) => { this._loadSuccessCallback(jsZip); },
             () => { this._loadErrorCallback(); });
@@ -20068,7 +20182,6 @@ class LoadFromGDrivePage extends PaginatedPage {
 
     _loadErrorCallback() {
         this._updateLoadingSaving(true);
-        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, true);
         pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
             text: 'Error Loading Project',
             sustainTime: 5,
@@ -21827,7 +21940,6 @@ class ProjectPage extends PaginatedPage {
 
     _handleLocalFile(file) {
         this._updateLoading(false);
-        pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
         JSZip.loadAsync(file).then((jsZip) => {
             googleDrive.clearActiveFile();
             ProjectHandler$1.loadZip(jsZip, () => {
@@ -21932,7 +22044,7 @@ class ReadyPlayerMe {
         this._iframe = document.createElement('iframe');
         this._iframe.id = "digital-bacon-rpm-iframe";
         this._iframe.allow = 'camera *; microphone *; clipboard-write';
-        this._iframe.src = 'https://digitalbacon.readyplayer.me/avatar?frameApi';
+        this._iframe.src = 'https://digital-bacon.readyplayer.me/avatar?frameApi&clearCache';
         this._iframe.hidden = true;
         this._closeButton = document.createElement('button');
         this._closeButton.innerHTML = "Close Ready Player Me";
@@ -21966,7 +22078,7 @@ class ReadyPlayerMe {
 
         // Get avatar GLB URL
         if(json.eventName === 'v1.avatar.exported') {
-            UserController$1.updateAvatar(json.data.url);
+            UserController$1.updateAvatar(json.data.url + '?useHands=false');
             this._close();
         }
 
@@ -23024,6 +23136,7 @@ class Main {
         sessionHandler.init(this._container);
         inputHandler.init(this._container, this._renderer, this._userObj);
         pointerInteractableHandler.init();
+        undoRedoHandler.init();
         if(global$1.deviceType == "XR") gripInteractableHandler.init();
         transformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);
