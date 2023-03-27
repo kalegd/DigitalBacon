@@ -61,6 +61,7 @@ export default class BasicMovement {
     };
 
     _moveUp(velocity, timeDelta) {
+        velocity = this._userObj.scale.y * velocity;
         this._worldVelocity.setY(velocity);
         vector3s[0].fromArray([0, velocity * timeDelta, 0]);
         this._userObj.position.add(vector3s[0]);
@@ -134,7 +135,7 @@ export default class BasicMovement {
             vector3s[1].copy(vector3s[0]);
             this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
-            if(vector3s[1].length() > 0.001) {
+            if(vector3s[1].length() > 0.001 * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
@@ -178,7 +179,7 @@ export default class BasicMovement {
             vector3s[1].copy(vector3s[0]);
             this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
-            if(vector3s[1].length() > 0.001) {
+            if(vector3s[1].length() > 0.001 * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }

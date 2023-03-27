@@ -18,6 +18,7 @@ import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
+import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import global from '/scripts/core/global.js';
 import Stats from '/node_modules/three/examples/jsm/libs/stats.module.js';
@@ -96,6 +97,7 @@ export default class Main {
         SessionHandler.init(this._container);
         InputHandler.init(this._container, this._renderer, this._userObj);
         PointerInteractableHandler.init();
+        UndoRedoHandler.init();
         if(global.deviceType == "XR") GripInteractableHandler.init();
         TransformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);

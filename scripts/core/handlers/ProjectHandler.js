@@ -50,6 +50,7 @@ class ProjectHandler {
     }
 
     loadZip(jsZip, successCallback, errorCallback) {
+        PubSub.publish(this._id, PubSubTopics.PROJECT_LOADING, false, true);
         this.reset();
         let lock = uuidv4();
         global.loadingLocks.add(lock);

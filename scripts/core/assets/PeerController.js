@@ -111,6 +111,10 @@ export default class PeerController extends Entity {
         }
     }
 
+    updateScale(scale) {
+        this._object.scale.set(scale, scale, scale);
+    }
+
     updateUsername(username) {
         if(this._username == username) return;
         this._username = username;

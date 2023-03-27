@@ -14,10 +14,12 @@ import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
 const FADE_START = 0.6;
 const FADE_END = 0.2;
+//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
 const FADE_RANGE = FADE_START - FADE_END;
 const EPSILON = 0.00000000001;
   
@@ -26,6 +28,7 @@ class UserController {
         if(params == null) {
             params = {};
         }
+        this._id = uuidv4();
         this._dynamicAssets = [];
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
@@ -34,6 +37,7 @@ class UserController {
         this._avatarFadeUpdateNumber = 0;
 
         this._setup();
+        this._addSubscriptions();
     }
 
     _setup() {
@@ -54,6 +58,12 @@ class UserController {
             'Avatar': this._avatar,
         });
         this._dynamicAssets.push(this._basicMovement);
+    }
+
+    _addSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.USER_SCALE_UPDATED, (scale) => {
+            this._userObj.scale.set(scale, scale, scale);
+        });
     }
 
     getAvatarUrl() {
@@ -150,6 +160,7 @@ class UserController {
         if(cameraDistance > FADE_START * 2) return;
         let diff = cameraDistance - this._avatarFadeCameraDistance
         if(Math.abs(diff) < EPSILON) return;
+        //Fade Logic Start
         this._avatarFadeCameraDistance = cameraDistance;
         let object = this._avatar.getObject();
         let fadePercent = Math.max(cameraDistance, FADE_END);
@@ -163,6 +174,16 @@ class UserController {
         (fadePercent < 1)
             ? this._avatar.fade(fadePercent)
             : this._avatar.endFade();
+        //Fade Logic end
+
+        //Disappear Logic start
+        //let object = this._avatar.getObject();
+        //if(cameraDistance < FADE_MIDDLE) {
+        //    if(object.parent) this._avatar.removeFromScene();
+        //} else if(!object.parent) {
+        //    this._avatar.addToScene(global.cameraFocus);
+        //}
+        //Disappear Logic end
     }
 
     update(timeDelta) {

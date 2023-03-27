@@ -193,7 +193,6 @@ class ProjectPage extends PaginatedPage {
 
     _handleLocalFile(file) {
         this._updateLoading(false);
-        PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
         JSZip.loadAsync(file).then((jsZip) => {
             GoogleDrive.clearActiveFile();
             ProjectHandler.loadZip(jsZip, () => {

@@ -45,6 +45,7 @@ class PartyMessageHelper {
             avatar: (p, m) => { this._handleAvatar(p, m); },
             asset_added: (p, m) => { this._handleAssetAdded(p, m); },
             username: (p, m) => { this._handleUsername(p, m); },
+            user_scale: (p, m) => { this._handleUserScale(p,m);},
         };
         for(let topic in BLOCKABLE_HANDLERS_MAP) {
             let handler = BLOCKABLE_HANDLERS_MAP[topic];
@@ -260,6 +261,11 @@ class PartyMessageHelper {
         });
     }
 
+    _handleUserScale(peer, message) {
+        let scale = message.scale;
+        if(peer.controller) peer.controller.updateScale(scale);
+    }
+
     handlePartyStarted() {
         PubSub.publish(this._id, PubSubTopics.PARTY_STARTED);
     }
@@ -434,6 +440,16 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishUserScaleUpdated(scale) {
+        let message = {
+            topic: 'user_scale',
+            scale: scale,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+
     addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
             this._publishQueue.enqueue(() => {
@@ -509,6 +525,11 @@ class PartyMessageHelper {
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
             this._publishQueue.enqueue(() => {
                 return this._publishAssetUpdate(message, "texture");
+            });
+        });
+        PubSub.subscribe(this._id, PubSubTopics.USER_SCALE_UPDATED, (scale) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishUserScaleUpdated(scale);
             });
         });
     }

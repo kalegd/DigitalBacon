@@ -16,8 +16,8 @@ import Keyboard from '/scripts/core/menu/input/Keyboard.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import * as THREE from 'three';
 
@@ -152,6 +152,7 @@ export default class MenuController extends PointerInteractableEntity {
     }
 
     _openMenu() {
+        let userScale = SettingsHandler.getUserScale();
         global.renderer.getSize(vector2);
         let aspectRatio = vector2.x / vector2.y;
         let menuDistanceScale = (aspectRatio > 1.15)
@@ -159,9 +160,10 @@ export default class MenuController extends PointerInteractableEntity {
             : 1.5 * aspectRatio;
         global.camera.getWorldPosition(vector3s[0]);
         global.camera.getWorldDirection(vector3s[1]);
-        vector3s[1].normalize().divideScalar(menuDistanceScale);
+        vector3s[1].normalize().divideScalar(menuDistanceScale).multiplyScalar(userScale);
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
+        this._object.scale.set(userScale, userScale, userScale);
         this.addToScene(this._scene);
     }
 

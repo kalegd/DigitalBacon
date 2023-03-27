@@ -12,7 +12,7 @@ import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 class UndoRedoHandler {
-    constructor() {
+    init() {
         this._currentAction = {};
         this._disableOwners = new Set();
         this._setupButtons();

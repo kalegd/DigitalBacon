@@ -5,6 +5,8 @@
  */
 
 import global from '/scripts/core/global.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -39,6 +41,20 @@ class EditorSettingsPage extends DynamicFieldsPage {
             },
             'getFromSource': () => {
                 return SettingsHandler.getEditorSettings()['Movement Speed'];
+            },
+        }));
+        fields.push(new NumberInput({
+            'title': 'User Scale',
+            'minValue': 0.001,
+            'maxValue': 1000,
+            'initialValue': 1,
+            'onBlur': (oldValue, newValue) => {
+                PubSub.publish(this._id, PubSubTopics.USER_SCALE_UPDATED,
+                    newValue);
+                SettingsHandler.setEditorSetting('User Scale', newValue);
+            },
+            'getFromSource': () => {
+                return SettingsHandler.getEditorSettings()['User Scale'];
             },
         }));
         fields.push(new CheckboxInput({

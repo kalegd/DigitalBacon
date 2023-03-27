@@ -23,6 +23,7 @@ class SettingsHandler {
         };
         this.editorSettings = {
             "Movement Speed": 3,
+            "User Scale": 1,
             "Enable Flying": true,
             "Swap Joysticks": false,
         };
@@ -113,6 +114,13 @@ class SettingsHandler {
         return (global.isEditor)
             ? this.editorSettings['Movement Speed']
             : this.settings['User Settings']['Movement Speed'];
+    }
+
+    getUserScale() {
+        return (global.isEditor)
+            ? this.editorSettings['User Scale']
+            : 1;//TODO: allow users to access menu and configure a specific
+                    //      set of settings
     }
 
     isFlyingEnabled() {

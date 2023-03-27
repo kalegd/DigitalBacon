@@ -60,6 +60,11 @@ class TransformControlsHandler {
                 }
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            for(let option in this._attachedAssets) {
+                this._detachDeleted(option);
+            }
+        });
     }
 
     _addEventListeners() {
@@ -218,7 +223,6 @@ class TransformControlsHandler {
         vector3s[1].y = 0;
         vector3s[1].setLength(0.2);
         vector3s[1].applyAxisAngle(vector3s[0], -Math.PI / 4);
-        object.worldToLocal(vector3s[1]);
         object.position.add(vector3s[1]);
 
         instance.getEditorHelper().roundAttributes(true);

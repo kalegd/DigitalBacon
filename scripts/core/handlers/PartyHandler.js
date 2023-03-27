@@ -8,6 +8,7 @@ import global from '/scripts/core/global.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import Party from '/scripts/core/clients/Party.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import { concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
 
@@ -57,6 +58,10 @@ class PartyHandler {
             rtc.sendData(JSON.stringify({
                 topic: 'username',
                 username: this._username,
+            }));
+            rtc.sendData(JSON.stringify({
+                topic: 'user_scale',
+                scale: SettingsHandler.getUserScale(),
             }));
             if(this._isHost) {
                 if(global.isEditor) {

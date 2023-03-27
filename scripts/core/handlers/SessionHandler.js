@@ -176,11 +176,11 @@ class SessionHandler {
     }
 
     enableOrbit() {
-        this._controls.enableRotate = true;
+        if(this._controls) this._controls.enableRotate = true;
     }
 
     disableOrbit() {
-        this._controls.enableRotate = false;
+        if(this._controls) this._controls.enableRotate = false;
     }
 
     getControlsUpdateNumber() {

@@ -53,7 +53,7 @@ export default class Avatar {
     }
 
     _createMesh(filename) {
-        if(/\.glb$/.test(filename)) {
+        if(/\.glb/.test(filename)) {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(filename, (gltf) => {
                 gltf.scene.rotateY(Math.PI);
@@ -145,12 +145,18 @@ export default class Avatar {
                 if(Array.isArray(node.material)) {
                     for(let i = 0; i < node.material.length; i++) {
                         let material = node.material[i];
-                        if(!material.transparent) material.transparent = true;
+                        if(!material.transparent) {
+                            material.transparent = true;
+                            material.needsUpdate = true;
+                        }
                         material.opacity = material.userData['opacity']*percent;
                     }
                 } else {
                     let material = node.material;
-                    if(!material.transparent) material.transparent = true;
+                    if(!material.transparent) {
+                        material.transparent = true;
+                        material.needsUpdate = true;
+                    }
                     material.opacity = material.userData['opacity'] * percent;
                 }
             }
@@ -164,14 +170,20 @@ export default class Avatar {
             if(node instanceof THREE.Mesh && node.material) {
                 if(Array.isArray(node.material)) {
                     for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.transparent = material.userData['transparent'];
-                        material.opacity = material.userData['opacity'];
+                        let mtrl = node.material[i];
+                        if(mtrl.transparent != mtrl.userData['transparent']) {
+                            mtrl.transparent = mtrl.userData['transparent'];
+                            mtrl.needsUpdate = true;
+                        }
+                        mtrl.opacity = mtrl.userData['opacity'];
                     }
                 } else {
-                    let material = node.material;
-                    material.transparent = material.userData['transparent'];
-                    material.opacity = material.userData['opacity'];
+                    let mtrl = node.material;
+                    if(mtrl.transparent != mtrl.userData['transparent']) {
+                        mtrl.transparent = mtrl.userData['transparent'];
+                        mtrl.needsUpdate = true;
+                    }
+                    mtrl.opacity = mtrl.userData['opacity'];
                 }
             }
         });

@@ -18,7 +18,7 @@ class ReadyPlayerMe {
         this._iframe = document.createElement('iframe');
         this._iframe.id = "digital-bacon-rpm-iframe";
         this._iframe.allow = 'camera *; microphone *; clipboard-write';
-        this._iframe.src = 'https://digitalbacon.readyplayer.me/avatar?frameApi';
+        this._iframe.src = 'https://digital-bacon.readyplayer.me/avatar?frameApi&clearCache';
         this._iframe.hidden = true;
         this._closeButton = document.createElement('button');
         this._closeButton.innerHTML = "Close Ready Player Me";
@@ -52,7 +52,7 @@ class ReadyPlayerMe {
 
         // Get avatar GLB URL
         if(json.eventName === 'v1.avatar.exported') {
-            UserController.updateAvatar(json.data.url);
+            UserController.updateAvatar(json.data.url + '?useHands=false');
             this._close();
         }
 

@@ -55,7 +55,6 @@ class LoadFromGDrivePage extends PaginatedPage {
             content: "Project Loading..."
         });
         this._updateLoadingSaving(false);
-        PubSub.publish(this._id, PubSubTopics.PROJECT_LOADING, false);
         GoogleDrive.loadFile(this._instances[item]['id'],
             (jsZip) => { this._loadSuccessCallback(jsZip); },
             () => { this._loadErrorCallback(); });
@@ -75,7 +74,6 @@ class LoadFromGDrivePage extends PaginatedPage {
 
     _loadErrorCallback() {
         this._updateLoadingSaving(true);
-        PubSub.publish(this._id, PubSubTopics.PROJECT_LOADING, true);
         PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
             text: 'Error Loading Project',
             sustainTime: 5,
