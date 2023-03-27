@@ -82,6 +82,11 @@ class PartyHandler {
                 PartyMessageHelper.handlePeerDisconnected(peer);
             }
         });
+        rtc.setOnFailedImpoliteConnect(() => {
+            if(this._errorCallback)
+                this._errorCallback({ topic: 'could-not-connect' });
+            Party.disconnect();
+        });
         rtc.setOnMessage((message) => {
             if(typeof message == "string") {
                 this._handleJSON(peer, JSON.parse(message));

@@ -107,6 +107,10 @@ class JoinPartyPage extends MenuPage {
             });
         } else if(topic == 'rtc-timeout') {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Could not connect to all other users in time, please try again',
+            });
+        } else if(topic == 'could-not-connect') {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Could not connect to all other users, please try again',
             });
         } else if(topic == 'bad-auth') {

@@ -91,7 +91,11 @@ export default class RTCPeer {
                     this._addAudioTrack();
                 if(!this._polite) clearTimeout(this._timeoutId);
             } else if(state == "disconnected" || state == "failed") {
-                if(!this._polite) clearTimeout(this._timeoutId);
+                if(!this._polite) {
+                    clearTimeout(this._timeoutId);
+                    if(!this._hasConnected && this._onFailedImpoliteConnect)
+                        this._onFailedImpoliteConnect();
+                }
                 if(this._onDisconnect) this._onDisconnect();
             }
         }
@@ -114,7 +118,10 @@ export default class RTCPeer {
     }
 
     _timeout() {
-        if(this._onTimeout) this._onTimeout();
+        if(this._onTimeout) {
+            this._onFailedImpoliteConnect = null;
+            this._onTimeout();
+        }
     }
 
     toggleMyselfMuted(muted) {
@@ -208,6 +215,10 @@ export default class RTCPeer {
 
     setOnDisconnect(f) {
         this._onDisconnect = f;
+    }
+
+    setOnFailedImpoliteConnect(f) {
+        this._onFailedImpoliteConnect = f;
     }
 
     setOnMessage(f) {

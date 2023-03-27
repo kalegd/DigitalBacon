@@ -13,6 +13,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
@@ -86,9 +87,11 @@ class UserController {
 
     _pushXRDataForRTC(data) {
         let codes = 0;
+        let userScale = SettingsHandler.getUserScale();
         global.camera.getWorldPosition(vector3s[0]);
         this._userObj.getWorldPosition(vector3s[1]);
-        let position = vector3s[0].sub(vector3s[1]).toArray();
+        let position = vector3s[0].sub(vector3s[1]).divideScalar(userScale)
+            .toArray();
 
         global.camera.getWorldQuaternion(quaternion);
         quaternion.normalize();
@@ -103,7 +106,8 @@ class UserController {
         for(let hand of [Hands.LEFT, Hands.RIGHT]) {
             let userHand = this.hands[hand];
             if(userHand.isInScene()) {
-                position = userHand.getWorldPosition().sub(vector3s[1]);
+                position = userHand.getWorldPosition().sub(vector3s[1])
+                    .divideScalar(userScale);
                 rotation = userHand.getWorldRotation().toArray();
                 rotation.pop();
                 data.push(...position.toArray());
