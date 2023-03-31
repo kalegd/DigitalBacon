@@ -6991,6 +6991,7 @@ const HandTools = {
     DELETE: "DELETE",
     EDIT: "EDIT",
     ROTATE: "ROTATE",
+    SCALE: "SCALE",
     TRANSLATE: "TRANSLATE",
 };
 
@@ -7092,6 +7093,7 @@ class InteractableHandler {
         this._toolInteractables[HandTools.DELETE] = new Set();
         this._toolInteractables[HandTools.TRANSLATE] = new Set();
         this._toolInteractables[HandTools.ROTATE] = new Set();
+        this._toolInteractables[HandTools.SCALE] = new Set();
         this._handTool = HandTools.EDIT;
         this._addInteractable = this.addInteractable;
         this._addInteractables = this.addInteractables;
@@ -12784,6 +12786,151 @@ let rotateHandler = new RotateHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+class ScaleHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._heldAssets = {};
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
+            if(message['targetOnlyMenu']) return;
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.asset == e.instance) {
+                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let object = heldAsset.asset.getObject();
+                    if(heldAsset.preTransformState) {
+                        object.scale.fromArray(heldAsset.preTransformState);
+                        assetHelper._publish(['scale']);
+                    }
+                    delete this._heldAssets[key];
+                }
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let key in this._heldAssets) {
+                delete this._heldAssets[key];
+            }
+        });
+    }
+
+    attach(controller, hand, asset, scaleIdentity) {
+        let controllerId = controller.getId();
+        let otherHand = Hands.otherHand(hand);
+        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
+        if(otherHeldAsset && otherHeldAsset.asset == asset) {
+            this._swapToHand(controller, hand, otherHand, scaleIdentity);
+        } else {
+            let heldAsset = {
+                asset: asset,
+                controller: controller,
+                hand: hand,
+            };
+            if(scaleIdentity) {
+                heldAsset.scaleIdentity = scaleIdentity;
+            } else {
+                let distance = controller.hands[hand].getWorldPosition()
+                    .distanceTo(asset.getWorldPosition());
+                let scale = asset.getWorldScale();
+                heldAsset.preTransformState = scale.toArray();
+                heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
+            }
+            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+        }
+        if(!scaleIdentity) {
+            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
+                instance: asset,
+                option: hand,
+                type: 'scale',
+                scale: heldAsset.scaleIdentity,
+            });
+        }
+    }
+
+    detach(controller, hand, scale) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+        if(!heldAsset) return;
+        delete this._heldAssets[controllerId + ':' + hand];
+        if(!scale) {
+            scale = this._update(heldAsset);
+            let assetHelper = heldAsset.asset.getEditorHelper();
+            let preState = heldAsset.preTransformState;
+            let postState = scale;
+            assetHelper._updateVector3('scale', postState, false, true,
+                preState);
+            assetHelper._publish(['scale']);
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
+                instance: heldAsset.asset,
+                option: hand,
+                type: 'scale',
+                scale: scale,
+            });
+        } else {
+            heldAsset.asset.setScale(scale);
+        }
+    }
+
+    update() {
+        for(let key in this._heldAssets) {
+            let heldAsset = this._heldAssets[key];
+            this._update(heldAsset);
+        }
+    }
+
+    _update(heldAsset) {
+        if(!heldAsset) return;
+        //Eventually we'll need to set the world scale of the asset once
+        //we support parent child relationships
+        let distance = heldAsset.asset.getWorldPosition().distanceTo(heldAsset
+            .controller.hands[heldAsset.hand].getWorldPosition());
+        let newScale = [
+            heldAsset.scaleIdentity[0] * distance,
+            heldAsset.scaleIdentity[1] * distance,
+            heldAsset.scaleIdentity[2] * distance
+        ];
+        heldAsset.asset.setScale(newScale);
+        return newScale;
+    }
+
+    _swapToHand(controller, newHand, oldHand, scaleIdentity) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
+        heldAsset.hand = newHand;
+        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
+        delete this._heldAssets[controllerId + ':' + oldHand];
+        if(scaleIdentity) {
+            heldAsset.scaleIdentity = scaleIdentity;
+        } else {
+            let distance = controller.hands[newHand].getWorldPosition()
+                .distanceTo(heldAsset.asset.getWorldPosition());
+            let scale = heldAsset.asset.getWorldScale();
+            heldAsset.scaleIdentity = scale.divideScalar(distance).toArray();
+        }
+    }
+}
+
+let scaleHandler = new ScaleHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 class TranslateHandler {
     constructor() {
         this._id = uuidv4();
@@ -14238,6 +14385,7 @@ class PartyMessageHelper {
         if(global$1.deviceType == 'XR') {
             message['position'] = data.position;
             message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
@@ -14256,6 +14404,7 @@ class PartyMessageHelper {
         if(global$1.deviceType == 'XR') {
             message['position'] = data.position;
             message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
@@ -17228,6 +17377,7 @@ const INTERACTABLE_KEYS = [
     HandTools.DELETE,
     HandTools.TRANSLATE,
     HandTools.ROTATE,
+    HandTools.SCALE,
 ];
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const FIELDS$m = [
@@ -17319,6 +17469,16 @@ class AssetHelper extends EditorHelper {
             );
             this._gripInteractables[HandTools.ROTATE]
                 .push(rotateInteractable);
+            let scaleInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    scaleHandler.attach(UserController$1, hand, this._asset);
+                },
+                (hand) => {
+                    scaleHandler.detach(UserController$1, hand);
+                },
+            );
+            this._gripInteractables[HandTools.SCALE]
+                .push(scaleInteractable);
         } else {
             this._object.states = InteractableStates;
             this._object.setState = (state) => {
@@ -17396,13 +17556,14 @@ class AssetHelper extends EditorHelper {
             } else {
                 if(message.option in Hands && peer.controller) {
                     if(message.type == 'translate') {
-                        this._asset.setPosition(message.position);
                         translateHandler.attach(peer.controller, message.option,
                             this._asset, message.position);
                     } else if(message.type == 'rotate') {
-                        this._asset.setRotationFromQuaternion(message.rotation);
                         rotateHandler.attach(peer.controller, message.option,
                             this._asset, message.rotation);
+                    } else if(message.type == 'scale') {
+                        scaleHandler.attach(peer.controller, message.option,
+                            this._asset, message.scale);
                     } else {
                         peer.controller.hands[message.option].attach(
                             this._object);
@@ -17433,6 +17594,9 @@ class AssetHelper extends EditorHelper {
                 } else if(message.type == 'rotate') {
                     rotateHandler.detach(peer.controller, message.option,
                         message.rotation);
+                } else if(message.type == 'scale') {
+                    scaleHandler.detach(peer.controller, message.option,
+                        message.scale);
                 } else {
                     global$1.scene.attach(this._object);
                     this._asset.setPosition(message.position);
@@ -17676,6 +17840,12 @@ class Asset extends Entity {
         if(!quat) quat = quaternion;
         this._object.getWorldQuaternion(quat);
         return quat;
+    }
+
+    getWorldScale(vector3) {
+        if(!vector3) vector3 = vector3s$1[0];
+        this._object.getWorldScale(vector3);
+        return vector3;
     }
 
     setPosition(position) {
@@ -19881,11 +20051,13 @@ const hands = [
     { "title": "Delete", "type": HandTools.DELETE },
     { "title": "Translate", "type": HandTools.TRANSLATE },
     { "title": "Rotate", "type": HandTools.ROTATE },
+    { "title": "Scale", "type": HandTools.SCALE },
 ];
 
-class HandsPage extends MenuPage {
+class HandsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
+        this._items = hands;
         this._addPageContent();
     }
 
@@ -19898,32 +20070,22 @@ class HandsPage extends MenuPage {
         });
         this._container.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-        });
-        for(let hand of hands) {
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': hand.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
-            columnBlock.add(button);
-            let interactable = new PointerInteractable(button, () => {
-                if(HandTools.ACTIVE == hand.type) return;
-                HandTools.ACTIVE = hand.type;
-                pubSub.publish(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, hand.type);
-            });
-            this._containerInteractable.addChild(interactable);
-        }
-        this._container.add(columnBlock);
+        this._addList();
     }
 
+    _getItemName(item) {
+        return item.title;
+    }
+
+    _handleItemInteraction(item) {
+        if(HandTools.ACTIVE == item.type) return;
+        HandTools.ACTIVE = item.type;
+        pubSub.publish(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, item.type);
+    }
+
+    _refreshItems() {
+
+    }
 }
 
 /*
@@ -23667,8 +23829,11 @@ class Main {
             this._dynamicAssets.push(pubSub);
             this._dynamicAssets.push(ThreeMeshUI);
             this._dynamicAssets.push(partyHandler);
-            this._dynamicAssets.push(translateHandler);
-            this._dynamicAssets.push(rotateHandler);
+            if(global$1.isEditor) {
+                this._dynamicAssets.push(translateHandler);
+                this._dynamicAssets.push(rotateHandler);
+                this._dynamicAssets.push(scaleHandler);
+            }
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "
