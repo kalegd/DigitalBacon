@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, sRGBEncoding, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, InterpolateLinear, AnimationClip, Bone, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Sphere, Interpolant, SphereGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
+import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, sRGBEncoding, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, InterpolateLinear, AnimationClip, Bone, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Sphere, Interpolant, SphereGeometry, CubeTexture as CubeTexture$1, EventDispatcher, MOUSE, TOUCH, Spherical, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 
 /*
@@ -5303,6 +5303,10 @@ class Entity {
         this._object = new Object3D();
     }
     
+    getId() {
+        return this._id;
+    }
+
     getObject() {
         return this._object;
     }
@@ -5321,287 +5325,233 @@ class Entity {
     }
 }
 
-const InteractableStates = {
-    IDLE: "IDLE",
-    HOVERED: "HOVERED",
-    SELECTED: "SELECTED"
-};
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+  
+class Avatar {
+    constructor(params) {
+        if(params == null) {
+            params = {};
+        }
+        let verticalOffset = params['Vertical Offset'] || 0;
+        let focusCamera = params['Focus Camera'] || false;
+        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
+        this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._pivotPoint = new THREE.Object3D();
+        this._pivotPoint.position.setY(verticalOffset);
+        this._createBoundingBox(params);
+        //this._pivotPoint.position.setY(1.3);
+
+        this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
+        if(focusCamera) {
+            global$1.cameraFocus.position.fromArray(cameraFocalPoint);
+        }
+    }
+
+    _createBoundingBox(params) {
+        let boundingBoxSize = (params['Bounding Box Size'])
+            ? params['Bounding Box Min']
+            : [0.2, 0.8, 0.2];
+        let boundingBoxCenter = (params['Bounding Box Center'])
+            ? params['Bounding Box Max']
+            : [0, 0.4, 0];
+        let boundingBoxQuaternion = (params['Bounding Box Quaternion'])
+            ? params['Bounding Box Quaternion']
+            : [0, 0, 0, 0];
+        let geometry = new THREE.BoxGeometry(
+            boundingBoxSize[0],
+            boundingBoxSize[1],
+            boundingBoxSize[2],
+        );
+        let material = new THREE.MeshBasicMaterial({ wireframe: true });
+        this._boundingBox = new THREE.Mesh(geometry, material);
+        this._boundingBox.position.fromArray(boundingBoxCenter);
+        this._boundingBox.quaternion.fromArray(boundingBoxQuaternion);
+        //this._pivotPoint.add(this._boundingBox);
+    }
+
+    _createMesh(filename) {
+        if(/\.glb/.test(filename)) {
+            let gltfLoader = new GLTFLoader();
+            gltfLoader.load(filename, (gltf) => {
+                gltf.scene.rotateY(Math.PI);
+                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
+                    let hands = new Set();
+                    gltf.scene.traverse((child) => {
+                        if(child.name.toLowerCase().includes("hand")) {
+                            hands.add(child);
+                        }
+                    });
+                    hands.forEach((hand) => { hand.parent.remove(hand); });
+                    gltf.scene.position.setY(-0.7);
+                }
+                this._pivotPoint.add(gltf.scene);
+                this._saveOriginalTransparencyStates();
+                this._dimensions = 3;
+            }, () => {}, (error) => {
+                console.log(error);
+                if(filename != this._defaultURL) {
+                    this._createMesh(this._defaultURL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
+            new THREE.TextureLoader().load(filename, (texture) => {
+                let width = texture.image.width;
+                let height = texture.image.height;
+                if(width > height) {
+                    let factor = 0.3 / width;
+                    width = 0.3;
+                    height *= factor;
+                } else {
+                    let factor = 0.3 / height;
+                    height = 0.3;
+                    width *= factor;
+                }
+                let material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                });
+                let geometry = new THREE.PlaneGeometry(width, height);
+                geometry.rotateY(Math.PI);
+                let mesh = new THREE.Mesh(geometry, material);
+                this._pivotPoint.add(mesh);
+                this._saveOriginalTransparencyStates();
+                //let sprite = new THREE.Sprite(material);
+                //this._pivotPoint.add(sprite);
+                this._dimensions = 2;
+            }, () => {}, () => {
+                if(filename != this._defaultURL) {
+                    this._createMesh(this._defaultURL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else {
+            if(filename != this._defaultURL) {
+                this._createMesh(this._defaultURL);
+            } else {
+                console.error("Default avatar URL is invalid :(");
+            }
+        }
+    }
+
+    _saveOriginalTransparencyStates() {
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.userData['transparent'] = material.transparent;
+                        material.userData['opacity'] = material.opacity;
+                    }
+                } else {
+                    let material = node.material;
+                    material.userData['transparent'] = material.transparent;
+                    material.userData['opacity'] = material.opacity;
+                }
+            }
+        });
+    }
+
+    fade(percent) {
+        this._isFading = true;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        if(!material.transparent) {
+                            material.transparent = true;
+                            material.needsUpdate = true;
+                        }
+                        material.opacity = material.userData['opacity']*percent;
+                    }
+                } else {
+                    let material = node.material;
+                    if(!material.transparent) {
+                        material.transparent = true;
+                        material.needsUpdate = true;
+                    }
+                    material.opacity = material.userData['opacity'] * percent;
+                }
+            }
+        });
+    }
+
+    endFade() {
+        if(!this._isFading) return;
+        this._isFading = false;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let mtrl = node.material[i];
+                        if(mtrl.transparent != mtrl.userData['transparent']) {
+                            mtrl.transparent = mtrl.userData['transparent'];
+                            mtrl.needsUpdate = true;
+                        }
+                        mtrl.opacity = mtrl.userData['opacity'];
+                    }
+                } else {
+                    let mtrl = node.material;
+                    if(mtrl.transparent != mtrl.userData['transparent']) {
+                        mtrl.transparent = mtrl.userData['transparent'];
+                        mtrl.needsUpdate = true;
+                    }
+                    mtrl.opacity = mtrl.userData['opacity'];
+                }
+            }
+        });
+    }
+
+    lookAtLocal(point) {
+        if(this._pivotPoint.parent) {
+            vector3s$1[0].copy(point);
+            this._pivotPoint.parent.localToWorld(vector3s$1[0]);
+            this._pivotPoint.lookAt(vector3s$1[0]);
+        }
+    }
+
+    updateSourceUrl(url) {
+        while(this._pivotPoint.children[0]) {
+            let child = this._pivotPoint.children[0];
+            this._pivotPoint.remove(child);
+            fullDispose(child, true);
+        }
+        this._createMesh(url);
+    }
+
+    getObject() {
+        return this._pivotPoint;
+    }
+
+    addToScene(scene) {
+        scene.add(this._pivotPoint);
+    }
+
+    removeFromScene() {
+        if(this._pivotPoint.parent) {
+            this._pivotPoint.parent.remove(this._pivotPoint);
+        }
+    }
+}
 
 const Hands = {
     LEFT: "LEFT",
     RIGHT: "RIGHT",
 };
 
-const HandTools = {
-    EDIT: "EDIT",
-    COPY_PASTE: "COPY_PASTE",
-    DELETE: "DELETE",
-    ACTIVE: "EDIT",
+Hands.otherHand = (hand) => {
+    if(hand == Hands.LEFT) return Hands.RIGHT;
+    if(hand == Hands.RIGHT) return Hands.LEFT;
+    console.error('ERROR: Unexpected hand provided to Hands.otherHand');
 };
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Box3Helper extends LineSegments {
-
-	constructor(box) {
-		super(BoundingBox.geometry, BoundingBox.material);
-
-		this.box = box;
-
-		this.type = 'Box3Helper';
-
-		this.geometry.computeBoundingSphere();
-
-	}
-
-	updateMatrixWorld( force ) {
-
-		const box = this.box;
-
-		if ( box.isEmpty() ) return;
-
-		box.getCenter( this.position );
-
-		box.getSize( this.scale );
-
-		this.scale.multiplyScalar( 0.5 );
-
-		super.updateMatrixWorld( force );
-
-	}
-
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Interactable {
-    constructor(threeObj) {
-        this._threeObj = threeObj;
-        this._state = InteractableStates.IDLE;
-        this.children = new Set();
-        this._hoveredOwners = new Set();
-        this._selectedOwners = new Set();
-    }
-
-    isOnlyGroup() {
-        console.error("Interactable.isOnlyGroup() should be overridden");
-        return;
-    }
-
-    getThreeObj() {
-        return this._threeObj;
-    }
-
-    getState() {
-        return this._state;
-    }
-
-    setState(newState) {
-        if(this._state != newState) {
-            this._state = newState;
-            if(this._threeObj.states && newState in this._threeObj.states) {
-                this._threeObj.setState(newState);
-            }
-        }
-    }
-
-    addHoveredBy(owner) {
-        console.error("Interactable.addHoveredBy(owner) should be overridden");
-    }
-
-    removeHoveredBy(owner) {
-        console.error("Interactable.removeHoveredBy(owner) should be overridden");
-    }
-
-    addSelectedBy(owner) {
-        console.error("Interactable.addSelectedBy(owner) should be overridden");
-    }
-
-    removeSelectedBy(owner) {
-        console.error("Interactable.removeSelectedBy(owner) should be overridden");
-    }
-
-    reset() {
-        this._hoveredOwners.clear();
-        this._selectedOwners.clear();
-        this.setState(InteractableStates.IDLE);
-        this.children.forEach((interactable) => {
-            interactable.reset();
-        });
-    }
-
-    addChild(interactable) {
-        if(interactable.parent) interactable.parent.removeChild(interactable);
-        this.children.add(interactable);
-        interactable.parent = this;
-    }
-
-    addChildren(interactables) {
-        interactables.forEach((interactable) => {
-            this.addChild(interactable);
-        });
-    }
-
-    removeChild(interactable) {
-        this.children.delete(interactable);
-        interactable.parent = null;
-    }
-
-    removeChildren(interactables) {
-        interactables.forEach((interactable) => {
-            this.removeChild(interactable);
-        });
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class GripInteractable extends Interactable {
-    constructor(threeObj, selectedFunc, releasedFunc, specificOption) {
-        super(threeObj);
-        this._selectedFunc = selectedFunc;
-        this._releasedFunc = releasedFunc;
-        this.specificOption = specificOption;
-        this._createBoundingObject();
-    }
-
-    isOnlyGroup() {
-        return this._selectedFunc == null && this._releasedFunc == null;
-    }
-
-    _createBoundingObject() {
-        this._boundingBox = new THREE.Box3();
-        this._boundingBoxObj = new Box3Helper(this._boundingBox);
-    }
-
-    _getBoundingObject() {
-        this._boundingBox.setFromObject(this._threeObj);
-        return this._boundingBox;
-    }
-
-    _displayBoundingObject() {
-        global$1.scene.add(this._boundingBoxObj);
-    }
-
-    _hideBoundingObject() {
-        global$1.scene.remove(this._boundingBoxObj);
-    }
-
-    intersectsSphere(sphere) {
-        let boundingBox = this._getBoundingObject();
-        let intersects;
-        if(boundingBox) {
-            intersects = sphere.intersectsBox(boundingBox);
-        } else {
-            intersects = false;
-        }
-        return intersects;
-    }
-
-    // Assumes intersectsSphere(sphere) is called first so we don't update the
-    // bounding box by calling _getBoundingObject()
-    distanceToSphere(sphere) {
-        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s$1[0]));
-    }
-
-    _determineAndSetState() {
-        if(this._selectedOwners.size > 0) {
-            this.setState(InteractableStates.SELECTED);
-            if(this._hoveredOwners.size >= this._selectedOwners.size) {
-                this._displayBoundingObject();
-            } else {
-                this._hideBoundingObject();
-            }
-        } else if(this._hoveredOwners.size > 0) {
-            this.setState(InteractableStates.HOVERED);
-            this._displayBoundingObject();
-        } else {
-            this.setState(InteractableStates.IDLE);
-            this._hideBoundingObject();
-        }
-    }
-
-    addHoveredBy(owner) {
-        if(this._hoveredOwners.has(owner)) {
-            return;
-        }
-        this._hoveredOwners.add(owner);
-        if(this._selectedOwners.size == 0) {
-            this.setState(InteractableStates.HOVERED);
-        }
-        this._displayBoundingObject();
-    }
-
-    removeHoveredBy(owner) {
-        this._hoveredOwners.delete(owner);
-        this._determineAndSetState();
-    }
-
-    addSelectedBy(owner) {
-        if(this._selectedFunc != null) {
-            this._selectedFunc(owner);
-        }
-        this._selectedOwners.add(owner);
-        this.setState(InteractableStates.SELECTED);
-    }
-
-    removeSelectedBy(owner) {
-        if(this._releasedFunc != null) {
-            this._releasedFunc(owner);
-        }
-        this._selectedOwners.delete(owner);
-        this._determineAndSetState();
-    }
-
-    updateAction(newActionFunc) {
-        this._selectedFunc = newActionFunc;
-    }
-
-    static emptyGroup() {
-        return new GripInteractable();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class AudioHandler {
-    init() {
-        if(this._audioListener) return;
-
-        this._audioListener = new THREE.AudioListener();
-        this._addEventListeners();
-        global$1.camera.add(this._audioListener);
-    }
-
-    _addEventListeners() {
-        //XR Event Listeners
-        global$1.renderer.xr.addEventListener("sessionstart", () => {
-            this._audioListener.context.resume();
-        });
-        global$1.renderer.xr.addEventListener("sessionend", () => {
-            this._audioListener.context.suspend();
-        });
-    }
-
-}
-
-let audioHandler = new AudioHandler();
 
 /**
  * @webxr-input-profiles/motion-controllers 1.0.0 https://github.com/immersive-web/webxr-input-profiles
@@ -6580,6 +6530,675 @@ class InputHandler {
 }
 
 let inputHandler = new InputHandler();
+
+const CubeSides = {
+    FRONT: "FRONT",
+    BACK: "BACK",
+    LEFT: "LEFT",
+    RIGHT: "RIGHT",
+    TOP: "TOP",
+    BOTTOM: "BOTTOM",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const RESOLUTION = 1024;
+const SIDES$1 = {};
+for(let side in CubeSides) {
+    let canvas = document.createElement('canvas');
+    canvas.width = RESOLUTION;
+    canvas.height = RESOLUTION;
+    SIDES$1[side] = {
+        canvas: canvas,
+        context: canvas.getContext("2d"),
+    };
+}
+
+class Skybox {
+    init(scene) {
+        this._scene = scene;
+        this._scene.background = new CubeTexture$1([
+            SIDES$1[CubeSides.RIGHT].canvas,
+            SIDES$1[CubeSides.LEFT].canvas,
+            SIDES$1[CubeSides.TOP].canvas,
+            SIDES$1[CubeSides.BOTTOM].canvas,
+            SIDES$1[CubeSides.FRONT].canvas,
+            SIDES$1[CubeSides.BACK].canvas,
+        ]);
+    }
+
+    setSides(assetIds) {
+        for(let side in assetIds) {
+            this.setSide(side, assetIds[side]);
+        }
+    }
+
+    setSide(side, assetId) {
+        let image = (assetId)
+            ? libraryHandler.getImage(assetId)
+            : null;
+        this._drawImage(side, image);
+        this._scene.background.needsUpdate = true;
+    }
+
+    deleteSide(side) {
+        this._drawImage(side);
+        this._scene.background.needsUpdate = true;
+    }
+
+    //https://stackoverflow.com/a/23105310
+    _drawImage(side, image) {
+        let canvas = SIDES$1[side]['canvas'];
+        let context = SIDES$1[side]['context'];
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if(!image) return;
+        let ratio  = RESOLUTION / Math.max(image.width, image.height);
+        let centerShift_x = (canvas.width - image.width*ratio) / 2;
+        let centerShift_y = (canvas.height - image.height*ratio) / 2;
+        context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
+            centerShift_y, image.width * ratio, image.height * ratio);
+    }
+}
+
+let skybox = new Skybox();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class SettingsHandler {
+    constructor() {
+        this.settings = {
+            "Skybox": {},
+            "User Settings": {
+                "Movement Speed": 3,
+                "Enable Flying": true,
+            },
+        };
+        this.editorSettings = {
+            "Movement Speed": 3,
+            "User Scale": 1,
+            "Enable Flying": true,
+            "Swap Joysticks": false,
+        };
+        this.settings['Skybox'][CubeSides.FRONT] = null;
+        this.settings['Skybox'][CubeSides.BACK] = null;
+        this.settings['Skybox'][CubeSides.LEFT] = null;
+        this.settings['Skybox'][CubeSides.RIGHT] = null;
+        this.settings['Skybox'][CubeSides.TOP] = null;
+        this.settings['Skybox'][CubeSides.BOTTOM] = null;
+    }
+
+    init(scene) {
+        this._scene = scene;
+        skybox.init(scene);
+    }
+
+    load(settings) {
+        if(!settings) {
+            for(let side in this.settings['Skybox']) {
+                this.settings['Skybox'][side] = null;
+            }
+            this.settings['User Settings']['Movement Speed'] = 3;
+            this.settings['User Settings']['Enable Flying'] = true;
+        } else {
+            this.settings = settings;
+            if(!this.settings['User Settings']) {
+                this.settings['User Settings'] = {
+                    "Movement Speed": 3,
+                    "Enable Flying": true,
+                };
+            }
+        }
+        skybox.setSides(this.settings['Skybox']);
+    }
+
+    reset() {
+        this.load();
+    }
+
+    getSkyboxTextures() {
+        let textures = {};
+        let skybox = this.settings['Skybox'];
+        for(let side in skybox) {
+            if(skybox[side]) {
+                textures[side] = libraryHandler.getTexture(skybox[side]);
+            } else {
+                textures[side] = Textures.searchIcon;
+            }
+        }
+        return textures;
+    }
+
+    setSkyboxSide(side, assetId, ignorePublish) {
+        //Should validate image size is square before setting Skybox side
+        this.settings['Skybox'][side] = assetId;
+        skybox.setSide(side, assetId);
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['Skybox', side],
+            });
+    }
+
+    getEditorSettings() {
+        return this.editorSettings;
+    }
+
+    setEditorSetting(key, value) {
+        if(key in this.editorSettings) this.editorSettings[key] = value;
+    }
+
+    getUserSettings() {
+        return this.settings['User Settings'];
+    }
+
+    setUserSetting(key, value, ignorePublish) {
+        if(!(key in this.settings['User Settings'])) return;
+
+        this.settings['User Settings'][key] = value;
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['User Settings', key],
+            });
+    }
+
+    getMovementSpeed() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Movement Speed']
+            : this.settings['User Settings']['Movement Speed'];
+    }
+
+    getUserScale() {
+        return (global$1.isEditor)
+            ? this.editorSettings['User Scale']
+            : 1;//TODO: allow users to access menu and configure a specific
+                    //      set of settings
+    }
+
+    isFlyingEnabled() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Enable Flying']
+            : this.settings['User Settings']['Enable Flying'];
+    }
+
+    areJoysticksSwapped() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Swap Joysticks']
+            : false;//TODO: allow users to access menu and configure a specific
+                    //      set of settings
+    }
+
+    getSettings() {
+        return this.settings;
+    }
+
+}
+
+let settingsHandler = new SettingsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class BasicMovement {
+    constructor(params) {
+        if(params == null) {
+            params = {};
+        }
+        this._avatar = params['Avatar'];
+        this._userObj = params['User Object'];
+        this._velocity = new THREE.Vector3();
+        this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
+        this._snapRotationTriggered = false;
+    }
+
+    _setupMobileFlyingButtons() {
+        this._mobileUp = false;
+        this._mobileDown = false;
+        let upButton = document.getElementById("mobile-flying-up-button");
+        let downButton = document.getElementById("mobile-flying-down-button");
+        upButton.addEventListener('touchstart',
+            () => { this._mobileUp = true; });
+        upButton.addEventListener('touchend',
+            () => { this._mobileUp = false; });
+        downButton.addEventListener('touchstart',
+            () => { this._mobileDown = true; });
+        downButton.addEventListener('touchend',
+            () => { this._mobileDown = false; });
+    }
+
+    _moveForward(velocity, timeDelta) {
+        // move forward parallel to the xz-plane
+        // assumes camera.up is y-up
+        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s$1[0].crossVectors(this._userObj.up, vector3s$1[0]);
+        // not using addScaledVector because we use vector3s[0] later
+        vector3s$1[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s$1[0]);
+        vector3s$1[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s$1[0]);
+    };
+
+    _moveRight(velocity, timeDelta) {
+        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s$1[0].y = 0;
+        vector3s$1[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s$1[0]);
+        vector3s$1[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s$1[0]);
+    };
+
+    _moveUp(velocity, timeDelta) {
+        velocity = this._userObj.scale.y * velocity;
+        this._worldVelocity.setY(velocity);
+        vector3s$1[0].fromArray([0, velocity * timeDelta, 0]);
+        this._userObj.position.add(vector3s$1[0]);
+    }
+
+    _snapLeft() {
+        this._userObj.rotateY(Math.PI/8);
+    }
+
+    _snapRight() {
+        this._userObj.rotateY(-Math.PI/8);
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updatePositionVR(timeDelta);
+            this.update = this._updatePositionVR;
+        } else if(global$1.deviceType == "POINTER") {
+            this._updatePosition(timeDelta);
+            this.update = this._updatePosition;
+        } else if(global$1.deviceType == "MOBILE") {
+            this._setupMobileFlyingButtons();
+            this._updatePositionMobile(timeDelta);
+            this.update = this._updatePositionMobile;
+        }
+    }
+
+    _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        // Decrease the velocity.
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
+        if(flightEnabled)
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
+
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            if (inputHandler.isKeyCodePressed("ArrowUp")
+                    || inputHandler.isKeyCodePressed("KeyW"))
+                this._velocity.z += movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowDown")
+                    || inputHandler.isKeyCodePressed("KeyS"))
+                this._velocity.z -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowLeft")
+                    || inputHandler.isKeyCodePressed("KeyA"))
+                this._velocity.x -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowRight")
+                    || inputHandler.isKeyCodePressed("KeyD"))
+                this._velocity.x += movementSpeed / 4;
+            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
+                    != inputHandler.isKeyCodePressed("ShiftLeft")) {
+                this._verticalVelocity =
+                    (inputHandler.isKeyCodePressed("Space"))
+                        ? movementSpeed
+                        : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s$1[1].copy(vector3s$1[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s$1[1].add(vector3s$1[0]);
+            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
+                vector3s$1[1].multiplyScalar(-2);
+                this._avatar.lookAtLocal(vector3s$1[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        this._velocity.x = 0;
+        if(flightEnabled)
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
+        this._velocity.z = 0;
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            let joystickAngle = inputHandler.getJoystickAngle();
+            let joystickDistance = inputHandler.getJoystickDistance();
+            let movingDistance = movementSpeed * joystickDistance;
+            this._velocity.x = movingDistance * Math.cos(joystickAngle);
+            this._velocity.z = movingDistance * Math.sin(joystickAngle);
+            if(flightEnabled && this._mobileUp != this._mobileDown) {
+                this._verticalVelocity = (this._mobileUp)
+                    ? movementSpeed
+                    : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s$1[1].copy(vector3s$1[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s$1[1].add(vector3s$1[0]);
+            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
+                vector3s$1[1].multiplyScalar(-2);
+                this._avatar.lookAtLocal(vector3s$1[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        let movementGamepad;
+        let rotationGamepad;
+        if(settingsHandler.areJoysticksSwapped()) {
+            movementGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
+            rotationGamepad = inputHandler.getXRGamepad(Hands.LEFT);
+        } else {
+            movementGamepad = inputHandler.getXRGamepad(Hands.LEFT);
+            rotationGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
+        }
+        this._velocity.x = 0;
+        this._velocity.y = 0;
+        this._velocity.z = 0;
+        if(movementGamepad) {
+            let axes = movementGamepad.axes;
+            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
+            this._velocity.x = movementSpeed * axes[2];//Left/Right
+
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        if(rotationGamepad) {
+            let verticalForce = rotationGamepad.axes[3];
+            let rotationForce = rotationGamepad.axes[2];
+            if(Math.abs(rotationForce) > 0.5) {
+                if(!this._snapRotationTriggered) {
+                    this._snapRotationTriggered = true; 
+                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
+                }
+            } else {
+                this._snapRotationTriggered = false;
+            }
+            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
+                this._velocity.y = -1 * movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+        } else {
+            this._snapRotationTriggered = false;
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+}
+
+const InteractableStates = {
+    IDLE: "IDLE",
+    HOVERED: "HOVERED",
+    SELECTED: "SELECTED"
+};
+
+const HandTools = {
+    ACTIVE: "EDIT",
+    COPY_PASTE: "COPY_PASTE",
+    DELETE: "DELETE",
+    EDIT: "EDIT",
+    ROTATE: "ROTATE",
+    TRANSLATE: "TRANSLATE",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class CopyPasteControlsHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._assetAlreadyPastedByTrigger = false;
+        this._assetAlreadyPastedByGrip = false;
+        this._copiedAsset;
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            if(this._copiedAsset) this._clear();
+            this._assetAlreadyPastedByTrigger = false;
+            this._assetAlreadyPastedByGrip = false;
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(this._copiedAsset) this._clear();
+            this._assetAlreadyPastedByTrigger = false;
+            this._assetAlreadyPastedByGrip = false;
+        });
+    }
+
+    copy(asset) {
+        if(this._copiedAsset) this._clear();
+        this._copiedAsset = asset;
+        this._previewAsset = asset.preview();
+        UserController$1.hands[Hands.LEFT].attach(this._previewAsset.getObject());
+        UserController$1.hands[Hands.RIGHT].add(this._previewAsset.getObject());
+    }
+
+    _paste() {
+        this._previewAsset.clone(
+            this._copiedAsset.visualEdit);
+        this._assetAlreadyPastedByGrip = true;
+    }
+
+    checkPlacement(controller) {
+        if(!this._copiedAsset) return;
+        let raycaster = controller['raycaster'];
+        raycaster.far = Infinity;
+        let isPressed = controller['isPressed'];
+        let intersections = raycaster.intersectObjects(ProjectHandler$1.getObjects(), true);
+        if(this._assetAlreadyPastedByTrigger) {
+            if(isPressed) return;
+            this._assetAlreadyPastedByTrigger = false;
+        }
+        if(intersections.length > 0) {
+            controller['closestPoint'] = intersections[0].point;
+            if(isPressed && this._copiedAsset) {
+                let clonedAsset = this._copiedAsset.clone();
+                clonedAsset.getEditorHelper().place(intersections[0]);
+                this._assetAlreadyPastedByTrigger = true;
+            }
+        }
+    }
+
+    checkGripPlacement(isControllerPressed) {
+        if(!this._copiedAsset) return;
+        if(isControllerPressed != this._assetAlreadyPastedByGrip) {
+            if(isControllerPressed) this._paste();
+            else this._assetAlreadyPastedByGrip = false;
+        }
+    }
+
+    _clear() {
+        this._previewAsset.removeFromScene();
+        this._copiedAsset = null;
+        this._previewAsset = null;
+    }
+
+    hasCopiedObject() {
+        return this._copiedAsset;
+    }
+
+}
+
+let copyPasteControlsHandler = new CopyPasteControlsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class InteractableHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._interactables = new Set();
+        this._hoveredInteractables = {};
+        this._selectedInteractables = {};
+        this._toolInteractables = {};
+        this._toolInteractables[HandTools.EDIT] = new Set();
+        this._toolInteractables[HandTools.COPY_PASTE] = new Set();
+        this._toolInteractables[HandTools.DELETE] = new Set();
+        this._toolInteractables[HandTools.TRANSLATE] = new Set();
+        this._toolInteractables[HandTools.ROTATE] = new Set();
+        this._handTool = HandTools.EDIT;
+        this._addInteractable = this.addInteractable;
+        this._addInteractables = this.addInteractables;
+        this._removeInteractable = this.removeInteractable;
+        this._removeInteractables = this.removeInteractables;
+        this.addInteractable = () => {};
+        this.addInteractables = () => {};
+        this.removeInteractable = () => {};
+        this.removeInteractables = () => {};
+    }
+
+    init() {
+        if(global$1.deviceType == "XR") {
+            this.update = this._updateForXREdit;
+            this._setupXRSubscription();
+        } else if(global$1.deviceType == "POINTER") {
+            this.update = this._updateForPointer;
+        } else if(global$1.deviceType == "MOBILE") {
+            this.update = this._updateForMobile;
+        }
+        this.addInteractable = this._addInteractable;
+        this.addInteractables = this._addInteractables;
+        this.removeInteractable = this._removeInteractable;
+        this.removeInteractables = this._removeInteractables;
+    }
+
+    addInteractable(interactable, tool) {
+        if(!tool) {
+            this._interactables.add(interactable);
+        } else {
+            this._toolInteractables[tool].add(interactable);
+        }
+    }
+
+    addInteractables(interactables, tool) {
+        if(!tool) {
+            interactables.forEach((interactable) => {
+                this._interactables.add(interactable);
+            });
+        } else {
+            interactables.forEach((interactable) => {
+                this._toolInteractables[tool].add(interactable);
+            });
+        }
+    }
+
+    removeInteractable(interactable, tool) {
+        if(!tool) {
+            this._interactables.delete(interactable);
+            interactable.reset();
+        } else {
+            this._toolInteractables[tool].delete(interactable);
+            interactable.reset();
+        }
+    }
+
+    removeInteractables(interactables, tool) {
+        if(!tool) {
+            interactables.forEach((interactable) => {
+                this._interactables.delete(interactable);
+                interactable.reset();
+            });
+        } else {
+            interactables.forEach((interactable) => {
+                this._toolInteractables[tool].delete(interactable);
+                interactable.reset();
+            });
+        }
+    }
+
+    reset() {
+        this._interactables.forEach(interactable => { interactable.reset(); });
+        this._interactables = new Set();
+        this._hoveredInteractables = {};
+        this._selectedInteractables = {};
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class AudioHandler {
+    init() {
+        if(this._audioListener) return;
+
+        this._audioListener = new THREE.AudioListener();
+        this._addEventListeners();
+        global$1.camera.add(this._audioListener);
+    }
+
+    _addEventListeners() {
+        //XR Event Listeners
+        global$1.renderer.xr.addEventListener("sessionstart", () => {
+            this._audioListener.context.resume();
+        });
+        global$1.renderer.xr.addEventListener("sessionend", () => {
+            this._audioListener.context.suspend();
+        });
+    }
+
+}
+
+let audioHandler = new AudioHandler();
 
 class VRButton {
 
@@ -8218,855 +8837,6 @@ class SessionHandler {
 
 let sessionHandler = new SessionHandler();
 
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class PointerInteractable extends Interactable {
-    constructor(threeObj, actionFunc, canDisableOrbit, canDisplayPointer, specificOption, draggableActionFunc) {
-        super(threeObj);
-        this._actionFunc = actionFunc;
-        this._canDisableOrbit = global$1.deviceType != "XR" && canDisableOrbit != false;
-        this.canDisplayPointer = global$1.deviceType == "XR" && canDisplayPointer != false;
-        this.specificOption = specificOption;
-        this._draggableActionFunc = draggableActionFunc;
-    }
-
-    isOnlyGroup() {
-        return this._actionFunc == null && !this.canDisplayPointer && !this._canDisableOrbit;
-    }
-
-    isDraggable() {
-        return this._draggableActionFunc != null;
-    }
-
-    _determineAndSetState() {
-        if(this._selectedOwners.size > 0) {
-            this.setState(InteractableStates.SELECTED);
-        } else if(this._hoveredOwners.size > 0) {
-            this.setState(InteractableStates.HOVERED);
-        } else {
-            this.setState(InteractableStates.IDLE);
-        }
-    }
-
-    addHoveredBy(owner, closestPoint) {
-        if(this._hoveredOwners.has(owner)) {
-            return;
-        } else if(this._selectedOwners.has(owner)) {
-            this.triggerAction(closestPoint);
-        }
-        this._hoveredOwners.add(owner);
-        if(this._selectedOwners.size == 0) {
-            this.setState(InteractableStates.HOVERED);
-        }
-    }
-
-    removeHoveredBy(owner) {
-        this._hoveredOwners.delete(owner);
-        this._determineAndSetState();
-    }
-
-    addSelectedBy(owner, closestPoint) {
-        this._selectedOwners.add(owner);
-        this.setState(InteractableStates.SELECTED);
-        if(this._canDisableOrbit) sessionHandler.disableOrbit();
-        if(this._draggableActionFunc) this._draggableActionFunc(closestPoint);
-    }
-
-    removeSelectedBy(owner) {
-        this._selectedOwners.delete(owner);
-        this._determineAndSetState();
-        if(this._canDisableOrbit) sessionHandler.enableOrbit();
-    }
-
-    triggerAction(closestPoint) {
-        if(this._actionFunc != null) {
-            this._actionFunc(closestPoint);
-        }
-    }
-
-    triggerDraggableAction(closestPoint) {
-        if(this._draggableActionFunc != null) {
-            this._draggableActionFunc(closestPoint);
-        }
-    }
-
-    updateAction(newActionFunc) {
-        this._actionFunc = newActionFunc;
-    }
-
-    static emptyGroup() {
-        return new PointerInteractable(null, null, false, false);
-    }
-
-    static createDraggable(threeObj, actionFunc, draggableActionFunc) {
-        return new PointerInteractable(threeObj, actionFunc, true, true, null, draggableActionFunc);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-  
-class Avatar {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        let verticalOffset = params['Vertical Offset'] || 0;
-        let focusCamera = params['Focus Camera'] || false;
-        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
-        this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-        this._pivotPoint = new THREE.Object3D();
-        this._pivotPoint.position.setY(verticalOffset);
-        this._createBoundingBox(params);
-        //this._pivotPoint.position.setY(1.3);
-
-        this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
-        if(focusCamera) {
-            global$1.cameraFocus.position.fromArray(cameraFocalPoint);
-        }
-    }
-
-    _createBoundingBox(params) {
-        let boundingBoxSize = (params['Bounding Box Size'])
-            ? params['Bounding Box Min']
-            : [0.2, 0.8, 0.2];
-        let boundingBoxCenter = (params['Bounding Box Center'])
-            ? params['Bounding Box Max']
-            : [0, 0.4, 0];
-        let boundingBoxQuaternion = (params['Bounding Box Quaternion'])
-            ? params['Bounding Box Quaternion']
-            : [0, 0, 0, 0];
-        let geometry = new THREE.BoxGeometry(
-            boundingBoxSize[0],
-            boundingBoxSize[1],
-            boundingBoxSize[2],
-        );
-        let material = new THREE.MeshBasicMaterial({ wireframe: true });
-        this._boundingBox = new THREE.Mesh(geometry, material);
-        this._boundingBox.position.fromArray(boundingBoxCenter);
-        this._boundingBox.quaternion.fromArray(boundingBoxQuaternion);
-        //this._pivotPoint.add(this._boundingBox);
-    }
-
-    _createMesh(filename) {
-        if(/\.glb/.test(filename)) {
-            let gltfLoader = new GLTFLoader();
-            gltfLoader.load(filename, (gltf) => {
-                gltf.scene.rotateY(Math.PI);
-                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
-                    let hands = new Set();
-                    gltf.scene.traverse((child) => {
-                        if(child.name.toLowerCase().includes("hand")) {
-                            hands.add(child);
-                        }
-                    });
-                    hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.7);
-                }
-                this._pivotPoint.add(gltf.scene);
-                this._saveOriginalTransparencyStates();
-                this._dimensions = 3;
-            }, () => {}, (error) => {
-                console.log(error);
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
-            new THREE.TextureLoader().load(filename, (texture) => {
-                let width = texture.image.width;
-                let height = texture.image.height;
-                if(width > height) {
-                    let factor = 0.3 / width;
-                    width = 0.3;
-                    height *= factor;
-                } else {
-                    let factor = 0.3 / height;
-                    height = 0.3;
-                    width *= factor;
-                }
-                let material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                });
-                let geometry = new THREE.PlaneGeometry(width, height);
-                geometry.rotateY(Math.PI);
-                let mesh = new THREE.Mesh(geometry, material);
-                this._pivotPoint.add(mesh);
-                this._saveOriginalTransparencyStates();
-                //let sprite = new THREE.Sprite(material);
-                //this._pivotPoint.add(sprite);
-                this._dimensions = 2;
-            }, () => {}, () => {
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else {
-            if(filename != this._defaultURL) {
-                this._createMesh(this._defaultURL);
-            } else {
-                console.error("Default avatar URL is invalid :(");
-            }
-        }
-    }
-
-    _saveOriginalTransparencyStates() {
-        this._pivotPoint.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.userData['transparent'] = material.transparent;
-                        material.userData['opacity'] = material.opacity;
-                    }
-                } else {
-                    let material = node.material;
-                    material.userData['transparent'] = material.transparent;
-                    material.userData['opacity'] = material.opacity;
-                }
-            }
-        });
-    }
-
-    fade(percent) {
-        this._isFading = true;
-        this._pivotPoint.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        if(!material.transparent) {
-                            material.transparent = true;
-                            material.needsUpdate = true;
-                        }
-                        material.opacity = material.userData['opacity']*percent;
-                    }
-                } else {
-                    let material = node.material;
-                    if(!material.transparent) {
-                        material.transparent = true;
-                        material.needsUpdate = true;
-                    }
-                    material.opacity = material.userData['opacity'] * percent;
-                }
-            }
-        });
-    }
-
-    endFade() {
-        if(!this._isFading) return;
-        this._isFading = false;
-        this._pivotPoint.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let mtrl = node.material[i];
-                        if(mtrl.transparent != mtrl.userData['transparent']) {
-                            mtrl.transparent = mtrl.userData['transparent'];
-                            mtrl.needsUpdate = true;
-                        }
-                        mtrl.opacity = mtrl.userData['opacity'];
-                    }
-                } else {
-                    let mtrl = node.material;
-                    if(mtrl.transparent != mtrl.userData['transparent']) {
-                        mtrl.transparent = mtrl.userData['transparent'];
-                        mtrl.needsUpdate = true;
-                    }
-                    mtrl.opacity = mtrl.userData['opacity'];
-                }
-            }
-        });
-    }
-
-    lookAtLocal(point) {
-        if(this._pivotPoint.parent) {
-            vector3s$1[0].copy(point);
-            this._pivotPoint.parent.localToWorld(vector3s$1[0]);
-            this._pivotPoint.lookAt(vector3s$1[0]);
-        }
-    }
-
-    updateSourceUrl(url) {
-        while(this._pivotPoint.children[0]) {
-            let child = this._pivotPoint.children[0];
-            this._pivotPoint.remove(child);
-            fullDispose(child, true);
-        }
-        this._createMesh(url);
-    }
-
-    getObject() {
-        return this._pivotPoint;
-    }
-
-    addToScene(scene) {
-        scene.add(this._pivotPoint);
-    }
-
-    removeFromScene() {
-        if(this._pivotPoint.parent) {
-            this._pivotPoint.parent.remove(this._pivotPoint);
-        }
-    }
-}
-
-const CubeSides = {
-    FRONT: "FRONT",
-    BACK: "BACK",
-    LEFT: "LEFT",
-    RIGHT: "RIGHT",
-    TOP: "TOP",
-    BOTTOM: "BOTTOM",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const RESOLUTION = 1024;
-const SIDES$1 = {};
-for(let side in CubeSides) {
-    let canvas = document.createElement('canvas');
-    canvas.width = RESOLUTION;
-    canvas.height = RESOLUTION;
-    SIDES$1[side] = {
-        canvas: canvas,
-        context: canvas.getContext("2d"),
-    };
-}
-
-class Skybox {
-    init(scene) {
-        this._scene = scene;
-        this._scene.background = new CubeTexture$1([
-            SIDES$1[CubeSides.RIGHT].canvas,
-            SIDES$1[CubeSides.LEFT].canvas,
-            SIDES$1[CubeSides.TOP].canvas,
-            SIDES$1[CubeSides.BOTTOM].canvas,
-            SIDES$1[CubeSides.FRONT].canvas,
-            SIDES$1[CubeSides.BACK].canvas,
-        ]);
-    }
-
-    setSides(assetIds) {
-        for(let side in assetIds) {
-            this.setSide(side, assetIds[side]);
-        }
-    }
-
-    setSide(side, assetId) {
-        let image = (assetId)
-            ? libraryHandler.getImage(assetId)
-            : null;
-        this._drawImage(side, image);
-        this._scene.background.needsUpdate = true;
-    }
-
-    deleteSide(side) {
-        this._drawImage(side);
-        this._scene.background.needsUpdate = true;
-    }
-
-    //https://stackoverflow.com/a/23105310
-    _drawImage(side, image) {
-        let canvas = SIDES$1[side]['canvas'];
-        let context = SIDES$1[side]['context'];
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        if(!image) return;
-        let ratio  = RESOLUTION / Math.max(image.width, image.height);
-        let centerShift_x = (canvas.width - image.width*ratio) / 2;
-        let centerShift_y = (canvas.height - image.height*ratio) / 2;
-        context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
-            centerShift_y, image.width * ratio, image.height * ratio);
-    }
-}
-
-let skybox = new Skybox();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class SettingsHandler {
-    constructor() {
-        this.settings = {
-            "Skybox": {},
-            "User Settings": {
-                "Movement Speed": 3,
-                "Enable Flying": true,
-            },
-        };
-        this.editorSettings = {
-            "Movement Speed": 3,
-            "User Scale": 1,
-            "Enable Flying": true,
-            "Swap Joysticks": false,
-        };
-        this.settings['Skybox'][CubeSides.FRONT] = null;
-        this.settings['Skybox'][CubeSides.BACK] = null;
-        this.settings['Skybox'][CubeSides.LEFT] = null;
-        this.settings['Skybox'][CubeSides.RIGHT] = null;
-        this.settings['Skybox'][CubeSides.TOP] = null;
-        this.settings['Skybox'][CubeSides.BOTTOM] = null;
-    }
-
-    init(scene) {
-        this._scene = scene;
-        skybox.init(scene);
-    }
-
-    load(settings) {
-        if(!settings) {
-            for(let side in this.settings['Skybox']) {
-                this.settings['Skybox'][side] = null;
-            }
-            this.settings['User Settings']['Movement Speed'] = 3;
-            this.settings['User Settings']['Enable Flying'] = true;
-        } else {
-            this.settings = settings;
-            if(!this.settings['User Settings']) {
-                this.settings['User Settings'] = {
-                    "Movement Speed": 3,
-                    "Enable Flying": true,
-                };
-            }
-        }
-        skybox.setSides(this.settings['Skybox']);
-    }
-
-    reset() {
-        this.load();
-    }
-
-    getSkyboxTextures() {
-        let textures = {};
-        let skybox = this.settings['Skybox'];
-        for(let side in skybox) {
-            if(skybox[side]) {
-                textures[side] = libraryHandler.getTexture(skybox[side]);
-            } else {
-                textures[side] = Textures.searchIcon;
-            }
-        }
-        return textures;
-    }
-
-    setSkyboxSide(side, assetId, ignorePublish) {
-        //Should validate image size is square before setting Skybox side
-        this.settings['Skybox'][side] = assetId;
-        skybox.setSide(side, assetId);
-        if(!ignorePublish)
-            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
-                settings: this.settings,
-                keys: ['Skybox', side],
-            });
-    }
-
-    getEditorSettings() {
-        return this.editorSettings;
-    }
-
-    setEditorSetting(key, value) {
-        if(key in this.editorSettings) this.editorSettings[key] = value;
-    }
-
-    getUserSettings() {
-        return this.settings['User Settings'];
-    }
-
-    setUserSetting(key, value, ignorePublish) {
-        if(!(key in this.settings['User Settings'])) return;
-
-        this.settings['User Settings'][key] = value;
-        if(!ignorePublish)
-            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
-                settings: this.settings,
-                keys: ['User Settings', key],
-            });
-    }
-
-    getMovementSpeed() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Movement Speed']
-            : this.settings['User Settings']['Movement Speed'];
-    }
-
-    getUserScale() {
-        return (global$1.isEditor)
-            ? this.editorSettings['User Scale']
-            : 1;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
-    }
-
-    isFlyingEnabled() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Enable Flying']
-            : this.settings['User Settings']['Enable Flying'];
-    }
-
-    areJoysticksSwapped() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Swap Joysticks']
-            : false;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
-    }
-
-    getSettings() {
-        return this.settings;
-    }
-
-}
-
-let settingsHandler = new SettingsHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class BasicMovement {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        this._avatar = params['Avatar'];
-        this._userObj = params['User Object'];
-        this._velocity = new THREE.Vector3();
-        this._verticalVelocity = 0;
-        this._worldVelocity = new THREE.Vector3();
-        this._snapRotationTriggered = false;
-    }
-
-    _setupMobileFlyingButtons() {
-        this._mobileUp = false;
-        this._mobileDown = false;
-        let upButton = document.getElementById("mobile-flying-up-button");
-        let downButton = document.getElementById("mobile-flying-down-button");
-        upButton.addEventListener('touchstart',
-            () => { this._mobileUp = true; });
-        upButton.addEventListener('touchend',
-            () => { this._mobileUp = false; });
-        downButton.addEventListener('touchstart',
-            () => { this._mobileDown = true; });
-        downButton.addEventListener('touchend',
-            () => { this._mobileDown = false; });
-    }
-
-    _moveForward(velocity, timeDelta) {
-        // move forward parallel to the xz-plane
-        // assumes camera.up is y-up
-        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s$1[0].crossVectors(this._userObj.up, vector3s$1[0]);
-        // not using addScaledVector because we use vector3s[0] later
-        vector3s$1[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s$1[0]);
-        vector3s$1[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s$1[0]);
-    };
-
-    _moveRight(velocity, timeDelta) {
-        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s$1[0].y = 0;
-        vector3s$1[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s$1[0]);
-        vector3s$1[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s$1[0]);
-    };
-
-    _moveUp(velocity, timeDelta) {
-        velocity = this._userObj.scale.y * velocity;
-        this._worldVelocity.setY(velocity);
-        vector3s$1[0].fromArray([0, velocity * timeDelta, 0]);
-        this._userObj.position.add(vector3s$1[0]);
-    }
-
-    _snapLeft() {
-        this._userObj.rotateY(Math.PI/8);
-    }
-
-    _snapRight() {
-        this._userObj.rotateY(-Math.PI/8);
-    }
-
-    getWorldVelocity() {
-        return this._worldVelocity;
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updatePositionVR(timeDelta);
-            this.update = this._updatePositionVR;
-        } else if(global$1.deviceType == "POINTER") {
-            this._updatePosition(timeDelta);
-            this.update = this._updatePosition;
-        } else if(global$1.deviceType == "MOBILE") {
-            this._setupMobileFlyingButtons();
-            this._updatePositionMobile(timeDelta);
-            this.update = this._updatePositionMobile;
-        }
-    }
-
-    _updatePosition(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        // Decrease the velocity.
-        let slowdownFactor = (1 - timeDelta) * 0.88;
-        this._velocity.x *= slowdownFactor;
-        if(flightEnabled)
-            this._verticalVelocity *= slowdownFactor;
-        this._velocity.z *= slowdownFactor;
-
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            if (inputHandler.isKeyCodePressed("ArrowUp")
-                    || inputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowDown")
-                    || inputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowLeft")
-                    || inputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowRight")
-                    || inputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += movementSpeed / 4;
-            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
-                    != inputHandler.isKeyCodePressed("ShiftLeft")) {
-                this._verticalVelocity =
-                    (inputHandler.isKeyCodePressed("Space"))
-                        ? movementSpeed
-                        : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s$1[1].copy(vector3s$1[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s$1[1].add(vector3s$1[0]);
-            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
-                vector3s$1[1].multiplyScalar(-2);
-                this._avatar.lookAtLocal(vector3s$1[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionMobile(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        this._velocity.x = 0;
-        if(flightEnabled)
-            this._verticalVelocity *= (1 - timeDelta) * 0.88;
-        this._velocity.z = 0;
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            let joystickAngle = inputHandler.getJoystickAngle();
-            let joystickDistance = inputHandler.getJoystickDistance();
-            let movingDistance = movementSpeed * joystickDistance;
-            this._velocity.x = movingDistance * Math.cos(joystickAngle);
-            this._velocity.z = movingDistance * Math.sin(joystickAngle);
-            if(flightEnabled && this._mobileUp != this._mobileDown) {
-                this._verticalVelocity = (this._mobileUp)
-                    ? movementSpeed
-                    : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s$1[1].copy(vector3s$1[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s$1[1].add(vector3s$1[0]);
-            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
-                vector3s$1[1].multiplyScalar(-2);
-                this._avatar.lookAtLocal(vector3s$1[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionVR(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        let movementGamepad;
-        let rotationGamepad;
-        if(settingsHandler.areJoysticksSwapped()) {
-            movementGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
-            rotationGamepad = inputHandler.getXRGamepad(Hands.LEFT);
-        } else {
-            movementGamepad = inputHandler.getXRGamepad(Hands.LEFT);
-            rotationGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
-        }
-        this._velocity.x = 0;
-        this._velocity.y = 0;
-        this._velocity.z = 0;
-        if(movementGamepad) {
-            let axes = movementGamepad.axes;
-            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
-            this._velocity.x = movementSpeed * axes[2];//Left/Right
-
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        if(rotationGamepad) {
-            let verticalForce = rotationGamepad.axes[3];
-            let rotationForce = rotationGamepad.axes[2];
-            if(Math.abs(rotationForce) > 0.5) {
-                if(!this._snapRotationTriggered) {
-                    this._snapRotationTriggered = true; 
-                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
-                }
-            } else {
-                this._snapRotationTriggered = false;
-            }
-            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
-                this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y, timeDelta);
-            }
-        } else {
-            this._snapRotationTriggered = false;
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class InteractableHandler {
-    constructor() {
-        this._id = uuidv4();
-        this._interactables = new Set();
-        this._hoveredInteractables = {};
-        this._selectedInteractables = {};
-        this._toolInteractables = {};
-        this._toolInteractables[HandTools.EDIT] = new Set();
-        this._toolInteractables[HandTools.COPY_PASTE] = new Set();
-        this._toolInteractables[HandTools.DELETE] = new Set();
-        this._handTool = HandTools.EDIT;
-        this._addInteractable = this.addInteractable;
-        this._addInteractables = this.addInteractables;
-        this._removeInteractable = this.removeInteractable;
-        this._removeInteractables = this.removeInteractables;
-        this.addInteractable = () => {};
-        this.addInteractables = () => {};
-        this.removeInteractable = () => {};
-        this.removeInteractables = () => {};
-    }
-
-    init() {
-        if(global$1.deviceType == "XR") {
-            this.update = this._updateForXREdit;
-            this._setupXRSubscription();
-        } else if(global$1.deviceType == "POINTER") {
-            this.update = this._updateForPointer;
-        } else if(global$1.deviceType == "MOBILE") {
-            this.update = this._updateForMobile;
-        }
-        this.addInteractable = this._addInteractable;
-        this.addInteractables = this._addInteractables;
-        this.removeInteractable = this._removeInteractable;
-        this.removeInteractables = this._removeInteractables;
-    }
-
-    addInteractable(interactable, tool) {
-        if(!tool) {
-            this._interactables.add(interactable);
-        } else {
-            this._toolInteractables[tool].add(interactable);
-        }
-    }
-
-    addInteractables(interactables, tool) {
-        if(!tool) {
-            interactables.forEach((interactable) => {
-                this._interactables.add(interactable);
-            });
-        } else {
-            interactables.forEach((interactable) => {
-                this._toolInteractables[tool].add(interactable);
-            });
-        }
-    }
-
-    removeInteractable(interactable, tool) {
-        if(!tool) {
-            this._interactables.delete(interactable);
-            interactable.reset();
-        } else {
-            this._toolInteractables[tool].delete(interactable);
-            interactable.reset();
-        }
-    }
-
-    removeInteractables(interactables, tool) {
-        if(!tool) {
-            interactables.forEach((interactable) => {
-                this._interactables.delete(interactable);
-                interactable.reset();
-            });
-        } else {
-            interactables.forEach((interactable) => {
-                this._toolInteractables[tool].delete(interactable);
-                interactable.reset();
-            });
-        }
-    }
-
-    reset() {
-        this._interactables.forEach(interactable => { interactable.reset(); });
-        this._interactables = new Set();
-        this._hoveredInteractables = {};
-        this._selectedInteractables = {};
-    }
-
-}
-
 const FileTypes$1 = {
     jpg: "jpg",
     jpeg: "jpeg",
@@ -9218,6 +8988,181 @@ class UploadHandler {
 }
 
 let uploadHandler = new UploadHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class Interactable {
+    constructor(threeObj) {
+        this._threeObj = threeObj;
+        this._state = InteractableStates.IDLE;
+        this.children = new Set();
+        this._hoveredOwners = new Set();
+        this._selectedOwners = new Set();
+    }
+
+    isOnlyGroup() {
+        console.error("Interactable.isOnlyGroup() should be overridden");
+        return;
+    }
+
+    getThreeObj() {
+        return this._threeObj;
+    }
+
+    getState() {
+        return this._state;
+    }
+
+    setState(newState) {
+        if(this._state != newState) {
+            this._state = newState;
+            if(this._threeObj.states && newState in this._threeObj.states) {
+                this._threeObj.setState(newState);
+            }
+        }
+    }
+
+    addHoveredBy(owner) {
+        console.error("Interactable.addHoveredBy(owner) should be overridden");
+    }
+
+    removeHoveredBy(owner) {
+        console.error("Interactable.removeHoveredBy(owner) should be overridden");
+    }
+
+    addSelectedBy(owner) {
+        console.error("Interactable.addSelectedBy(owner) should be overridden");
+    }
+
+    removeSelectedBy(owner) {
+        console.error("Interactable.removeSelectedBy(owner) should be overridden");
+    }
+
+    reset() {
+        this._hoveredOwners.clear();
+        this._selectedOwners.clear();
+        this.setState(InteractableStates.IDLE);
+        this.children.forEach((interactable) => {
+            interactable.reset();
+        });
+    }
+
+    addChild(interactable) {
+        if(interactable.parent) interactable.parent.removeChild(interactable);
+        this.children.add(interactable);
+        interactable.parent = this;
+    }
+
+    addChildren(interactables) {
+        interactables.forEach((interactable) => {
+            this.addChild(interactable);
+        });
+    }
+
+    removeChild(interactable) {
+        this.children.delete(interactable);
+        interactable.parent = null;
+    }
+
+    removeChildren(interactables) {
+        interactables.forEach((interactable) => {
+            this.removeChild(interactable);
+        });
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class PointerInteractable extends Interactable {
+    constructor(threeObj, actionFunc, canDisableOrbit, canDisplayPointer, specificOption, draggableActionFunc) {
+        super(threeObj);
+        this._actionFunc = actionFunc;
+        this._canDisableOrbit = global$1.deviceType != "XR" && canDisableOrbit != false;
+        this.canDisplayPointer = global$1.deviceType == "XR" && canDisplayPointer != false;
+        this.specificOption = specificOption;
+        this._draggableActionFunc = draggableActionFunc;
+    }
+
+    isOnlyGroup() {
+        return this._actionFunc == null && !this.canDisplayPointer && !this._canDisableOrbit;
+    }
+
+    isDraggable() {
+        return this._draggableActionFunc != null;
+    }
+
+    _determineAndSetState() {
+        if(this._selectedOwners.size > 0) {
+            this.setState(InteractableStates.SELECTED);
+        } else if(this._hoveredOwners.size > 0) {
+            this.setState(InteractableStates.HOVERED);
+        } else {
+            this.setState(InteractableStates.IDLE);
+        }
+    }
+
+    addHoveredBy(owner, closestPoint) {
+        if(this._hoveredOwners.has(owner)) {
+            return;
+        } else if(this._selectedOwners.has(owner)) {
+            this.triggerAction(closestPoint);
+        }
+        this._hoveredOwners.add(owner);
+        if(this._selectedOwners.size == 0) {
+            this.setState(InteractableStates.HOVERED);
+        }
+    }
+
+    removeHoveredBy(owner) {
+        this._hoveredOwners.delete(owner);
+        this._determineAndSetState();
+    }
+
+    addSelectedBy(owner, closestPoint) {
+        this._selectedOwners.add(owner);
+        this.setState(InteractableStates.SELECTED);
+        if(this._canDisableOrbit) sessionHandler.disableOrbit();
+        if(this._draggableActionFunc) this._draggableActionFunc(closestPoint);
+    }
+
+    removeSelectedBy(owner) {
+        this._selectedOwners.delete(owner);
+        this._determineAndSetState();
+        if(this._canDisableOrbit) sessionHandler.enableOrbit();
+    }
+
+    triggerAction(closestPoint) {
+        if(this._actionFunc != null) {
+            this._actionFunc(closestPoint);
+        }
+    }
+
+    triggerDraggableAction(closestPoint) {
+        if(this._draggableActionFunc != null) {
+            this._draggableActionFunc(closestPoint);
+        }
+    }
+
+    updateAction(newActionFunc) {
+        this._actionFunc = newActionFunc;
+    }
+
+    static emptyGroup() {
+        return new PointerInteractable(null, null, false, false);
+    }
+
+    static createDraggable(threeObj, actionFunc, draggableActionFunc) {
+        return new PointerInteractable(threeObj, actionFunc, true, true, null, draggableActionFunc);
+    }
+}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -11514,10 +11459,7 @@ class TransformControlsHandler {
 
     attach(asset, option) {
         option = option || global$1.deviceType;
-        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
-            instance: asset,
-            option: option,
-        });
+        let publishMessage = { instance: asset, option: option };
         this._attachedAssets[option] = asset;
         if(global$1.deviceType == 'XR') {
             this._placingObject[option] = true;
@@ -11525,6 +11467,7 @@ class TransformControlsHandler {
             if(asset == this._attachedAssets[otherOption]) {
                 UserController$1.hands[option].remove(asset.getObject());
                 UserController$1.hands[otherOption].remove(asset.getObject());
+                publishMessage.twoHandScaling = true;
                 this._twoHandScaling = true;
                 this._initialScalingDistance =
                     UserController$1.getDistanceBetweenHands();
@@ -11535,6 +11478,8 @@ class TransformControlsHandler {
                 UserController$1.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
+            publishMessage.position = asset.getPosition();
+            publishMessage.rotation = asset.getRotation();
             undoRedoHandler.disable(this._id);
         } else {
             this._transformControls.attach(asset.getObject());
@@ -11543,30 +11488,31 @@ class TransformControlsHandler {
             $('#' + this._transformControls.mode + "-button")
                 .addClass("selected");
         }
+        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED,publishMessage);
     }
 
     detach(option) {
         option = option || global$1.deviceType;
+        let assetHelper, preState, postState;
         let asset = this._attachedAssets[option];
         if(!asset) return;
-        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
-            instance: asset,
-            option: option,
-        });
+        let publishMessage = { instance: asset, option: option };
         if(global$1.deviceType == 'XR') {
             UserController$1.hands[option].remove(asset.getObject());
             let otherOption = this._getOtherHand(option);
             if(this._attachedAssets[otherOption] == asset) {
                 UserController$1.hands[otherOption].attach(asset.getObject());
+                publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
-                let assetHelper = asset.getEditorHelper();
+                assetHelper = asset.getEditorHelper();
                 assetHelper.roundAttributes(true);
-                let preState = this._preTransformStates[asset.getId()];
-                let postState = assetHelper.getObjectTransformation();
-                assetHelper.setObjectTransformation(preState, postState);
+                preState = this._preTransformStates[asset.getId()];
+                postState = assetHelper.getObjectTransformation();
             }
+            publishMessage.position = asset.getPosition();
+            publishMessage.rotation = asset.getRotation();
             if(Object.keys(this._attachedAssets).length == 1)
                 undoRedoHandler.enable(this._id);
         }
@@ -11574,6 +11520,9 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
         this._transformControls.detach();
         $("#transform-controls").addClass("hidden");
+        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED,publishMessage);
+        if(assetHelper && preState && postState)
+            assetHelper.setObjectTransformation(preState, postState);
     }
 
     _detachDeleted(option) {
@@ -11672,6 +11621,8 @@ class PointerInteractableHandler extends InteractableHandler {
                 this.update = this._updateForXRCopyPaste;
             } else if(tool == HandTools.DELETE) {
                 this.update = this._updateForXRDelete;
+            } else {
+                this.update = this._updateForXR;
             }
         });
     }
@@ -11945,7 +11896,7 @@ class PointerInteractableHandler extends InteractableHandler {
 
         this._updateInteractables(controllers);
         if(controllers[Hands.RIGHT].closestPoint == null)
-            CopyPasteControlsHandler$1.checkPlacement(controllers[Hands.RIGHT]);
+            copyPasteControlsHandler.checkPlacement(controllers[Hands.RIGHT]);
         for(let option in controllers) {
             this._updateCursor(controllers[option]);
         }
@@ -12059,6 +12010,8 @@ class UserHand {
         this._hand = hand;
         this._isGripPressed = false;
         this._vector3 = new Vector3();
+        this._euler = new Euler();
+        this._quaternion = new Quaternion();
 
         this._setup();
     }
@@ -12079,10 +12032,15 @@ class UserHand {
     }
 
     getWorldRotation() {
-        this._controller.getWorldQuaternion(quaternion);
-        quaternion.normalize();
-        euler.setFromQuaternion(quaternion);
-        return euler;
+        this._controller.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._controller.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
     }
 
     add(threeObj) {
@@ -12172,6 +12130,10 @@ class UserController {
         pubSub.subscribe(this._id, PubSubTopics$1.USER_SCALE_UPDATED, (scale) => {
             this._userObj.scale.set(scale, scale, scale);
         });
+    }
+
+    getId() {
+        return this._id;
     }
 
     getAvatarUrl() {
@@ -12316,75 +12278,160 @@ var UserController$1 = userController;
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class CopyPasteControlsHandler {
-    constructor() {
-        this._id = uuidv4();
-        this._assetAlreadyPastedByTrigger = false;
-        this._assetAlreadyPastedByGrip = false;
-        this._copiedAsset;
-        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
-            if(this._copiedAsset) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
-        });
-    }
+class Box3Helper extends LineSegments {
 
-    copy(asset) {
-        if(this._copiedAsset) this._clear();
-        this._copiedAsset = asset;
-        this._previewAsset = asset.preview();
-        UserController$1.hands[Hands.LEFT].attach(this._previewAsset.getObject());
-        UserController$1.hands[Hands.RIGHT].add(this._previewAsset.getObject());
-    }
+	constructor(box) {
+		super(BoundingBox.geometry, BoundingBox.material);
 
-    _paste() {
-        this._previewAsset.clone(
-            this._copiedAsset.visualEdit);
-        this._assetAlreadyPastedByGrip = true;
-    }
+		this.box = box;
 
-    checkPlacement(controller) {
-        if(!this._copiedAsset) return;
-        let raycaster = controller['raycaster'];
-        raycaster.far = Infinity;
-        let isPressed = controller['isPressed'];
-        let intersections = raycaster.intersectObjects(ProjectHandler$1.getObjects(), true);
-        if(this._assetAlreadyPastedByTrigger) {
-            if(isPressed) return;
-            this._assetAlreadyPastedByTrigger = false;
-        }
-        if(intersections.length > 0) {
-            controller['closestPoint'] = intersections[0].point;
-            if(isPressed && this._copiedAsset) {
-                let clonedAsset = this._copiedAsset.clone();
-                clonedAsset.getEditorHelper().place(intersections[0]);
-                this._assetAlreadyPastedByTrigger = true;
-            }
-        }
-    }
+		this.type = 'Box3Helper';
 
-    checkGripPlacement(isControllerPressed) {
-        if(!this._copiedAsset) return;
-        if(isControllerPressed != this._assetAlreadyPastedByGrip) {
-            if(isControllerPressed) this._paste();
-            else this._assetAlreadyPastedByGrip = false;
-        }
-    }
+		this.geometry.computeBoundingSphere();
 
-    _clear() {
-        this._previewAsset.removeFromScene();
-        this._copiedAsset = null;
-        this._previewAsset = null;
-    }
+	}
 
-    hasCopiedObject() {
-        return this._copiedAsset;
-    }
+	updateMatrixWorld( force ) {
+
+		const box = this.box;
+
+		if ( box.isEmpty() ) return;
+
+		box.getCenter( this.position );
+
+		box.getSize( this.scale );
+
+		this.scale.multiplyScalar( 0.5 );
+
+		super.updateMatrixWorld( force );
+
+	}
 
 }
 
-let copyPasteControlsHandler = new CopyPasteControlsHandler();
-var CopyPasteControlsHandler$1 = copyPasteControlsHandler;
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class GripInteractable extends Interactable {
+    constructor(threeObj, selectedFunc, releasedFunc, draggedFunc, specificOption) {
+        super(threeObj);
+        this._selectedFunc = selectedFunc;
+        this._releasedFunc = releasedFunc;
+        this._draggedFunc = draggedFunc;
+        this.specificOption = specificOption;
+        this._createBoundingObject();
+    }
+
+    isOnlyGroup() {
+        return this._selectedFunc == null && this._releasedFunc == null
+            && this._draggedFunc == null;
+    }
+
+    isDraggable() {
+        return this._draggedFunc != null;
+    }
+
+    _createBoundingObject() {
+        this._boundingBox = new THREE.Box3();
+        this._boundingBoxObj = new Box3Helper(this._boundingBox);
+    }
+
+    _getBoundingObject() {
+        this._boundingBox.setFromObject(this._threeObj);
+        return this._boundingBox;
+    }
+
+    _displayBoundingObject() {
+        global$1.scene.add(this._boundingBoxObj);
+    }
+
+    _hideBoundingObject() {
+        global$1.scene.remove(this._boundingBoxObj);
+    }
+
+    intersectsSphere(sphere) {
+        let boundingBox = this._getBoundingObject();
+        let intersects;
+        if(boundingBox) {
+            intersects = sphere.intersectsBox(boundingBox);
+        } else {
+            intersects = false;
+        }
+        return intersects;
+    }
+
+    // Assumes intersectsSphere(sphere) is called first so we don't update the
+    // bounding box by calling _getBoundingObject()
+    distanceToSphere(sphere) {
+        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s$1[0]));
+    }
+
+    _determineAndSetState() {
+        if(this._selectedOwners.size > 0) {
+            this.setState(InteractableStates.SELECTED);
+            if(this._hoveredOwners.size >= this._selectedOwners.size) {
+                this._displayBoundingObject();
+            } else {
+                this._hideBoundingObject();
+            }
+        } else if(this._hoveredOwners.size > 0) {
+            this.setState(InteractableStates.HOVERED);
+            this._displayBoundingObject();
+        } else {
+            this.setState(InteractableStates.IDLE);
+            this._hideBoundingObject();
+        }
+    }
+
+    addHoveredBy(owner) {
+        if(this._hoveredOwners.has(owner)) {
+            return;
+        }
+        this._hoveredOwners.add(owner);
+        if(this._selectedOwners.size == 0) {
+            this.setState(InteractableStates.HOVERED);
+        }
+        this._displayBoundingObject();
+    }
+
+    removeHoveredBy(owner) {
+        this._hoveredOwners.delete(owner);
+        this._determineAndSetState();
+    }
+
+    addSelectedBy(owner) {
+        if(this._selectedFunc != null) {
+            this._selectedFunc(owner);
+        }
+        this._selectedOwners.add(owner);
+        this.setState(InteractableStates.SELECTED);
+    }
+
+    removeSelectedBy(owner) {
+        if(this._releasedFunc != null) {
+            this._releasedFunc(owner);
+        }
+        this._selectedOwners.delete(owner);
+        this._determineAndSetState();
+    }
+
+    triggerDragged(owner) {
+        if(this._draggedFunc != null) {
+            this._draggedFunc(owner);
+        }
+    }
+
+    updateAction(newActionFunc) {
+        this._selectedFunc = newActionFunc;
+    }
+
+    static emptyGroup() {
+        return new GripInteractable();
+    }
+}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12488,9 +12535,13 @@ class GripInteractableHandler extends InteractableHandler {
             let closestInteractable = controller['closestInteractable'];
             if(closestInteractable) {
                 if(isPressed) {
-                    if(!selectedInteractable
-                        && hoveredInteractable == closestInteractable)
-                    {
+                    if(selectedInteractable) {
+                        if(selectedInteractable == closestInteractable
+                            && selectedInteractable.isDraggable())
+                        {
+                            selectedInteractable.triggerDraggableAction(option);
+                        }
+                    } else if(hoveredInteractable == closestInteractable) {
                         closestInteractable.addSelectedBy(option);
                         this._selectedInteractables[option] = closestInteractable;
                         closestInteractable.removeHoveredBy(option);
@@ -12532,8 +12583,8 @@ class GripInteractableHandler extends InteractableHandler {
             closestPointDistance: Number.MAX_SAFE_INTEGER,
         };
 
-        if(CopyPasteControlsHandler$1.hasCopiedObject()) {
-            CopyPasteControlsHandler$1.checkGripPlacement(
+        if(copyPasteControlsHandler.hasCopiedObject()) {
+            copyPasteControlsHandler.checkGripPlacement(
                 this._isControllerPressed(Hands.RIGHT));
         } else {
             controllers[Hands.RIGHT] = {
@@ -12575,6 +12626,300 @@ class GripInteractableHandler extends InteractableHandler {
 }
 
 let gripInteractableHandler = new GripInteractableHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class RotateHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._heldAssets = {};
+        this._quaternion = new Quaternion();
+        this._euler1 = new Euler();
+        this._euler2 = new Euler();
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
+            if(message['targetOnlyMenu']) return;
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.asset == e.instance) {
+                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let object = heldAsset.asset.getObject();
+                    if(heldAsset.preTransformState) {
+                        object.quaternion.fromArray(
+                            heldAsset.preTransformState);
+                        object.rotation.setFromQuaternion(object.quaternion);
+                        assetHelper._publish(['rotation']);
+                    }
+                    delete this._heldAssets[key];
+                }
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let key in this._heldAssets) {
+                delete this._heldAssets[key];
+            }
+        });
+    }
+
+    attach(controller, hand, asset, rotationDifference) {
+        let controllerId = controller.getId();
+        let otherHand = Hands.otherHand(hand);
+        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
+        if(otherHeldAsset && otherHeldAsset.asset == asset) {
+            this._swapToHand(controller, hand, otherHand, rotationDifference);
+        } else {
+            let heldAsset = {
+                asset: asset,
+                controller: controller,
+                hand: hand,
+            };
+            if(rotationDifference) {
+                heldAsset.rotationDifference = rotationDifference;
+            } else {
+                let rotation = asset.getWorldQuaternion();
+                heldAsset.preTransformState = rotation.toArray();
+                heldAsset.rotationDifference = controller.hands[hand]
+                    .getWorldQuaternion().conjugate().multiply(rotation)
+                    .toArray();
+            }
+            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+        }
+        if(!rotationDifference) {
+            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
+                instance: asset,
+                option: hand,
+                type: 'rotate',
+                rotation: heldAsset.rotationDifference,
+            });
+        }
+    }
+
+    detach(controller, hand, rotation) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+        if(!heldAsset) return;
+        delete this._heldAssets[controllerId + ':' + hand];
+        if(!rotation) {
+            rotation = this._update(heldAsset);
+            let assetHelper = heldAsset.asset.getEditorHelper();
+            this._quaternion.fromArray(heldAsset.preTransformState);
+            this._euler1.setFromQuaternion(this._quaternion);
+            this._quaternion.fromArray(rotation);
+            this._euler2.setFromQuaternion(this._quaternion);
+            let preState = this._euler1.toArray();
+            let postState = this._euler2.toArray();
+            assetHelper._updateEuler('rotation', postState, false, true,
+                preState);
+            assetHelper._publish(['rotation']);
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
+                instance: heldAsset.asset,
+                option: hand,
+                type: 'rotate',
+                rotation: rotation,
+            });
+        } else {
+            heldAsset.asset.setRotationFromQuaternion(rotation);
+        }
+    }
+
+    update() {
+        for(let key in this._heldAssets) {
+            let heldAsset = this._heldAssets[key];
+            this._update(heldAsset);
+        }
+    }
+
+    _update(heldAsset) {
+        if(!heldAsset) return;
+        //Eventually we'll need to set the world rotation of the asset once
+        //we support parent child relationships
+        let handRotation = heldAsset.controller.hands[heldAsset.hand]
+            .getWorldQuaternion();
+        this._quaternion.fromArray(heldAsset.rotationDifference);
+        let newRotation = handRotation.multiply(this._quaternion).toArray();
+        heldAsset.asset.setRotationFromQuaternion(newRotation);
+        return newRotation;
+    }
+
+    _swapToHand(controller, newHand, oldHand, rotationDifference) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
+        heldAsset.hand = newHand;
+        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
+        delete this._heldAssets[controllerId + ':' + oldHand];
+        if(rotationDifference) {
+            heldAsset.rotationDifference = rotationDifference;
+        } else {
+            let rotation = heldAsset.asset.getWorldQuaternion();
+            heldAsset.rotationDifference = heldAsset.controller
+                .hands[heldAsset.hand].getWorldQuaternion().conjugate()
+                .multiply(rotation).toArray();
+        }
+    }
+}
+
+let rotateHandler = new RotateHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class TranslateHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._heldAssets = {};
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
+            if(message['targetOnlyMenu']) return;
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.asset == e.instance) {
+                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let object = heldAsset.asset.getObject();
+                    if(heldAsset.preTransformState) {
+                        object.position.fromArray(heldAsset.preTransformState);
+                        assetHelper._publish(['position']);
+                    }
+                    delete this._heldAssets[key];
+                }
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let key in this._heldAssets) {
+                delete this._heldAssets[key];
+            }
+        });
+    }
+
+    attach(controller, hand, asset, positionDifference) {
+        let controllerId = controller.getId();
+        let otherHand = Hands.otherHand(hand);
+        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
+        if(otherHeldAsset && otherHeldAsset.asset == asset) {
+            this._swapToHand(controller, hand, otherHand, positionDifference);
+        } else {
+            let heldAsset = {
+                asset: asset,
+                controller: controller,
+                hand: hand,
+            };
+            if(positionDifference) {
+                heldAsset.positionDifference = positionDifference;
+            } else {
+                let position = asset.getWorldPosition();
+                heldAsset.preTransformState = position.toArray();
+                heldAsset.positionDifference = position.sub(heldAsset
+                    .controller.hands[hand].getWorldPosition()).toArray();
+            }
+            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+        }
+        if(!positionDifference) {
+            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
+                instance: asset,
+                option: hand,
+                type: 'translate',
+                position: heldAsset.positionDifference,
+            });
+        }
+    }
+
+    detach(controller, hand, position) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+        if(!heldAsset) return;
+        delete this._heldAssets[controllerId + ':' + hand];
+        if(!position) {
+            position = this._update(heldAsset);
+            let assetHelper = heldAsset.asset.getEditorHelper();
+            let preState = heldAsset.preTransformState;
+            let postState = position;
+            assetHelper._updateVector3('position', postState, false, true,
+                preState);
+            assetHelper._publish(['position']);
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
+                instance: heldAsset.asset,
+                option: hand,
+                type: 'translate',
+                position: position,
+            });
+        } else {
+            heldAsset.asset.setPosition(position);
+        }
+    }
+
+    update() {
+        for(let key in this._heldAssets) {
+            let heldAsset = this._heldAssets[key];
+            this._update(heldAsset);
+        }
+    }
+
+    _update(heldAsset) {
+        if(!heldAsset) return;
+        //Eventually we'll need to set the world position of the asset once
+        //we support parent child relationships
+        let handPosition = heldAsset.controller.hands[heldAsset.hand]
+            .getWorldPosition();
+        let newPosition = [
+            heldAsset.positionDifference[0] + handPosition.x,
+            heldAsset.positionDifference[1] + handPosition.y,
+            heldAsset.positionDifference[2] + handPosition.z
+        ];
+        heldAsset.asset.setPosition(newPosition);
+        return newPosition;
+    }
+
+    _swapToHand(controller, newHand, oldHand, positionDifference) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
+        heldAsset.hand = newHand;
+        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
+        delete this._heldAssets[controllerId + ':' + oldHand];
+        if(positionDifference) {
+            heldAsset.positionDifference = positionDifference;
+        } else {
+            let position = asset.getWorldPosition();
+            heldAsset.positionDifference = position.sub(heldAsset
+                .controller.hands[heldAsset.hand].getWorldPosition()).toArray();
+        }
+    }
+}
+
+let translateHandler = new TranslateHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -13105,6 +13450,8 @@ class PeerHand extends Entity {
         this._hand = hand;
         this._isGripPressed = false;
         this._vector3 = new THREE.Vector3();
+        this._euler = new THREE.Euler();
+        this._quaternion = new THREE.Quaternion();
 
         this._setup();
     }
@@ -13114,6 +13461,23 @@ class PeerHand extends Entity {
         let material = new THREE.MeshLambertMaterial({ color: 0xC68863 });
         this._mesh = new THREE.Mesh(geometry, material);
         this._object.add(this._mesh);
+    }
+
+    getWorldPosition() {
+        this._object.getWorldPosition(this._vector3);
+        return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._object.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._object.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
     }
 
     add(threeObj) {
@@ -13869,10 +14233,12 @@ class PartyMessageHelper {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
+            type: data.type,
         };
         if(global$1.deviceType == 'XR') {
-            message['position'] = data.instance.getPosition();
-            message['rotation'] = data.instance.getRotation();
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
@@ -13885,10 +14251,12 @@ class PartyMessageHelper {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
+            type: data.type,
         };
         if(global$1.deviceType == 'XR') {
-            message['position'] = data.instance.getPosition();
-            message['rotation'] = data.instance.getRotation();
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
@@ -16858,6 +17226,8 @@ const INTERACTABLE_KEYS = [
     HandTools.EDIT,
     HandTools.COPY_PASTE,
     HandTools.DELETE,
+    HandTools.TRANSLATE,
+    HandTools.ROTATE,
 ];
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const FIELDS$m = [
@@ -16897,8 +17267,7 @@ class AssetHelper extends EditorHelper {
             let deleteInteractable = new GripInteractable(this._object,
                 (hand) => {
                     ProjectHandler$1.deleteAssetInstance(this._asset);
-                },
-                () => {}
+                }
             );
             this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
             deleteInteractable = new PointerInteractable(this._object,
@@ -16912,16 +17281,17 @@ class AssetHelper extends EditorHelper {
                 .push(deleteInteractable);
             let copyInteractable = new GripInteractable(this._object,
                 (hand) => {
-                    CopyPasteControlsHandler$1.copy(this._asset);
+                    copyPasteControlsHandler.copy(this._asset);
                 },
-                () => {},
+                null,
+                null,
                 Hands.LEFT
             );
             this._gripInteractables[HandTools.COPY_PASTE]
                 .push(copyInteractable);
             copyInteractable = new PointerInteractable(this._object,
                 (hand) => {
-                    CopyPasteControlsHandler$1.copy(this._asset);
+                    copyPasteControlsHandler.copy(this._asset);
                 },
                 true,
                 true,
@@ -16929,6 +17299,26 @@ class AssetHelper extends EditorHelper {
             );
             this._pointerInteractables[HandTools.COPY_PASTE]
                 .push(copyInteractable);
+            let translateInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    translateHandler.attach(UserController$1, hand, this._asset);
+                },
+                (hand) => {
+                    translateHandler.detach(UserController$1, hand);
+                },
+            );
+            this._gripInteractables[HandTools.TRANSLATE]
+                .push(translateInteractable);
+            let rotateInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    rotateHandler.attach(UserController$1, hand, this._asset);
+                },
+                (hand) => {
+                    rotateHandler.detach(UserController$1, hand);
+                },
+            );
+            this._gripInteractables[HandTools.ROTATE]
+                .push(rotateInteractable);
         } else {
             this._object.states = InteractableStates;
             this._object.setState = (state) => {
@@ -16998,17 +17388,28 @@ class AssetHelper extends EditorHelper {
     attachToPeer(peer, message) {
         this._attachedPeers.add(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(this._attachedPeers.size == 1) {
-                if(message.option in Hands && peer.controller) {
-                    peer.controller.hands[message.option].attach(this._object);
-                    this._asset.setPosition(message.position);
-                    this._asset.setRotation(message.rotation);
-                }
-            } else {
+            if(message.twoHandScaling) {
                 global$1.scene.attach(this._object);
                 this._asset.setPosition(message.position);
                 this._asset.setRotation(message.rotation);
                 return;
+            } else {
+                if(message.option in Hands && peer.controller) {
+                    if(message.type == 'translate') {
+                        this._asset.setPosition(message.position);
+                        translateHandler.attach(peer.controller, message.option,
+                            this._asset, message.position);
+                    } else if(message.type == 'rotate') {
+                        this._asset.setRotationFromQuaternion(message.rotation);
+                        rotateHandler.attach(peer.controller, message.option,
+                            this._asset, message.rotation);
+                    } else {
+                        peer.controller.hands[message.option].attach(
+                            this._object);
+                        this._asset.setPosition(message.position);
+                        this._asset.setRotation(message.rotation);
+                    }
+                }
             }
         }
         if(!this._asset.visualEdit) return;
@@ -17019,20 +17420,24 @@ class AssetHelper extends EditorHelper {
     detachFromPeer(peer, message) {
         this._attachedPeers.delete(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(this._attachedPeers.size == 0) {
-                global$1.scene.attach(this._object);
+            if(message.twoHandScaling) {
+                let otherHand = Hands.otherHand(message.option);
+                peer.controller.hands[otherHand].attach(this._object);
                 this._asset.setPosition(message.position);
                 this._asset.setRotation(message.rotation);
+                return;
             } else {
-                let firstId = this._attachedPeers.values().next().value;
-                let [firstPeerId, option] = firstId.split(':');
-                let firstPeer = partyHandler.getPeer(firstPeerId);
-                if(option in Hands && firstPeer && firstPeer.controller) {
-                    firstPeer.controller.hands[option].attach(this._object);
+                if(message.type == 'translate') {
+                    translateHandler.detach(peer.controller, message.option,
+                        message.position);
+                } else if(message.type == 'rotate') {
+                    rotateHandler.detach(peer.controller, message.option,
+                        message.rotation);
+                } else {
+                    global$1.scene.attach(this._object);
                     this._asset.setPosition(message.position);
                     this._asset.setRotation(message.rotation);
                 }
-                return;
             }
         }
         if(!this._asset.visualEdit) return;
@@ -17241,10 +17646,6 @@ class Asset extends Entity {
         return this._editorHelper;
     }
 
-    getId() {
-        return this._id;
-    }
-
     getName() {
         return this._name;
     }
@@ -17265,12 +17666,29 @@ class Asset extends Entity {
         return this.visualEdit;
     }
 
+    getWorldPosition(vector3) {
+        if(!vector3) vector3 = vector3s$1[0];
+        this._object.getWorldPosition(vector3);
+        return vector3;
+    }
+
+    getWorldQuaternion(quat) {
+        if(!quat) quat = quaternion;
+        this._object.getWorldQuaternion(quat);
+        return quat;
+    }
+
     setPosition(position) {
         this._object.position.fromArray(position);
     }
 
     setRotation(rotation) {
         this._object.rotation.fromArray(rotation);
+    }
+
+    setRotationFromQuaternion(quat) {
+        quaternion.fromArray(quat);
+        this._object.setRotationFromQuaternion(quaternion);
     }
 
     setScale(scale) {
@@ -19461,6 +19879,8 @@ const hands = [
     { "title": "Edit", "type": HandTools.EDIT },
     { "title": "Copy / Paste", "type": HandTools.COPY_PASTE },
     { "title": "Delete", "type": HandTools.DELETE },
+    { "title": "Translate", "type": HandTools.TRANSLATE },
+    { "title": "Rotate", "type": HandTools.ROTATE },
 ];
 
 class HandsPage extends MenuPage {
@@ -23247,6 +23667,8 @@ class Main {
             this._dynamicAssets.push(pubSub);
             this._dynamicAssets.push(ThreeMeshUI);
             this._dynamicAssets.push(partyHandler);
+            this._dynamicAssets.push(translateHandler);
+            this._dynamicAssets.push(rotateHandler);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "
