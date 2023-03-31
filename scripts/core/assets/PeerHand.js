@@ -20,6 +20,8 @@ export default class PeerHand extends Entity {
         this._hand = hand;
         this._isGripPressed = false;
         this._vector3 = new THREE.Vector3();
+        this._euler = new THREE.Euler();
+        this._quaternion = new THREE.Quaternion();
 
         this._setup();
     }
@@ -29,6 +31,23 @@ export default class PeerHand extends Entity {
         let material = new THREE.MeshLambertMaterial({ color: 0xC68863 });
         this._mesh = new THREE.Mesh(geometry, material);
         this._object.add(this._mesh);
+    }
+
+    getWorldPosition() {
+        this._object.getWorldPosition(this._vector3);
+        return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._object.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._object.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
     }
 
     add(threeObj) {

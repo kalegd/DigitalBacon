@@ -111,9 +111,13 @@ class GripInteractableHandler extends InteractableHandler {
             let closestInteractable = controller['closestInteractable'];
             if(closestInteractable) {
                 if(isPressed) {
-                    if(!selectedInteractable
-                        && hoveredInteractable == closestInteractable)
-                    {
+                    if(selectedInteractable) {
+                        if(selectedInteractable == closestInteractable
+                            && selectedInteractable.isDraggable())
+                        {
+                            selectedInteractable.triggerDraggableAction(option);
+                        }
+                    } else if(hoveredInteractable == closestInteractable) {
                         closestInteractable.addSelectedBy(option);
                         this._selectedInteractables[option] = closestInteractable;
                         closestInteractable.removeHoveredBy(option);

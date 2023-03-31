@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import UserController from '/scripts/core/assets/UserController.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
@@ -15,6 +16,8 @@ import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHand
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
+import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
+import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -33,6 +36,8 @@ const INTERACTABLE_KEYS = [
     HandTools.EDIT,
     HandTools.COPY_PASTE,
     HandTools.DELETE,
+    HandTools.TRANSLATE,
+    HandTools.ROTATE,
 ];
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const FIELDS = [
@@ -72,8 +77,7 @@ export default class AssetHelper extends EditorHelper {
             let deleteInteractable = new GripInteractable(this._object,
                 (hand) => {
                     ProjectHandler.deleteAssetInstance(this._asset);
-                },
-                () => {}
+                }
             );
             this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
             deleteInteractable = new PointerInteractable(this._object,
@@ -89,7 +93,8 @@ export default class AssetHelper extends EditorHelper {
                 (hand) => {
                     CopyPasteControlsHandler.copy(this._asset);
                 },
-                () => {},
+                null,
+                null,
                 Hands.LEFT
             );
             this._gripInteractables[HandTools.COPY_PASTE]
@@ -104,6 +109,26 @@ export default class AssetHelper extends EditorHelper {
             );
             this._pointerInteractables[HandTools.COPY_PASTE]
                 .push(copyInteractable);
+            let translateInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    TranslateHandler.attach(UserController, hand, this._asset);
+                },
+                (hand) => {
+                    TranslateHandler.detach(UserController, hand);
+                },
+            );
+            this._gripInteractables[HandTools.TRANSLATE]
+                .push(translateInteractable);
+            let rotateInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    RotateHandler.attach(UserController, hand, this._asset);
+                },
+                (hand) => {
+                    RotateHandler.detach(UserController, hand);
+                },
+            );
+            this._gripInteractables[HandTools.ROTATE]
+                .push(rotateInteractable);
         } else {
             this._object.states = States;
             this._object.setState = (state) => {
@@ -173,17 +198,28 @@ export default class AssetHelper extends EditorHelper {
     attachToPeer(peer, message) {
         this._attachedPeers.add(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(this._attachedPeers.size == 1) {
-                if(message.option in Hands && peer.controller) {
-                    peer.controller.hands[message.option].attach(this._object);
-                    this._asset.setPosition(message.position);
-                    this._asset.setRotation(message.rotation);
-                }
-            } else {
+            if(message.twoHandScaling) {
                 global.scene.attach(this._object);
                 this._asset.setPosition(message.position);
                 this._asset.setRotation(message.rotation);
                 return;
+            } else {
+                if(message.option in Hands && peer.controller) {
+                    if(message.type == 'translate') {
+                        this._asset.setPosition(message.position);
+                        TranslateHandler.attach(peer.controller, message.option,
+                            this._asset, message.position);
+                    } else if(message.type == 'rotate') {
+                        this._asset.setRotationFromQuaternion(message.rotation);
+                        RotateHandler.attach(peer.controller, message.option,
+                            this._asset, message.rotation);
+                    } else {
+                        peer.controller.hands[message.option].attach(
+                            this._object);
+                        this._asset.setPosition(message.position);
+                        this._asset.setRotation(message.rotation);
+                    }
+                }
             }
         }
         if(!this._asset.visualEdit) return;
@@ -194,20 +230,24 @@ export default class AssetHelper extends EditorHelper {
     detachFromPeer(peer, message) {
         this._attachedPeers.delete(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(this._attachedPeers.size == 0) {
-                global.scene.attach(this._object);
+            if(message.twoHandScaling) {
+                let otherHand = Hands.otherHand(message.option);
+                peer.controller.hands[otherHand].attach(this._object);
                 this._asset.setPosition(message.position);
                 this._asset.setRotation(message.rotation);
+                return;
             } else {
-                let firstId = this._attachedPeers.values().next().value;
-                let [firstPeerId, option] = firstId.split(':');
-                let firstPeer = PartyHandler.getPeer(firstPeerId)
-                if(option in Hands && firstPeer && firstPeer.controller) {
-                    firstPeer.controller.hands[option].attach(this._object);
+                if(message.type == 'translate') {
+                    TranslateHandler.detach(peer.controller, message.option,
+                        message.position);
+                } else if(message.type == 'rotate') {
+                    RotateHandler.detach(peer.controller, message.option,
+                        message.rotation);
+                } else {
+                    global.scene.attach(this._object);
                     this._asset.setPosition(message.position);
                     this._asset.setRotation(message.rotation);
                 }
-                return;
             }
         }
         if(!this._asset.visualEdit) return;

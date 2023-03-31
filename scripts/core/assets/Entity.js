@@ -13,6 +13,10 @@ export default class Entity {
         this._object = new Object3D();
     }
     
+    getId() {
+        return this._id;
+    }
+
     getObject() {
         return this._object;
     }

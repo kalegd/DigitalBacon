@@ -34,6 +34,8 @@ class PointerInteractableHandler extends InteractableHandler {
                 this.update = this._updateForXRCopyPaste;
             } else if(tool == HandTools.DELETE) {
                 this.update = this._updateForXRDelete;
+            } else {
+                this.update = this._updateForXR;
             }
         });
     }

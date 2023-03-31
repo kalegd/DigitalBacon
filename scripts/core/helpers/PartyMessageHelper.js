@@ -349,10 +349,12 @@ class PartyMessageHelper {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
+            type: data.type,
         };
         if(global.deviceType == 'XR') {
-            message['position'] = data.instance.getPosition();
-            message['rotation'] = data.instance.getRotation();
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
@@ -365,10 +367,12 @@ class PartyMessageHelper {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
+            type: data.type,
         };
         if(global.deviceType == 'XR') {
-            message['position'] = data.instance.getPosition();
-            message['rotation'] = data.instance.getRotation();
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));

@@ -6,13 +6,10 @@
 
 import UserController from '/scripts/core/assets/UserController.js';
 import Hands from '/scripts/core/enums/Hands.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-
-const MODES = ['translate', 'rotate', 'scale'];
 
 class CopyPasteControlsHandler {
     constructor() {
@@ -21,6 +18,11 @@ class CopyPasteControlsHandler {
         this._assetAlreadyPastedByGrip = false;
         this._copiedAsset;
         PubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (handTool)=>{
+            if(this._copiedAsset) this._clear();
+            this._assetAlreadyPastedByTrigger = false;
+            this._assetAlreadyPastedByGrip = false;
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             if(this._copiedAsset) this._clear();
             this._assetAlreadyPastedByTrigger = false;
             this._assetAlreadyPastedByGrip = false;

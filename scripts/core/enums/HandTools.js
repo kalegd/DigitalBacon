@@ -1,8 +1,10 @@
 const HandTools = {
-    EDIT: "EDIT",
+    ACTIVE: "EDIT",
     COPY_PASTE: "COPY_PASTE",
     DELETE: "DELETE",
-    ACTIVE: "EDIT",
+    EDIT: "EDIT",
+    ROTATE: "ROTATE",
+    TRANSLATE: "TRANSLATE",
 };
 
 export default HandTools;

@@ -314,10 +314,7 @@ class TransformControlsHandler {
 
     attach(asset, option) {
         option = option || global.deviceType;
-        PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
-            instance: asset,
-            option: option,
-        });
+        let publishMessage = { instance: asset, option: option };
         this._attachedAssets[option] = asset;
         if(global.deviceType == 'XR') {
             this._placingObject[option] = true;
@@ -325,6 +322,7 @@ class TransformControlsHandler {
             if(asset == this._attachedAssets[otherOption]) {
                 UserController.hands[option].remove(asset.getObject());
                 UserController.hands[otherOption].remove(asset.getObject());
+                publishMessage.twoHandScaling = true;
                 this._twoHandScaling = true;
                 this._initialScalingDistance =
                     UserController.getDistanceBetweenHands();
@@ -335,6 +333,8 @@ class TransformControlsHandler {
                 UserController.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
+            publishMessage.position = asset.getPosition();
+            publishMessage.rotation = asset.getRotation();
             UndoRedoHandler.disable(this._id);
         } else {
             this._transformControls.attach(asset.getObject());
@@ -343,30 +343,31 @@ class TransformControlsHandler {
             $('#' + this._transformControls.mode + "-button")
                 .addClass("selected");
         }
+        PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED,publishMessage);
     }
 
     detach(option) {
         option = option || global.deviceType;
+        let assetHelper, preState, postState;
         let asset = this._attachedAssets[option];
         if(!asset) return;
-        PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
-            instance: asset,
-            option: option,
-        });
+        let publishMessage = { instance: asset, option: option };
         if(global.deviceType == 'XR') {
             UserController.hands[option].remove(asset.getObject());
             let otherOption = this._getOtherHand(option);
             if(this._attachedAssets[otherOption] == asset) {
                 UserController.hands[otherOption].attach(asset.getObject());
+                publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
-                let assetHelper = asset.getEditorHelper();
+                assetHelper = asset.getEditorHelper();
                 assetHelper.roundAttributes(true);
-                let preState = this._preTransformStates[asset.getId()];
-                let postState = assetHelper.getObjectTransformation();
-                assetHelper.setObjectTransformation(preState, postState);
+                preState = this._preTransformStates[asset.getId()];
+                postState = assetHelper.getObjectTransformation();
             }
+            publishMessage.position = asset.getPosition();
+            publishMessage.rotation = asset.getRotation();
             if(Object.keys(this._attachedAssets).length == 1)
                 UndoRedoHandler.enable(this._id);
         }
@@ -374,6 +375,9 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
         this._transformControls.detach();
         $("#transform-controls").addClass("hidden");
+        PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED,publishMessage);
+        if(assetHelper && preState && postState)
+            assetHelper.setObjectTransformation(preState, postState);
     }
 
     _detachDeleted(option) {

@@ -120,10 +120,6 @@ export default class Asset extends Entity {
         return this._editorHelper;
     }
 
-    getId() {
-        return this._id;
-    }
-
     getName() {
         return this._name;
     }
@@ -144,12 +140,29 @@ export default class Asset extends Entity {
         return this.visualEdit;
     }
 
+    getWorldPosition(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldPosition(vector3);
+        return vector3;
+    }
+
+    getWorldQuaternion(quat) {
+        if(!quat) quat = quaternion;
+        this._object.getWorldQuaternion(quat);
+        return quat;
+    }
+
     setPosition(position) {
         this._object.position.fromArray(position);
     }
 
     setRotation(rotation) {
         this._object.rotation.fromArray(rotation);
+    }
+
+    setRotationFromQuaternion(quat) {
+        quaternion.fromArray(quat);
+        this._object.setRotationFromQuaternion(quaternion);
     }
 
     setScale(scale) {

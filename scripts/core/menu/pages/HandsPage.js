@@ -18,6 +18,8 @@ const hands = [
     { "title": "Edit", "type": HandTools.EDIT },
     { "title": "Copy / Paste", "type": HandTools.COPY_PASTE },
     { "title": "Delete", "type": HandTools.DELETE },
+    { "title": "Translate", "type": HandTools.TRANSLATE },
+    { "title": "Rotate", "type": HandTools.ROTATE },
 ];
 
 class HandsPage extends MenuPage {

@@ -19,6 +19,8 @@ import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
+import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
+import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import global from '/scripts/core/global.js';
 import Stats from '/node_modules/three/examples/jsm/libs/stats.module.js';
@@ -208,6 +210,8 @@ export default class Main {
             this._dynamicAssets.push(PubSub);
             this._dynamicAssets.push(ThreeMeshUI);
             this._dynamicAssets.push(PartyHandler);
+            this._dynamicAssets.push(TranslateHandler);
+            this._dynamicAssets.push(RotateHandler);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "

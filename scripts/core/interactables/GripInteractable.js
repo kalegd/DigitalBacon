@@ -12,16 +12,22 @@ import Interactable from '/scripts/core/interactables/Interactable.js';
 import * as THREE from 'three';
 
 class GripInteractable extends Interactable {
-    constructor(threeObj, selectedFunc, releasedFunc, specificOption) {
+    constructor(threeObj, selectedFunc, releasedFunc, draggedFunc, specificOption) {
         super(threeObj);
         this._selectedFunc = selectedFunc;
         this._releasedFunc = releasedFunc;
+        this._draggedFunc = draggedFunc;
         this.specificOption = specificOption;
         this._createBoundingObject();
     }
 
     isOnlyGroup() {
-        return this._selectedFunc == null && this._releasedFunc == null;
+        return this._selectedFunc == null && this._releasedFunc == null
+            && this._draggedFunc == null;
+    }
+
+    isDraggable() {
+        return this._draggedFunc != null;
     }
 
     _createBoundingObject() {
@@ -106,6 +112,12 @@ class GripInteractable extends Interactable {
         }
         this._selectedOwners.delete(owner);
         this._determineAndSetState();
+    }
+
+    triggerDragged(owner) {
+        if(this._draggedFunc != null) {
+            this._draggedFunc(owner);
+        }
     }
 
     updateAction(newActionFunc) {

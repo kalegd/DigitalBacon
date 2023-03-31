@@ -67,6 +67,10 @@ class UserController {
         });
     }
 
+    getId() {
+        return this._id;
+    }
+
     getAvatarUrl() {
         return this._avatarUrl;
     }

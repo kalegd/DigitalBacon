@@ -8,8 +8,7 @@ import global from '/scripts/core/global.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
-import { euler, quaternion } from '/scripts/core/helpers/constants.js';
-import { Vector3 } from 'three';
+import { Euler, Quaternion, Vector3 } from 'three';
 
 export default class UserHand {
     constructor(hand) {
@@ -21,6 +20,8 @@ export default class UserHand {
         this._hand = hand;
         this._isGripPressed = false;
         this._vector3 = new Vector3();
+        this._euler = new Euler();
+        this._quaternion = new Quaternion();
 
         this._setup();
     }
@@ -41,10 +42,15 @@ export default class UserHand {
     }
 
     getWorldRotation() {
-        this._controller.getWorldQuaternion(quaternion);
-        quaternion.normalize();
-        euler.setFromQuaternion(quaternion);
-        return euler;
+        this._controller.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._controller.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
     }
 
     add(threeObj) {
