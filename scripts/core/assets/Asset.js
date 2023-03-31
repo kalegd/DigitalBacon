@@ -152,6 +152,12 @@ export default class Asset extends Entity {
         return quat;
     }
 
+    getWorldScale(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldScale(vector3);
+        return vector3;
+    }
+
     setPosition(position) {
         this._object.position.fromArray(position);
     }

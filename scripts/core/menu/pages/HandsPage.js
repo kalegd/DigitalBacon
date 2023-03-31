@@ -11,7 +11,7 @@ import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
+import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const hands = [
@@ -20,11 +20,13 @@ const hands = [
     { "title": "Delete", "type": HandTools.DELETE },
     { "title": "Translate", "type": HandTools.TRANSLATE },
     { "title": "Rotate", "type": HandTools.ROTATE },
+    { "title": "Scale", "type": HandTools.SCALE },
 ];
 
-class HandsPage extends MenuPage {
+class HandsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
+        this._items = hands;
         this._addPageContent();
     }
 
@@ -37,32 +39,22 @@ class HandsPage extends MenuPage {
         });
         this._container.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-        });
-        for(let hand of hands) {
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': hand.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
-            columnBlock.add(button);
-            let interactable = new PointerInteractable(button, () => {
-                if(HandTools.ACTIVE == hand.type) return;
-                HandTools.ACTIVE = hand.type;
-                PubSub.publish(this._id, PubSubTopics.HAND_TOOLS_SWITCH, hand.type);
-            });
-            this._containerInteractable.addChild(interactable);
-        }
-        this._container.add(columnBlock);
+        this._addList();
     }
 
+    _getItemName(item) {
+        return item.title;
+    }
+
+    _handleItemInteraction(item) {
+        if(HandTools.ACTIVE == item.type) return;
+        HandTools.ACTIVE = item.type;
+        PubSub.publish(this._id, PubSubTopics.HAND_TOOLS_SWITCH, item.type);
+    }
+
+    _refreshItems() {
+
+    }
 }
 
 export default HandsPage;

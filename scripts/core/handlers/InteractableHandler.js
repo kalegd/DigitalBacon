@@ -20,6 +20,7 @@ export default class InteractableHandler {
         this._toolInteractables[HandTools.DELETE] = new Set();
         this._toolInteractables[HandTools.TRANSLATE] = new Set();
         this._toolInteractables[HandTools.ROTATE] = new Set();
+        this._toolInteractables[HandTools.SCALE] = new Set();
         this._handTool = HandTools.EDIT;
         this._addInteractable = this.addInteractable;
         this._addInteractables = this.addInteractables;

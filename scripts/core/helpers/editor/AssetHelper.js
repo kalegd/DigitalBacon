@@ -17,6 +17,7 @@ import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractab
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
+import ScaleHandler from '/scripts/core/handlers/hands/ScaleHandler.js';
 import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -38,6 +39,7 @@ const INTERACTABLE_KEYS = [
     HandTools.DELETE,
     HandTools.TRANSLATE,
     HandTools.ROTATE,
+    HandTools.SCALE,
 ];
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const FIELDS = [
@@ -129,6 +131,16 @@ export default class AssetHelper extends EditorHelper {
             );
             this._gripInteractables[HandTools.ROTATE]
                 .push(rotateInteractable);
+            let scaleInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    ScaleHandler.attach(UserController, hand, this._asset);
+                },
+                (hand) => {
+                    ScaleHandler.detach(UserController, hand);
+                },
+            );
+            this._gripInteractables[HandTools.SCALE]
+                .push(scaleInteractable);
         } else {
             this._object.states = States;
             this._object.setState = (state) => {
@@ -206,13 +218,14 @@ export default class AssetHelper extends EditorHelper {
             } else {
                 if(message.option in Hands && peer.controller) {
                     if(message.type == 'translate') {
-                        this._asset.setPosition(message.position);
                         TranslateHandler.attach(peer.controller, message.option,
                             this._asset, message.position);
                     } else if(message.type == 'rotate') {
-                        this._asset.setRotationFromQuaternion(message.rotation);
                         RotateHandler.attach(peer.controller, message.option,
                             this._asset, message.rotation);
+                    } else if(message.type == 'scale') {
+                        ScaleHandler.attach(peer.controller, message.option,
+                            this._asset, message.scale);
                     } else {
                         peer.controller.hands[message.option].attach(
                             this._object);
@@ -243,6 +256,9 @@ export default class AssetHelper extends EditorHelper {
                 } else if(message.type == 'rotate') {
                     RotateHandler.detach(peer.controller, message.option,
                         message.rotation);
+                } else if(message.type == 'scale') {
+                    ScaleHandler.detach(peer.controller, message.option,
+                        message.scale);
                 } else {
                     global.scene.attach(this._object);
                     this._asset.setPosition(message.position);

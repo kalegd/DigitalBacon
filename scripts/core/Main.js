@@ -20,6 +20,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
+import ScaleHandler from '/scripts/core/handlers/hands/ScaleHandler.js';
 import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import global from '/scripts/core/global.js';
@@ -210,8 +211,11 @@ export default class Main {
             this._dynamicAssets.push(PubSub);
             this._dynamicAssets.push(ThreeMeshUI);
             this._dynamicAssets.push(PartyHandler);
-            this._dynamicAssets.push(TranslateHandler);
-            this._dynamicAssets.push(RotateHandler);
+            if(global.isEditor) {
+                this._dynamicAssets.push(TranslateHandler);
+                this._dynamicAssets.push(RotateHandler);
+                this._dynamicAssets.push(ScaleHandler);
+            }
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "

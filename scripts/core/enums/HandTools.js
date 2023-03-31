@@ -4,6 +4,7 @@ const HandTools = {
     DELETE: "DELETE",
     EDIT: "EDIT",
     ROTATE: "ROTATE",
+    SCALE: "SCALE",
     TRANSLATE: "TRANSLATE",
 };
 

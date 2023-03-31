@@ -354,6 +354,7 @@ class PartyMessageHelper {
         if(global.deviceType == 'XR') {
             message['position'] = data.position;
             message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
@@ -372,6 +373,7 @@ class PartyMessageHelper {
         if(global.deviceType == 'XR') {
             message['position'] = data.position;
             message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
