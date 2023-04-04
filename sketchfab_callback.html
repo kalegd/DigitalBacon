@@ -40,7 +40,7 @@
             topic: 'sketchfab_auth_token',
             authToken: authToken,
             authExpiry: authExpiry,
-          });
+          }, '*');
         } else if(event.data == 'close_tab') {
           window.close();
         }
