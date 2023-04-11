@@ -113,24 +113,13 @@ export default class Main {
     }
 
     _createAssets(projectFilePath) {
-        if(!global.disableImmersion) {
-            this._menuController = global.isEditor
-                ? new EditorMenuController()
-                : new LiveMenuController();
-            this._menuController.addToScene(this._scene);
-            global.menuController = this._menuController;
-
-            UserController.init({
-                'User Object': this._userObj,
-                'Flight Enabled': true,
-            });
-            UserController.addToScene(this._userObj);
-        }
-
         if(projectFilePath) {
             let lock = uuidv4();
             global.loadingLocks.add(lock);
             ProjectHandler.load(projectFilePath, () => {
+                if(!global.disableImmersion) {
+                    this._setupForImmersion();
+                }
                 global.loadingLocks.delete(lock);
             }, (error) => {
                 $(this._loadingMessage).removeClass("loading");
@@ -142,7 +131,24 @@ export default class Main {
                 'visualEdit': false,
             });
             ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+            if(!global.disableImmersion) {
+                this._setupForImmersion();
+            }
         }
+    }
+
+    _setupForImmersion() {
+        this._menuController = global.isEditor
+            ? new EditorMenuController()
+            : new LiveMenuController();
+        this._menuController.addToScene(this._scene);
+        global.menuController = this._menuController;
+
+        UserController.init({
+            'User Object': this._userObj,
+            'Flight Enabled': true,
+        });
+        UserController.addToScene(this._userObj);
     }
 
     _addEventListeners() {

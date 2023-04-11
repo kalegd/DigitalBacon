@@ -6,7 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
+import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -16,11 +16,12 @@ import { TextureLoader } from 'three';
 class AcknowledgementsPage extends MenuPage {
     constructor(controller) {
         super(controller, false, true);
-        this._staySignedIn = false;
+        this._sketchfabAssets = [];
         this._addPageContent();
     }
 
     _addPageContent() {
+        this._createPreviousAndNextButtons();
         this._titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': ' ',
             'fontSize': FontSizes.header,
@@ -29,9 +30,27 @@ class AcknowledgementsPage extends MenuPage {
         });
         this._container.add(this._titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
+        this._noAcknowledgements = ThreeMeshUIHelper.createTextBlock({
+            'text': 'No Acknowledgements to Display',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+
+        this._acknowledgementsContainer = new ThreeMeshUI.Block({
             'height': 0.2,
             'width': 0.45,
+            'contentDirection': 'row',
+            'justifyContent': 'center',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.31,
             'contentDirection': 'column',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -67,12 +86,63 @@ class AcknowledgementsPage extends MenuPage {
                     '_blank');
             });
         this._containerInteractable.addChild(this._sketchfabInteractable);
-        this._container.add(columnBlock);
+        this._container.add(this._acknowledgementsContainer);
+        this._acknowledgementsContainer.add(this._previousButton);
+        this._acknowledgementsContainer.add(columnBlock);
+        this._acknowledgementsContainer.add(this._nextButton);
+    }
+
+    _createPreviousAndNextButtons() {
+        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '<',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '>',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._previousInteractable = new PointerInteractable(
+            this._previousButton,
+            () => {
+                this._page += this._sketchfabAssets.length - 1;
+                this._page %= this._sketchfabAssets.length;
+                this._setAsset();
+            });
+        this._nextInteractable = new PointerInteractable(this._nextButton,
+            () => {
+                this._page += 1;
+                this._page %= this._sketchfabAssets.length;
+                this._setAsset();
+            });
     }
 
     setAssets(sketchfabAssets) {
         this._sketchfabAssets = sketchfabAssets;
         this._page = 0;
+        if(sketchfabAssets.length > 1) {
+            this._previousButton.visible = true;
+            this._nextButton.visible = true;
+            this._containerInteractable.addChild(this._previousInteractable);
+            this._containerInteractable.addChild(this._nextInteractable);
+        } else {
+            this._previousButton.visible = false;
+            this._nextButton.visible = false;
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            if(sketchfabAssets.length == 0) {
+                this._container.remove(this._acknowledgementsContainer);
+                this._container.add(this._noAcknowledgements);
+                return;
+            }
+        }
         this._setAsset();
     }
 

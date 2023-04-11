@@ -7,6 +7,7 @@
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import MenuController from '/scripts/core/menu/MenuController.js';
+import AcknowledgementsPage from '/scripts/core/menu/pages/AcknowledgementsPage.js';
 import HomePage from '/scripts/core/menu/pages/HomePage.js';
 import HostPartyPage from '/scripts/core/menu/pages/HostPartyPage.js';
 import JoinPartyPage from '/scripts/core/menu/pages/JoinPartyPage.js';
@@ -20,6 +21,7 @@ import * as THREE from 'three';
 export default class LiveMenuController extends MenuController {
     constructor() {
         super();
+        this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.HOME] = new HomePage(this);
         this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
