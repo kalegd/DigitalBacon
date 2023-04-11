@@ -10,7 +10,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global.loadingLocks.add(blackPixelLock);
@@ -26,6 +26,10 @@ export const Textures = {
     "checkmarkIcon": new THREE.TextureLoader().load(
         'images/icons/checkmark_icon_white.png',
         function(texture) { global.loadingLocks.delete(locks['checkmark']); },
+    ),
+    "ellipsisIcon": new THREE.TextureLoader().load(
+        'images/icons/ellipsis_icon_white.png',
+        function(texture) { global.loadingLocks.delete(locks['ellipsis']); },
     ),
     "hamburgerIcon": new THREE.TextureLoader().load(
         'images/icons/hamburger_icon_white.png',
@@ -116,8 +120,8 @@ export const Colors = {
 };
 
 export const Fonts = {
-    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.json',
-    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.png',
+    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.json',
+    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.png',
 };
 
 export const FontSizes = {

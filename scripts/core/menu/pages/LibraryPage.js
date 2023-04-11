@@ -7,7 +7,6 @@
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedIconsPage from '/scripts/core/menu/pages/PaginatedIconsPage.js';
@@ -57,7 +56,6 @@ const ASSETS = [{
 class LibraryPage extends PaginatedIconsPage {
     constructor(controller) {
         super(controller, false, true);
-        this._assets = LibraryHandler.getLibrary();
         this._items = Object.keys(ASSETS);
         this._addPageContent();
         this._createSearchButton();

@@ -103,6 +103,8 @@ THREE.Euler.prototype.roundWithPrecision = function(p) {
         || this.z != oldValues[2];
 }
 
+THREE.Cache.enabled = true;
+
 export const cartesianToPolar = (x, y) => {
     let r = Math.sqrt(x*x + y*y);
     let phi = Math.atan2(y, x);

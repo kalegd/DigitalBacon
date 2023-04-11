@@ -1,0 +1,49 @@
+<html>
+  <head>
+    <title>Digital Bacon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffebfd"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link href="https://fonts.cdnfonts.com/css/montserrat" rel="stylesheet">
+    <style>
+      h1 {
+        font-family: Montserrat, sans-serif;
+        font-weight: 400;
+        font-size: 1.85714em;
+        line-height: 1.6em;
+        color: rgb(50, 50, 159);
+      }
+
+      #main {
+        margin: auto;
+        max-width: 80%;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+      <h1>Please wait while we connect to your Sketchfab Account</h1>
+    </div>
+    <script>
+      let urlParams = new URLSearchParams(window.location.hash.substring(1));
+      let authToken = urlParams.get('access_token');
+      let expiresIn = urlParams.get('expires_in');
+      let authExpiry = Date.now() + (expiresIn * 1000) - 10000;
+      window.addEventListener('message', (event) => {
+        if(event.data == 'fetch_auth_token') {
+          event.source.postMessage({
+            topic: 'sketchfab_auth_token',
+            authToken: authToken,
+            authExpiry: authExpiry,
+          }, '*');
+        } else if(event.data == 'close_tab') {
+          window.close();
+        }
+      });
+    </script>
+  </body>
+</html>

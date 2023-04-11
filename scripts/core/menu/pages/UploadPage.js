@@ -4,21 +4,26 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
+import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
-class UploadPage extends MenuPage {
+const OPTIONS = {
+    'Select from Device': '_uploadAsset',
+    'Select from Sketchfab': '_selectFromSketchfab',
+};
+
+class UploadPage extends PaginatedPage {
     constructor(controller) {
         super(controller, false, true);
+        this._items = Object.keys(OPTIONS);
         this._addPageContent();
     }
 
@@ -30,26 +35,31 @@ class UploadPage extends MenuPage {
             'width': 0.2,
         });
         this._container.add(titleBlock);
+        this._addList();
+    }
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-        });
-        let linkButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Select File",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-        });
-        columnBlock.add(linkButton);
-        let interactable = new PointerInteractable(linkButton, () => {
-            UploadHandler.triggerUpload();
-        });
-        this._containerInteractable.addChild(interactable);
-        this._container.add(columnBlock);
+    _getItemName(item) {
+        return item;
+    }
+
+    _handleItemInteraction(item) {
+        this[OPTIONS[item]]();
+    }
+
+    _refreshItems() {
+
+    }
+
+    _uploadAsset() {
+        UploadHandler.triggerUpload();
+    }
+
+    _selectFromSketchfab() {
+        if(Sketchfab.isSignedIn()) {
+            this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
+        } else {
+            this._controller.pushPage(MenuPages.SKETCHFAB_LOGIN);
+        }
     }
 
     _uploadCallback(assetIds) {

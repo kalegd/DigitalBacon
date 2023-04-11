@@ -260,6 +260,10 @@ function setup(containerId, params) {
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
             start(resolve, containerId, params.projectFilePath);
             return;
+        } else if(localStorage.getItem('DigitalBacon:PointerOverride')) {
+            global.deviceType = "POINTER";
+            start(resolve, containerId, params.projectFilePath);
+            return;
         }
         if('xr' in navigator) {
             navigator.xr.isSessionSupported( 'immersive-vr' )

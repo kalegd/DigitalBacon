@@ -26,17 +26,19 @@ class CheckboxInput extends PointerInteractableEntity {
         this._getFromSource = params['getFromSource'];
         let initialValue = params['initialValue'] || false;
         let title = params['title'] || 'Missing Field Name...';
+        let titleWidth = params['titleWidth'] || TITLE_WIDTH;
+        let contentDirection = params['swapOrder'] ? 'row-reverse' : 'row';
         this._suppressMenuFocusEvent = params['suppressMenuFocusEvent'];
-        this._createInputs(initialValue, title);
+        this._createInputs(initialValue, title, titleWidth, contentDirection);
     }
 
-    _createInputs(initialValue, title) {
+    _createInputs(initialValue, title, titleWidth, contentDirection) {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
             'height': HEIGHT,
             'width': WIDTH,
-            'contentDirection': 'row',
+            'contentDirection': contentDirection,
             'justifyContent': 'start',
             'backgroundOpacity': 0,
             'offset': 0,
@@ -45,9 +47,9 @@ class CheckboxInput extends PointerInteractableEntity {
             'text': title,
             'fontSize': FontSizes.body,
             'height': HEIGHT,
-            'width': TITLE_WIDTH,
+            'width': titleWidth,
             'margin': 0,
-            'textAlign': 'left',
+            'textAlign': contentDirection == 'row' ? 'left' : 'right',
         });
         this._selectBox = ThreeMeshUIHelper.createCheckboxBlock({
             'initialValue': initialValue,

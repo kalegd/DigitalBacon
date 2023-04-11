@@ -11,7 +11,7 @@ function base64Encode(file) {
 }
 
 let replacementMap = {};
-let icons = ['audio', 'checkmark', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let filesToReplace = [
     'images/black_pixel.png',
     'images/digital_bacon_pig_compressed.png',
