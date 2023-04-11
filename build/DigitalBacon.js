@@ -230,6 +230,8 @@ THREE.Euler.prototype.roundWithPrecision = function(p) {
         || this.z != oldValues[2];
 };
 
+THREE.Cache.enabled = true;
+
 const cartesianToPolar = (x, y) => {
     let r = Math.sqrt(x*x + y*y);
     let phi = Math.atan2(y, x);
@@ -334,7 +336,7 @@ class Queue {
  */
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global$1.loadingLocks.add(blackPixelLock);
@@ -350,6 +352,10 @@ const Textures = {
     "checkmarkIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
         function(texture) { global$1.loadingLocks.delete(locks['checkmark']); },
+    ),
+    "ellipsisIcon": new THREE.TextureLoader().load(
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAACTtJREFUeF7t3NFuG0cQRFHr/z9agZAoMQw7FFs73Jmq41erCdSt7qslZevthz8IIFBL4K02ueAIIPCDACwBAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUegRgDv7+/vz9T99vYWxUb+7v7/tPtRS/67kM8u/q+vcboI5H/u8NP6f/RNL1IA3136P9rykKcC+b939Kf3/+jof/77OAGsWv5PaLs/Eci/5vhP6f+Z4//42hgBrF783R8N5V97+Lv3/+zh/yu06eBOc69e/t2+G8j/2uPfrf/v3OLxTwB3Lf8uSyD/Pce/S//fOf7j3wLcvfx3L4H89x7/3f1/9/iPFsAuy3/XEsi/x/Hf1f8Vx08AV1H8+DT1xT8iJAACuGJ9j/wMYLflf/V3Afn3Ov5X93/F4R/7U4Bdl/9VSyD/nsf/qv6vPP4j3wI4gO4DaO+fAJ78Tz1XA3v0eqs/C2g/gPb8j/bv2b8/6jOA3ctf/Rgo/95PP6v7f/a4v/L1BPAVSk9+zaqnAAIggCdX8eGXHyOAU5Z/1XcB+c84/lX9P7zk4RcQwBDco7GrnwIIgAAe7dzk7wlgQu0LMwRw7W9UahfgF1Zu9CUEMML2eIgACODxltz/FQSwqAMCIIBFq3XpyxLApTj/ezECIIBFq3XpyxLApTgJYNWn4D4DWLOoBLCG6+X/O7D9ANrzL1rTc34nYPsCyO/HgCsk4AlgBdUFvx+AAAhgxaoSwAqqBOAt0It/Qcx0jQlgSu7BnJ8C+CnAotW69GWPEcBH6lMeg68+/s/G5T/jbcCq/i+9/H9ejAAWUF21AARAAFev61ECOOEpYNXxn/IUIP+1b32uPvhfX48ALibsANYewO5PQav7v3hdz/l3AL4D/k2g/QDa89cLYOcjeJX9dz0C+dc+/Vx9/B+vd9xbgF2fBF61/PLv+ST06v6vkgEBXETy1Quw21OA/Od99z/6CWCntwKvXv7dngLkP/P4jxfADhK4a/l3kYD85x5/hADulMDdy3+3BOQ/+/hjBHCHBHZZ/rskIP/5xx8lgFcdwm6L/+tnmKs/HJQ/4/A/9+bYnwL834f3q45g9+VfLUH5s44/8gng6u+Ipyz9n4T4XRnKn3f0P+9K5BPA747h2UM4ffG/K0L5sw8/+i3ARf+2x8sgEE+g5gkgvkkBERgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBD4C9goER8tauZoAAAAAElFTkSuQmCC',
+        function(texture) { global$1.loadingLocks.delete(locks['ellipsis']); },
     ),
     "hamburgerIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAQAAAAHUWYVAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA75o43NsAAAAHdElNRQflBwgBKRc7nqR1AAAAAW9yTlQBz6J3mgAAAQpJREFUeNrt3bEKgzAUQNFY/P8f7mBnoVMN9UbO2RN43jE8HAMAAAAAAAAAAAAAAAAAAAAAAACANW2T79uP990j/dc2+Qu+7h6IM0FiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiZgc57h4IAAAAAAAAACaZvRY9xv7zySvv8Sue/cqe+kX21B9OkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBAAAAAAAAAIAl2FO/yJ76wwkSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgS43/qAAAAAAAAAAAAAAAAAAAAAAAAADDFB0xaDHVXaSV/AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIxLTA3LTA4VDAxOjQxOjIzKzAwOjAw09nK7wAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMS0wNy0wOFQwMTo0MToyMyswMDowMKKEclMAAAAASUVORK5CYII=',
@@ -440,8 +446,8 @@ const Colors = {
 };
 
 const Fonts = {
-    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.json',
-    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.png',
+    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.json',
+    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.png',
 };
 
 const FontSizes = {
@@ -5058,6 +5064,9 @@ function parallelTraverse( a, b, callback ) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL',
+    'Sketchfab Link'];
+
 class LibraryHandler {
     constructor() {
         this.library = {};
@@ -5121,6 +5130,10 @@ class LibraryHandler {
                 'Name': assetDetails['Name'],
                 'Type': assetDetails['Type'],
             };
+            for(let key of OPTIONAL_PARAMS) {
+                if(assetDetails[key])
+                    this.library[assetId][key] = assetDetails[key];
+            }
             return this._loadMesh(assetId, blob, true);
         });
     }
@@ -5259,6 +5272,24 @@ class LibraryHandler {
         return null;
     }
 
+    setSketchfabDetails(assetId, sketchfabAsset) {
+        let asset = this.library[assetId];
+        if(!asset) {
+            console.error('Asset ID not found when setting Sketchfab Details');
+            return;
+        }
+        if(sketchfabAsset.previewUrl)
+            asset['Preview Image URL'] = sketchfabAsset.previewUrl;
+        if(sketchfabAsset.license)
+            asset['License'] = sketchfabAsset.license.label;
+        if(sketchfabAsset.user && sketchfabAsset.user.username)
+            asset['Author'] = 'Sketchfab User ' + sketchfabAsset.user.username;
+        if(sketchfabAsset.viewerUrl)
+            asset['Sketchfab Link'] = sketchfabAsset.viewerUrl;
+        if(sketchfabAsset.previewTexture)
+            asset.previewTexture = sketchfabAsset.previewTexture;
+    }
+
     reset() {
         let newLibrary = {};
         for(let assetId in this.library) {
@@ -5280,6 +5311,10 @@ class LibraryHandler {
                 'Name': assetDetails['Name'],
                 'Type': assetType,
             };
+            for(let key of OPTIONAL_PARAMS) {
+                if(assetDetails[key])
+                    libraryDetails[assetId][key] = assetDetails[key];
+            }
             if(assetType == AssetTypes.MODEL || assetType == AssetTypes.IMAGE) {
                 let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];
                 libraryDetails[assetId]['Filepath'] = filepath;
@@ -15365,17 +15400,19 @@ class CheckboxInput extends PointerInteractableEntity {
         this._getFromSource = params['getFromSource'];
         let initialValue = params['initialValue'] || false;
         let title = params['title'] || 'Missing Field Name...';
+        let titleWidth = params['titleWidth'] || TITLE_WIDTH$a;
+        let contentDirection = params['swapOrder'] ? 'row-reverse' : 'row';
         this._suppressMenuFocusEvent = params['suppressMenuFocusEvent'];
-        this._createInputs(initialValue, title);
+        this._createInputs(initialValue, title, titleWidth, contentDirection);
     }
 
-    _createInputs(initialValue, title) {
+    _createInputs(initialValue, title, titleWidth, contentDirection) {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
             'height': HEIGHT$a,
             'width': WIDTH$a,
-            'contentDirection': 'row',
+            'contentDirection': contentDirection,
             'justifyContent': 'start',
             'backgroundOpacity': 0,
             'offset': 0,
@@ -15384,9 +15421,9 @@ class CheckboxInput extends PointerInteractableEntity {
             'text': title,
             'fontSize': FontSizes.body,
             'height': HEIGHT$a,
-            'width': TITLE_WIDTH$a,
+            'width': titleWidth,
             'margin': 0,
-            'textAlign': 'left',
+            'textAlign': contentDirection == 'row' ? 'left' : 'right',
         });
         this._selectBox = ThreeMeshUIHelper.createCheckboxBlock({
             'initialValue': initialValue,
@@ -15427,6 +15464,7 @@ class CheckboxInput extends PointerInteractableEntity {
 }
 
 const MenuPages = {
+    ACKNOWLEDGEMENTS: "ACKNOWLEDGEMENTS",
     ASSET: "ASSET",
     ASSETS: "ASSETS",
     ASSET_SELECT: "ASSET_SELECT",
@@ -15448,6 +15486,9 @@ const MenuPages = {
     PEER: "PEER",
     PROJECT: "PROJECT",
     SETTINGS: "SETTINGS",
+    SKETCHFAB_ASSET: "SKETCHFAB_ASSET",
+    SKETCHFAB_LOGIN: "SKETCHFAB_LOGIN",
+    SKETCHFAB_SEARCH: "SKETCHFAB_SEARCH",
     SKYBOX: "SKYBOX",
     TEXTURE: "TEXTURE",
     TEXTURES: "TEXTURES",
@@ -18875,7 +18916,189 @@ class MenuPage extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const OPTIONS$2 = 5;
+class AcknowledgementsPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._sketchfabAssets = [];
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._createPreviousAndNextButtons();
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': ' ',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.3,
+        });
+        this._container.add(this._titleBlock);
+
+        this._noAcknowledgements = ThreeMeshUIHelper.createTextBlock({
+            'text': 'No Acknowledgements to Display',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+
+        this._acknowledgementsContainer = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'row',
+            'justifyContent': 'center',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.31,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+
+        this._textureBlock = new ThreeMeshUI.Block({
+            'height': 0.085,
+            'width': 0.1,
+            'backgroundOpacity': 1,
+        });
+        columnBlock.add(this._textureBlock);
+
+        this._authorBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Author: ',
+            'fontSize': FontSizes.body,
+            'height': 0.025,
+            'width': 0.3,
+        });
+        columnBlock.add(this._authorBlock);
+
+        this._sketchfabButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "View on Sketchfab",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(this._sketchfabButton);
+        this._sketchfabInteractable = new PointerInteractable(
+            this._sketchfabButton, () => {
+                if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+                window.open(this._sketchfabAssets[this._page]['Sketchfab Link'],
+                    '_blank');
+            });
+        this._containerInteractable.addChild(this._sketchfabInteractable);
+        this._container.add(this._acknowledgementsContainer);
+        this._acknowledgementsContainer.add(this._previousButton);
+        this._acknowledgementsContainer.add(columnBlock);
+        this._acknowledgementsContainer.add(this._nextButton);
+    }
+
+    _createPreviousAndNextButtons() {
+        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '<',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '>',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._previousInteractable = new PointerInteractable(
+            this._previousButton,
+            () => {
+                this._page += this._sketchfabAssets.length - 1;
+                this._page %= this._sketchfabAssets.length;
+                this._setAsset();
+            });
+        this._nextInteractable = new PointerInteractable(this._nextButton,
+            () => {
+                this._page += 1;
+                this._page %= this._sketchfabAssets.length;
+                this._setAsset();
+            });
+    }
+
+    setAssets(sketchfabAssets) {
+        this._sketchfabAssets = sketchfabAssets;
+        this._page = 0;
+        if(sketchfabAssets.length > 1) {
+            this._previousButton.visible = true;
+            this._nextButton.visible = true;
+            this._containerInteractable.addChild(this._previousInteractable);
+            this._containerInteractable.addChild(this._nextInteractable);
+        } else {
+            this._previousButton.visible = false;
+            this._nextButton.visible = false;
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            if(sketchfabAssets.length == 0) {
+                this._container.remove(this._acknowledgementsContainer);
+                this._container.add(this._noAcknowledgements);
+                return;
+            }
+        }
+        this._setAsset();
+    }
+
+    _setAsset() {
+        let page = this._page;
+        let sketchfabAsset = this._sketchfabAssets[page];
+        this._titleBlock.children[1].set({ content: sketchfabAsset['Name'] });
+        if(sketchfabAsset['Author']) {
+            this._authorBlock.children[1].set({
+                content: 'Author: ' + sketchfabAsset['Author'],
+            });
+            this._authorBlock.visible = true;
+        } else {
+            this._authorBlock.visible = false;
+        }
+        if(sketchfabAsset.previewTexture) {
+            this._textureBlock.set({
+                backgroundTexture: sketchfabAsset.previewTexture
+            });
+            this._textureBlock.visible = true;
+        } else if(sketchfabAsset['Preview Image URL']
+            && !sketchfabAsset.isLoadingTexture)
+        {
+            this._textureBlock.visible = false;
+            sketchfabAsset.isLoadingTexture = true;
+            new TextureLoader().load(sketchfabAsset['Preview Image URL'],
+                (texture) => {
+                    if(this._page == page) {
+                        sketchfabAsset.previewTexture = texture;
+                        this._setAsset();
+                    }
+                });
+        } else {
+            this._textureBlock.visible = false;
+        }
+        if(sketchfabAsset['Sketchfab Link']) {
+            this._sketchfabButton.visible = true;
+            this._containerInteractable.addChild(this._sketchfabInteractable);
+        } else {
+            this._sketchfabButton.visible = false;
+            this._containerInteractable.removeChild(
+                this._sketchfabInteractable);
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const OPTIONS$4 = 5;
 
 class PaginatedPage extends MenuPage {
     constructor(controller, hasSideBar, hasBackButton) {
@@ -18904,7 +19127,7 @@ class PaginatedPage extends MenuPage {
             'backgroundOpacity': 0,
             'offset': 0,
         });
-        for(let i = 0; i < OPTIONS$2; i++) {
+        for(let i = 0; i < OPTIONS$4; i++) {
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': ' ',
                 'fontSize': FontSizes.body,
@@ -18917,7 +19140,7 @@ class PaginatedPage extends MenuPage {
             this._optionsBlock.add(button);
             this._paginatedListButtons.push(button);
             let interactable = new PointerInteractable(button, () => {
-                let index = this._page * OPTIONS$2 + i;
+                let index = this._page * OPTIONS$4 + i;
                 if(this._items.length > index) {
                     this._handleItemInteraction(this._items[index]);
                 } else {
@@ -18966,8 +19189,8 @@ class PaginatedPage extends MenuPage {
     }
 
     _updateItemsGUI() {
-        let firstIndex = this._page * OPTIONS$2;
-        for(let i = 0; i < OPTIONS$2; i++) {
+        let firstIndex = this._page * OPTIONS$4;
+        for(let i = 0; i < OPTIONS$4; i++) {
             let interactable = this._paginatedListInteractables[i];
             let button = this._paginatedListButtons[i];
             if(firstIndex + i < this._items.length) {
@@ -18987,7 +19210,7 @@ class PaginatedPage extends MenuPage {
             this._previousButton.visible = true;
             this._optionsInteractable.addChild(this._previousInteractable);
         }
-        if(this._items.length > firstIndex + OPTIONS$2) {
+        if(this._items.length > firstIndex + OPTIONS$4) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
         } else {
@@ -19105,18 +19328,32 @@ class AssetPage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        return this._instances[item].getName();
+        if(item == 'Acknowledgement') {
+            return item;
+        } else {
+            return this._instances[item].getName();
+        }
     }
 
     _handleItemInteraction(item) {
-        let instancePage = this._controller.getPage(MenuPages.INSTANCE);
-        instancePage.setInstance(this._instances[item]);
-        this._controller.pushPage(MenuPages.INSTANCE);
+        if(item == 'Acknowledgement') {
+            let page = this._controller.getPage(MenuPages.ACKNOWLEDGEMENTS);
+            page.setAssets([libraryHandler.library[this._assetId]]);
+            this._controller.pushPage(MenuPages.ACKNOWLEDGEMENTS);
+        } else {
+            let instancePage = this._controller.getPage(MenuPages.INSTANCE);
+            instancePage.setInstance(this._instances[item]);
+            this._controller.pushPage(MenuPages.INSTANCE);
+        }
     }
 
     _refreshItems() {
         this._instances = ProjectHandler$1.getInstancesForAssetId(this._assetId);
         this._items = Object.keys(this._instances);
+        let asset = libraryHandler.library[this._assetId];
+        if(asset['Author']) {
+            this._items.push('Acknowledgement');
+        }
     }
 
     setAsset(assetId) {
@@ -20844,10 +21081,10 @@ class LoadFromGDrivePage extends PaginatedPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const ROWS = 2;
-const OPTIONS$1 = 3;
+const ROWS$1 = 2;
+const OPTIONS$3 = 3;
 
-class PaginatedIconsPage extends MenuPage {
+let PaginatedIconsPage$1 = class PaginatedIconsPage extends MenuPage {
     constructor(controller, hasSideBar, hasBackButton) {
         super(controller, hasSideBar, hasBackButton);
         this._paginatedListButtons = [];
@@ -20882,9 +21119,9 @@ class PaginatedIconsPage extends MenuPage {
         this._rows = [];
         this._rows.push(new ThreeMeshUI.Block(params));
         this._rows.push(new ThreeMeshUI.Block(params));
-        for(let i = 0; i < ROWS; i++) {
+        for(let i = 0; i < ROWS$1; i++) {
             let row = this._rows[i];
-            for(let j = 0; j < OPTIONS$1; j++) {
+            for(let j = 0; j < OPTIONS$3; j++) {
                 let button = ThreeMeshUIHelper.createButtonBlock({
                     'height': 0.085,
                     'width': 0.1,
@@ -20911,7 +21148,7 @@ class PaginatedIconsPage extends MenuPage {
                 row.add(button);
                 this._paginatedListButtons.push(button);
                 let interactable = new PointerInteractable(button, () => {
-                    let index = this._page * ROWS * OPTIONS$1 + OPTIONS$1 * i + j;
+                    let index = this._page * ROWS$1 * OPTIONS$3 + OPTIONS$3 * i + j;
                     if(this._items.length > index) {
                         this._handleItemInteraction(this._items[index]);
                     } else {
@@ -20963,8 +21200,8 @@ class PaginatedIconsPage extends MenuPage {
     }
 
     _updateItemsGUI() {
-        let firstIndex = this._page * ROWS * OPTIONS$1;
-        for(let i = 0; i < ROWS * OPTIONS$1; i++) {
+        let firstIndex = this._page * ROWS$1 * OPTIONS$3;
+        for(let i = 0; i < ROWS$1 * OPTIONS$3; i++) {
             let interactable = this._paginatedListInteractables[i];
             let button = this._paginatedListButtons[i];
             if(firstIndex + i < this._items.length) {
@@ -20987,7 +21224,7 @@ class PaginatedIconsPage extends MenuPage {
             this._previousButton.visible = true;
             this._optionsInteractable.addChild(this._previousInteractable);
         }
-        if(this._items.length > firstIndex + ROWS * OPTIONS$1) {
+        if(this._items.length > firstIndex + ROWS$1 * OPTIONS$3) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
         } else {
@@ -21030,7 +21267,7 @@ class PaginatedIconsPage extends MenuPage {
         }
     }
 
-}
+};
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -21079,10 +21316,9 @@ const ASSETS = [{
     }
 ];
 
-class LibraryPage extends PaginatedIconsPage {
+class LibraryPage extends PaginatedIconsPage$1 {
     constructor(controller) {
         super(controller, false, true);
-        this._assets = libraryHandler.getLibrary();
         this._items = Object.keys(ASSETS);
         this._addPageContent();
         this._createSearchButton();
@@ -22348,7 +22584,7 @@ let delayedClickEventHandler = new DelayedClickEventHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const OPTIONS = {
+const OPTIONS$2 = {
     'New Project': '_newProject',
     'Load from Device': '_localLoad',
     'Load from Google Drive': '_googleDriveLoad',
@@ -22360,7 +22596,7 @@ const OPTIONS = {
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
         super(controller, false, true);
-        this._items = Object.keys(OPTIONS).slice(0, -1);
+        this._items = Object.keys(OPTIONS$2).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
     }
@@ -22391,14 +22627,14 @@ class ProjectPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        this[OPTIONS[item]]();
+        this[OPTIONS$2[item]]();
     }
 
     _refreshItems() {
         if(googleDrive.isSignedIn()) {
-            this._items = Object.keys(OPTIONS);
+            this._items = Object.keys(OPTIONS$2);
         } else {
-            this._items = Object.keys(OPTIONS).slice(0, -1);
+            this._items = Object.keys(OPTIONS$2).slice(0, -1);
         }
     }
 
@@ -22749,6 +22985,627 @@ class SettingsPage extends MenuPage {
             this._containerInteractable.addChild(interactable);
         }
         this._container.add(columnBlock);
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken';
+const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry';
+const AUTH_URL = 'https://sketchfab.com/oauth2/authorize/?state=123456789&response_type=token&client_id=WXFMTux03Lde8DFpnZWlzwR4afwtSrpumZToMy62';
+const VALID_CALLBACK_ORIGIN = 'https://digitalbacon.io';
+const SEARCH_URL = 'https://api.sketchfab.com/v3/search?type=models&downloadable=true&archives_flavours=false&q=';
+const DOWNLOAD_URL = 'https://api.sketchfab.com/v3/models/{uid}/download';
+
+class Sketchfab {
+    constructor() {
+        this._authToken = localStorage.getItem(AUTH_KEY);
+        this._authExpiry = localStorage.getItem(AUTH_EXPIRY_KEY);
+    }
+
+    isSignedIn() {
+        return this._authToken && this._authExpiry
+            && this._authExpiry > Date.now();
+    }
+
+    signIn(staySignedIn, callback) {
+        if(this._intervalId) {
+            clearInterval(this._intervalId);
+            this._intervalId = null;
+        }
+
+        let tab = window.open(AUTH_URL, '_blank');
+        tab.focus();
+        window._tab = tab;
+        this._intervalId = setInterval(() => {
+            tab.postMessage('fetch_auth_token', VALID_CALLBACK_ORIGIN);
+        }, 1000);
+
+        window.addEventListener('message', (event) => {
+            if(event.origin != VALID_CALLBACK_ORIGIN) return;
+            if(event.data.topic != 'sketchfab_auth_token') return;
+            clearInterval(this._intervalId);
+            tab.postMessage('close_tab', VALID_CALLBACK_ORIGIN);
+            this._authToken = event.data.authToken;
+            this._authExpiry = event.data.authExpiry;
+            if(staySignedIn) {
+                localStorage.setItem(AUTH_KEY, this._authToken);
+                localStorage.setItem(AUTH_EXPIRY_KEY, this._authExpiry);
+            }
+            if(callback) callback();
+        });
+    }
+
+    search(query, successCallback, errorCallback) {
+        let url = SEARCH_URL + encodeURIComponent(query);
+        this.fetch(url, successCallback, errorCallback);
+    }
+
+    fetch(url, successCallback, errorCallback) {
+        fetch(url, {
+            headers: {
+                Authorization: 'Bearer ' + this._authToken,
+            }
+        }).then((response) => {
+            return response.json();
+        }).then((body) => {
+            if(successCallback) successCallback(body);
+        }).catch((error) => {
+            console.error(error);
+            if(errorCallback) errorCallback();
+        });
+    }
+
+    _download(url, sketchfabAsset, successCallback, errorCallback) {
+        fetch(url).then(response => response.blob()).then((blob) => {
+            libraryHandler.addNewAsset(blob, sketchfabAsset.name,
+                AssetTypes.MODEL, (assetId) => {
+                    libraryHandler.setSketchfabDetails(assetId, sketchfabAsset);
+                    if(successCallback) successCallback(assetId);
+                });
+        }).catch((error) => {
+            console.error(error);
+            if(errorCallback) errorCallback();
+        });
+    }
+
+    download(sketchfabAsset, successCallback, errorCallback) {
+        this.fetch(DOWNLOAD_URL.replace('{uid}', sketchfabAsset.uid), (body) =>{
+            if(!body.glb) {
+                if(errorCallback) errorCallback();
+                return;
+            }
+            this._download(body.glb.url, sketchfabAsset, successCallback,
+                errorCallback);
+        }, errorCallback);
+    }
+}
+
+let sketchfab = new Sketchfab();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._staySignedIn = false;
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': ' ',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.3,
+        });
+        this._container.add(this._titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+
+        this._textureBlock = new ThreeMeshUI.Block({
+            'height': 0.085,
+            'width': 0.1,
+            'backgroundOpacity': 1,
+        });
+        columnBlock.add(this._textureBlock);
+
+        this._authorBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Author: ',
+            'fontSize': FontSizes.body,
+            'height': 0.025,
+            'width': 0.3,
+        });
+        columnBlock.add(this._authorBlock);
+
+        let button = ThreeMeshUIHelper.createButtonBlock({
+            'text': "View on Sketchfab",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(button);
+        let interactable = new PointerInteractable(button, () => {
+            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+            window.open(this._sketchfabAsset.viewerUrl, '_blank');
+        });
+        this._containerInteractable.addChild(interactable);
+
+        this._downloadButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Download",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(this._downloadButton);
+        this._downloadInteractable = new PointerInteractable(
+            this._downloadButton, () => {
+                this._downloadButton.visible = false;
+                this._containerInteractable.removeChild(
+                    this._downloadInteractable);
+                sketchfab.download(this._sketchfabAsset,
+                    (assetId) => { this._handleDownloadSuccess(assetId); },
+                    () => { this._handleDownloadError(); });
+            });
+        this._containerInteractable.addChild(this._downloadInteractable);
+        this._container.add(columnBlock);
+    }
+
+    _handleDownloadSuccess(assetId) {
+        this._controller
+            .getPosition(vector3s$1[0]);
+        this._controller
+            .getDirection(vector3s$1[1]).normalize()
+            .divideScalar(4);
+        let position = vector3s$1[0].sub(vector3s$1[1]).toArray();
+        vector3s$1[0].set(0, 0, 1);
+        vector3s$1[1].setY(0).normalize();
+        quaternion.setFromUnitVectors(vector3s$1[0], vector3s$1[1]);
+        euler.setFromQuaternion(quaternion);
+        let rotation = euler.toArray();
+        ProjectHandler$1.addGLTF({
+            "assetId": assetId,
+            "position": position,
+            "rotation": rotation,
+            "visualEdit": true,
+        });
+        this._downloadButton.visible = true;
+        this._containerInteractable.addChild(this._downloadInteractable);
+    }
+
+    _handleDownloadError() {
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'Could not download model, please try again later',
+        });
+        this._downloadButton.visible = true;
+        this._containerInteractable.addChild(this._downloadInteractable);
+    }
+
+    setContent(sketchfabAsset) {
+        this._titleBlock.children[1].set({ content: sketchfabAsset['name'] });
+        this._authorBlock.children[1].set({
+            content: 'Author: ' + sketchfabAsset.user.username,
+        });
+        if(sketchfabAsset.previewTexture) {
+            this._textureBlock.set({
+                backgroundTexture: sketchfabAsset.previewTexture
+            });
+            this._textureBlock.visible = true;
+        } else {
+            this._textureBlock.visible = false;
+        }
+        this._sketchfabAsset = sketchfabAsset;
+    }
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class SketchfabLoginPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._staySignedIn = false;
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Login to Sketchfab',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.3,
+        });
+        this._container.add(titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'margin': 0.03,
+        });
+
+        let staySignedInCheckbox = new CheckboxInput({
+            'title': 'Stay signed in on this device',
+            'titleWidth': 0.27,
+            'initialValue': false,
+            'swapOrder': true,
+            'onUpdate': (value) => {
+                this._staySignedIn = value;
+            },
+            'getFromSource': () => {
+                return this._staySignedIn;
+            },
+        });
+        staySignedInCheckbox.addToScene(columnBlock,
+            this._containerInteractable);
+        let loginButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Login",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+        });
+        columnBlock.add(loginButton);
+        let interactable = new PointerInteractable(loginButton, () => {
+            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+            sketchfab.signIn(this._staySignedIn,
+                () => { this._handleLoginCallback(); });
+        });
+        this._containerInteractable.addChild(interactable);
+        this._container.add(columnBlock);
+    }
+
+    _handleLoginCallback() {
+        this._controller.popPage();
+        this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const ROWS = 2;
+const OPTIONS$1 = 3;
+
+class PaginatedIconsPage extends MenuPage {
+    constructor(controller, hasSideBar, hasBackButton) {
+        super(controller, hasSideBar, hasBackButton);
+        this._paginatedListButtons = [];
+        this._paginatedListInteractables = [];
+        this._page = 0;
+        this._optionsInteractable = PointerInteractable.emptyGroup();
+    }
+
+    _addList() {
+        this._createPreviousAndNextButtons();
+        this._optionsContainer = new ThreeMeshUI.Block({
+            'height': 0.17,
+            'width': 0.45,
+            'contentDirection': 'row',
+            'justifyContent': 'center',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let params = {
+            'height': 0.17,
+            'width': 0.31,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        };
+        this._optionsBlock = new ThreeMeshUI.Block(params);
+        params['height'] = 0.085;
+        params['contentDirection'] = 'row';
+        params['justifyContent'] = 'center';
+        params['margin'] = 0.005;
+        this._rows = [];
+        this._rows.push(new ThreeMeshUI.Block(params));
+        this._rows.push(new ThreeMeshUI.Block(params));
+        for(let i = 0; i < ROWS; i++) {
+            let row = this._rows[i];
+            for(let j = 0; j < OPTIONS$1; j++) {
+                let button = ThreeMeshUIHelper.createButtonBlock({
+                    'height': 0.085,
+                    'width': 0.1,
+                    'margin': 0.002,
+                    'justifyContent': 'start',
+                    'idleBackgroundColor': Colors.white,
+                    'hoveredBackgroundColor': Colors.white,
+                    'selectedBackgroundColor': Colors.white,
+                    'idleOpacity': 1,
+                });
+                let textBlock = ThreeMeshUIHelper.createTextBlock({
+                    'text': ' ',
+                    'height': 0.035,
+                    'width': 0.1,
+                    'margin': 0,
+                });
+                button.add(textBlock);
+                row.add(button);
+                this._paginatedListButtons.push(button);
+                let interactable = new PointerInteractable(button, () => {
+                    let index = this._page * ROWS * OPTIONS$1 + OPTIONS$1 * i + j;
+                    if(this._items.length > index) {
+                        this._handleItemInteraction(this._items[index]);
+                    } else {
+                        console.error(
+                            "PaginatedIconsPage displaying non existant option");
+                    }
+                });
+                this._optionsInteractable.addChild(interactable);
+                this._paginatedListInteractables.push(interactable);
+            }
+        }
+        this._optionsBlock.add(this._rows[0]);
+        this._optionsBlock.add(this._rows[1]);
+        this._optionsContainer.add(this._previousButton);
+        this._optionsContainer.add(this._optionsBlock);
+        this._optionsContainer.add(this._nextButton);
+        this._container.add(this._optionsContainer);
+        this._containerInteractable.addChild(this._optionsInteractable);
+    }
+
+    _createPreviousAndNextButtons() {
+        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '<',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '>',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._previousInteractable = new PointerInteractable(
+            this._previousButton,
+            () => {
+                this._page -= 1;
+                this._updateItemsGUI();
+            });
+        this._nextInteractable = new PointerInteractable(this._nextButton,
+            () => {
+                this._page += 1;
+                this._updateItemsGUI();
+            });
+        this._fetchNextInteractable = new PointerInteractable(this._nextButton,
+            () => {
+                this._page += 1;
+                this._fetchNextItems();
+                this._updateItemsGUI();
+            });
+    }
+
+    _updateItemsGUI() {
+        let firstIndex = this._page * ROWS * OPTIONS$1;
+        for(let i = 0; i < ROWS * OPTIONS$1; i++) {
+            let interactable = this._paginatedListInteractables[i];
+            let button = this._paginatedListButtons[i];
+            if(firstIndex + i < this._items.length) {
+                let item = this._items[firstIndex + i];
+                let image = this._getItemImage(item);
+                button.set({ backgroundTexture: image });
+                button.visible = true;
+                this._optionsInteractable.addChild(interactable);
+            } else {
+                button.visible = false;
+                this._optionsInteractable.removeChild(interactable);
+            }
+        }
+        if(this._page == 0) {
+            this._previousButton.visible = false;
+            this._optionsInteractable.removeChild(this._previousInteractable);
+        } else {
+            this._previousButton.visible = true;
+            this._optionsInteractable.addChild(this._previousInteractable);
+        }
+        if(this._items.length > firstIndex + ROWS * OPTIONS$1) {
+            this._nextButton.visible = true;
+            this._optionsInteractable.addChild(this._nextInteractable);
+            this._optionsInteractable.removeChild(this._fetchNextInteractable);
+        } else if(this._items.length == firstIndex + ROWS * OPTIONS$1
+                && this._canFetchMore) {
+            this._nextButton.visible = true;
+            this._optionsInteractable.addChild(this._fetchNextInteractable);
+            this._optionsInteractable.removeChild(this._nextInteractable);
+        } else {
+            this._nextButton.visible = false;
+            this._optionsInteractable.removeChild(this._nextInteractable);
+            this._optionsInteractable.removeChild(this._fetchNextInteractable);
+        }
+        //this._container.update(false, true, false);
+    }
+
+    //Needs to be overridden
+    _getItemImage() {
+        console.error(
+            "PaginatedIconsPage._getItemImage() should be overridden");
+        return "";
+    }
+
+    //Needs to be overridden
+    _handleItemInteraction() {
+        console.error(
+            "PaginatedIconsPage._handleItemInteraction() should be overridden");
+        return;
+    }
+
+    //Needs to be overridden
+    _refreshItems() {
+        console.error("PaginatedIconsPage._refreshItems() should be overridden");
+        return;
+    }
+
+    addToScene(scene, interactableParent) {
+        super.addToScene(scene, interactableParent);
+        if(scene) {
+            this._refreshItems();
+            this._updateItemsGUI();
+        }
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class SketchfabSearchPage extends PaginatedIconsPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._items = [];
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._textField = new TextField({
+            'height': 0.04,
+            'width': 0.4,
+            'text': 'Search',
+            'fontSize': FontSizes.header,
+            'onBlur': () => { this._searchUpdated(); },
+        });
+        this._textField.addToScene(this._container,this._containerInteractable);
+        this._loadingBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Loading...',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+
+        this._addList();
+    }
+
+    _searchUpdated() {
+        for(let item of this._items) {
+            item.isDeleted = true;
+            if(item.previewTexture) item.previewTexture.dispose();
+        }
+        this._page = 0;
+        this._items = [];
+        this._updateItemsGUI();
+        if(this._textField.content.length == 0) {
+            this._textField.reset();
+            return;
+        }
+        this._container.remove(this._optionsContainer);
+        this._container.add(this._loadingBlock);
+        let number = Math.random();
+        this._idempotentKey = number;
+        sketchfab.search(this._textField.content,
+            (response) => { this._handleSearchResponse(response, number); },
+            () => { this._handleSearchError(); });
+    }
+
+    _handleSearchResponse(response, number) {
+        if(this._idempotentKey != number) return;
+        this._container.remove(this._loadingBlock);
+        this._container.add(this._optionsContainer);
+        for(let result of response.results) {
+            this._items.push(result);
+        }
+        this._canFetchMore = response.next;
+        this._updateItemsGUI();
+    }
+
+    _handleSearchError() {
+        this._container.remove(this._loadingBlock);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'An unexpected error occurred, please try again later',
+        });
+    }
+
+    _handleFetchMoreError() {
+        this._page--;
+        this._updateItemsGUI();
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'An unexpected error occurred, please try again later',
+        });
+    }
+
+    _fetchNextItems() {
+        this._container.remove(this._optionsContainer);
+        this._container.add(this._loadingBlock);
+        let number = Math.random();
+        this._idempotentKey = number;
+        sketchfab.fetch(this._canFetchMore,
+            (response) => { this._handleSearchResponse(response, number); },
+            () => { this._handleFetchMoreError(); });
+    }
+
+    _getItemImage(item) {
+        if(item.previewTexture) {
+            return item.previewTexture;
+        } else if(!item.isLoadingTexture) {
+            let image = this._getSmallestImage(item.thumbnails.images);
+            item.previewUrl = image.url;
+            item.isLoadingTexture = true;
+            new TextureLoader().load(item.previewUrl, (texture) => {
+                if(item.isDeleted) {
+                    texture.dispose();
+                } else {
+                    item.previewTexture = texture;
+                    this._updateItemsGUI();
+                }
+            });
+        }
+        return Textures.ellipsisIcon;
+    }
+
+    //With the caveat that it's at least 256px wide
+    _getSmallestImage(images) {
+        let smallestImage = null;
+        for(let image of images) {
+            if(image.width < 256) continue;
+            if(smallestImage == null || image.size < smallestImage.size) {
+                smallestImage = image;
+            }
+        }
+        return smallestImage;
+    }
+
+    _handleItemInteraction(item) {
+        let page = this._controller.getPage(MenuPages.SKETCHFAB_ASSET);
+        page.setContent(item);
+        this._controller.pushPage(MenuPages.SKETCHFAB_ASSET);
+    }
+
+    _refreshItems() {
+        return;
     }
 
 }
@@ -23195,9 +24052,15 @@ class TextInputPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class UploadPage extends MenuPage {
+const OPTIONS = {
+    'Select from Device': '_uploadAsset',
+    'Select from Sketchfab': '_selectFromSketchfab',
+};
+
+class UploadPage extends PaginatedPage {
     constructor(controller) {
         super(controller, false, true);
+        this._items = Object.keys(OPTIONS);
         this._addPageContent();
     }
 
@@ -23209,26 +24072,31 @@ class UploadPage extends MenuPage {
             'width': 0.2,
         });
         this._container.add(titleBlock);
+        this._addList();
+    }
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-        });
-        let linkButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Select File",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-        });
-        columnBlock.add(linkButton);
-        let interactable = new PointerInteractable(linkButton, () => {
-            uploadHandler.triggerUpload();
-        });
-        this._containerInteractable.addChild(interactable);
-        this._container.add(columnBlock);
+    _getItemName(item) {
+        return item;
+    }
+
+    _handleItemInteraction(item) {
+        this[OPTIONS[item]]();
+    }
+
+    _refreshItems() {
+
+    }
+
+    _uploadAsset() {
+        uploadHandler.triggerUpload();
+    }
+
+    _selectFromSketchfab() {
+        if(sketchfab.isSignedIn()) {
+            this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
+        } else {
+            this._controller.pushPage(MenuPages.SKETCHFAB_LOGIN);
+        }
     }
 
     _uploadCallback(assetIds) {
@@ -23362,6 +24230,7 @@ class UserSettingsPage extends DynamicFieldsPage {
 class EditorMenuController extends MenuController {
     constructor() {
         super();
+        this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.ASSET] = new AssetPage(this);
         this._pages[MenuPages.ASSETS] = new LightsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
@@ -23382,6 +24251,9 @@ class EditorMenuController extends MenuController {
         this._pages[MenuPages.PEER] = new PeerPage(this);
         this._pages[MenuPages.PROJECT] = new ProjectPage(this);
         this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
+        this._pages[MenuPages.SKETCHFAB_ASSET] = new SketchfabLoginPage$1(this);
+        this._pages[MenuPages.SKETCHFAB_LOGIN] = new SketchfabLoginPage(this);
+        this._pages[MenuPages.SKETCHFAB_SEARCH] = new SketchfabSearchPage(this);
         this._pages[MenuPages.SKYBOX] = new SkyboxPage(this);
         this._pages[MenuPages.TEXTURE] = new TexturePage(this);
         this._pages[MenuPages.TEXTURES] = new TexturesPage(this);
@@ -23409,6 +24281,7 @@ class EditorMenuController extends MenuController {
 const pages = [
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
     { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
+    { "title": "Acknowledgements", "menuPage": MenuPages.ACKNOWLEDGEMENTS },
 ];
 
 class HomePage extends MenuPage {
@@ -23434,8 +24307,11 @@ class HomePage extends MenuPage {
             'backgroundOpacity': 0,
         });
         let supportsParty = global$1.authUrl && global$1.socketUrl;
+        let authoredAssets = this._getAuthoredAssets();
         for(let page of pages) {
             if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
+            if(page['menuPage'] == MenuPages.ACKNOWLEDGEMENTS
+                && authoredAssets.length == 0) continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': page.title,
                 'fontSize': FontSizes.body,
@@ -23445,6 +24321,11 @@ class HomePage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
+                if(page.menuPage == MenuPages.ACKNOWLEDGEMENTS) {
+                    let page = this._controller.getPage(
+                        MenuPages.ACKNOWLEDGEMENTS);
+                    page.setAssets(authoredAssets);
+                }
                 this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);
@@ -23452,6 +24333,16 @@ class HomePage extends MenuPage {
         this._container.add(columnBlock);
     }
 
+    _getAuthoredAssets() {
+        let authoredAssets = [];
+        for(let assetId in libraryHandler.library) {
+            let asset = libraryHandler.library[assetId];
+            if(asset['Type'] == AssetTypes.MODEL && asset['Author']) {
+                authoredAssets.push(asset);
+            }
+        }
+        return authoredAssets;
+    }
 }
 
 /*
@@ -23463,6 +24354,7 @@ class HomePage extends MenuPage {
 class LiveMenuController extends MenuController {
     constructor() {
         super();
+        this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.HOME] = new HomePage(this);
         this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
@@ -23731,24 +24623,13 @@ class Main {
     }
 
     _createAssets(projectFilePath) {
-        if(!global$1.disableImmersion) {
-            this._menuController = global$1.isEditor
-                ? new EditorMenuController()
-                : new LiveMenuController();
-            this._menuController.addToScene(this._scene);
-            global$1.menuController = this._menuController;
-
-            UserController$1.init({
-                'User Object': this._userObj,
-                'Flight Enabled': true,
-            });
-            UserController$1.addToScene(this._userObj);
-        }
-
         if(projectFilePath) {
             let lock = uuidv4();
             global$1.loadingLocks.add(lock);
             ProjectHandler$1.load(projectFilePath, () => {
+                if(!global$1.disableImmersion) {
+                    this._setupForImmersion();
+                }
                 global$1.loadingLocks.delete(lock);
             }, (error) => {
                 $(this._loadingMessage).removeClass("loading");
@@ -23760,7 +24641,24 @@ class Main {
                 'visualEdit': false,
             });
             ProjectHandler$1.addLight(ambientLight, ambientLight.getAssetId(), true);
+            if(!global$1.disableImmersion) {
+                this._setupForImmersion();
+            }
         }
+    }
+
+    _setupForImmersion() {
+        this._menuController = global$1.isEditor
+            ? new EditorMenuController()
+            : new LiveMenuController();
+        this._menuController.addToScene(this._scene);
+        global$1.menuController = this._menuController;
+
+        UserController$1.init({
+            'User Object': this._userObj,
+            'Flight Enabled': true,
+        });
+        UserController$1.addToScene(this._userObj);
     }
 
     _addEventListeners() {
@@ -39894,6 +40792,10 @@ function setup(containerId, params) {
     let promise = new Promise((resolve) => {
         //Check mobile override for VR capable phones
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
+            start(resolve, containerId, params.projectFilePath);
+            return;
+        } else if(localStorage.getItem('DigitalBacon:PointerOverride')) {
+            global$1.deviceType = "POINTER";
             start(resolve, containerId, params.projectFilePath);
             return;
         }
