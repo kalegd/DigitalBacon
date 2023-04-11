@@ -7,6 +7,7 @@
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import MenuController from '/scripts/core/menu/MenuController.js';
+import AcknowledgementsPage from '/scripts/core/menu/pages/AcknowledgementsPage.js';
 import AssetPage from '/scripts/core/menu/pages/AssetPage.js';
 import AssetsPage from '/scripts/core/menu/pages/AssetsPage.js';
 import AssetSelectPage from '/scripts/core/menu/pages/AssetSelectPage.js';
@@ -44,6 +45,7 @@ import * as THREE from 'three';
 export default class EditorMenuController extends MenuController {
     constructor() {
         super();
+        this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.ASSET] = new AssetPage(this);
         this._pages[MenuPages.ASSETS] = new AssetsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);

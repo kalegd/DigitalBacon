@@ -90,18 +90,32 @@ class AssetPage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        return this._instances[item].getName();
+        if(item == 'Acknowledgement') {
+            return item;
+        } else {
+            return this._instances[item].getName();
+        }
     }
 
     _handleItemInteraction(item) {
-        let instancePage = this._controller.getPage(MenuPages.INSTANCE);
-        instancePage.setInstance(this._instances[item]);
-        this._controller.pushPage(MenuPages.INSTANCE);
+        if(item == 'Acknowledgement') {
+            let page = this._controller.getPage(MenuPages.ACKNOWLEDGEMENTS);
+            page.setAssets([LibraryHandler.library[this._assetId]]);
+            this._controller.pushPage(MenuPages.ACKNOWLEDGEMENTS);
+        } else {
+            let instancePage = this._controller.getPage(MenuPages.INSTANCE);
+            instancePage.setInstance(this._instances[item]);
+            this._controller.pushPage(MenuPages.INSTANCE);
+        }
     }
 
     _refreshItems() {
         this._instances = ProjectHandler.getInstancesForAssetId(this._assetId);
         this._items = Object.keys(this._instances);
+        let asset = LibraryHandler.library[this._assetId];
+        if(asset['Author']) {
+            this._items.push('Acknowledgement');
+        }
     }
 
     setAsset(assetId) {

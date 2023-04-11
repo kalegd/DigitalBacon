@@ -106,8 +106,9 @@ class SketchfabSearchPage extends PaginatedImagesPage {
             return item.previewTexture;
         } else if(!item.isLoadingTexture) {
             let image = this._getSmallestImage(item.thumbnails.images);
-            let previewUrl = image.url;
-            new TextureLoader().load(previewUrl, (texture) => {
+            item.previewUrl = image.url;
+            item.isLoadingTexture = true;
+            new TextureLoader().load(item.previewUrl, (texture) => {
                 if(item.isDeleted) {
                     texture.dispose();
                 } else {
@@ -119,6 +120,7 @@ class SketchfabSearchPage extends PaginatedImagesPage {
         return Textures.ellipsisIcon;
     }
 
+    //With the caveat that it's at least 256px wide
     _getSmallestImage(images) {
         let smallestImage = null;
         for(let image of images) {

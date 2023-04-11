@@ -14,6 +14,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 
+const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL',
+    'Sketchfab Link'];
+
 class LibraryHandler {
     constructor() {
         this.library = {};
@@ -76,6 +79,10 @@ class LibraryHandler {
                 'Blob': blob,
                 'Name': assetDetails['Name'],
                 'Type': assetDetails['Type'],
+            }
+            for(let key of OPTIONAL_PARAMS) {
+                if(assetDetails[key])
+                    this.library[assetId][key] = assetDetails[key];
             }
             return this._loadMesh(assetId, blob, true);
         });
@@ -215,6 +222,24 @@ class LibraryHandler {
         return null;
     }
 
+    setSketchfabDetails(assetId, sketchfabAsset) {
+        let asset = this.library[assetId];
+        if(!asset) {
+            console.error('Asset ID not found when setting Sketchfab Details');
+            return;
+        }
+        if(sketchfabAsset.previewUrl)
+            asset['Preview Image URL'] = sketchfabAsset.previewUrl;
+        if(sketchfabAsset.license)
+            asset['License'] = sketchfabAsset.license.label;
+        if(sketchfabAsset.user && sketchfabAsset.user.username)
+            asset['Author'] = 'Sketchfab User ' + sketchfabAsset.user.username;
+        if(sketchfabAsset.viewerUrl)
+            asset['Sketchfab Link'] = sketchfabAsset.viewerUrl;
+        if(sketchfabAsset.previewTexture)
+            asset.previewTexture = sketchfabAsset.previewTexture;
+    }
+
     reset() {
         let newLibrary = {};
         for(let assetId in this.library) {
@@ -235,6 +260,10 @@ class LibraryHandler {
             libraryDetails[assetId] = {
                 'Name': assetDetails['Name'],
                 'Type': assetType,
+            }
+            for(let key of OPTIONAL_PARAMS) {
+                if(assetDetails[key])
+                    libraryDetails[assetId][key] = assetDetails[key];
             }
             if(assetType == AssetTypes.MODEL || assetType == AssetTypes.IMAGE) {
                 let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];

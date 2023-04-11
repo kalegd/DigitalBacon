@@ -6,7 +6,6 @@
 
 import global from '/scripts/core/global.js';
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -14,7 +13,6 @@ import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { euler, quaternion, vector3s, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 

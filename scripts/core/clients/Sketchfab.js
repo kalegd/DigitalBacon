@@ -79,8 +79,7 @@ class Sketchfab {
         fetch(url).then(response => response.blob()).then((blob) => {
             LibraryHandler.addNewAsset(blob, sketchfabAsset.name,
                 AssetTypes.MODEL, (assetId) => {
-                    //TODO: Add sketchfab details to library
-                    console.log("TODO: Add Sketchfab details to library");
+                    LibraryHandler.setSketchfabDetails(assetId, sketchfabAsset);
                     if(successCallback) successCallback(assetId);
                 });
         }).catch((error) => {
