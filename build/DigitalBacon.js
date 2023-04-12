@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, sRGBEncoding, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, InterpolateLinear, AnimationClip, Bone, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Sphere, Interpolant, SphereGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
+import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, sRGBEncoding, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, InterpolateLinear, AnimationClip, Bone, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Sphere, Interpolant, SphereGeometry, CubeTexture as CubeTexture$1, EventDispatcher, MOUSE, TOUCH, Spherical, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 
 /*
@@ -56,6 +56,7 @@ const PubSubTopics$1 = {
     TEXTURE_ADDED: "TEXTURE_ADDED",
     TEXTURE_DELETED: "TEXTURE_DELETED",
     TEXTURE_UPDATED: "TEXTURE_UPDATED",
+    USER_SCALE_UPDATED: "USER_SCALE_UPDATED",
 };
 
 /*
@@ -229,6 +230,8 @@ THREE.Euler.prototype.roundWithPrecision = function(p) {
         || this.z != oldValues[2];
 };
 
+THREE.Cache.enabled = true;
+
 const cartesianToPolar = (x, y) => {
     let r = Math.sqrt(x*x + y*y);
     let phi = Math.atan2(y, x);
@@ -333,7 +336,7 @@ class Queue {
  */
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global$1.loadingLocks.add(blackPixelLock);
@@ -349,6 +352,10 @@ const Textures = {
     "checkmarkIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAADVJJREFUeF7tndtWI7sORcn/f3R6QBM6HapSki3Zstc8r8eX0rpMKtAbbh/8DwVQQFaBm+zkDI4CKPABAAgBCggrAACEzWd0FAAAZAAFhBUAAMLmMzoKAAAygALCCgAAYfMZHQUAABlAAWEFAICw+YyOAgCADKCAsAIAQNh8RkcBAEAGUEBYAQAgbD6jowAAIAMoIKwAABA2n9FRAACQARQQVgAACJvP6CgAAMgACggrAACEzWd0FAAAZAAFhBUAAMLmMzoKAAAygALCCgAAYfMZHQUAABlAAWEFAICw+YyOAgCADKCAsAIAQNh8RkcBAEAGUEBYAQAgbD6jowAAIAMoIKwAABA2n9FRAACQARSYqMD9fr8/X3+73YZ2cuhlE3XmahSYqsBr0b0PkwUGAOB1gvUoYFSgt/TvrokCAgAwmskyFLAqkFn812foBQEAsLrKOhS4UGBk8aNAAACINQp0KjCz+L3fQAQAneazXVuBKuVvBQEA0M4v03coULH8j3Gs3xsAAB0BYKuuApXL74EAANDNMJM3KLBC8T0fBwBAQwjYoqvAagD4dOrdxwEAoJtlJncqsGL5rz4OAABnCFiup8DKxQcAenll4mAFdgDA2UcB3gCCw8JxeymwS/nP3gQAwF55ZZpABXYr/9FbAAAIDAxH7aPAjuU/egsAAPtklkkCFNi5+AAgICAcsbcCCgB4/ijAG8DeeWY6hwIq5QcAjlCwdH8FlIr/7ObnvxDkDWD/fDPhhQIAgIiggKgCquV/fAzgDUA0+Iz98aFcfgBAA6QVUC//z48EpVPA8HIKUPz/LecjgFwFtAcGAABAuwHC01P+3+bzBiBcCJXRKf650wBApQXCcwIAACAcf+3RKf97/3kD0O7H1tNT/mt7AcC1RqxYUAHKbzMNANh0YtUiClB8n1EAwKcXq4srAAB8BgEAn16sLqwA5febAwD8mrGjmAIUv90QANCuHTuLKAAA2ozgF4K06cauQgpQ/nYzAEC7duwsoADl7zMBAPTpx+6JClD+PvEfvw6Q7wH06cjuwQpQ/BjBAUCMjpwyWAEAECM4AIjRkVMGKkD5Y8R+/m3gfASI0ZRTEhWg+LHiAoBYPTktWQEAECfw698C4Q0gTltOSlCA8seKCgBi9eS0RAUof6y4R38JjDeAWI05LUgByh8k5PcxZ38GEADE6sxpnQpQ/E4BD7a/+xugACBeb07sUAAAdIjnLP/ncgAQqzendShA+TvEO9l69RfAAUC85pzoVIDiOwUzLr8qP28ARiFZlqsAAIjX11J+ABCvOyc6FaD8TsEMy63lBwAGMVmSpwDlj9fWU34AEK8/JxoVoPxGoRzLvOUHAA5xWRqjAMWP0fH1lJbyA4AcLzj1jQIAID4ereUHAPFecCLlH5qBnvIDgKFW6V7GV/0c73vLDwByfOHUFwUAQHwkIsoPAOJ94UTKn56BqPIDgHSrtC/gK3+8/5HlBwDx/nDitwKUPz4K0eUHAPEeyZ9I8XMikFF+AJDjlfSpACDe/qzypwKgJwiZA8fbw4kPBXo8R8VjBbK7EPr7ADICkC0AwetXIMP3/qda/4QR2Q8BwIgAjBBj/cjMmWCE/3Mmm3frqLx3AWCG8aOEmWf9WjfPyMBaCvmfdmTGmwBQwfSRIvkt1NhRIQe7KT06124AVDJ9tFi7ha1nnko56Jmj0t4ZeXYBoKrpM4SrFJyRz1I1AyM1yLhrVoZNAFjB9FkCZoSh8pkrZKGyfkfPNjO7lwBYyfCZQq4WupbnXSkLLfPN2DM7s1sB4NPA2YLOCFH2nRQ/R+EKWX0LgFWNryBsTmTmnLpqDuaoZbu1SkZPAbC66VUEtsWh7qrVc1BR2UrZPATALqZXErpiEK+eaZccXM058v+vlslfANjN9GqCjwxbz1275aBHi6i9FbO4PQD4xqAvvhTfp5d1dcXyf3XjeYCdza9qgDVAo9btnIFRGr7eUzl7MgDgTeA6/pT/WiPvisrl/+8NQMX86oZ4AxaxXsX7CK08Z6yQtZ83AKUQrGCMJ2i9a5W879XKun+VjH0BQDEAqxhkDVzrOkXvW7Wy7lspW7IA4HsCmuC3lrh13Url//kegPJXgdUMaw3m6z5lz6M0XOm7/WczS78BPERRggDFz6n/qhm6EYi/gVjVQG+c8dur2PX6lbMDAJ78XdnI65jymd+ikXfN6pkBAC+Or27oUYD5qu+ttW39DlkBAAde72Ds81gAwFZoz6pdMgIATlzfxWDK76m1be0u2fj63hcBOTd9daPx1lZoz6rVM/HrR5eE5L39qxqOr55a29aumoV30/EGYPB+JeMpvsHQhiUrZcAzHgAwqrVKAACA0VDHslW8d4z0sxQAOFSrHgTK7zDTuLS658YxTpcBAKeCFQNB8Z0mGpdX9Nr46OZlAMAs1b+F1YIBABpMvNhSzeP4Cf+eCAAala0SEMrfaOCbbVW8jZ/s94n814AdKs8OCuXvMO9k62xP4yd6fyIA6FR8VmAof6dxB9tneRk/if1EAGDX6vw7qbfb5R9ZDbjm6wiKH6Xk/+colv/rewCEKiZQowIEAGL8ej5llHfxT95/ouRvBe6X7fiE7CBR/njnsj2Lf+LYEwFArJ4pv1mI4geb9H2cevl/PgI85CVoMUGLDha+xPjCa/9vHaX+NFh8jM5PjIIA5Y93Lcqb+Ccbf6LEXwceL+vfG3uDRvnjnev1JP6J5p4IAJL1bwkcxc8xpcWLnCepc+rhz68JYKxBnuChfaz2j9M8HuQ8Qc1TT/8BC0GMNcwSQDSP1ZzyX+sJAK41Cl1xBgLKHyrzz2EW8ObcvMapb/8JK6Fcw0Se8lgByn+djMt/ww4ErkVkRT0FKL/Nk0sAfB4DBGxisqqGApTf7oMJAEDALigr5ypA+X36mwEABHzCsnq8ApTfr7kLAEDALzA7xihA+dt0dgMACLQJza48BSh/u7ZNAAAC7YKzM1YByt+nZzMAgECf8OzuV4DyB2jYewQ/IuxVkP0tClD+FtV+7+l6A3gcBwRizOAUmwKU36aTZVUIAPg4YJGaNREKUP4IFf+dEQYAIBBrDKcdvK4O/PXrKvqHAgAIqMRm/Jx85c/RPBwAQCDHKOVTKX+e+ykAAAJ5hqmdTPlzHU8DABDINU7hdMqf73IqAIBAvoG73kD5xzibDgAgMMbInW6h/OPcHAIAIDDO0NVvovxjHRwGACAw1tgVb6P8410bCgAgMN7gVW6k/HOcGg4AIDDH6Mq3Uv557kwBABCYZ3i1myn/XEemAQAIzDW+wu2Uf74LUwEABOYHYNYTUP5Zyv9/73QAAIEaQRj5FJR/pNrv7yoBACBQJxDZT0L5sxX2nV8GAEDAZ9yKqyl/PddKAQAI1AtI1BNR/iglY88pBwAgEGtwhdMofwUXjp+hJACAQN3AeJ+M8nsVG7u+LACAwNggZNxG+TNUjT2zNACAQKzZI0+j/CPVbr+rPACAQLu5s3ZS/lnK++9dAgBAwG/srB2Uf5bybfcuAwAg0GbwyF2Uf6TaMXctBQAgEGN6ximUP0PV/DOXAwAQyA+F9wbK71WszvolAQAECgWIP9dVx4yGJ1kWAECgwe3gLXzlDxZ0wnFLAwAITEjM95WUf572kTcvDwAgEBkH21mU36bTCqu2AAAQGBc1yj9O6xE3bQMAIJAfF8qfr/HoG7YCABDIiw/lz9N25snbAQAIxMeJ8sdrWuXELQEABOLiRfnjtKx40rYAAAL9caP8/RpWP2FrAACB9vhR/nbtVtq5PQCAgD+OlN+v2ao7JAAABOzxpPx2rXZYKQMAIHAdV8p/rdFuK6QAAATO40v5d6u2bR45AACB38Gg/Lay7LhKEgBA4F+UKf+OtbbPJAsAIPDxQfntRdl1pTQAlCFA+XettG8ueQAoQoDy+0qy82oA8O3u/X6/72z0YzbKr+CyfUYA8KTV7hCg/PZiqKwEAC9O7woByq9Sad+cAOBAr90gQPl9pVBaDQBO3N4FApRfqc7+WQHAG81WhwDl9xdCbQcAuHB8VQhQfrUqt80LAAy6rQYBym8wlSVfCgAAYxBWgQDlNxrKMgDQkoGqIKD4LW6yhzeAhgxUgwDlbzCRLbwB9GSgCgQof4+L7OUNoDMDs0BA8TuNYztvAFEZGAkBih/lGufwU4DgDGSCgOIHm8VxvAFkZ6AXCJQ+2yHO53sAEzLwCgaKPsEEruQNgAyggLoCvAGoJ4D5pRUAANL2M7y6AgBAPQHML60AAJC2n+HVFQAA6glgfmkFAIC0/QyvrgAAUE8A80srAACk7Wd4dQUAgHoCmF9aAQAgbT/DqysAANQTwPzSCgAAafsZXl0BAKCeAOaXVgAASNvP8OoKAAD1BDC/tAIAQNp+hldXAACoJ4D5pRUAANL2M7y6AgBAPQHML60AAJC2n+HVFQAA6glgfmkFAIC0/QyvrgAAUE8A80srAACk7Wd4dQUAgHoCmF9aAQAgbT/DqysAANQTwPzSCgAAafsZXl0BAKCeAOaXVgAASNvP8OoKAAD1BDC/tAJ/AGjWxPrGa8JgAAAAAElFTkSuQmCC',
         function(texture) { global$1.loadingLocks.delete(locks['checkmark']); },
+    ),
+    "ellipsisIcon": new THREE.TextureLoader().load(
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAACTtJREFUeF7t3NFuG0cQRFHr/z9agZAoMQw7FFs73Jmq41erCdSt7qslZevthz8IIFBL4K02ueAIIPCDACwBAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUegRgDv7+/vz9T99vYWxUb+7v7/tPtRS/67kM8u/q+vcboI5H/u8NP6f/RNL1IA3136P9rykKcC+b939Kf3/+jof/77OAGsWv5PaLs/Eci/5vhP6f+Z4//42hgBrF783R8N5V97+Lv3/+zh/yu06eBOc69e/t2+G8j/2uPfrf/v3OLxTwB3Lf8uSyD/Pce/S//fOf7j3wLcvfx3L4H89x7/3f1/9/iPFsAuy3/XEsi/x/Hf1f8Vx08AV1H8+DT1xT8iJAACuGJ9j/wMYLflf/V3Afn3Ov5X93/F4R/7U4Bdl/9VSyD/nsf/qv6vPP4j3wI4gO4DaO+fAJ78Tz1XA3v0eqs/C2g/gPb8j/bv2b8/6jOA3ctf/Rgo/95PP6v7f/a4v/L1BPAVSk9+zaqnAAIggCdX8eGXHyOAU5Z/1XcB+c84/lX9P7zk4RcQwBDco7GrnwIIgAAe7dzk7wlgQu0LMwRw7W9UahfgF1Zu9CUEMML2eIgACODxltz/FQSwqAMCIIBFq3XpyxLApTj/ezECIIBFq3XpyxLApTgJYNWn4D4DWLOoBLCG6+X/O7D9ANrzL1rTc34nYPsCyO/HgCsk4AlgBdUFvx+AAAhgxaoSwAqqBOAt0It/Qcx0jQlgSu7BnJ8C+CnAotW69GWPEcBH6lMeg68+/s/G5T/jbcCq/i+9/H9ejAAWUF21AARAAFev61ECOOEpYNXxn/IUIP+1b32uPvhfX48ALibsANYewO5PQav7v3hdz/l3AL4D/k2g/QDa89cLYOcjeJX9dz0C+dc+/Vx9/B+vd9xbgF2fBF61/PLv+ST06v6vkgEBXETy1Quw21OA/Od99z/6CWCntwKvXv7dngLkP/P4jxfADhK4a/l3kYD85x5/hADulMDdy3+3BOQ/+/hjBHCHBHZZ/rskIP/5xx8lgFcdwm6L/+tnmKs/HJQ/4/A/9+bYnwL834f3q45g9+VfLUH5s44/8gng6u+Ipyz9n4T4XRnKn3f0P+9K5BPA747h2UM4ffG/K0L5sw8/+i3ARf+2x8sgEE+g5gkgvkkBERgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBD4C9goER8tauZoAAAAAElFTkSuQmCC',
+        function(texture) { global$1.loadingLocks.delete(locks['ellipsis']); },
     ),
     "hamburgerIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAQAAAAHUWYVAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA75o43NsAAAAHdElNRQflBwgBKRc7nqR1AAAAAW9yTlQBz6J3mgAAAQpJREFUeNrt3bEKgzAUQNFY/P8f7mBnoVMN9UbO2RN43jE8HAMAAAAAAAAAAAAAAAAAAAAAAACANW2T79uP990j/dc2+Qu+7h6IM0FiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiZgc57h4IAAAAAAAAACaZvRY9xv7zySvv8Sue/cqe+kX21B9OkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBAAAAAAAAAIAl2FO/yJ76wwkSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgS43/qAAAAAAAAAAAAAAAAAAAAAAAAADDFB0xaDHVXaSV/AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIxLTA3LTA4VDAxOjQxOjIzKzAwOjAw09nK7wAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMS0wNy0wOFQwMTo0MToyMyswMDowMKKEclMAAAAASUVORK5CYII=',
@@ -439,8 +446,8 @@ const Colors = {
 };
 
 const Fonts = {
-    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.json',
-    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/OpenSans-Regular-msdf.png',
+    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.json',
+    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.png',
 };
 
 const FontSizes = {
@@ -2185,8 +2192,6 @@ class GLTFMeshGpuInstancing {
 				// Just in case
 				Object3D.prototype.copy.call( instancedMesh, mesh );
 
-				// https://github.com/mrdoob/three.js/issues/18334
-				instancedMesh.frustumCulled = false;
 				this.parser.assignFinalMaterial( instancedMesh );
 
 				instancedMeshes.push( instancedMesh );
@@ -2381,13 +2386,10 @@ class GLTFTextureTransformExtension {
 
 	extendTexture( texture, transform ) {
 
-		if ( transform.texCoord !== undefined ) {
-
-			console.warn( 'THREE.GLTFLoader: Custom UV sets in "' + this.name + '" extension not yet supported.' );
-
-		}
-
-		if ( transform.offset === undefined && transform.rotation === undefined && transform.scale === undefined ) {
+		if ( ( transform.texCoord === undefined || transform.texCoord === texture.channel )
+			&& transform.offset === undefined
+			&& transform.rotation === undefined
+			&& transform.scale === undefined ) {
 
 			// See https://github.com/mrdoob/three.js/issues/21819.
 			return texture;
@@ -2395,6 +2397,12 @@ class GLTFTextureTransformExtension {
 		}
 
 		texture = texture.clone();
+
+		if ( transform.texCoord !== undefined ) {
+
+			texture.channel = transform.texCoord;
+
+		}
 
 		if ( transform.offset !== undefined ) {
 
@@ -3559,6 +3567,12 @@ class GLTFParser {
 
 			texture.name = textureDef.name || sourceDef.name || '';
 
+			if ( texture.name === '' && typeof sourceDef.uri === 'string' && sourceDef.uri.startsWith( 'data:image/' ) === false ) {
+
+				texture.name = sourceDef.uri;
+
+			}
+
 			const samplers = json.samplers || {};
 			const sampler = samplers[ textureDef.sampler ] || {};
 
@@ -3685,11 +3699,10 @@ class GLTFParser {
 
 			if ( ! texture ) return null;
 
-			// Materials sample aoMap from UV set 1 and other maps from UV set 0 - this can't be configured
-			// However, we will copy UV set 0 to UV set 1 on demand for aoMap
-			if ( mapDef.texCoord !== undefined && mapDef.texCoord != 0 && ! ( mapName === 'aoMap' && mapDef.texCoord == 1 ) ) {
+			if ( mapDef.texCoord !== undefined && mapDef.texCoord > 0 ) {
 
-				console.warn( 'THREE.GLTFLoader: Custom UV set ' + mapDef.texCoord + ' for texture ' + mapName + ' not yet supported.' );
+				texture = texture.clone();
+				texture.channel = mapDef.texCoord;
 
 			}
 
@@ -3769,6 +3782,7 @@ class GLTFParser {
 				lineMaterial = new LineBasicMaterial();
 				Material$1.prototype.copy.call( lineMaterial, material );
 				lineMaterial.color.copy( material.color );
+				lineMaterial.map = material.map;
 
 				this.cache.add( cacheKey, lineMaterial );
 
@@ -3811,14 +3825,6 @@ class GLTFParser {
 			}
 
 			material = cachedMaterial;
-
-		}
-
-		// workarounds for mesh and geometry
-
-		if ( material.aoMap && geometry.attributes.uv2 === undefined && geometry.attributes.uv !== undefined ) {
-
-			geometry.setAttribute( 'uv2', geometry.attributes.uv );
 
 		}
 
@@ -4339,6 +4345,7 @@ class GLTFParser {
 		const json = this.json;
 
 		const animationDef = json.animations[ animationIndex ];
+		const animationName = animationDef.name ? animationDef.name : 'animation_' + animationIndex;
 
 		const pendingNodes = [];
 		const pendingInputAccessors = [];
@@ -4354,6 +4361,8 @@ class GLTFParser {
 			const name = target.node;
 			const input = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.input ] : sampler.input;
 			const output = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.output ] : sampler.output;
+
+			if ( target.node === undefined ) continue;
 
 			pendingNodes.push( this.getDependency( 'node', name ) );
 			pendingInputAccessors.push( this.getDependency( 'accessor', input ) );
@@ -4492,9 +4501,7 @@ class GLTFParser {
 
 			}
 
-			const name = animationDef.name ? animationDef.name : 'animation_' + animationIndex;
-
-			return new AnimationClip( name, undefined, tracks );
+			return new AnimationClip( animationName, undefined, tracks );
 
 		} );
 
@@ -5057,6 +5064,9 @@ function parallelTraverse( a, b, callback ) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL',
+    'Sketchfab Link'];
+
 class LibraryHandler {
     constructor() {
         this.library = {};
@@ -5120,6 +5130,10 @@ class LibraryHandler {
                 'Name': assetDetails['Name'],
                 'Type': assetDetails['Type'],
             };
+            for(let key of OPTIONAL_PARAMS) {
+                if(assetDetails[key])
+                    this.library[assetId][key] = assetDetails[key];
+            }
             return this._loadMesh(assetId, blob, true);
         });
     }
@@ -5258,6 +5272,24 @@ class LibraryHandler {
         return null;
     }
 
+    setSketchfabDetails(assetId, sketchfabAsset) {
+        let asset = this.library[assetId];
+        if(!asset) {
+            console.error('Asset ID not found when setting Sketchfab Details');
+            return;
+        }
+        if(sketchfabAsset.previewUrl)
+            asset['Preview Image URL'] = sketchfabAsset.previewUrl;
+        if(sketchfabAsset.license)
+            asset['License'] = sketchfabAsset.license.label;
+        if(sketchfabAsset.user && sketchfabAsset.user.username)
+            asset['Author'] = 'Sketchfab User ' + sketchfabAsset.user.username;
+        if(sketchfabAsset.viewerUrl)
+            asset['Sketchfab Link'] = sketchfabAsset.viewerUrl;
+        if(sketchfabAsset.previewTexture)
+            asset.previewTexture = sketchfabAsset.previewTexture;
+    }
+
     reset() {
         let newLibrary = {};
         for(let assetId in this.library) {
@@ -5279,6 +5311,10 @@ class LibraryHandler {
                 'Name': assetDetails['Name'],
                 'Type': assetType,
             };
+            for(let key of OPTIONAL_PARAMS) {
+                if(assetDetails[key])
+                    libraryDetails[assetId][key] = assetDetails[key];
+            }
             if(assetType == AssetTypes.MODEL || assetType == AssetTypes.IMAGE) {
                 let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];
                 libraryDetails[assetId]['Filepath'] = filepath;
@@ -5302,6 +5338,10 @@ class Entity {
         this._object = new Object3D();
     }
     
+    getId() {
+        return this._id;
+    }
+
     getObject() {
         return this._object;
     }
@@ -5320,287 +5360,233 @@ class Entity {
     }
 }
 
-const InteractableStates = {
-    IDLE: "IDLE",
-    HOVERED: "HOVERED",
-    SELECTED: "SELECTED"
-};
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+  
+class Avatar {
+    constructor(params) {
+        if(params == null) {
+            params = {};
+        }
+        let verticalOffset = params['Vertical Offset'] || 0;
+        let focusCamera = params['Focus Camera'] || false;
+        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
+        this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._pivotPoint = new THREE.Object3D();
+        this._pivotPoint.position.setY(verticalOffset);
+        this._createBoundingBox(params);
+        //this._pivotPoint.position.setY(1.3);
+
+        this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
+        if(focusCamera) {
+            global$1.cameraFocus.position.fromArray(cameraFocalPoint);
+        }
+    }
+
+    _createBoundingBox(params) {
+        let boundingBoxSize = (params['Bounding Box Size'])
+            ? params['Bounding Box Min']
+            : [0.2, 0.8, 0.2];
+        let boundingBoxCenter = (params['Bounding Box Center'])
+            ? params['Bounding Box Max']
+            : [0, 0.4, 0];
+        let boundingBoxQuaternion = (params['Bounding Box Quaternion'])
+            ? params['Bounding Box Quaternion']
+            : [0, 0, 0, 0];
+        let geometry = new THREE.BoxGeometry(
+            boundingBoxSize[0],
+            boundingBoxSize[1],
+            boundingBoxSize[2],
+        );
+        let material = new THREE.MeshBasicMaterial({ wireframe: true });
+        this._boundingBox = new THREE.Mesh(geometry, material);
+        this._boundingBox.position.fromArray(boundingBoxCenter);
+        this._boundingBox.quaternion.fromArray(boundingBoxQuaternion);
+        //this._pivotPoint.add(this._boundingBox);
+    }
+
+    _createMesh(filename) {
+        if(/\.glb/.test(filename)) {
+            let gltfLoader = new GLTFLoader();
+            gltfLoader.load(filename, (gltf) => {
+                gltf.scene.rotateY(Math.PI);
+                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
+                    let hands = new Set();
+                    gltf.scene.traverse((child) => {
+                        if(child.name.toLowerCase().includes("hand")) {
+                            hands.add(child);
+                        }
+                    });
+                    hands.forEach((hand) => { hand.parent.remove(hand); });
+                    gltf.scene.position.setY(-0.7);
+                }
+                this._pivotPoint.add(gltf.scene);
+                this._saveOriginalTransparencyStates();
+                this._dimensions = 3;
+            }, () => {}, (error) => {
+                console.log(error);
+                if(filename != this._defaultURL) {
+                    this._createMesh(this._defaultURL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
+            new THREE.TextureLoader().load(filename, (texture) => {
+                let width = texture.image.width;
+                let height = texture.image.height;
+                if(width > height) {
+                    let factor = 0.3 / width;
+                    width = 0.3;
+                    height *= factor;
+                } else {
+                    let factor = 0.3 / height;
+                    height = 0.3;
+                    width *= factor;
+                }
+                let material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                });
+                let geometry = new THREE.PlaneGeometry(width, height);
+                geometry.rotateY(Math.PI);
+                let mesh = new THREE.Mesh(geometry, material);
+                this._pivotPoint.add(mesh);
+                this._saveOriginalTransparencyStates();
+                //let sprite = new THREE.Sprite(material);
+                //this._pivotPoint.add(sprite);
+                this._dimensions = 2;
+            }, () => {}, () => {
+                if(filename != this._defaultURL) {
+                    this._createMesh(this._defaultURL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else {
+            if(filename != this._defaultURL) {
+                this._createMesh(this._defaultURL);
+            } else {
+                console.error("Default avatar URL is invalid :(");
+            }
+        }
+    }
+
+    _saveOriginalTransparencyStates() {
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.userData['transparent'] = material.transparent;
+                        material.userData['opacity'] = material.opacity;
+                    }
+                } else {
+                    let material = node.material;
+                    material.userData['transparent'] = material.transparent;
+                    material.userData['opacity'] = material.opacity;
+                }
+            }
+        });
+    }
+
+    fade(percent) {
+        this._isFading = true;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        if(!material.transparent) {
+                            material.transparent = true;
+                            material.needsUpdate = true;
+                        }
+                        material.opacity = material.userData['opacity']*percent;
+                    }
+                } else {
+                    let material = node.material;
+                    if(!material.transparent) {
+                        material.transparent = true;
+                        material.needsUpdate = true;
+                    }
+                    material.opacity = material.userData['opacity'] * percent;
+                }
+            }
+        });
+    }
+
+    endFade() {
+        if(!this._isFading) return;
+        this._isFading = false;
+        this._pivotPoint.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let mtrl = node.material[i];
+                        if(mtrl.transparent != mtrl.userData['transparent']) {
+                            mtrl.transparent = mtrl.userData['transparent'];
+                            mtrl.needsUpdate = true;
+                        }
+                        mtrl.opacity = mtrl.userData['opacity'];
+                    }
+                } else {
+                    let mtrl = node.material;
+                    if(mtrl.transparent != mtrl.userData['transparent']) {
+                        mtrl.transparent = mtrl.userData['transparent'];
+                        mtrl.needsUpdate = true;
+                    }
+                    mtrl.opacity = mtrl.userData['opacity'];
+                }
+            }
+        });
+    }
+
+    lookAtLocal(point) {
+        if(this._pivotPoint.parent) {
+            vector3s$1[0].copy(point);
+            this._pivotPoint.parent.localToWorld(vector3s$1[0]);
+            this._pivotPoint.lookAt(vector3s$1[0]);
+        }
+    }
+
+    updateSourceUrl(url) {
+        while(this._pivotPoint.children[0]) {
+            let child = this._pivotPoint.children[0];
+            this._pivotPoint.remove(child);
+            fullDispose(child, true);
+        }
+        this._createMesh(url);
+    }
+
+    getObject() {
+        return this._pivotPoint;
+    }
+
+    addToScene(scene) {
+        scene.add(this._pivotPoint);
+    }
+
+    removeFromScene() {
+        if(this._pivotPoint.parent) {
+            this._pivotPoint.parent.remove(this._pivotPoint);
+        }
+    }
+}
 
 const Hands = {
     LEFT: "LEFT",
     RIGHT: "RIGHT",
 };
 
-const HandTools = {
-    EDIT: "EDIT",
-    COPY_PASTE: "COPY_PASTE",
-    DELETE: "DELETE",
-    ACTIVE: "EDIT",
+Hands.otherHand = (hand) => {
+    if(hand == Hands.LEFT) return Hands.RIGHT;
+    if(hand == Hands.RIGHT) return Hands.LEFT;
+    console.error('ERROR: Unexpected hand provided to Hands.otherHand');
 };
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Box3Helper extends LineSegments {
-
-	constructor(box) {
-		super(BoundingBox.geometry, BoundingBox.material);
-
-		this.box = box;
-
-		this.type = 'Box3Helper';
-
-		this.geometry.computeBoundingSphere();
-
-	}
-
-	updateMatrixWorld( force ) {
-
-		const box = this.box;
-
-		if ( box.isEmpty() ) return;
-
-		box.getCenter( this.position );
-
-		box.getSize( this.scale );
-
-		this.scale.multiplyScalar( 0.5 );
-
-		super.updateMatrixWorld( force );
-
-	}
-
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Interactable {
-    constructor(threeObj) {
-        this._threeObj = threeObj;
-        this._state = InteractableStates.IDLE;
-        this.children = new Set();
-        this._hoveredOwners = new Set();
-        this._selectedOwners = new Set();
-    }
-
-    isOnlyGroup() {
-        console.error("Interactable.isOnlyGroup() should be overridden");
-        return;
-    }
-
-    getThreeObj() {
-        return this._threeObj;
-    }
-
-    getState() {
-        return this._state;
-    }
-
-    setState(newState) {
-        if(this._state != newState) {
-            this._state = newState;
-            if(this._threeObj.states && newState in this._threeObj.states) {
-                this._threeObj.setState(newState);
-            }
-        }
-    }
-
-    addHoveredBy(owner) {
-        console.error("Interactable.addHoveredBy(owner) should be overridden");
-    }
-
-    removeHoveredBy(owner) {
-        console.error("Interactable.removeHoveredBy(owner) should be overridden");
-    }
-
-    addSelectedBy(owner) {
-        console.error("Interactable.addSelectedBy(owner) should be overridden");
-    }
-
-    removeSelectedBy(owner) {
-        console.error("Interactable.removeSelectedBy(owner) should be overridden");
-    }
-
-    reset() {
-        this._hoveredOwners.clear();
-        this._selectedOwners.clear();
-        this.setState(InteractableStates.IDLE);
-        this.children.forEach((interactable) => {
-            interactable.reset();
-        });
-    }
-
-    addChild(interactable) {
-        if(interactable.parent) interactable.parent.removeChild(interactable);
-        this.children.add(interactable);
-        interactable.parent = this;
-    }
-
-    addChildren(interactables) {
-        interactables.forEach((interactable) => {
-            this.addChild(interactable);
-        });
-    }
-
-    removeChild(interactable) {
-        this.children.delete(interactable);
-        interactable.parent = null;
-    }
-
-    removeChildren(interactables) {
-        interactables.forEach((interactable) => {
-            this.removeChild(interactable);
-        });
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class GripInteractable extends Interactable {
-    constructor(threeObj, selectedFunc, releasedFunc, specificOption) {
-        super(threeObj);
-        this._selectedFunc = selectedFunc;
-        this._releasedFunc = releasedFunc;
-        this.specificOption = specificOption;
-        this._createBoundingObject();
-    }
-
-    isOnlyGroup() {
-        return this._selectedFunc == null && this._releasedFunc == null;
-    }
-
-    _createBoundingObject() {
-        this._boundingBox = new THREE.Box3();
-        this._boundingBoxObj = new Box3Helper(this._boundingBox);
-    }
-
-    _getBoundingObject() {
-        this._boundingBox.setFromObject(this._threeObj);
-        return this._boundingBox;
-    }
-
-    _displayBoundingObject() {
-        global$1.scene.add(this._boundingBoxObj);
-    }
-
-    _hideBoundingObject() {
-        global$1.scene.remove(this._boundingBoxObj);
-    }
-
-    intersectsSphere(sphere) {
-        let boundingBox = this._getBoundingObject();
-        let intersects;
-        if(boundingBox) {
-            intersects = sphere.intersectsBox(boundingBox);
-        } else {
-            intersects = false;
-        }
-        return intersects;
-    }
-
-    // Assumes intersectsSphere(sphere) is called first so we don't update the
-    // bounding box by calling _getBoundingObject()
-    distanceToSphere(sphere) {
-        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s$1[0]));
-    }
-
-    _determineAndSetState() {
-        if(this._selectedOwners.size > 0) {
-            this.setState(InteractableStates.SELECTED);
-            if(this._hoveredOwners.size >= this._selectedOwners.size) {
-                this._displayBoundingObject();
-            } else {
-                this._hideBoundingObject();
-            }
-        } else if(this._hoveredOwners.size > 0) {
-            this.setState(InteractableStates.HOVERED);
-            this._displayBoundingObject();
-        } else {
-            this.setState(InteractableStates.IDLE);
-            this._hideBoundingObject();
-        }
-    }
-
-    addHoveredBy(owner) {
-        if(this._hoveredOwners.has(owner)) {
-            return;
-        }
-        this._hoveredOwners.add(owner);
-        if(this._selectedOwners.size == 0) {
-            this.setState(InteractableStates.HOVERED);
-        }
-        this._displayBoundingObject();
-    }
-
-    removeHoveredBy(owner) {
-        this._hoveredOwners.delete(owner);
-        this._determineAndSetState();
-    }
-
-    addSelectedBy(owner) {
-        if(this._selectedFunc != null) {
-            this._selectedFunc(owner);
-        }
-        this._selectedOwners.add(owner);
-        this.setState(InteractableStates.SELECTED);
-    }
-
-    removeSelectedBy(owner) {
-        if(this._releasedFunc != null) {
-            this._releasedFunc(owner);
-        }
-        this._selectedOwners.delete(owner);
-        this._determineAndSetState();
-    }
-
-    updateAction(newActionFunc) {
-        this._selectedFunc = newActionFunc;
-    }
-
-    static emptyGroup() {
-        return new GripInteractable();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class AudioHandler {
-    init() {
-        if(this._audioListener) return;
-
-        this._audioListener = new THREE.AudioListener();
-        this._addEventListeners();
-        global$1.camera.add(this._audioListener);
-    }
-
-    _addEventListeners() {
-        //XR Event Listeners
-        global$1.renderer.xr.addEventListener("sessionstart", () => {
-            this._audioListener.context.resume();
-        });
-        global$1.renderer.xr.addEventListener("sessionend", () => {
-            this._audioListener.context.suspend();
-        });
-    }
-
-}
-
-let audioHandler = new AudioHandler();
 
 /**
  * @webxr-input-profiles/motion-controllers 1.0.0 https://github.com/immersive-web/webxr-input-profiles
@@ -6579,6 +6565,677 @@ class InputHandler {
 }
 
 let inputHandler = new InputHandler();
+
+const CubeSides = {
+    FRONT: "FRONT",
+    BACK: "BACK",
+    LEFT: "LEFT",
+    RIGHT: "RIGHT",
+    TOP: "TOP",
+    BOTTOM: "BOTTOM",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const RESOLUTION = 1024;
+const SIDES$1 = {};
+for(let side in CubeSides) {
+    let canvas = document.createElement('canvas');
+    canvas.width = RESOLUTION;
+    canvas.height = RESOLUTION;
+    SIDES$1[side] = {
+        canvas: canvas,
+        context: canvas.getContext("2d"),
+    };
+}
+
+class Skybox {
+    init(scene) {
+        this._scene = scene;
+        this._scene.background = new CubeTexture$1([
+            SIDES$1[CubeSides.RIGHT].canvas,
+            SIDES$1[CubeSides.LEFT].canvas,
+            SIDES$1[CubeSides.TOP].canvas,
+            SIDES$1[CubeSides.BOTTOM].canvas,
+            SIDES$1[CubeSides.FRONT].canvas,
+            SIDES$1[CubeSides.BACK].canvas,
+        ]);
+    }
+
+    setSides(assetIds) {
+        for(let side in assetIds) {
+            this.setSide(side, assetIds[side]);
+        }
+    }
+
+    setSide(side, assetId) {
+        let image = (assetId)
+            ? libraryHandler.getImage(assetId)
+            : null;
+        this._drawImage(side, image);
+        this._scene.background.needsUpdate = true;
+    }
+
+    deleteSide(side) {
+        this._drawImage(side);
+        this._scene.background.needsUpdate = true;
+    }
+
+    //https://stackoverflow.com/a/23105310
+    _drawImage(side, image) {
+        let canvas = SIDES$1[side]['canvas'];
+        let context = SIDES$1[side]['context'];
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if(!image) return;
+        let ratio  = RESOLUTION / Math.max(image.width, image.height);
+        let centerShift_x = (canvas.width - image.width*ratio) / 2;
+        let centerShift_y = (canvas.height - image.height*ratio) / 2;
+        context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
+            centerShift_y, image.width * ratio, image.height * ratio);
+    }
+}
+
+let skybox = new Skybox();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class SettingsHandler {
+    constructor() {
+        this.settings = {
+            "Skybox": {},
+            "User Settings": {
+                "Movement Speed": 3,
+                "Enable Flying": true,
+            },
+        };
+        this.editorSettings = {
+            "Movement Speed": 3,
+            "User Scale": 1,
+            "Enable Flying": true,
+            "Swap Joysticks": false,
+        };
+        this.settings['Skybox'][CubeSides.FRONT] = null;
+        this.settings['Skybox'][CubeSides.BACK] = null;
+        this.settings['Skybox'][CubeSides.LEFT] = null;
+        this.settings['Skybox'][CubeSides.RIGHT] = null;
+        this.settings['Skybox'][CubeSides.TOP] = null;
+        this.settings['Skybox'][CubeSides.BOTTOM] = null;
+    }
+
+    init(scene) {
+        this._scene = scene;
+        skybox.init(scene);
+    }
+
+    load(settings) {
+        if(!settings) {
+            for(let side in this.settings['Skybox']) {
+                this.settings['Skybox'][side] = null;
+            }
+            this.settings['User Settings']['Movement Speed'] = 3;
+            this.settings['User Settings']['Enable Flying'] = true;
+        } else {
+            this.settings = settings;
+            if(!this.settings['User Settings']) {
+                this.settings['User Settings'] = {
+                    "Movement Speed": 3,
+                    "Enable Flying": true,
+                };
+            }
+        }
+        skybox.setSides(this.settings['Skybox']);
+    }
+
+    reset() {
+        this.load();
+    }
+
+    getSkyboxTextures() {
+        let textures = {};
+        let skybox = this.settings['Skybox'];
+        for(let side in skybox) {
+            if(skybox[side]) {
+                textures[side] = libraryHandler.getTexture(skybox[side]);
+            } else {
+                textures[side] = Textures.searchIcon;
+            }
+        }
+        return textures;
+    }
+
+    setSkyboxSide(side, assetId, ignorePublish) {
+        //Should validate image size is square before setting Skybox side
+        this.settings['Skybox'][side] = assetId;
+        skybox.setSide(side, assetId);
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['Skybox', side],
+            });
+    }
+
+    getEditorSettings() {
+        return this.editorSettings;
+    }
+
+    setEditorSetting(key, value) {
+        if(key in this.editorSettings) this.editorSettings[key] = value;
+    }
+
+    getUserSettings() {
+        return this.settings['User Settings'];
+    }
+
+    setUserSetting(key, value, ignorePublish) {
+        if(!(key in this.settings['User Settings'])) return;
+
+        this.settings['User Settings'][key] = value;
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['User Settings', key],
+            });
+    }
+
+    getMovementSpeed() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Movement Speed']
+            : this.settings['User Settings']['Movement Speed'];
+    }
+
+    getUserScale() {
+        return (global$1.isEditor)
+            ? this.editorSettings['User Scale']
+            : 1;//TODO: allow users to access menu and configure a specific
+                    //      set of settings
+    }
+
+    isFlyingEnabled() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Enable Flying']
+            : this.settings['User Settings']['Enable Flying'];
+    }
+
+    areJoysticksSwapped() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Swap Joysticks']
+            : false;//TODO: allow users to access menu and configure a specific
+                    //      set of settings
+    }
+
+    getSettings() {
+        return this.settings;
+    }
+
+}
+
+let settingsHandler = new SettingsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class BasicMovement {
+    constructor(params) {
+        if(params == null) {
+            params = {};
+        }
+        this._avatar = params['Avatar'];
+        this._userObj = params['User Object'];
+        this._velocity = new THREE.Vector3();
+        this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
+        this._snapRotationTriggered = false;
+    }
+
+    _setupMobileFlyingButtons() {
+        this._mobileUp = false;
+        this._mobileDown = false;
+        let upButton = document.getElementById("mobile-flying-up-button");
+        let downButton = document.getElementById("mobile-flying-down-button");
+        upButton.addEventListener('touchstart',
+            () => { this._mobileUp = true; });
+        upButton.addEventListener('touchend',
+            () => { this._mobileUp = false; });
+        downButton.addEventListener('touchstart',
+            () => { this._mobileDown = true; });
+        downButton.addEventListener('touchend',
+            () => { this._mobileDown = false; });
+    }
+
+    _moveForward(velocity, timeDelta) {
+        // move forward parallel to the xz-plane
+        // assumes camera.up is y-up
+        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s$1[0].crossVectors(this._userObj.up, vector3s$1[0]);
+        // not using addScaledVector because we use vector3s[0] later
+        vector3s$1[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s$1[0]);
+        vector3s$1[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s$1[0]);
+    };
+
+    _moveRight(velocity, timeDelta) {
+        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s$1[0].y = 0;
+        vector3s$1[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s$1[0]);
+        vector3s$1[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s$1[0]);
+    };
+
+    _moveUp(velocity, timeDelta) {
+        velocity = this._userObj.scale.y * velocity;
+        this._worldVelocity.setY(velocity);
+        vector3s$1[0].fromArray([0, velocity * timeDelta, 0]);
+        this._userObj.position.add(vector3s$1[0]);
+    }
+
+    _snapLeft() {
+        this._userObj.rotateY(Math.PI/8);
+    }
+
+    _snapRight() {
+        this._userObj.rotateY(-Math.PI/8);
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updatePositionVR(timeDelta);
+            this.update = this._updatePositionVR;
+        } else if(global$1.deviceType == "POINTER") {
+            this._updatePosition(timeDelta);
+            this.update = this._updatePosition;
+        } else if(global$1.deviceType == "MOBILE") {
+            this._setupMobileFlyingButtons();
+            this._updatePositionMobile(timeDelta);
+            this.update = this._updatePositionMobile;
+        }
+    }
+
+    _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        // Decrease the velocity.
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
+        if(flightEnabled)
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
+
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            if (inputHandler.isKeyCodePressed("ArrowUp")
+                    || inputHandler.isKeyCodePressed("KeyW"))
+                this._velocity.z += movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowDown")
+                    || inputHandler.isKeyCodePressed("KeyS"))
+                this._velocity.z -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowLeft")
+                    || inputHandler.isKeyCodePressed("KeyA"))
+                this._velocity.x -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowRight")
+                    || inputHandler.isKeyCodePressed("KeyD"))
+                this._velocity.x += movementSpeed / 4;
+            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
+                    != inputHandler.isKeyCodePressed("ShiftLeft")) {
+                this._verticalVelocity =
+                    (inputHandler.isKeyCodePressed("Space"))
+                        ? movementSpeed
+                        : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s$1[1].copy(vector3s$1[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s$1[1].add(vector3s$1[0]);
+            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
+                vector3s$1[1].multiplyScalar(-2);
+                this._avatar.lookAtLocal(vector3s$1[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        this._velocity.x = 0;
+        if(flightEnabled)
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
+        this._velocity.z = 0;
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            let joystickAngle = inputHandler.getJoystickAngle();
+            let joystickDistance = inputHandler.getJoystickDistance();
+            let movingDistance = movementSpeed * joystickDistance;
+            this._velocity.x = movingDistance * Math.cos(joystickAngle);
+            this._velocity.z = movingDistance * Math.sin(joystickAngle);
+            if(flightEnabled && this._mobileUp != this._mobileDown) {
+                this._verticalVelocity = (this._mobileUp)
+                    ? movementSpeed
+                    : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s$1[1].copy(vector3s$1[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s$1[1].add(vector3s$1[0]);
+            if(vector3s$1[1].length() > 0.001 * settingsHandler.getUserScale()) {
+                vector3s$1[1].multiplyScalar(-2);
+                this._avatar.lookAtLocal(vector3s$1[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        let movementGamepad;
+        let rotationGamepad;
+        if(settingsHandler.areJoysticksSwapped()) {
+            movementGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
+            rotationGamepad = inputHandler.getXRGamepad(Hands.LEFT);
+        } else {
+            movementGamepad = inputHandler.getXRGamepad(Hands.LEFT);
+            rotationGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
+        }
+        this._velocity.x = 0;
+        this._velocity.y = 0;
+        this._velocity.z = 0;
+        if(movementGamepad) {
+            let axes = movementGamepad.axes;
+            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
+            this._velocity.x = movementSpeed * axes[2];//Left/Right
+
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        if(rotationGamepad) {
+            let verticalForce = rotationGamepad.axes[3];
+            let rotationForce = rotationGamepad.axes[2];
+            if(Math.abs(rotationForce) > 0.5) {
+                if(!this._snapRotationTriggered) {
+                    this._snapRotationTriggered = true; 
+                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
+                }
+            } else {
+                this._snapRotationTriggered = false;
+            }
+            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
+                this._velocity.y = -1 * movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+        } else {
+            this._snapRotationTriggered = false;
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+}
+
+const InteractableStates = {
+    IDLE: "IDLE",
+    HOVERED: "HOVERED",
+    SELECTED: "SELECTED"
+};
+
+const HandTools = {
+    ACTIVE: "EDIT",
+    COPY_PASTE: "COPY_PASTE",
+    DELETE: "DELETE",
+    EDIT: "EDIT",
+    ROTATE: "ROTATE",
+    SCALE: "SCALE",
+    TRANSLATE: "TRANSLATE",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class CopyPasteControlsHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._assetAlreadyPastedByTrigger = false;
+        this._assetAlreadyPastedByGrip = false;
+        this._copiedAsset;
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            if(this._copiedAsset) this._clear();
+            this._assetAlreadyPastedByTrigger = false;
+            this._assetAlreadyPastedByGrip = false;
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            if(this._copiedAsset) this._clear();
+            this._assetAlreadyPastedByTrigger = false;
+            this._assetAlreadyPastedByGrip = false;
+        });
+    }
+
+    copy(asset) {
+        if(this._copiedAsset) this._clear();
+        this._copiedAsset = asset;
+        this._previewAsset = asset.preview();
+        UserController$1.hands[Hands.LEFT].attach(this._previewAsset.getObject());
+        UserController$1.hands[Hands.RIGHT].add(this._previewAsset.getObject());
+    }
+
+    _paste() {
+        this._previewAsset.clone(
+            this._copiedAsset.visualEdit);
+        this._assetAlreadyPastedByGrip = true;
+    }
+
+    checkPlacement(controller) {
+        if(!this._copiedAsset) return;
+        let raycaster = controller['raycaster'];
+        raycaster.far = Infinity;
+        let isPressed = controller['isPressed'];
+        let intersections = raycaster.intersectObjects(ProjectHandler$1.getObjects(), true);
+        if(this._assetAlreadyPastedByTrigger) {
+            if(isPressed) return;
+            this._assetAlreadyPastedByTrigger = false;
+        }
+        if(intersections.length > 0) {
+            controller['closestPoint'] = intersections[0].point;
+            if(isPressed && this._copiedAsset) {
+                let clonedAsset = this._copiedAsset.clone();
+                clonedAsset.getEditorHelper().place(intersections[0]);
+                this._assetAlreadyPastedByTrigger = true;
+            }
+        }
+    }
+
+    checkGripPlacement(isControllerPressed) {
+        if(!this._copiedAsset) return;
+        if(isControllerPressed != this._assetAlreadyPastedByGrip) {
+            if(isControllerPressed) this._paste();
+            else this._assetAlreadyPastedByGrip = false;
+        }
+    }
+
+    _clear() {
+        this._previewAsset.removeFromScene();
+        this._copiedAsset = null;
+        this._previewAsset = null;
+    }
+
+    hasCopiedObject() {
+        return this._copiedAsset;
+    }
+
+}
+
+let copyPasteControlsHandler = new CopyPasteControlsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class InteractableHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._interactables = new Set();
+        this._hoveredInteractables = {};
+        this._selectedInteractables = {};
+        this._toolInteractables = {};
+        this._toolInteractables[HandTools.EDIT] = new Set();
+        this._toolInteractables[HandTools.COPY_PASTE] = new Set();
+        this._toolInteractables[HandTools.DELETE] = new Set();
+        this._toolInteractables[HandTools.TRANSLATE] = new Set();
+        this._toolInteractables[HandTools.ROTATE] = new Set();
+        this._toolInteractables[HandTools.SCALE] = new Set();
+        this._handTool = HandTools.EDIT;
+        this._addInteractable = this.addInteractable;
+        this._addInteractables = this.addInteractables;
+        this._removeInteractable = this.removeInteractable;
+        this._removeInteractables = this.removeInteractables;
+        this.addInteractable = () => {};
+        this.addInteractables = () => {};
+        this.removeInteractable = () => {};
+        this.removeInteractables = () => {};
+    }
+
+    init() {
+        if(global$1.deviceType == "XR") {
+            this.update = this._updateForXREdit;
+            this._setupXRSubscription();
+        } else if(global$1.deviceType == "POINTER") {
+            this.update = this._updateForPointer;
+        } else if(global$1.deviceType == "MOBILE") {
+            this.update = this._updateForMobile;
+        }
+        this.addInteractable = this._addInteractable;
+        this.addInteractables = this._addInteractables;
+        this.removeInteractable = this._removeInteractable;
+        this.removeInteractables = this._removeInteractables;
+    }
+
+    addInteractable(interactable, tool) {
+        if(!tool) {
+            this._interactables.add(interactable);
+        } else {
+            this._toolInteractables[tool].add(interactable);
+        }
+    }
+
+    addInteractables(interactables, tool) {
+        if(!tool) {
+            interactables.forEach((interactable) => {
+                this._interactables.add(interactable);
+            });
+        } else {
+            interactables.forEach((interactable) => {
+                this._toolInteractables[tool].add(interactable);
+            });
+        }
+    }
+
+    removeInteractable(interactable, tool) {
+        if(!tool) {
+            this._interactables.delete(interactable);
+            interactable.reset();
+        } else {
+            this._toolInteractables[tool].delete(interactable);
+            interactable.reset();
+        }
+    }
+
+    removeInteractables(interactables, tool) {
+        if(!tool) {
+            interactables.forEach((interactable) => {
+                this._interactables.delete(interactable);
+                interactable.reset();
+            });
+        } else {
+            interactables.forEach((interactable) => {
+                this._toolInteractables[tool].delete(interactable);
+                interactable.reset();
+            });
+        }
+    }
+
+    reset() {
+        this._interactables.forEach(interactable => { interactable.reset(); });
+        this._interactables = new Set();
+        this._hoveredInteractables = {};
+        this._selectedInteractables = {};
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class AudioHandler {
+    init() {
+        if(this._audioListener) return;
+
+        this._audioListener = new THREE.AudioListener();
+        this._addEventListeners();
+        global$1.camera.add(this._audioListener);
+    }
+
+    _addEventListeners() {
+        //XR Event Listeners
+        global$1.renderer.xr.addEventListener("sessionstart", () => {
+            this._audioListener.context.resume();
+        });
+        global$1.renderer.xr.addEventListener("sessionend", () => {
+            this._audioListener.context.suspend();
+        });
+    }
+
+}
+
+let audioHandler = new AudioHandler();
 
 class VRButton {
 
@@ -8199,11 +8856,11 @@ class SessionHandler {
     }
 
     enableOrbit() {
-        this._controls.enableRotate = true;
+        if(this._controls) this._controls.enableRotate = true;
     }
 
     disableOrbit() {
-        this._controls.enableRotate = false;
+        if(this._controls) this._controls.enableRotate = false;
     }
 
     getControlsUpdateNumber() {
@@ -8216,834 +8873,6 @@ class SessionHandler {
 }
 
 let sessionHandler = new SessionHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class PointerInteractable extends Interactable {
-    constructor(threeObj, actionFunc, canDisableOrbit, canDisplayPointer, specificOption, draggableActionFunc) {
-        super(threeObj);
-        this._actionFunc = actionFunc;
-        this._canDisableOrbit = global$1.deviceType != "XR" && canDisableOrbit != false;
-        this.canDisplayPointer = global$1.deviceType == "XR" && canDisplayPointer != false;
-        this.specificOption = specificOption;
-        this._draggableActionFunc = draggableActionFunc;
-    }
-
-    isOnlyGroup() {
-        return this._actionFunc == null && !this.canDisplayPointer && !this._canDisableOrbit;
-    }
-
-    isDraggable() {
-        return this._draggableActionFunc != null;
-    }
-
-    _determineAndSetState() {
-        if(this._selectedOwners.size > 0) {
-            this.setState(InteractableStates.SELECTED);
-        } else if(this._hoveredOwners.size > 0) {
-            this.setState(InteractableStates.HOVERED);
-        } else {
-            this.setState(InteractableStates.IDLE);
-        }
-    }
-
-    addHoveredBy(owner, closestPoint) {
-        if(this._hoveredOwners.has(owner)) {
-            return;
-        } else if(this._selectedOwners.has(owner)) {
-            this.triggerAction(closestPoint);
-        }
-        this._hoveredOwners.add(owner);
-        if(this._selectedOwners.size == 0) {
-            this.setState(InteractableStates.HOVERED);
-        }
-    }
-
-    removeHoveredBy(owner) {
-        this._hoveredOwners.delete(owner);
-        this._determineAndSetState();
-    }
-
-    addSelectedBy(owner, closestPoint) {
-        this._selectedOwners.add(owner);
-        this.setState(InteractableStates.SELECTED);
-        if(this._canDisableOrbit) sessionHandler.disableOrbit();
-        if(this._draggableActionFunc) this._draggableActionFunc(closestPoint);
-    }
-
-    removeSelectedBy(owner) {
-        this._selectedOwners.delete(owner);
-        this._determineAndSetState();
-        if(this._canDisableOrbit) sessionHandler.enableOrbit();
-    }
-
-    triggerAction(closestPoint) {
-        if(this._actionFunc != null) {
-            this._actionFunc(closestPoint);
-        }
-    }
-
-    triggerDraggableAction(closestPoint) {
-        if(this._draggableActionFunc != null) {
-            this._draggableActionFunc(closestPoint);
-        }
-    }
-
-    updateAction(newActionFunc) {
-        this._actionFunc = newActionFunc;
-    }
-
-    static emptyGroup() {
-        return new PointerInteractable(null, null, false, false);
-    }
-
-    static createDraggable(threeObj, actionFunc, draggableActionFunc) {
-        return new PointerInteractable(threeObj, actionFunc, true, true, null, draggableActionFunc);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-  
-class Avatar {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        let verticalOffset = params['Vertical Offset'] || 0;
-        let focusCamera = params['Focus Camera'] || false;
-        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
-        this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-        this._pivotPoint = new THREE.Object3D();
-        this._pivotPoint.position.setY(verticalOffset);
-        this._createBoundingBox(params);
-        //this._pivotPoint.position.setY(1.3);
-
-        this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
-        if(focusCamera) {
-            global$1.cameraFocus.position.fromArray(cameraFocalPoint);
-        }
-    }
-
-    _createBoundingBox(params) {
-        let boundingBoxSize = (params['Bounding Box Size'])
-            ? params['Bounding Box Min']
-            : [0.2, 0.8, 0.2];
-        let boundingBoxCenter = (params['Bounding Box Center'])
-            ? params['Bounding Box Max']
-            : [0, 0.4, 0];
-        let boundingBoxQuaternion = (params['Bounding Box Quaternion'])
-            ? params['Bounding Box Quaternion']
-            : [0, 0, 0, 0];
-        let geometry = new THREE.BoxGeometry(
-            boundingBoxSize[0],
-            boundingBoxSize[1],
-            boundingBoxSize[2],
-        );
-        let material = new THREE.MeshBasicMaterial({ wireframe: true });
-        this._boundingBox = new THREE.Mesh(geometry, material);
-        this._boundingBox.position.fromArray(boundingBoxCenter);
-        this._boundingBox.quaternion.fromArray(boundingBoxQuaternion);
-        //this._pivotPoint.add(this._boundingBox);
-    }
-
-    _createMesh(filename) {
-        if(/\.glb$/.test(filename)) {
-            let gltfLoader = new GLTFLoader();
-            gltfLoader.load(filename, (gltf) => {
-                gltf.scene.rotateY(Math.PI);
-                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
-                    let hands = new Set();
-                    gltf.scene.traverse((child) => {
-                        if(child.name.toLowerCase().includes("hand")) {
-                            hands.add(child);
-                        }
-                    });
-                    hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.7);
-                }
-                this._pivotPoint.add(gltf.scene);
-                this._saveOriginalTransparencyStates();
-                this._dimensions = 3;
-            }, () => {}, (error) => {
-                console.log(error);
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
-            new THREE.TextureLoader().load(filename, (texture) => {
-                let width = texture.image.width;
-                let height = texture.image.height;
-                if(width > height) {
-                    let factor = 0.3 / width;
-                    width = 0.3;
-                    height *= factor;
-                } else {
-                    let factor = 0.3 / height;
-                    height = 0.3;
-                    width *= factor;
-                }
-                let material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                });
-                let geometry = new THREE.PlaneGeometry(width, height);
-                geometry.rotateY(Math.PI);
-                let mesh = new THREE.Mesh(geometry, material);
-                this._pivotPoint.add(mesh);
-                this._saveOriginalTransparencyStates();
-                //let sprite = new THREE.Sprite(material);
-                //this._pivotPoint.add(sprite);
-                this._dimensions = 2;
-            }, () => {}, () => {
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else {
-            if(filename != this._defaultURL) {
-                this._createMesh(this._defaultURL);
-            } else {
-                console.error("Default avatar URL is invalid :(");
-            }
-        }
-    }
-
-    _saveOriginalTransparencyStates() {
-        this._pivotPoint.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.userData['transparent'] = material.transparent;
-                        material.userData['opacity'] = material.opacity;
-                    }
-                } else {
-                    let material = node.material;
-                    material.userData['transparent'] = material.transparent;
-                    material.userData['opacity'] = material.opacity;
-                }
-            }
-        });
-    }
-
-    fade(percent) {
-        this._isFading = true;
-        this._pivotPoint.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        if(!material.transparent) material.transparent = true;
-                        material.opacity = material.userData['opacity']*percent;
-                    }
-                } else {
-                    let material = node.material;
-                    if(!material.transparent) material.transparent = true;
-                    material.opacity = material.userData['opacity'] * percent;
-                }
-            }
-        });
-    }
-
-    endFade() {
-        if(!this._isFading) return;
-        this._isFading = false;
-        this._pivotPoint.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.transparent = material.userData['transparent'];
-                        material.opacity = material.userData['opacity'];
-                    }
-                } else {
-                    let material = node.material;
-                    material.transparent = material.userData['transparent'];
-                    material.opacity = material.userData['opacity'];
-                }
-            }
-        });
-    }
-
-    lookAtLocal(point) {
-        if(this._pivotPoint.parent) {
-            vector3s$1[0].copy(point);
-            this._pivotPoint.parent.localToWorld(vector3s$1[0]);
-            this._pivotPoint.lookAt(vector3s$1[0]);
-        }
-    }
-
-    updateSourceUrl(url) {
-        while(this._pivotPoint.children[0]) {
-            let child = this._pivotPoint.children[0];
-            this._pivotPoint.remove(child);
-            fullDispose(child, true);
-        }
-        this._createMesh(url);
-    }
-
-    getObject() {
-        return this._pivotPoint;
-    }
-
-    addToScene(scene) {
-        scene.add(this._pivotPoint);
-    }
-
-    removeFromScene() {
-        if(this._pivotPoint.parent) {
-            this._pivotPoint.parent.remove(this._pivotPoint);
-        }
-    }
-}
-
-const CubeSides = {
-    FRONT: "FRONT",
-    BACK: "BACK",
-    LEFT: "LEFT",
-    RIGHT: "RIGHT",
-    TOP: "TOP",
-    BOTTOM: "BOTTOM",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const RESOLUTION = 1024;
-const SIDES$1 = {};
-for(let side in CubeSides) {
-    let canvas = document.createElement('canvas');
-    canvas.width = RESOLUTION;
-    canvas.height = RESOLUTION;
-    SIDES$1[side] = {
-        canvas: canvas,
-        context: canvas.getContext("2d"),
-    };
-}
-
-class Skybox {
-    init(scene) {
-        this._scene = scene;
-        this._scene.background = new CubeTexture$1([
-            SIDES$1[CubeSides.RIGHT].canvas,
-            SIDES$1[CubeSides.LEFT].canvas,
-            SIDES$1[CubeSides.TOP].canvas,
-            SIDES$1[CubeSides.BOTTOM].canvas,
-            SIDES$1[CubeSides.FRONT].canvas,
-            SIDES$1[CubeSides.BACK].canvas,
-        ]);
-    }
-
-    setSides(assetIds) {
-        for(let side in assetIds) {
-            this.setSide(side, assetIds[side]);
-        }
-    }
-
-    setSide(side, assetId) {
-        let image = (assetId)
-            ? libraryHandler.getImage(assetId)
-            : null;
-        this._drawImage(side, image);
-        this._scene.background.needsUpdate = true;
-    }
-
-    deleteSide(side) {
-        this._drawImage(side);
-        this._scene.background.needsUpdate = true;
-    }
-
-    //https://stackoverflow.com/a/23105310
-    _drawImage(side, image) {
-        let canvas = SIDES$1[side]['canvas'];
-        let context = SIDES$1[side]['context'];
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        if(!image) return;
-        let ratio  = RESOLUTION / Math.max(image.width, image.height);
-        let centerShift_x = (canvas.width - image.width*ratio) / 2;
-        let centerShift_y = (canvas.height - image.height*ratio) / 2;
-        context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
-            centerShift_y, image.width * ratio, image.height * ratio);
-    }
-}
-
-let skybox = new Skybox();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class SettingsHandler {
-    constructor() {
-        this.settings = {
-            "Skybox": {},
-            "User Settings": {
-                "Movement Speed": 3,
-                "Enable Flying": true,
-            },
-        };
-        this.editorSettings = {
-            "Movement Speed": 3,
-            "Enable Flying": true,
-            "Swap Joysticks": false,
-        };
-        this.settings['Skybox'][CubeSides.FRONT] = null;
-        this.settings['Skybox'][CubeSides.BACK] = null;
-        this.settings['Skybox'][CubeSides.LEFT] = null;
-        this.settings['Skybox'][CubeSides.RIGHT] = null;
-        this.settings['Skybox'][CubeSides.TOP] = null;
-        this.settings['Skybox'][CubeSides.BOTTOM] = null;
-    }
-
-    init(scene) {
-        this._scene = scene;
-        skybox.init(scene);
-    }
-
-    load(settings) {
-        if(!settings) {
-            for(let side in this.settings['Skybox']) {
-                this.settings['Skybox'][side] = null;
-            }
-            this.settings['User Settings']['Movement Speed'] = 3;
-            this.settings['User Settings']['Enable Flying'] = true;
-        } else {
-            this.settings = settings;
-            if(!this.settings['User Settings']) {
-                this.settings['User Settings'] = {
-                    "Movement Speed": 3,
-                    "Enable Flying": true,
-                };
-            }
-        }
-        skybox.setSides(this.settings['Skybox']);
-    }
-
-    reset() {
-        this.load();
-    }
-
-    getSkyboxTextures() {
-        let textures = {};
-        let skybox = this.settings['Skybox'];
-        for(let side in skybox) {
-            if(skybox[side]) {
-                textures[side] = libraryHandler.getTexture(skybox[side]);
-            } else {
-                textures[side] = Textures.searchIcon;
-            }
-        }
-        return textures;
-    }
-
-    setSkyboxSide(side, assetId, ignorePublish) {
-        //Should validate image size is square before setting Skybox side
-        this.settings['Skybox'][side] = assetId;
-        skybox.setSide(side, assetId);
-        if(!ignorePublish)
-            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
-                settings: this.settings,
-                keys: ['Skybox', side],
-            });
-    }
-
-    getEditorSettings() {
-        return this.editorSettings;
-    }
-
-    setEditorSetting(key, value) {
-        if(key in this.editorSettings) this.editorSettings[key] = value;
-    }
-
-    getUserSettings() {
-        return this.settings['User Settings'];
-    }
-
-    setUserSetting(key, value, ignorePublish) {
-        if(!(key in this.settings['User Settings'])) return;
-
-        this.settings['User Settings'][key] = value;
-        if(!ignorePublish)
-            pubSub.publish(this._id, PubSubTopics$1.SETTINGS_UPDATED, {
-                settings: this.settings,
-                keys: ['User Settings', key],
-            });
-    }
-
-    getMovementSpeed() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Movement Speed']
-            : this.settings['User Settings']['Movement Speed'];
-    }
-
-    isFlyingEnabled() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Enable Flying']
-            : this.settings['User Settings']['Enable Flying'];
-    }
-
-    areJoysticksSwapped() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Swap Joysticks']
-            : false;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
-    }
-
-    getSettings() {
-        return this.settings;
-    }
-
-}
-
-let settingsHandler = new SettingsHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class BasicMovement {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        this._avatar = params['Avatar'];
-        this._userObj = params['User Object'];
-        this._velocity = new THREE.Vector3();
-        this._verticalVelocity = 0;
-        this._worldVelocity = new THREE.Vector3();
-        this._snapRotationTriggered = false;
-    }
-
-    _setupMobileFlyingButtons() {
-        this._mobileUp = false;
-        this._mobileDown = false;
-        let upButton = document.getElementById("mobile-flying-up-button");
-        let downButton = document.getElementById("mobile-flying-down-button");
-        upButton.addEventListener('touchstart',
-            () => { this._mobileUp = true; });
-        upButton.addEventListener('touchend',
-            () => { this._mobileUp = false; });
-        downButton.addEventListener('touchstart',
-            () => { this._mobileDown = true; });
-        downButton.addEventListener('touchend',
-            () => { this._mobileDown = false; });
-    }
-
-    _moveForward(velocity, timeDelta) {
-        // move forward parallel to the xz-plane
-        // assumes camera.up is y-up
-        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s$1[0].crossVectors(this._userObj.up, vector3s$1[0]);
-        // not using addScaledVector because we use vector3s[0] later
-        vector3s$1[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s$1[0]);
-        vector3s$1[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s$1[0]);
-    };
-
-    _moveRight(velocity, timeDelta) {
-        vector3s$1[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s$1[0].y = 0;
-        vector3s$1[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s$1[0]);
-        vector3s$1[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s$1[0]);
-    };
-
-    _moveUp(velocity, timeDelta) {
-        this._worldVelocity.setY(velocity);
-        vector3s$1[0].fromArray([0, velocity * timeDelta, 0]);
-        this._userObj.position.add(vector3s$1[0]);
-    }
-
-    _snapLeft() {
-        this._userObj.rotateY(Math.PI/8);
-    }
-
-    _snapRight() {
-        this._userObj.rotateY(-Math.PI/8);
-    }
-
-    getWorldVelocity() {
-        return this._worldVelocity;
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updatePositionVR(timeDelta);
-            this.update = this._updatePositionVR;
-        } else if(global$1.deviceType == "POINTER") {
-            this._updatePosition(timeDelta);
-            this.update = this._updatePosition;
-        } else if(global$1.deviceType == "MOBILE") {
-            this._setupMobileFlyingButtons();
-            this._updatePositionMobile(timeDelta);
-            this.update = this._updatePositionMobile;
-        }
-    }
-
-    _updatePosition(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        // Decrease the velocity.
-        let slowdownFactor = (1 - timeDelta) * 0.88;
-        this._velocity.x *= slowdownFactor;
-        if(flightEnabled)
-            this._verticalVelocity *= slowdownFactor;
-        this._velocity.z *= slowdownFactor;
-
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            if (inputHandler.isKeyCodePressed("ArrowUp")
-                    || inputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowDown")
-                    || inputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowLeft")
-                    || inputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowRight")
-                    || inputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += movementSpeed / 4;
-            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
-                    != inputHandler.isKeyCodePressed("ShiftLeft")) {
-                this._verticalVelocity =
-                    (inputHandler.isKeyCodePressed("Space"))
-                        ? movementSpeed
-                        : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s$1[1].copy(vector3s$1[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s$1[1].add(vector3s$1[0]);
-            if(vector3s$1[1].length() > 0.001) {
-                vector3s$1[1].multiplyScalar(-2);
-                this._avatar.lookAtLocal(vector3s$1[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionMobile(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        this._velocity.x = 0;
-        if(flightEnabled)
-            this._verticalVelocity *= (1 - timeDelta) * 0.88;
-        this._velocity.z = 0;
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            let joystickAngle = inputHandler.getJoystickAngle();
-            let joystickDistance = inputHandler.getJoystickDistance();
-            let movingDistance = movementSpeed * joystickDistance;
-            this._velocity.x = movingDistance * Math.cos(joystickAngle);
-            this._velocity.z = movingDistance * Math.sin(joystickAngle);
-            if(flightEnabled && this._mobileUp != this._mobileDown) {
-                this._verticalVelocity = (this._mobileUp)
-                    ? movementSpeed
-                    : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s$1[1].copy(vector3s$1[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s$1[1].add(vector3s$1[0]);
-            if(vector3s$1[1].length() > 0.001) {
-                vector3s$1[1].multiplyScalar(-2);
-                this._avatar.lookAtLocal(vector3s$1[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionVR(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        let movementGamepad;
-        let rotationGamepad;
-        if(settingsHandler.areJoysticksSwapped()) {
-            movementGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
-            rotationGamepad = inputHandler.getXRGamepad(Hands.LEFT);
-        } else {
-            movementGamepad = inputHandler.getXRGamepad(Hands.LEFT);
-            rotationGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
-        }
-        this._velocity.x = 0;
-        this._velocity.y = 0;
-        this._velocity.z = 0;
-        if(movementGamepad) {
-            let axes = movementGamepad.axes;
-            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
-            this._velocity.x = movementSpeed * axes[2];//Left/Right
-
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        if(rotationGamepad) {
-            let verticalForce = rotationGamepad.axes[3];
-            let rotationForce = rotationGamepad.axes[2];
-            if(Math.abs(rotationForce) > 0.5) {
-                if(!this._snapRotationTriggered) {
-                    this._snapRotationTriggered = true; 
-                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
-                }
-            } else {
-                this._snapRotationTriggered = false;
-            }
-            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
-                this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y, timeDelta);
-            }
-        } else {
-            this._snapRotationTriggered = false;
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class InteractableHandler {
-    constructor() {
-        this._id = uuidv4();
-        this._interactables = new Set();
-        this._hoveredInteractables = {};
-        this._selectedInteractables = {};
-        this._toolInteractables = {};
-        this._toolInteractables[HandTools.EDIT] = new Set();
-        this._toolInteractables[HandTools.COPY_PASTE] = new Set();
-        this._toolInteractables[HandTools.DELETE] = new Set();
-        this._handTool = HandTools.EDIT;
-        this._addInteractable = this.addInteractable;
-        this._addInteractables = this.addInteractables;
-        this._removeInteractable = this.removeInteractable;
-        this._removeInteractables = this.removeInteractables;
-        this.addInteractable = () => {};
-        this.addInteractables = () => {};
-        this.removeInteractable = () => {};
-        this.removeInteractables = () => {};
-    }
-
-    init() {
-        if(global$1.deviceType == "XR") {
-            this.update = this._updateForXREdit;
-            this._setupXRSubscription();
-        } else if(global$1.deviceType == "POINTER") {
-            this.update = this._updateForPointer;
-        } else if(global$1.deviceType == "MOBILE") {
-            this.update = this._updateForMobile;
-        }
-        this.addInteractable = this._addInteractable;
-        this.addInteractables = this._addInteractables;
-        this.removeInteractable = this._removeInteractable;
-        this.removeInteractables = this._removeInteractables;
-    }
-
-    addInteractable(interactable, tool) {
-        if(!tool) {
-            this._interactables.add(interactable);
-        } else {
-            this._toolInteractables[tool].add(interactable);
-        }
-    }
-
-    addInteractables(interactables, tool) {
-        if(!tool) {
-            interactables.forEach((interactable) => {
-                this._interactables.add(interactable);
-            });
-        } else {
-            interactables.forEach((interactable) => {
-                this._toolInteractables[tool].add(interactable);
-            });
-        }
-    }
-
-    removeInteractable(interactable, tool) {
-        if(!tool) {
-            this._interactables.delete(interactable);
-            interactable.reset();
-        } else {
-            this._toolInteractables[tool].delete(interactable);
-            interactable.reset();
-        }
-    }
-
-    removeInteractables(interactables, tool) {
-        if(!tool) {
-            interactables.forEach((interactable) => {
-                this._interactables.delete(interactable);
-                interactable.reset();
-            });
-        } else {
-            interactables.forEach((interactable) => {
-                this._toolInteractables[tool].delete(interactable);
-                interactable.reset();
-            });
-        }
-    }
-
-    reset() {
-        this._interactables.forEach(interactable => { interactable.reset(); });
-        this._interactables = new Set();
-        this._hoveredInteractables = {};
-        this._selectedInteractables = {};
-    }
-
-}
 
 const FileTypes$1 = {
     jpg: "jpg",
@@ -9196,6 +9025,181 @@ class UploadHandler {
 }
 
 let uploadHandler = new UploadHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class Interactable {
+    constructor(threeObj) {
+        this._threeObj = threeObj;
+        this._state = InteractableStates.IDLE;
+        this.children = new Set();
+        this._hoveredOwners = new Set();
+        this._selectedOwners = new Set();
+    }
+
+    isOnlyGroup() {
+        console.error("Interactable.isOnlyGroup() should be overridden");
+        return;
+    }
+
+    getThreeObj() {
+        return this._threeObj;
+    }
+
+    getState() {
+        return this._state;
+    }
+
+    setState(newState) {
+        if(this._state != newState) {
+            this._state = newState;
+            if(this._threeObj.states && newState in this._threeObj.states) {
+                this._threeObj.setState(newState);
+            }
+        }
+    }
+
+    addHoveredBy(owner) {
+        console.error("Interactable.addHoveredBy(owner) should be overridden");
+    }
+
+    removeHoveredBy(owner) {
+        console.error("Interactable.removeHoveredBy(owner) should be overridden");
+    }
+
+    addSelectedBy(owner) {
+        console.error("Interactable.addSelectedBy(owner) should be overridden");
+    }
+
+    removeSelectedBy(owner) {
+        console.error("Interactable.removeSelectedBy(owner) should be overridden");
+    }
+
+    reset() {
+        this._hoveredOwners.clear();
+        this._selectedOwners.clear();
+        this.setState(InteractableStates.IDLE);
+        this.children.forEach((interactable) => {
+            interactable.reset();
+        });
+    }
+
+    addChild(interactable) {
+        if(interactable.parent) interactable.parent.removeChild(interactable);
+        this.children.add(interactable);
+        interactable.parent = this;
+    }
+
+    addChildren(interactables) {
+        interactables.forEach((interactable) => {
+            this.addChild(interactable);
+        });
+    }
+
+    removeChild(interactable) {
+        this.children.delete(interactable);
+        interactable.parent = null;
+    }
+
+    removeChildren(interactables) {
+        interactables.forEach((interactable) => {
+            this.removeChild(interactable);
+        });
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class PointerInteractable extends Interactable {
+    constructor(threeObj, actionFunc, canDisableOrbit, canDisplayPointer, specificOption, draggableActionFunc) {
+        super(threeObj);
+        this._actionFunc = actionFunc;
+        this._canDisableOrbit = global$1.deviceType != "XR" && canDisableOrbit != false;
+        this.canDisplayPointer = global$1.deviceType == "XR" && canDisplayPointer != false;
+        this.specificOption = specificOption;
+        this._draggableActionFunc = draggableActionFunc;
+    }
+
+    isOnlyGroup() {
+        return this._actionFunc == null && !this.canDisplayPointer && !this._canDisableOrbit;
+    }
+
+    isDraggable() {
+        return this._draggableActionFunc != null;
+    }
+
+    _determineAndSetState() {
+        if(this._selectedOwners.size > 0) {
+            this.setState(InteractableStates.SELECTED);
+        } else if(this._hoveredOwners.size > 0) {
+            this.setState(InteractableStates.HOVERED);
+        } else {
+            this.setState(InteractableStates.IDLE);
+        }
+    }
+
+    addHoveredBy(owner, closestPoint) {
+        if(this._hoveredOwners.has(owner)) {
+            return;
+        } else if(this._selectedOwners.has(owner)) {
+            this.triggerAction(closestPoint);
+        }
+        this._hoveredOwners.add(owner);
+        if(this._selectedOwners.size == 0) {
+            this.setState(InteractableStates.HOVERED);
+        }
+    }
+
+    removeHoveredBy(owner) {
+        this._hoveredOwners.delete(owner);
+        this._determineAndSetState();
+    }
+
+    addSelectedBy(owner, closestPoint) {
+        this._selectedOwners.add(owner);
+        this.setState(InteractableStates.SELECTED);
+        if(this._canDisableOrbit) sessionHandler.disableOrbit();
+        if(this._draggableActionFunc) this._draggableActionFunc(closestPoint);
+    }
+
+    removeSelectedBy(owner) {
+        this._selectedOwners.delete(owner);
+        this._determineAndSetState();
+        if(this._canDisableOrbit) sessionHandler.enableOrbit();
+    }
+
+    triggerAction(closestPoint) {
+        if(this._actionFunc != null) {
+            this._actionFunc(closestPoint);
+        }
+    }
+
+    triggerDraggableAction(closestPoint) {
+        if(this._draggableActionFunc != null) {
+            this._draggableActionFunc(closestPoint);
+        }
+    }
+
+    updateAction(newActionFunc) {
+        this._actionFunc = newActionFunc;
+    }
+
+    static emptyGroup() {
+        return new PointerInteractable(null, null, false, false);
+    }
+
+    static createDraggable(threeObj, actionFunc, draggableActionFunc) {
+        return new PointerInteractable(threeObj, actionFunc, true, true, null, draggableActionFunc);
+    }
+}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -9530,7 +9534,7 @@ class ThreeMeshUIHelper {
  */
 
 class UndoRedoHandler {
-    constructor() {
+    init() {
         this._currentAction = {};
         this._disableOwners = new Set();
         this._setupButtons();
@@ -11238,6 +11242,11 @@ class TransformControlsHandler {
                 }
             }
         });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let option in this._attachedAssets) {
+                this._detachDeleted(option);
+            }
+        });
     }
 
     _addEventListeners() {
@@ -11396,7 +11405,6 @@ class TransformControlsHandler {
         vector3s$1[1].y = 0;
         vector3s$1[1].setLength(0.2);
         vector3s$1[1].applyAxisAngle(vector3s$1[0], -Math.PI / 4);
-        object.worldToLocal(vector3s$1[1]);
         object.position.add(vector3s$1[1]);
 
         instance.getEditorHelper().roundAttributes(true);
@@ -11488,10 +11496,7 @@ class TransformControlsHandler {
 
     attach(asset, option) {
         option = option || global$1.deviceType;
-        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
-            instance: asset,
-            option: option,
-        });
+        let publishMessage = { instance: asset, option: option };
         this._attachedAssets[option] = asset;
         if(global$1.deviceType == 'XR') {
             this._placingObject[option] = true;
@@ -11499,6 +11504,7 @@ class TransformControlsHandler {
             if(asset == this._attachedAssets[otherOption]) {
                 UserController$1.hands[option].remove(asset.getObject());
                 UserController$1.hands[otherOption].remove(asset.getObject());
+                publishMessage.twoHandScaling = true;
                 this._twoHandScaling = true;
                 this._initialScalingDistance =
                     UserController$1.getDistanceBetweenHands();
@@ -11509,6 +11515,8 @@ class TransformControlsHandler {
                 UserController$1.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
+            publishMessage.position = asset.getPosition();
+            publishMessage.rotation = asset.getRotation();
             undoRedoHandler.disable(this._id);
         } else {
             this._transformControls.attach(asset.getObject());
@@ -11517,30 +11525,31 @@ class TransformControlsHandler {
             $('#' + this._transformControls.mode + "-button")
                 .addClass("selected");
         }
+        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED,publishMessage);
     }
 
     detach(option) {
         option = option || global$1.deviceType;
+        let assetHelper, preState, postState;
         let asset = this._attachedAssets[option];
         if(!asset) return;
-        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
-            instance: asset,
-            option: option,
-        });
+        let publishMessage = { instance: asset, option: option };
         if(global$1.deviceType == 'XR') {
             UserController$1.hands[option].remove(asset.getObject());
             let otherOption = this._getOtherHand(option);
             if(this._attachedAssets[otherOption] == asset) {
                 UserController$1.hands[otherOption].attach(asset.getObject());
+                publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
-                let assetHelper = asset.getEditorHelper();
+                assetHelper = asset.getEditorHelper();
                 assetHelper.roundAttributes(true);
-                let preState = this._preTransformStates[asset.getId()];
-                let postState = assetHelper.getObjectTransformation();
-                assetHelper.setObjectTransformation(preState, postState);
+                preState = this._preTransformStates[asset.getId()];
+                postState = assetHelper.getObjectTransformation();
             }
+            publishMessage.position = asset.getPosition();
+            publishMessage.rotation = asset.getRotation();
             if(Object.keys(this._attachedAssets).length == 1)
                 undoRedoHandler.enable(this._id);
         }
@@ -11548,6 +11557,9 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
         this._transformControls.detach();
         $("#transform-controls").addClass("hidden");
+        pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED,publishMessage);
+        if(assetHelper && preState && postState)
+            assetHelper.setObjectTransformation(preState, postState);
     }
 
     _detachDeleted(option) {
@@ -11646,6 +11658,8 @@ class PointerInteractableHandler extends InteractableHandler {
                 this.update = this._updateForXRCopyPaste;
             } else if(tool == HandTools.DELETE) {
                 this.update = this._updateForXRDelete;
+            } else {
+                this.update = this._updateForXR;
             }
         });
     }
@@ -11919,7 +11933,7 @@ class PointerInteractableHandler extends InteractableHandler {
 
         this._updateInteractables(controllers);
         if(controllers[Hands.RIGHT].closestPoint == null)
-            CopyPasteControlsHandler$1.checkPlacement(controllers[Hands.RIGHT]);
+            copyPasteControlsHandler.checkPlacement(controllers[Hands.RIGHT]);
         for(let option in controllers) {
             this._updateCursor(controllers[option]);
         }
@@ -12033,6 +12047,8 @@ class UserHand {
         this._hand = hand;
         this._isGripPressed = false;
         this._vector3 = new Vector3();
+        this._euler = new Euler();
+        this._quaternion = new Quaternion();
 
         this._setup();
     }
@@ -12053,10 +12069,15 @@ class UserHand {
     }
 
     getWorldRotation() {
-        this._controller.getWorldQuaternion(quaternion);
-        quaternion.normalize();
-        euler.setFromQuaternion(quaternion);
-        return euler;
+        this._controller.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._controller.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
     }
 
     add(threeObj) {
@@ -12101,6 +12122,7 @@ const UserMessageCodes = {
 const AVATAR_KEY = "DigitalBacon:Avatar";
 const FADE_START = 0.6;
 const FADE_END = 0.2;
+//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
 const FADE_RANGE = FADE_START - FADE_END;
 const EPSILON = 0.00000000001;
   
@@ -12109,6 +12131,7 @@ class UserController {
         if(params == null) {
             params = {};
         }
+        this._id = uuidv4();
         this._dynamicAssets = [];
         this._userObj = params['User Object'];
         this._flightEnabled = params['Flight Enabled'] || false;
@@ -12117,6 +12140,7 @@ class UserController {
         this._avatarFadeUpdateNumber = 0;
 
         this._setup();
+        this._addSubscriptions();
     }
 
     _setup() {
@@ -12139,6 +12163,16 @@ class UserController {
         this._dynamicAssets.push(this._basicMovement);
     }
 
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics$1.USER_SCALE_UPDATED, (scale) => {
+            this._userObj.scale.set(scale, scale, scale);
+        });
+    }
+
+    getId() {
+        return this._id;
+    }
+
     getAvatarUrl() {
         return this._avatarUrl;
     }
@@ -12159,9 +12193,11 @@ class UserController {
 
     _pushXRDataForRTC(data) {
         let codes = 0;
+        let userScale = settingsHandler.getUserScale();
         global$1.camera.getWorldPosition(vector3s$1[0]);
         this._userObj.getWorldPosition(vector3s$1[1]);
-        let position = vector3s$1[0].sub(vector3s$1[1]).toArray();
+        let position = vector3s$1[0].sub(vector3s$1[1]).divideScalar(userScale)
+            .toArray();
 
         global$1.camera.getWorldQuaternion(quaternion);
         quaternion.normalize();
@@ -12176,7 +12212,8 @@ class UserController {
         for(let hand of [Hands.LEFT, Hands.RIGHT]) {
             let userHand = this.hands[hand];
             if(userHand.isInScene()) {
-                position = userHand.getWorldPosition().sub(vector3s$1[1]);
+                position = userHand.getWorldPosition().sub(vector3s$1[1])
+                    .divideScalar(userScale);
                 rotation = userHand.getWorldRotation().toArray();
                 rotation.pop();
                 data.push(...position.toArray());
@@ -12233,6 +12270,7 @@ class UserController {
         if(cameraDistance > FADE_START * 2) return;
         let diff = cameraDistance - this._avatarFadeCameraDistance;
         if(Math.abs(diff) < EPSILON) return;
+        //Fade Logic Start
         this._avatarFadeCameraDistance = cameraDistance;
         let object = this._avatar.getObject();
         let fadePercent = Math.max(cameraDistance, FADE_END);
@@ -12246,6 +12284,16 @@ class UserController {
         (fadePercent < 1)
             ? this._avatar.fade(fadePercent)
             : this._avatar.endFade();
+        //Fade Logic end
+
+        //Disappear Logic start
+        //let object = this._avatar.getObject();
+        //if(cameraDistance < FADE_MIDDLE) {
+        //    if(object.parent) this._avatar.removeFromScene();
+        //} else if(!object.parent) {
+        //    this._avatar.addToScene(global.cameraFocus);
+        //}
+        //Disappear Logic end
     }
 
     update(timeDelta) {
@@ -12267,75 +12315,160 @@ var UserController$1 = userController;
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class CopyPasteControlsHandler {
-    constructor() {
-        this._id = uuidv4();
-        this._assetAlreadyPastedByTrigger = false;
-        this._assetAlreadyPastedByGrip = false;
-        this._copiedAsset;
-        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
-            if(this._copiedAsset) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
-        });
-    }
+class Box3Helper extends LineSegments {
 
-    copy(asset) {
-        if(this._copiedAsset) this._clear();
-        this._copiedAsset = asset;
-        this._previewAsset = asset.preview();
-        UserController$1.hands[Hands.LEFT].attach(this._previewAsset.getObject());
-        UserController$1.hands[Hands.RIGHT].add(this._previewAsset.getObject());
-    }
+	constructor(box) {
+		super(BoundingBox.geometry, BoundingBox.material);
 
-    _paste() {
-        this._previewAsset.clone(
-            this._copiedAsset.visualEdit);
-        this._assetAlreadyPastedByGrip = true;
-    }
+		this.box = box;
 
-    checkPlacement(controller) {
-        if(!this._copiedAsset) return;
-        let raycaster = controller['raycaster'];
-        raycaster.far = Infinity;
-        let isPressed = controller['isPressed'];
-        let intersections = raycaster.intersectObjects(ProjectHandler$1.getObjects(), true);
-        if(this._assetAlreadyPastedByTrigger) {
-            if(isPressed) return;
-            this._assetAlreadyPastedByTrigger = false;
-        }
-        if(intersections.length > 0) {
-            controller['closestPoint'] = intersections[0].point;
-            if(isPressed && this._copiedAsset) {
-                let clonedAsset = this._copiedAsset.clone();
-                clonedAsset.getEditorHelper().place(intersections[0]);
-                this._assetAlreadyPastedByTrigger = true;
-            }
-        }
-    }
+		this.type = 'Box3Helper';
 
-    checkGripPlacement(isControllerPressed) {
-        if(!this._copiedAsset) return;
-        if(isControllerPressed != this._assetAlreadyPastedByGrip) {
-            if(isControllerPressed) this._paste();
-            else this._assetAlreadyPastedByGrip = false;
-        }
-    }
+		this.geometry.computeBoundingSphere();
 
-    _clear() {
-        this._previewAsset.removeFromScene();
-        this._copiedAsset = null;
-        this._previewAsset = null;
-    }
+	}
 
-    hasCopiedObject() {
-        return this._copiedAsset;
-    }
+	updateMatrixWorld( force ) {
+
+		const box = this.box;
+
+		if ( box.isEmpty() ) return;
+
+		box.getCenter( this.position );
+
+		box.getSize( this.scale );
+
+		this.scale.multiplyScalar( 0.5 );
+
+		super.updateMatrixWorld( force );
+
+	}
 
 }
 
-let copyPasteControlsHandler = new CopyPasteControlsHandler();
-var CopyPasteControlsHandler$1 = copyPasteControlsHandler;
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class GripInteractable extends Interactable {
+    constructor(threeObj, selectedFunc, releasedFunc, draggedFunc, specificOption) {
+        super(threeObj);
+        this._selectedFunc = selectedFunc;
+        this._releasedFunc = releasedFunc;
+        this._draggedFunc = draggedFunc;
+        this.specificOption = specificOption;
+        this._createBoundingObject();
+    }
+
+    isOnlyGroup() {
+        return this._selectedFunc == null && this._releasedFunc == null
+            && this._draggedFunc == null;
+    }
+
+    isDraggable() {
+        return this._draggedFunc != null;
+    }
+
+    _createBoundingObject() {
+        this._boundingBox = new THREE.Box3();
+        this._boundingBoxObj = new Box3Helper(this._boundingBox);
+    }
+
+    _getBoundingObject() {
+        this._boundingBox.setFromObject(this._threeObj);
+        return this._boundingBox;
+    }
+
+    _displayBoundingObject() {
+        global$1.scene.add(this._boundingBoxObj);
+    }
+
+    _hideBoundingObject() {
+        global$1.scene.remove(this._boundingBoxObj);
+    }
+
+    intersectsSphere(sphere) {
+        let boundingBox = this._getBoundingObject();
+        let intersects;
+        if(boundingBox) {
+            intersects = sphere.intersectsBox(boundingBox);
+        } else {
+            intersects = false;
+        }
+        return intersects;
+    }
+
+    // Assumes intersectsSphere(sphere) is called first so we don't update the
+    // bounding box by calling _getBoundingObject()
+    distanceToSphere(sphere) {
+        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s$1[0]));
+    }
+
+    _determineAndSetState() {
+        if(this._selectedOwners.size > 0) {
+            this.setState(InteractableStates.SELECTED);
+            if(this._hoveredOwners.size >= this._selectedOwners.size) {
+                this._displayBoundingObject();
+            } else {
+                this._hideBoundingObject();
+            }
+        } else if(this._hoveredOwners.size > 0) {
+            this.setState(InteractableStates.HOVERED);
+            this._displayBoundingObject();
+        } else {
+            this.setState(InteractableStates.IDLE);
+            this._hideBoundingObject();
+        }
+    }
+
+    addHoveredBy(owner) {
+        if(this._hoveredOwners.has(owner)) {
+            return;
+        }
+        this._hoveredOwners.add(owner);
+        if(this._selectedOwners.size == 0) {
+            this.setState(InteractableStates.HOVERED);
+        }
+        this._displayBoundingObject();
+    }
+
+    removeHoveredBy(owner) {
+        this._hoveredOwners.delete(owner);
+        this._determineAndSetState();
+    }
+
+    addSelectedBy(owner) {
+        if(this._selectedFunc != null) {
+            this._selectedFunc(owner);
+        }
+        this._selectedOwners.add(owner);
+        this.setState(InteractableStates.SELECTED);
+    }
+
+    removeSelectedBy(owner) {
+        if(this._releasedFunc != null) {
+            this._releasedFunc(owner);
+        }
+        this._selectedOwners.delete(owner);
+        this._determineAndSetState();
+    }
+
+    triggerDragged(owner) {
+        if(this._draggedFunc != null) {
+            this._draggedFunc(owner);
+        }
+    }
+
+    updateAction(newActionFunc) {
+        this._selectedFunc = newActionFunc;
+    }
+
+    static emptyGroup() {
+        return new GripInteractable();
+    }
+}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12439,9 +12572,13 @@ class GripInteractableHandler extends InteractableHandler {
             let closestInteractable = controller['closestInteractable'];
             if(closestInteractable) {
                 if(isPressed) {
-                    if(!selectedInteractable
-                        && hoveredInteractable == closestInteractable)
-                    {
+                    if(selectedInteractable) {
+                        if(selectedInteractable == closestInteractable
+                            && selectedInteractable.isDraggable())
+                        {
+                            selectedInteractable.triggerDraggableAction(option);
+                        }
+                    } else if(hoveredInteractable == closestInteractable) {
                         closestInteractable.addSelectedBy(option);
                         this._selectedInteractables[option] = closestInteractable;
                         closestInteractable.removeHoveredBy(option);
@@ -12483,8 +12620,8 @@ class GripInteractableHandler extends InteractableHandler {
             closestPointDistance: Number.MAX_SAFE_INTEGER,
         };
 
-        if(CopyPasteControlsHandler$1.hasCopiedObject()) {
-            CopyPasteControlsHandler$1.checkGripPlacement(
+        if(copyPasteControlsHandler.hasCopiedObject()) {
+            copyPasteControlsHandler.checkGripPlacement(
                 this._isControllerPressed(Hands.RIGHT));
         } else {
             controllers[Hands.RIGHT] = {
@@ -12526,6 +12663,445 @@ class GripInteractableHandler extends InteractableHandler {
 }
 
 let gripInteractableHandler = new GripInteractableHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class RotateHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._heldAssets = {};
+        this._quaternion = new Quaternion();
+        this._euler1 = new Euler();
+        this._euler2 = new Euler();
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
+            if(message['targetOnlyMenu']) return;
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.asset == e.instance) {
+                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let object = heldAsset.asset.getObject();
+                    if(heldAsset.preTransformState) {
+                        object.quaternion.fromArray(
+                            heldAsset.preTransformState);
+                        object.rotation.setFromQuaternion(object.quaternion);
+                        assetHelper._publish(['rotation']);
+                    }
+                    delete this._heldAssets[key];
+                }
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let key in this._heldAssets) {
+                delete this._heldAssets[key];
+            }
+        });
+    }
+
+    attach(controller, hand, asset, rotationDifference) {
+        let controllerId = controller.getId();
+        let otherHand = Hands.otherHand(hand);
+        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
+        if(otherHeldAsset && otherHeldAsset.asset == asset) {
+            this._swapToHand(controller, hand, otherHand, rotationDifference);
+        } else {
+            let heldAsset = {
+                asset: asset,
+                controller: controller,
+                hand: hand,
+            };
+            if(rotationDifference) {
+                heldAsset.rotationDifference = rotationDifference;
+            } else {
+                let rotation = asset.getWorldQuaternion();
+                heldAsset.preTransformState = rotation.toArray();
+                heldAsset.rotationDifference = controller.hands[hand]
+                    .getWorldQuaternion().conjugate().multiply(rotation)
+                    .toArray();
+            }
+            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+        }
+        if(!rotationDifference) {
+            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
+                instance: asset,
+                option: hand,
+                type: 'rotate',
+                rotation: heldAsset.rotationDifference,
+            });
+        }
+    }
+
+    detach(controller, hand, rotation) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+        if(!heldAsset) return;
+        delete this._heldAssets[controllerId + ':' + hand];
+        if(!rotation) {
+            rotation = this._update(heldAsset);
+            let assetHelper = heldAsset.asset.getEditorHelper();
+            this._quaternion.fromArray(heldAsset.preTransformState);
+            this._euler1.setFromQuaternion(this._quaternion);
+            this._quaternion.fromArray(rotation);
+            this._euler2.setFromQuaternion(this._quaternion);
+            let preState = this._euler1.toArray();
+            let postState = this._euler2.toArray();
+            assetHelper._updateEuler('rotation', postState, false, true,
+                preState);
+            assetHelper._publish(['rotation']);
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
+                instance: heldAsset.asset,
+                option: hand,
+                type: 'rotate',
+                rotation: rotation,
+            });
+        } else {
+            heldAsset.asset.setRotationFromQuaternion(rotation);
+        }
+    }
+
+    update() {
+        for(let key in this._heldAssets) {
+            let heldAsset = this._heldAssets[key];
+            this._update(heldAsset);
+        }
+    }
+
+    _update(heldAsset) {
+        if(!heldAsset) return;
+        //Eventually we'll need to set the world rotation of the asset once
+        //we support parent child relationships
+        let handRotation = heldAsset.controller.hands[heldAsset.hand]
+            .getWorldQuaternion();
+        this._quaternion.fromArray(heldAsset.rotationDifference);
+        let newRotation = handRotation.multiply(this._quaternion).toArray();
+        heldAsset.asset.setRotationFromQuaternion(newRotation);
+        return newRotation;
+    }
+
+    _swapToHand(controller, newHand, oldHand, rotationDifference) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
+        heldAsset.hand = newHand;
+        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
+        delete this._heldAssets[controllerId + ':' + oldHand];
+        if(rotationDifference) {
+            heldAsset.rotationDifference = rotationDifference;
+        } else {
+            let rotation = heldAsset.asset.getWorldQuaternion();
+            heldAsset.rotationDifference = heldAsset.controller
+                .hands[heldAsset.hand].getWorldQuaternion().conjugate()
+                .multiply(rotation).toArray();
+        }
+    }
+}
+
+let rotateHandler = new RotateHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class ScaleHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._heldAssets = {};
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
+            if(message['targetOnlyMenu']) return;
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.asset == e.instance) {
+                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let object = heldAsset.asset.getObject();
+                    if(heldAsset.preTransformState) {
+                        object.scale.fromArray(heldAsset.preTransformState);
+                        assetHelper._publish(['scale']);
+                    }
+                    delete this._heldAssets[key];
+                }
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let key in this._heldAssets) {
+                delete this._heldAssets[key];
+            }
+        });
+    }
+
+    attach(controller, hand, asset, scaleIdentity) {
+        let controllerId = controller.getId();
+        let otherHand = Hands.otherHand(hand);
+        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
+        if(otherHeldAsset && otherHeldAsset.asset == asset) {
+            this._swapToHand(controller, hand, otherHand, scaleIdentity);
+        } else {
+            let heldAsset = {
+                asset: asset,
+                controller: controller,
+                hand: hand,
+            };
+            if(scaleIdentity) {
+                heldAsset.scaleIdentity = scaleIdentity;
+            } else {
+                let distance = controller.hands[hand].getWorldPosition()
+                    .distanceTo(asset.getWorldPosition());
+                let scale = asset.getWorldScale();
+                heldAsset.preTransformState = scale.toArray();
+                heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
+            }
+            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+        }
+        if(!scaleIdentity) {
+            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
+                instance: asset,
+                option: hand,
+                type: 'scale',
+                scale: heldAsset.scaleIdentity,
+            });
+        }
+    }
+
+    detach(controller, hand, scale) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+        if(!heldAsset) return;
+        delete this._heldAssets[controllerId + ':' + hand];
+        if(!scale) {
+            scale = this._update(heldAsset);
+            let assetHelper = heldAsset.asset.getEditorHelper();
+            let preState = heldAsset.preTransformState;
+            let postState = scale;
+            assetHelper._updateVector3('scale', postState, false, true,
+                preState);
+            assetHelper._publish(['scale']);
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
+                instance: heldAsset.asset,
+                option: hand,
+                type: 'scale',
+                scale: scale,
+            });
+        } else {
+            heldAsset.asset.setScale(scale);
+        }
+    }
+
+    update() {
+        for(let key in this._heldAssets) {
+            let heldAsset = this._heldAssets[key];
+            this._update(heldAsset);
+        }
+    }
+
+    _update(heldAsset) {
+        if(!heldAsset) return;
+        //Eventually we'll need to set the world scale of the asset once
+        //we support parent child relationships
+        let distance = heldAsset.asset.getWorldPosition().distanceTo(heldAsset
+            .controller.hands[heldAsset.hand].getWorldPosition());
+        let newScale = [
+            heldAsset.scaleIdentity[0] * distance,
+            heldAsset.scaleIdentity[1] * distance,
+            heldAsset.scaleIdentity[2] * distance
+        ];
+        heldAsset.asset.setScale(newScale);
+        return newScale;
+    }
+
+    _swapToHand(controller, newHand, oldHand, scaleIdentity) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
+        heldAsset.hand = newHand;
+        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
+        delete this._heldAssets[controllerId + ':' + oldHand];
+        if(scaleIdentity) {
+            heldAsset.scaleIdentity = scaleIdentity;
+        } else {
+            let distance = controller.hands[newHand].getWorldPosition()
+                .distanceTo(heldAsset.asset.getWorldPosition());
+            let scale = heldAsset.asset.getWorldScale();
+            heldAsset.scaleIdentity = scale.divideScalar(distance).toArray();
+        }
+    }
+}
+
+let scaleHandler = new ScaleHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class TranslateHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._heldAssets = {};
+        pubSub.subscribe(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, (handTool)=>{
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.MENU_FIELD_FOCUSED, (message)=>{
+            if(message['targetOnlyMenu']) return;
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.preTransformState)
+                    this.detach(heldAsset.controller, heldAsset.hand);
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.INSTANCE_DELETED, (e) => {
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                if(heldAsset.asset == e.instance) {
+                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let object = heldAsset.asset.getObject();
+                    if(heldAsset.preTransformState) {
+                        object.position.fromArray(heldAsset.preTransformState);
+                        assetHelper._publish(['position']);
+                    }
+                    delete this._heldAssets[key];
+                }
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.PROJECT_LOADING, (done) => {
+            for(let key in this._heldAssets) {
+                delete this._heldAssets[key];
+            }
+        });
+    }
+
+    attach(controller, hand, asset, positionDifference) {
+        let controllerId = controller.getId();
+        let otherHand = Hands.otherHand(hand);
+        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
+        if(otherHeldAsset && otherHeldAsset.asset == asset) {
+            this._swapToHand(controller, hand, otherHand, positionDifference);
+        } else {
+            let heldAsset = {
+                asset: asset,
+                controller: controller,
+                hand: hand,
+            };
+            if(positionDifference) {
+                heldAsset.positionDifference = positionDifference;
+            } else {
+                let position = asset.getWorldPosition();
+                heldAsset.preTransformState = position.toArray();
+                heldAsset.positionDifference = position.sub(heldAsset
+                    .controller.hands[hand].getWorldPosition()).toArray();
+            }
+            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+        }
+        if(!positionDifference) {
+            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_ATTACHED, {
+                instance: asset,
+                option: hand,
+                type: 'translate',
+                position: heldAsset.positionDifference,
+            });
+        }
+    }
+
+    detach(controller, hand, position) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+        if(!heldAsset) return;
+        delete this._heldAssets[controllerId + ':' + hand];
+        if(!position) {
+            position = this._update(heldAsset);
+            let assetHelper = heldAsset.asset.getEditorHelper();
+            let preState = heldAsset.preTransformState;
+            let postState = position;
+            assetHelper._updateVector3('position', postState, false, true,
+                preState);
+            assetHelper._publish(['position']);
+            pubSub.publish(this._id, PubSubTopics$1.INSTANCE_DETACHED, {
+                instance: heldAsset.asset,
+                option: hand,
+                type: 'translate',
+                position: position,
+            });
+        } else {
+            heldAsset.asset.setPosition(position);
+        }
+    }
+
+    update() {
+        for(let key in this._heldAssets) {
+            let heldAsset = this._heldAssets[key];
+            this._update(heldAsset);
+        }
+    }
+
+    _update(heldAsset) {
+        if(!heldAsset) return;
+        //Eventually we'll need to set the world position of the asset once
+        //we support parent child relationships
+        let handPosition = heldAsset.controller.hands[heldAsset.hand]
+            .getWorldPosition();
+        let newPosition = [
+            heldAsset.positionDifference[0] + handPosition.x,
+            heldAsset.positionDifference[1] + handPosition.y,
+            heldAsset.positionDifference[2] + handPosition.z
+        ];
+        heldAsset.asset.setPosition(newPosition);
+        return newPosition;
+    }
+
+    _swapToHand(controller, newHand, oldHand, positionDifference) {
+        let controllerId = controller.getId();
+        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
+        heldAsset.hand = newHand;
+        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
+        delete this._heldAssets[controllerId + ':' + oldHand];
+        if(positionDifference) {
+            heldAsset.positionDifference = positionDifference;
+        } else {
+            let position = asset.getWorldPosition();
+            heldAsset.positionDifference = position.sub(heldAsset
+                .controller.hands[heldAsset.hand].getWorldPosition()).toArray();
+        }
+    }
+}
+
+let translateHandler = new TranslateHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12618,7 +13194,11 @@ class RTCPeer {
                     this._addAudioTrack();
                 if(!this._polite) clearTimeout(this._timeoutId);
             } else if(state == "disconnected" || state == "failed") {
-                if(!this._polite) clearTimeout(this._timeoutId);
+                if(!this._polite) {
+                    clearTimeout(this._timeoutId);
+                    if(!this._hasConnected && this._onFailedImpoliteConnect)
+                        this._onFailedImpoliteConnect();
+                }
                 if(this._onDisconnect) this._onDisconnect();
             }
         };
@@ -12641,7 +13221,10 @@ class RTCPeer {
     }
 
     _timeout() {
-        if(this._onTimeout) this._onTimeout();
+        if(this._onTimeout) {
+            this._onFailedImpoliteConnect = null;
+            this._onTimeout();
+        }
     }
 
     toggleMyselfMuted(muted) {
@@ -12735,6 +13318,10 @@ class RTCPeer {
 
     setOnDisconnect(f) {
         this._onDisconnect = f;
+    }
+
+    setOnFailedImpoliteConnect(f) {
+        this._onFailedImpoliteConnect = f;
     }
 
     setOnMessage(f) {
@@ -13045,6 +13632,8 @@ class PeerHand extends Entity {
         this._hand = hand;
         this._isGripPressed = false;
         this._vector3 = new THREE.Vector3();
+        this._euler = new THREE.Euler();
+        this._quaternion = new THREE.Quaternion();
 
         this._setup();
     }
@@ -13054,6 +13643,23 @@ class PeerHand extends Entity {
         let material = new THREE.MeshLambertMaterial({ color: 0xC68863 });
         this._mesh = new THREE.Mesh(geometry, material);
         this._object.add(this._mesh);
+    }
+
+    getWorldPosition() {
+        this._object.getWorldPosition(this._vector3);
+        return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._object.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._object.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
     }
 
     add(threeObj) {
@@ -13171,6 +13777,10 @@ class PeerController extends Entity {
         } else {
             this._object.remove(this._usernameBlock);
         }
+    }
+
+    updateScale(scale) {
+        this._object.scale.set(scale, scale, scale);
     }
 
     updateUsername(username) {
@@ -13501,6 +14111,7 @@ class PartyMessageHelper {
             avatar: (p, m) => { this._handleAvatar(p, m); },
             asset_added: (p, m) => { this._handleAssetAdded(p, m); },
             username: (p, m) => { this._handleUsername(p, m); },
+            user_scale: (p, m) => { this._handleUserScale(p,m);},
         };
         for(let topic in BLOCKABLE_HANDLERS_MAP) {
             let handler = BLOCKABLE_HANDLERS_MAP[topic];
@@ -13716,6 +14327,11 @@ class PartyMessageHelper {
         });
     }
 
+    _handleUserScale(peer, message) {
+        let scale = message.scale;
+        if(peer.controller) peer.controller.updateScale(scale);
+    }
+
     handlePartyStarted() {
         pubSub.publish(this._id, PubSubTopics$1.PARTY_STARTED);
     }
@@ -13799,10 +14415,13 @@ class PartyMessageHelper {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
+            type: data.type,
         };
         if(global$1.deviceType == 'XR') {
-            message['position'] = data.instance.getPosition();
-            message['rotation'] = data.instance.getRotation();
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
+            message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
@@ -13815,10 +14434,13 @@ class PartyMessageHelper {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
+            type: data.type,
         };
         if(global$1.deviceType == 'XR') {
-            message['position'] = data.instance.getPosition();
-            message['rotation'] = data.instance.getRotation();
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
+            message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
@@ -13889,6 +14511,16 @@ class PartyMessageHelper {
             JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
         return Promise.resolve();
     }
+
+    _publishUserScaleUpdated(scale) {
+        let message = {
+            topic: 'user_scale',
+            scale: scale,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
 
     addSubscriptions() {
         pubSub.subscribe(this._id, PubSubTopics$1.ASSET_ADDED, (assetId) => {
@@ -13965,6 +14597,11 @@ class PartyMessageHelper {
         pubSub.subscribe(this._id, PubSubTopics$1.TEXTURE_UPDATED, (message) => {
             this._publishQueue.enqueue(() => {
                 return this._publishAssetUpdate(message, "texture");
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics$1.USER_SCALE_UPDATED, (scale) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishUserScaleUpdated(scale);
             });
         });
     }
@@ -14050,6 +14687,10 @@ class PartyHandler {
                 topic: 'username',
                 username: this._username,
             }));
+            rtc.sendData(JSON.stringify({
+                topic: 'user_scale',
+                scale: settingsHandler.getUserScale(),
+            }));
             if(this._isHost) {
                 if(global$1.isEditor) {
                     this._sendProject([rtc]);
@@ -14065,6 +14706,11 @@ class PartyHandler {
                 delete this._peers[peer.id];
                 partyMessageHelper.handlePeerDisconnected(peer);
             }
+        });
+        rtc.setOnFailedImpoliteConnect(() => {
+            if(this._errorCallback)
+                this._errorCallback({ topic: 'could-not-connect' });
+            party.disconnect();
         });
         rtc.setOnMessage((message) => {
             if(typeof message == "string") {
@@ -14754,17 +15400,19 @@ class CheckboxInput extends PointerInteractableEntity {
         this._getFromSource = params['getFromSource'];
         let initialValue = params['initialValue'] || false;
         let title = params['title'] || 'Missing Field Name...';
+        let titleWidth = params['titleWidth'] || TITLE_WIDTH$a;
+        let contentDirection = params['swapOrder'] ? 'row-reverse' : 'row';
         this._suppressMenuFocusEvent = params['suppressMenuFocusEvent'];
-        this._createInputs(initialValue, title);
+        this._createInputs(initialValue, title, titleWidth, contentDirection);
     }
 
-    _createInputs(initialValue, title) {
+    _createInputs(initialValue, title, titleWidth, contentDirection) {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
             'height': HEIGHT$a,
             'width': WIDTH$a,
-            'contentDirection': 'row',
+            'contentDirection': contentDirection,
             'justifyContent': 'start',
             'backgroundOpacity': 0,
             'offset': 0,
@@ -14773,9 +15421,9 @@ class CheckboxInput extends PointerInteractableEntity {
             'text': title,
             'fontSize': FontSizes.body,
             'height': HEIGHT$a,
-            'width': TITLE_WIDTH$a,
+            'width': titleWidth,
             'margin': 0,
-            'textAlign': 'left',
+            'textAlign': contentDirection == 'row' ? 'left' : 'right',
         });
         this._selectBox = ThreeMeshUIHelper.createCheckboxBlock({
             'initialValue': initialValue,
@@ -14816,6 +15464,7 @@ class CheckboxInput extends PointerInteractableEntity {
 }
 
 const MenuPages = {
+    ACKNOWLEDGEMENTS: "ACKNOWLEDGEMENTS",
     ASSET: "ASSET",
     ASSETS: "ASSETS",
     ASSET_SELECT: "ASSET_SELECT",
@@ -14837,6 +15486,9 @@ const MenuPages = {
     PEER: "PEER",
     PROJECT: "PROJECT",
     SETTINGS: "SETTINGS",
+    SKETCHFAB_ASSET: "SKETCHFAB_ASSET",
+    SKETCHFAB_LOGIN: "SKETCHFAB_LOGIN",
+    SKETCHFAB_SEARCH: "SKETCHFAB_SEARCH",
     SKYBOX: "SKYBOX",
     TEXTURE: "TEXTURE",
     TEXTURES: "TEXTURES",
@@ -16764,6 +17416,9 @@ const INTERACTABLE_KEYS = [
     HandTools.EDIT,
     HandTools.COPY_PASTE,
     HandTools.DELETE,
+    HandTools.TRANSLATE,
+    HandTools.ROTATE,
+    HandTools.SCALE,
 ];
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const FIELDS$m = [
@@ -16803,8 +17458,7 @@ class AssetHelper extends EditorHelper {
             let deleteInteractable = new GripInteractable(this._object,
                 (hand) => {
                     ProjectHandler$1.deleteAssetInstance(this._asset);
-                },
-                () => {}
+                }
             );
             this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
             deleteInteractable = new PointerInteractable(this._object,
@@ -16818,16 +17472,17 @@ class AssetHelper extends EditorHelper {
                 .push(deleteInteractable);
             let copyInteractable = new GripInteractable(this._object,
                 (hand) => {
-                    CopyPasteControlsHandler$1.copy(this._asset);
+                    copyPasteControlsHandler.copy(this._asset);
                 },
-                () => {},
+                null,
+                null,
                 Hands.LEFT
             );
             this._gripInteractables[HandTools.COPY_PASTE]
                 .push(copyInteractable);
             copyInteractable = new PointerInteractable(this._object,
                 (hand) => {
-                    CopyPasteControlsHandler$1.copy(this._asset);
+                    copyPasteControlsHandler.copy(this._asset);
                 },
                 true,
                 true,
@@ -16835,6 +17490,36 @@ class AssetHelper extends EditorHelper {
             );
             this._pointerInteractables[HandTools.COPY_PASTE]
                 .push(copyInteractable);
+            let translateInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    translateHandler.attach(UserController$1, hand, this._asset);
+                },
+                (hand) => {
+                    translateHandler.detach(UserController$1, hand);
+                },
+            );
+            this._gripInteractables[HandTools.TRANSLATE]
+                .push(translateInteractable);
+            let rotateInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    rotateHandler.attach(UserController$1, hand, this._asset);
+                },
+                (hand) => {
+                    rotateHandler.detach(UserController$1, hand);
+                },
+            );
+            this._gripInteractables[HandTools.ROTATE]
+                .push(rotateInteractable);
+            let scaleInteractable = new GripInteractable(this._object,
+                (hand) => {
+                    scaleHandler.attach(UserController$1, hand, this._asset);
+                },
+                (hand) => {
+                    scaleHandler.detach(UserController$1, hand);
+                },
+            );
+            this._gripInteractables[HandTools.SCALE]
+                .push(scaleInteractable);
         } else {
             this._object.states = InteractableStates;
             this._object.setState = (state) => {
@@ -16904,17 +17589,29 @@ class AssetHelper extends EditorHelper {
     attachToPeer(peer, message) {
         this._attachedPeers.add(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(this._attachedPeers.size == 1) {
-                if(message.option in Hands && peer.controller) {
-                    peer.controller.hands[message.option].attach(this._object);
-                    this._asset.setPosition(message.position);
-                    this._asset.setRotation(message.rotation);
-                }
-            } else {
+            if(message.twoHandScaling) {
                 global$1.scene.attach(this._object);
                 this._asset.setPosition(message.position);
                 this._asset.setRotation(message.rotation);
                 return;
+            } else {
+                if(message.option in Hands && peer.controller) {
+                    if(message.type == 'translate') {
+                        translateHandler.attach(peer.controller, message.option,
+                            this._asset, message.position);
+                    } else if(message.type == 'rotate') {
+                        rotateHandler.attach(peer.controller, message.option,
+                            this._asset, message.rotation);
+                    } else if(message.type == 'scale') {
+                        scaleHandler.attach(peer.controller, message.option,
+                            this._asset, message.scale);
+                    } else {
+                        peer.controller.hands[message.option].attach(
+                            this._object);
+                        this._asset.setPosition(message.position);
+                        this._asset.setRotation(message.rotation);
+                    }
+                }
             }
         }
         if(!this._asset.visualEdit) return;
@@ -16925,20 +17622,27 @@ class AssetHelper extends EditorHelper {
     detachFromPeer(peer, message) {
         this._attachedPeers.delete(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(this._attachedPeers.size == 0) {
-                global$1.scene.attach(this._object);
+            if(message.twoHandScaling) {
+                let otherHand = Hands.otherHand(message.option);
+                peer.controller.hands[otherHand].attach(this._object);
                 this._asset.setPosition(message.position);
                 this._asset.setRotation(message.rotation);
+                return;
             } else {
-                let firstId = this._attachedPeers.values().next().value;
-                let [firstPeerId, option] = firstId.split(':');
-                let firstPeer = partyHandler.getPeer(firstPeerId);
-                if(option in Hands && firstPeer && firstPeer.controller) {
-                    firstPeer.controller.hands[option].attach(this._object);
+                if(message.type == 'translate') {
+                    translateHandler.detach(peer.controller, message.option,
+                        message.position);
+                } else if(message.type == 'rotate') {
+                    rotateHandler.detach(peer.controller, message.option,
+                        message.rotation);
+                } else if(message.type == 'scale') {
+                    scaleHandler.detach(peer.controller, message.option,
+                        message.scale);
+                } else {
+                    global$1.scene.attach(this._object);
                     this._asset.setPosition(message.position);
                     this._asset.setRotation(message.rotation);
                 }
-                return;
             }
         }
         if(!this._asset.visualEdit) return;
@@ -17147,10 +17851,6 @@ class Asset extends Entity {
         return this._editorHelper;
     }
 
-    getId() {
-        return this._id;
-    }
-
     getName() {
         return this._name;
     }
@@ -17171,12 +17871,35 @@ class Asset extends Entity {
         return this.visualEdit;
     }
 
+    getWorldPosition(vector3) {
+        if(!vector3) vector3 = vector3s$1[0];
+        this._object.getWorldPosition(vector3);
+        return vector3;
+    }
+
+    getWorldQuaternion(quat) {
+        if(!quat) quat = quaternion;
+        this._object.getWorldQuaternion(quat);
+        return quat;
+    }
+
+    getWorldScale(vector3) {
+        if(!vector3) vector3 = vector3s$1[0];
+        this._object.getWorldScale(vector3);
+        return vector3;
+    }
+
     setPosition(position) {
         this._object.position.fromArray(position);
     }
 
     setRotation(rotation) {
         this._object.rotation.fromArray(rotation);
+    }
+
+    setRotationFromQuaternion(quat) {
+        quaternion.fromArray(quat);
+        this._object.setRotationFromQuaternion(quaternion);
     }
 
     setScale(scale) {
@@ -17414,6 +18137,7 @@ class ProjectHandler {
     }
 
     loadZip(jsZip, successCallback, errorCallback) {
+        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, false, true);
         this.reset();
         let lock = uuidv4();
         global$1.loadingLocks.add(lock);
@@ -17982,6 +18706,7 @@ class MenuController extends PointerInteractableEntity {
     }
 
     _openMenu() {
+        let userScale = settingsHandler.getUserScale();
         global$1.renderer.getSize(vector2);
         let aspectRatio = vector2.x / vector2.y;
         let menuDistanceScale = (aspectRatio > 1.15)
@@ -17989,9 +18714,10 @@ class MenuController extends PointerInteractableEntity {
             : 1.5 * aspectRatio;
         global$1.camera.getWorldPosition(vector3s$1[0]);
         global$1.camera.getWorldDirection(vector3s$1[1]);
-        vector3s$1[1].normalize().divideScalar(menuDistanceScale);
+        vector3s$1[1].normalize().divideScalar(menuDistanceScale).multiplyScalar(userScale);
         this._object.position.addVectors(vector3s$1[0], vector3s$1[1]);
         this._object.lookAt(vector3s$1[0]);
+        this._object.scale.set(userScale, userScale, userScale);
         this.addToScene(this._scene);
     }
 
@@ -18190,7 +18916,189 @@ class MenuPage extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const OPTIONS$2 = 5;
+class AcknowledgementsPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._sketchfabAssets = [];
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._createPreviousAndNextButtons();
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': ' ',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.3,
+        });
+        this._container.add(this._titleBlock);
+
+        this._noAcknowledgements = ThreeMeshUIHelper.createTextBlock({
+            'text': 'No Acknowledgements to Display',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+
+        this._acknowledgementsContainer = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'row',
+            'justifyContent': 'center',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.31,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+
+        this._textureBlock = new ThreeMeshUI.Block({
+            'height': 0.085,
+            'width': 0.1,
+            'backgroundOpacity': 1,
+        });
+        columnBlock.add(this._textureBlock);
+
+        this._authorBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Author: ',
+            'fontSize': FontSizes.body,
+            'height': 0.025,
+            'width': 0.3,
+        });
+        columnBlock.add(this._authorBlock);
+
+        this._sketchfabButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "View on Sketchfab",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(this._sketchfabButton);
+        this._sketchfabInteractable = new PointerInteractable(
+            this._sketchfabButton, () => {
+                if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+                window.open(this._sketchfabAssets[this._page]['Sketchfab Link'],
+                    '_blank');
+            });
+        this._containerInteractable.addChild(this._sketchfabInteractable);
+        this._container.add(this._acknowledgementsContainer);
+        this._acknowledgementsContainer.add(this._previousButton);
+        this._acknowledgementsContainer.add(columnBlock);
+        this._acknowledgementsContainer.add(this._nextButton);
+    }
+
+    _createPreviousAndNextButtons() {
+        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '<',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '>',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._previousInteractable = new PointerInteractable(
+            this._previousButton,
+            () => {
+                this._page += this._sketchfabAssets.length - 1;
+                this._page %= this._sketchfabAssets.length;
+                this._setAsset();
+            });
+        this._nextInteractable = new PointerInteractable(this._nextButton,
+            () => {
+                this._page += 1;
+                this._page %= this._sketchfabAssets.length;
+                this._setAsset();
+            });
+    }
+
+    setAssets(sketchfabAssets) {
+        this._sketchfabAssets = sketchfabAssets;
+        this._page = 0;
+        if(sketchfabAssets.length > 1) {
+            this._previousButton.visible = true;
+            this._nextButton.visible = true;
+            this._containerInteractable.addChild(this._previousInteractable);
+            this._containerInteractable.addChild(this._nextInteractable);
+        } else {
+            this._previousButton.visible = false;
+            this._nextButton.visible = false;
+            this._containerInteractable.removeChild(this._previousInteractable);
+            this._containerInteractable.removeChild(this._nextInteractable);
+            if(sketchfabAssets.length == 0) {
+                this._container.remove(this._acknowledgementsContainer);
+                this._container.add(this._noAcknowledgements);
+                return;
+            }
+        }
+        this._setAsset();
+    }
+
+    _setAsset() {
+        let page = this._page;
+        let sketchfabAsset = this._sketchfabAssets[page];
+        this._titleBlock.children[1].set({ content: sketchfabAsset['Name'] });
+        if(sketchfabAsset['Author']) {
+            this._authorBlock.children[1].set({
+                content: 'Author: ' + sketchfabAsset['Author'],
+            });
+            this._authorBlock.visible = true;
+        } else {
+            this._authorBlock.visible = false;
+        }
+        if(sketchfabAsset.previewTexture) {
+            this._textureBlock.set({
+                backgroundTexture: sketchfabAsset.previewTexture
+            });
+            this._textureBlock.visible = true;
+        } else if(sketchfabAsset['Preview Image URL']
+            && !sketchfabAsset.isLoadingTexture)
+        {
+            this._textureBlock.visible = false;
+            sketchfabAsset.isLoadingTexture = true;
+            new TextureLoader().load(sketchfabAsset['Preview Image URL'],
+                (texture) => {
+                    if(this._page == page) {
+                        sketchfabAsset.previewTexture = texture;
+                        this._setAsset();
+                    }
+                });
+        } else {
+            this._textureBlock.visible = false;
+        }
+        if(sketchfabAsset['Sketchfab Link']) {
+            this._sketchfabButton.visible = true;
+            this._containerInteractable.addChild(this._sketchfabInteractable);
+        } else {
+            this._sketchfabButton.visible = false;
+            this._containerInteractable.removeChild(
+                this._sketchfabInteractable);
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const OPTIONS$4 = 5;
 
 class PaginatedPage extends MenuPage {
     constructor(controller, hasSideBar, hasBackButton) {
@@ -18219,7 +19127,7 @@ class PaginatedPage extends MenuPage {
             'backgroundOpacity': 0,
             'offset': 0,
         });
-        for(let i = 0; i < OPTIONS$2; i++) {
+        for(let i = 0; i < OPTIONS$4; i++) {
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': ' ',
                 'fontSize': FontSizes.body,
@@ -18232,7 +19140,7 @@ class PaginatedPage extends MenuPage {
             this._optionsBlock.add(button);
             this._paginatedListButtons.push(button);
             let interactable = new PointerInteractable(button, () => {
-                let index = this._page * OPTIONS$2 + i;
+                let index = this._page * OPTIONS$4 + i;
                 if(this._items.length > index) {
                     this._handleItemInteraction(this._items[index]);
                 } else {
@@ -18281,8 +19189,8 @@ class PaginatedPage extends MenuPage {
     }
 
     _updateItemsGUI() {
-        let firstIndex = this._page * OPTIONS$2;
-        for(let i = 0; i < OPTIONS$2; i++) {
+        let firstIndex = this._page * OPTIONS$4;
+        for(let i = 0; i < OPTIONS$4; i++) {
             let interactable = this._paginatedListInteractables[i];
             let button = this._paginatedListButtons[i];
             if(firstIndex + i < this._items.length) {
@@ -18302,7 +19210,7 @@ class PaginatedPage extends MenuPage {
             this._previousButton.visible = true;
             this._optionsInteractable.addChild(this._previousInteractable);
         }
-        if(this._items.length > firstIndex + OPTIONS$2) {
+        if(this._items.length > firstIndex + OPTIONS$4) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
         } else {
@@ -18420,18 +19328,32 @@ class AssetPage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        return this._instances[item].getName();
+        if(item == 'Acknowledgement') {
+            return item;
+        } else {
+            return this._instances[item].getName();
+        }
     }
 
     _handleItemInteraction(item) {
-        let instancePage = this._controller.getPage(MenuPages.INSTANCE);
-        instancePage.setInstance(this._instances[item]);
-        this._controller.pushPage(MenuPages.INSTANCE);
+        if(item == 'Acknowledgement') {
+            let page = this._controller.getPage(MenuPages.ACKNOWLEDGEMENTS);
+            page.setAssets([libraryHandler.library[this._assetId]]);
+            this._controller.pushPage(MenuPages.ACKNOWLEDGEMENTS);
+        } else {
+            let instancePage = this._controller.getPage(MenuPages.INSTANCE);
+            instancePage.setInstance(this._instances[item]);
+            this._controller.pushPage(MenuPages.INSTANCE);
+        }
     }
 
     _refreshItems() {
         this._instances = ProjectHandler$1.getInstancesForAssetId(this._assetId);
         this._items = Object.keys(this._instances);
+        let asset = libraryHandler.library[this._assetId];
+        if(asset['Author']) {
+            this._items.push('Acknowledgement');
+        }
     }
 
     setAsset(assetId) {
@@ -19301,6 +20223,20 @@ class EditorSettingsPage extends DynamicFieldsPage {
                 return settingsHandler.getEditorSettings()['Movement Speed'];
             },
         }));
+        fields.push(new NumberInput({
+            'title': 'User Scale',
+            'minValue': 0.001,
+            'maxValue': 1000,
+            'initialValue': 1,
+            'onBlur': (oldValue, newValue) => {
+                pubSub.publish(this._id, PubSubTopics$1.USER_SCALE_UPDATED,
+                    newValue);
+                settingsHandler.setEditorSetting('User Scale', newValue);
+            },
+            'getFromSource': () => {
+                return settingsHandler.getEditorSettings()['User Scale'];
+            },
+        }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
@@ -19350,11 +20286,15 @@ const hands = [
     { "title": "Edit", "type": HandTools.EDIT },
     { "title": "Copy / Paste", "type": HandTools.COPY_PASTE },
     { "title": "Delete", "type": HandTools.DELETE },
+    { "title": "Translate", "type": HandTools.TRANSLATE },
+    { "title": "Rotate", "type": HandTools.ROTATE },
+    { "title": "Scale", "type": HandTools.SCALE },
 ];
 
-class HandsPage extends MenuPage {
+class HandsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, true);
+        super(controller, false, true);
+        this._items = hands;
         this._addPageContent();
     }
 
@@ -19367,32 +20307,22 @@ class HandsPage extends MenuPage {
         });
         this._container.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-        });
-        for(let hand of hands) {
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': hand.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
-            columnBlock.add(button);
-            let interactable = new PointerInteractable(button, () => {
-                if(HandTools.ACTIVE == hand.type) return;
-                HandTools.ACTIVE = hand.type;
-                pubSub.publish(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, hand.type);
-            });
-            this._containerInteractable.addChild(interactable);
-        }
-        this._container.add(columnBlock);
+        this._addList();
     }
 
+    _getItemName(item) {
+        return item.title;
+    }
+
+    _handleItemInteraction(item) {
+        if(HandTools.ACTIVE == item.type) return;
+        HandTools.ACTIVE = item.type;
+        pubSub.publish(this._id, PubSubTopics$1.HAND_TOOLS_SWITCH, item.type);
+    }
+
+    _refreshItems() {
+
+    }
 }
 
 /*
@@ -19730,6 +20660,10 @@ class JoinPartyPage extends MenuPage {
             });
         } else if(topic == 'rtc-timeout') {
             pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Could not connect to all other users in time, please try again',
+            });
+        } else if(topic == 'could-not-connect') {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
                 text: 'Could not connect to all other users, please try again',
             });
         } else if(topic == 'bad-auth') {
@@ -20048,7 +20982,6 @@ class LoadFromGDrivePage extends PaginatedPage {
             content: "Project Loading..."
         });
         this._updateLoadingSaving(false);
-        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, false);
         googleDrive.loadFile(this._instances[item]['id'],
             (jsZip) => { this._loadSuccessCallback(jsZip); },
             () => { this._loadErrorCallback(); });
@@ -20068,7 +21001,6 @@ class LoadFromGDrivePage extends PaginatedPage {
 
     _loadErrorCallback() {
         this._updateLoadingSaving(true);
-        pubSub.publish(this._id, PubSubTopics$1.PROJECT_LOADING, true);
         pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
             text: 'Error Loading Project',
             sustainTime: 5,
@@ -20149,10 +21081,10 @@ class LoadFromGDrivePage extends PaginatedPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const ROWS = 2;
-const OPTIONS$1 = 3;
+const ROWS$1 = 2;
+const OPTIONS$3 = 3;
 
-class PaginatedIconsPage extends MenuPage {
+let PaginatedIconsPage$1 = class PaginatedIconsPage extends MenuPage {
     constructor(controller, hasSideBar, hasBackButton) {
         super(controller, hasSideBar, hasBackButton);
         this._paginatedListButtons = [];
@@ -20187,9 +21119,9 @@ class PaginatedIconsPage extends MenuPage {
         this._rows = [];
         this._rows.push(new ThreeMeshUI.Block(params));
         this._rows.push(new ThreeMeshUI.Block(params));
-        for(let i = 0; i < ROWS; i++) {
+        for(let i = 0; i < ROWS$1; i++) {
             let row = this._rows[i];
-            for(let j = 0; j < OPTIONS$1; j++) {
+            for(let j = 0; j < OPTIONS$3; j++) {
                 let button = ThreeMeshUIHelper.createButtonBlock({
                     'height': 0.085,
                     'width': 0.1,
@@ -20216,7 +21148,7 @@ class PaginatedIconsPage extends MenuPage {
                 row.add(button);
                 this._paginatedListButtons.push(button);
                 let interactable = new PointerInteractable(button, () => {
-                    let index = this._page * ROWS * OPTIONS$1 + OPTIONS$1 * i + j;
+                    let index = this._page * ROWS$1 * OPTIONS$3 + OPTIONS$3 * i + j;
                     if(this._items.length > index) {
                         this._handleItemInteraction(this._items[index]);
                     } else {
@@ -20268,8 +21200,8 @@ class PaginatedIconsPage extends MenuPage {
     }
 
     _updateItemsGUI() {
-        let firstIndex = this._page * ROWS * OPTIONS$1;
-        for(let i = 0; i < ROWS * OPTIONS$1; i++) {
+        let firstIndex = this._page * ROWS$1 * OPTIONS$3;
+        for(let i = 0; i < ROWS$1 * OPTIONS$3; i++) {
             let interactable = this._paginatedListInteractables[i];
             let button = this._paginatedListButtons[i];
             if(firstIndex + i < this._items.length) {
@@ -20292,7 +21224,7 @@ class PaginatedIconsPage extends MenuPage {
             this._previousButton.visible = true;
             this._optionsInteractable.addChild(this._previousInteractable);
         }
-        if(this._items.length > firstIndex + ROWS * OPTIONS$1) {
+        if(this._items.length > firstIndex + ROWS$1 * OPTIONS$3) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
         } else {
@@ -20335,7 +21267,7 @@ class PaginatedIconsPage extends MenuPage {
         }
     }
 
-}
+};
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -20384,10 +21316,9 @@ const ASSETS = [{
     }
 ];
 
-class LibraryPage extends PaginatedIconsPage {
+class LibraryPage extends PaginatedIconsPage$1 {
     constructor(controller) {
         super(controller, false, true);
-        this._assets = libraryHandler.getLibrary();
         this._items = Object.keys(ASSETS);
         this._addPageContent();
         this._createSearchButton();
@@ -21653,7 +22584,7 @@ let delayedClickEventHandler = new DelayedClickEventHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const OPTIONS = {
+const OPTIONS$2 = {
     'New Project': '_newProject',
     'Load from Device': '_localLoad',
     'Load from Google Drive': '_googleDriveLoad',
@@ -21665,7 +22596,7 @@ const OPTIONS = {
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
         super(controller, false, true);
-        this._items = Object.keys(OPTIONS).slice(0, -1);
+        this._items = Object.keys(OPTIONS$2).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
     }
@@ -21696,14 +22627,14 @@ class ProjectPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        this[OPTIONS[item]]();
+        this[OPTIONS$2[item]]();
     }
 
     _refreshItems() {
         if(googleDrive.isSignedIn()) {
-            this._items = Object.keys(OPTIONS);
+            this._items = Object.keys(OPTIONS$2);
         } else {
-            this._items = Object.keys(OPTIONS).slice(0, -1);
+            this._items = Object.keys(OPTIONS$2).slice(0, -1);
         }
     }
 
@@ -21827,7 +22758,6 @@ class ProjectPage extends PaginatedPage {
 
     _handleLocalFile(file) {
         this._updateLoading(false);
-        pubSub.publish(this._id, PubSubTopics$1.PROJECT_SAVING, false);
         JSZip.loadAsync(file).then((jsZip) => {
             googleDrive.clearActiveFile();
             ProjectHandler$1.loadZip(jsZip, () => {
@@ -21932,7 +22862,7 @@ class ReadyPlayerMe {
         this._iframe = document.createElement('iframe');
         this._iframe.id = "digital-bacon-rpm-iframe";
         this._iframe.allow = 'camera *; microphone *; clipboard-write';
-        this._iframe.src = 'https://digitalbacon.readyplayer.me/avatar?frameApi';
+        this._iframe.src = 'https://digital-bacon.readyplayer.me/avatar?frameApi&clearCache';
         this._iframe.hidden = true;
         this._closeButton = document.createElement('button');
         this._closeButton.innerHTML = "Close Ready Player Me";
@@ -21966,7 +22896,7 @@ class ReadyPlayerMe {
 
         // Get avatar GLB URL
         if(json.eventName === 'v1.avatar.exported') {
-            UserController$1.updateAvatar(json.data.url);
+            UserController$1.updateAvatar(json.data.url + '?useHands=false');
             this._close();
         }
 
@@ -22055,6 +22985,627 @@ class SettingsPage extends MenuPage {
             this._containerInteractable.addChild(interactable);
         }
         this._container.add(columnBlock);
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken';
+const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry';
+const AUTH_URL = 'https://sketchfab.com/oauth2/authorize/?state=123456789&response_type=token&client_id=WXFMTux03Lde8DFpnZWlzwR4afwtSrpumZToMy62';
+const VALID_CALLBACK_ORIGIN = 'https://digitalbacon.io';
+const SEARCH_URL = 'https://api.sketchfab.com/v3/search?type=models&downloadable=true&archives_flavours=false&q=';
+const DOWNLOAD_URL = 'https://api.sketchfab.com/v3/models/{uid}/download';
+
+class Sketchfab {
+    constructor() {
+        this._authToken = localStorage.getItem(AUTH_KEY);
+        this._authExpiry = localStorage.getItem(AUTH_EXPIRY_KEY);
+    }
+
+    isSignedIn() {
+        return this._authToken && this._authExpiry
+            && this._authExpiry > Date.now();
+    }
+
+    signIn(staySignedIn, callback) {
+        if(this._intervalId) {
+            clearInterval(this._intervalId);
+            this._intervalId = null;
+        }
+
+        let tab = window.open(AUTH_URL, '_blank');
+        tab.focus();
+        window._tab = tab;
+        this._intervalId = setInterval(() => {
+            tab.postMessage('fetch_auth_token', VALID_CALLBACK_ORIGIN);
+        }, 1000);
+
+        window.addEventListener('message', (event) => {
+            if(event.origin != VALID_CALLBACK_ORIGIN) return;
+            if(event.data.topic != 'sketchfab_auth_token') return;
+            clearInterval(this._intervalId);
+            tab.postMessage('close_tab', VALID_CALLBACK_ORIGIN);
+            this._authToken = event.data.authToken;
+            this._authExpiry = event.data.authExpiry;
+            if(staySignedIn) {
+                localStorage.setItem(AUTH_KEY, this._authToken);
+                localStorage.setItem(AUTH_EXPIRY_KEY, this._authExpiry);
+            }
+            if(callback) callback();
+        });
+    }
+
+    search(query, successCallback, errorCallback) {
+        let url = SEARCH_URL + encodeURIComponent(query);
+        this.fetch(url, successCallback, errorCallback);
+    }
+
+    fetch(url, successCallback, errorCallback) {
+        fetch(url, {
+            headers: {
+                Authorization: 'Bearer ' + this._authToken,
+            }
+        }).then((response) => {
+            return response.json();
+        }).then((body) => {
+            if(successCallback) successCallback(body);
+        }).catch((error) => {
+            console.error(error);
+            if(errorCallback) errorCallback();
+        });
+    }
+
+    _download(url, sketchfabAsset, successCallback, errorCallback) {
+        fetch(url).then(response => response.blob()).then((blob) => {
+            libraryHandler.addNewAsset(blob, sketchfabAsset.name,
+                AssetTypes.MODEL, (assetId) => {
+                    libraryHandler.setSketchfabDetails(assetId, sketchfabAsset);
+                    if(successCallback) successCallback(assetId);
+                });
+        }).catch((error) => {
+            console.error(error);
+            if(errorCallback) errorCallback();
+        });
+    }
+
+    download(sketchfabAsset, successCallback, errorCallback) {
+        this.fetch(DOWNLOAD_URL.replace('{uid}', sketchfabAsset.uid), (body) =>{
+            if(!body.glb) {
+                if(errorCallback) errorCallback();
+                return;
+            }
+            this._download(body.glb.url, sketchfabAsset, successCallback,
+                errorCallback);
+        }, errorCallback);
+    }
+}
+
+let sketchfab = new Sketchfab();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._staySignedIn = false;
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': ' ',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.3,
+        });
+        this._container.add(this._titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+
+        this._textureBlock = new ThreeMeshUI.Block({
+            'height': 0.085,
+            'width': 0.1,
+            'backgroundOpacity': 1,
+        });
+        columnBlock.add(this._textureBlock);
+
+        this._authorBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Author: ',
+            'fontSize': FontSizes.body,
+            'height': 0.025,
+            'width': 0.3,
+        });
+        columnBlock.add(this._authorBlock);
+
+        let button = ThreeMeshUIHelper.createButtonBlock({
+            'text': "View on Sketchfab",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(button);
+        let interactable = new PointerInteractable(button, () => {
+            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+            window.open(this._sketchfabAsset.viewerUrl, '_blank');
+        });
+        this._containerInteractable.addChild(interactable);
+
+        this._downloadButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Download",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(this._downloadButton);
+        this._downloadInteractable = new PointerInteractable(
+            this._downloadButton, () => {
+                this._downloadButton.visible = false;
+                this._containerInteractable.removeChild(
+                    this._downloadInteractable);
+                sketchfab.download(this._sketchfabAsset,
+                    (assetId) => { this._handleDownloadSuccess(assetId); },
+                    () => { this._handleDownloadError(); });
+            });
+        this._containerInteractable.addChild(this._downloadInteractable);
+        this._container.add(columnBlock);
+    }
+
+    _handleDownloadSuccess(assetId) {
+        this._controller
+            .getPosition(vector3s$1[0]);
+        this._controller
+            .getDirection(vector3s$1[1]).normalize()
+            .divideScalar(4);
+        let position = vector3s$1[0].sub(vector3s$1[1]).toArray();
+        vector3s$1[0].set(0, 0, 1);
+        vector3s$1[1].setY(0).normalize();
+        quaternion.setFromUnitVectors(vector3s$1[0], vector3s$1[1]);
+        euler.setFromQuaternion(quaternion);
+        let rotation = euler.toArray();
+        ProjectHandler$1.addGLTF({
+            "assetId": assetId,
+            "position": position,
+            "rotation": rotation,
+            "visualEdit": true,
+        });
+        this._downloadButton.visible = true;
+        this._containerInteractable.addChild(this._downloadInteractable);
+    }
+
+    _handleDownloadError() {
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'Could not download model, please try again later',
+        });
+        this._downloadButton.visible = true;
+        this._containerInteractable.addChild(this._downloadInteractable);
+    }
+
+    setContent(sketchfabAsset) {
+        this._titleBlock.children[1].set({ content: sketchfabAsset['name'] });
+        this._authorBlock.children[1].set({
+            content: 'Author: ' + sketchfabAsset.user.username,
+        });
+        if(sketchfabAsset.previewTexture) {
+            this._textureBlock.set({
+                backgroundTexture: sketchfabAsset.previewTexture
+            });
+            this._textureBlock.visible = true;
+        } else {
+            this._textureBlock.visible = false;
+        }
+        this._sketchfabAsset = sketchfabAsset;
+    }
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class SketchfabLoginPage extends MenuPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._staySignedIn = false;
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Login to Sketchfab',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.3,
+        });
+        this._container.add(titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'margin': 0.03,
+        });
+
+        let staySignedInCheckbox = new CheckboxInput({
+            'title': 'Stay signed in on this device',
+            'titleWidth': 0.27,
+            'initialValue': false,
+            'swapOrder': true,
+            'onUpdate': (value) => {
+                this._staySignedIn = value;
+            },
+            'getFromSource': () => {
+                return this._staySignedIn;
+            },
+        });
+        staySignedInCheckbox.addToScene(columnBlock,
+            this._containerInteractable);
+        let loginButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Login",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+        });
+        columnBlock.add(loginButton);
+        let interactable = new PointerInteractable(loginButton, () => {
+            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+            sketchfab.signIn(this._staySignedIn,
+                () => { this._handleLoginCallback(); });
+        });
+        this._containerInteractable.addChild(interactable);
+        this._container.add(columnBlock);
+    }
+
+    _handleLoginCallback() {
+        this._controller.popPage();
+        this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const ROWS = 2;
+const OPTIONS$1 = 3;
+
+class PaginatedIconsPage extends MenuPage {
+    constructor(controller, hasSideBar, hasBackButton) {
+        super(controller, hasSideBar, hasBackButton);
+        this._paginatedListButtons = [];
+        this._paginatedListInteractables = [];
+        this._page = 0;
+        this._optionsInteractable = PointerInteractable.emptyGroup();
+    }
+
+    _addList() {
+        this._createPreviousAndNextButtons();
+        this._optionsContainer = new ThreeMeshUI.Block({
+            'height': 0.17,
+            'width': 0.45,
+            'contentDirection': 'row',
+            'justifyContent': 'center',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let params = {
+            'height': 0.17,
+            'width': 0.31,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        };
+        this._optionsBlock = new ThreeMeshUI.Block(params);
+        params['height'] = 0.085;
+        params['contentDirection'] = 'row';
+        params['justifyContent'] = 'center';
+        params['margin'] = 0.005;
+        this._rows = [];
+        this._rows.push(new ThreeMeshUI.Block(params));
+        this._rows.push(new ThreeMeshUI.Block(params));
+        for(let i = 0; i < ROWS; i++) {
+            let row = this._rows[i];
+            for(let j = 0; j < OPTIONS$1; j++) {
+                let button = ThreeMeshUIHelper.createButtonBlock({
+                    'height': 0.085,
+                    'width': 0.1,
+                    'margin': 0.002,
+                    'justifyContent': 'start',
+                    'idleBackgroundColor': Colors.white,
+                    'hoveredBackgroundColor': Colors.white,
+                    'selectedBackgroundColor': Colors.white,
+                    'idleOpacity': 1,
+                });
+                let textBlock = ThreeMeshUIHelper.createTextBlock({
+                    'text': ' ',
+                    'height': 0.035,
+                    'width': 0.1,
+                    'margin': 0,
+                });
+                button.add(textBlock);
+                row.add(button);
+                this._paginatedListButtons.push(button);
+                let interactable = new PointerInteractable(button, () => {
+                    let index = this._page * ROWS * OPTIONS$1 + OPTIONS$1 * i + j;
+                    if(this._items.length > index) {
+                        this._handleItemInteraction(this._items[index]);
+                    } else {
+                        console.error(
+                            "PaginatedIconsPage displaying non existant option");
+                    }
+                });
+                this._optionsInteractable.addChild(interactable);
+                this._paginatedListInteractables.push(interactable);
+            }
+        }
+        this._optionsBlock.add(this._rows[0]);
+        this._optionsBlock.add(this._rows[1]);
+        this._optionsContainer.add(this._previousButton);
+        this._optionsContainer.add(this._optionsBlock);
+        this._optionsContainer.add(this._nextButton);
+        this._container.add(this._optionsContainer);
+        this._containerInteractable.addChild(this._optionsInteractable);
+    }
+
+    _createPreviousAndNextButtons() {
+        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '<',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': '>',
+            'fontSize': 0.03,
+            'height': 0.04,
+            'width': 0.04,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+        this._previousInteractable = new PointerInteractable(
+            this._previousButton,
+            () => {
+                this._page -= 1;
+                this._updateItemsGUI();
+            });
+        this._nextInteractable = new PointerInteractable(this._nextButton,
+            () => {
+                this._page += 1;
+                this._updateItemsGUI();
+            });
+        this._fetchNextInteractable = new PointerInteractable(this._nextButton,
+            () => {
+                this._page += 1;
+                this._fetchNextItems();
+                this._updateItemsGUI();
+            });
+    }
+
+    _updateItemsGUI() {
+        let firstIndex = this._page * ROWS * OPTIONS$1;
+        for(let i = 0; i < ROWS * OPTIONS$1; i++) {
+            let interactable = this._paginatedListInteractables[i];
+            let button = this._paginatedListButtons[i];
+            if(firstIndex + i < this._items.length) {
+                let item = this._items[firstIndex + i];
+                let image = this._getItemImage(item);
+                button.set({ backgroundTexture: image });
+                button.visible = true;
+                this._optionsInteractable.addChild(interactable);
+            } else {
+                button.visible = false;
+                this._optionsInteractable.removeChild(interactable);
+            }
+        }
+        if(this._page == 0) {
+            this._previousButton.visible = false;
+            this._optionsInteractable.removeChild(this._previousInteractable);
+        } else {
+            this._previousButton.visible = true;
+            this._optionsInteractable.addChild(this._previousInteractable);
+        }
+        if(this._items.length > firstIndex + ROWS * OPTIONS$1) {
+            this._nextButton.visible = true;
+            this._optionsInteractable.addChild(this._nextInteractable);
+            this._optionsInteractable.removeChild(this._fetchNextInteractable);
+        } else if(this._items.length == firstIndex + ROWS * OPTIONS$1
+                && this._canFetchMore) {
+            this._nextButton.visible = true;
+            this._optionsInteractable.addChild(this._fetchNextInteractable);
+            this._optionsInteractable.removeChild(this._nextInteractable);
+        } else {
+            this._nextButton.visible = false;
+            this._optionsInteractable.removeChild(this._nextInteractable);
+            this._optionsInteractable.removeChild(this._fetchNextInteractable);
+        }
+        //this._container.update(false, true, false);
+    }
+
+    //Needs to be overridden
+    _getItemImage() {
+        console.error(
+            "PaginatedIconsPage._getItemImage() should be overridden");
+        return "";
+    }
+
+    //Needs to be overridden
+    _handleItemInteraction() {
+        console.error(
+            "PaginatedIconsPage._handleItemInteraction() should be overridden");
+        return;
+    }
+
+    //Needs to be overridden
+    _refreshItems() {
+        console.error("PaginatedIconsPage._refreshItems() should be overridden");
+        return;
+    }
+
+    addToScene(scene, interactableParent) {
+        super.addToScene(scene, interactableParent);
+        if(scene) {
+            this._refreshItems();
+            this._updateItemsGUI();
+        }
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class SketchfabSearchPage extends PaginatedIconsPage {
+    constructor(controller) {
+        super(controller, false, true);
+        this._items = [];
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._textField = new TextField({
+            'height': 0.04,
+            'width': 0.4,
+            'text': 'Search',
+            'fontSize': FontSizes.header,
+            'onBlur': () => { this._searchUpdated(); },
+        });
+        this._textField.addToScene(this._container,this._containerInteractable);
+        this._loadingBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Loading...',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+        });
+
+        this._addList();
+    }
+
+    _searchUpdated() {
+        for(let item of this._items) {
+            item.isDeleted = true;
+            if(item.previewTexture) item.previewTexture.dispose();
+        }
+        this._page = 0;
+        this._items = [];
+        this._updateItemsGUI();
+        if(this._textField.content.length == 0) {
+            this._textField.reset();
+            return;
+        }
+        this._container.remove(this._optionsContainer);
+        this._container.add(this._loadingBlock);
+        let number = Math.random();
+        this._idempotentKey = number;
+        sketchfab.search(this._textField.content,
+            (response) => { this._handleSearchResponse(response, number); },
+            () => { this._handleSearchError(); });
+    }
+
+    _handleSearchResponse(response, number) {
+        if(this._idempotentKey != number) return;
+        this._container.remove(this._loadingBlock);
+        this._container.add(this._optionsContainer);
+        for(let result of response.results) {
+            this._items.push(result);
+        }
+        this._canFetchMore = response.next;
+        this._updateItemsGUI();
+    }
+
+    _handleSearchError() {
+        this._container.remove(this._loadingBlock);
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'An unexpected error occurred, please try again later',
+        });
+    }
+
+    _handleFetchMoreError() {
+        this._page--;
+        this._updateItemsGUI();
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'An unexpected error occurred, please try again later',
+        });
+    }
+
+    _fetchNextItems() {
+        this._container.remove(this._optionsContainer);
+        this._container.add(this._loadingBlock);
+        let number = Math.random();
+        this._idempotentKey = number;
+        sketchfab.fetch(this._canFetchMore,
+            (response) => { this._handleSearchResponse(response, number); },
+            () => { this._handleFetchMoreError(); });
+    }
+
+    _getItemImage(item) {
+        if(item.previewTexture) {
+            return item.previewTexture;
+        } else if(!item.isLoadingTexture) {
+            let image = this._getSmallestImage(item.thumbnails.images);
+            item.previewUrl = image.url;
+            item.isLoadingTexture = true;
+            new TextureLoader().load(item.previewUrl, (texture) => {
+                if(item.isDeleted) {
+                    texture.dispose();
+                } else {
+                    item.previewTexture = texture;
+                    this._updateItemsGUI();
+                }
+            });
+        }
+        return Textures.ellipsisIcon;
+    }
+
+    //With the caveat that it's at least 256px wide
+    _getSmallestImage(images) {
+        let smallestImage = null;
+        for(let image of images) {
+            if(image.width < 256) continue;
+            if(smallestImage == null || image.size < smallestImage.size) {
+                smallestImage = image;
+            }
+        }
+        return smallestImage;
+    }
+
+    _handleItemInteraction(item) {
+        let page = this._controller.getPage(MenuPages.SKETCHFAB_ASSET);
+        page.setContent(item);
+        this._controller.pushPage(MenuPages.SKETCHFAB_ASSET);
+    }
+
+    _refreshItems() {
+        return;
     }
 
 }
@@ -22501,9 +24052,15 @@ class TextInputPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class UploadPage extends MenuPage {
+const OPTIONS = {
+    'Select from Device': '_uploadAsset',
+    'Select from Sketchfab': '_selectFromSketchfab',
+};
+
+class UploadPage extends PaginatedPage {
     constructor(controller) {
         super(controller, false, true);
+        this._items = Object.keys(OPTIONS);
         this._addPageContent();
     }
 
@@ -22515,26 +24072,31 @@ class UploadPage extends MenuPage {
             'width': 0.2,
         });
         this._container.add(titleBlock);
+        this._addList();
+    }
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-        });
-        let linkButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Select File",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-        });
-        columnBlock.add(linkButton);
-        let interactable = new PointerInteractable(linkButton, () => {
-            uploadHandler.triggerUpload();
-        });
-        this._containerInteractable.addChild(interactable);
-        this._container.add(columnBlock);
+    _getItemName(item) {
+        return item;
+    }
+
+    _handleItemInteraction(item) {
+        this[OPTIONS[item]]();
+    }
+
+    _refreshItems() {
+
+    }
+
+    _uploadAsset() {
+        uploadHandler.triggerUpload();
+    }
+
+    _selectFromSketchfab() {
+        if(sketchfab.isSignedIn()) {
+            this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
+        } else {
+            this._controller.pushPage(MenuPages.SKETCHFAB_LOGIN);
+        }
     }
 
     _uploadCallback(assetIds) {
@@ -22668,6 +24230,7 @@ class UserSettingsPage extends DynamicFieldsPage {
 class EditorMenuController extends MenuController {
     constructor() {
         super();
+        this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.ASSET] = new AssetPage(this);
         this._pages[MenuPages.ASSETS] = new LightsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
@@ -22688,6 +24251,9 @@ class EditorMenuController extends MenuController {
         this._pages[MenuPages.PEER] = new PeerPage(this);
         this._pages[MenuPages.PROJECT] = new ProjectPage(this);
         this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
+        this._pages[MenuPages.SKETCHFAB_ASSET] = new SketchfabLoginPage$1(this);
+        this._pages[MenuPages.SKETCHFAB_LOGIN] = new SketchfabLoginPage(this);
+        this._pages[MenuPages.SKETCHFAB_SEARCH] = new SketchfabSearchPage(this);
         this._pages[MenuPages.SKYBOX] = new SkyboxPage(this);
         this._pages[MenuPages.TEXTURE] = new TexturePage(this);
         this._pages[MenuPages.TEXTURES] = new TexturesPage(this);
@@ -22715,6 +24281,7 @@ class EditorMenuController extends MenuController {
 const pages = [
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
     { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
+    { "title": "Acknowledgements", "menuPage": MenuPages.ACKNOWLEDGEMENTS },
 ];
 
 class HomePage extends MenuPage {
@@ -22740,8 +24307,11 @@ class HomePage extends MenuPage {
             'backgroundOpacity': 0,
         });
         let supportsParty = global$1.authUrl && global$1.socketUrl;
+        let authoredAssets = this._getAuthoredAssets();
         for(let page of pages) {
             if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
+            if(page['menuPage'] == MenuPages.ACKNOWLEDGEMENTS
+                && authoredAssets.length == 0) continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': page.title,
                 'fontSize': FontSizes.body,
@@ -22751,6 +24321,11 @@ class HomePage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
+                if(page.menuPage == MenuPages.ACKNOWLEDGEMENTS) {
+                    let page = this._controller.getPage(
+                        MenuPages.ACKNOWLEDGEMENTS);
+                    page.setAssets(authoredAssets);
+                }
                 this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);
@@ -22758,6 +24333,16 @@ class HomePage extends MenuPage {
         this._container.add(columnBlock);
     }
 
+    _getAuthoredAssets() {
+        let authoredAssets = [];
+        for(let assetId in libraryHandler.library) {
+            let asset = libraryHandler.library[assetId];
+            if(asset['Type'] == AssetTypes.MODEL && asset['Author']) {
+                authoredAssets.push(asset);
+            }
+        }
+        return authoredAssets;
+    }
 }
 
 /*
@@ -22769,6 +24354,7 @@ class HomePage extends MenuPage {
 class LiveMenuController extends MenuController {
     constructor() {
         super();
+        this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.HOME] = new HomePage(this);
         this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
@@ -23024,6 +24610,7 @@ class Main {
         sessionHandler.init(this._container);
         inputHandler.init(this._container, this._renderer, this._userObj);
         pointerInteractableHandler.init();
+        undoRedoHandler.init();
         if(global$1.deviceType == "XR") gripInteractableHandler.init();
         transformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);
@@ -23036,24 +24623,13 @@ class Main {
     }
 
     _createAssets(projectFilePath) {
-        if(!global$1.disableImmersion) {
-            this._menuController = global$1.isEditor
-                ? new EditorMenuController()
-                : new LiveMenuController();
-            this._menuController.addToScene(this._scene);
-            global$1.menuController = this._menuController;
-
-            UserController$1.init({
-                'User Object': this._userObj,
-                'Flight Enabled': true,
-            });
-            UserController$1.addToScene(this._userObj);
-        }
-
         if(projectFilePath) {
             let lock = uuidv4();
             global$1.loadingLocks.add(lock);
             ProjectHandler$1.load(projectFilePath, () => {
+                if(!global$1.disableImmersion) {
+                    this._setupForImmersion();
+                }
                 global$1.loadingLocks.delete(lock);
             }, (error) => {
                 $(this._loadingMessage).removeClass("loading");
@@ -23065,7 +24641,24 @@ class Main {
                 'visualEdit': false,
             });
             ProjectHandler$1.addLight(ambientLight, ambientLight.getAssetId(), true);
+            if(!global$1.disableImmersion) {
+                this._setupForImmersion();
+            }
         }
+    }
+
+    _setupForImmersion() {
+        this._menuController = global$1.isEditor
+            ? new EditorMenuController()
+            : new LiveMenuController();
+        this._menuController.addToScene(this._scene);
+        global$1.menuController = this._menuController;
+
+        UserController$1.init({
+            'User Object': this._userObj,
+            'Flight Enabled': true,
+        });
+        UserController$1.addToScene(this._userObj);
     }
 
     _addEventListeners() {
@@ -23134,6 +24727,11 @@ class Main {
             this._dynamicAssets.push(pubSub);
             this._dynamicAssets.push(ThreeMeshUI);
             this._dynamicAssets.push(partyHandler);
+            if(global$1.isEditor) {
+                this._dynamicAssets.push(translateHandler);
+                this._dynamicAssets.push(rotateHandler);
+                this._dynamicAssets.push(scaleHandler);
+            }
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "
@@ -39196,6 +40794,10 @@ function setup(containerId, params) {
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
             start(resolve, containerId, params.projectFilePath);
             return;
+        } else if(localStorage.getItem('DigitalBacon:PointerOverride')) {
+            global$1.deviceType = "POINTER";
+            start(resolve, containerId, params.projectFilePath);
+            return;
         }
         if('xr' in navigator) {
             navigator.xr.isSessionSupported( 'immersive-vr' )
@@ -39224,7 +40826,7 @@ function setup(containerId, params) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const version = "0.1.0";
+const version = "0.1.1";
 
 function getDeviceType() {
     return global$1.deviceType;
