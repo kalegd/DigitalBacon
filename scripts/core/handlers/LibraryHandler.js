@@ -15,12 +15,13 @@ import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 
 const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL',
-    'Sketchfab Link'];
+    'Sketchfab Link', 'Sketchfab ID'];
 
 class LibraryHandler {
     constructor() {
         this.library = {};
         this._blobHashMap = {};
+        this._sketchfabIdMap = {};
     }
 
     addNewAsset(blob, name, type, callback) {
@@ -84,6 +85,8 @@ class LibraryHandler {
                 if(assetDetails[key])
                     this.library[assetId][key] = assetDetails[key];
             }
+            if(assetDetails['Sketchfab ID'])
+                this._sketchfabIdMap[assetDetails['Sketchfab ID']] = assetId;
             return this._loadMesh(assetId, blob, true);
         });
     }
@@ -222,6 +225,10 @@ class LibraryHandler {
         return null;
     }
 
+    getAssetIdFromSketchfabId(sketchfabId) {
+        return this._sketchfabIdMap[sketchfabId];
+    }
+
     setSketchfabDetails(assetId, sketchfabAsset) {
         let asset = this.library[assetId];
         if(!asset) {
@@ -236,6 +243,10 @@ class LibraryHandler {
             asset['Author'] = 'Sketchfab User ' + sketchfabAsset.user.username;
         if(sketchfabAsset.viewerUrl)
             asset['Sketchfab Link'] = sketchfabAsset.viewerUrl;
+        if(sketchfabAsset.uid) {
+            asset['Sketchfab ID'] = sketchfabAsset.uid;
+            this._sketchfabIdMap[sketchfabAsset.uid] = assetId;
+        }
         if(sketchfabAsset.previewTexture)
             asset.previewTexture = sketchfabAsset.previewTexture;
     }
@@ -250,6 +261,7 @@ class LibraryHandler {
         }
         this.library = newLibrary;
         this._blobHashMap = {};
+        this._sketchfabIdMap = {};
     }
 
     getLibraryDetails(assetIds) {

@@ -60,12 +60,10 @@ class InputHandler {
                 this._keysPressed.delete(event.key);
                 this._keyCodesPressed.delete(event.code);
             });
-            if(global.isChrome) {
-                document.addEventListener('pointerlockchange', (event) => {
-                    if(!global.sessionActive) this._keysPressed.clear();
-                    if(!global.sessionActive) this._keyCodesPressed.clear();
-                });
-            }
+            window.addEventListener('blur', (event) => {
+                this._keysPressed.clear();
+                this._keyCodesPressed.clear();
+            });
             this._renderer.domElement.addEventListener( 'mousedown', () => {
                 this._pointerPressed = true;
             });

@@ -15,7 +15,7 @@ import ThreeMeshUI from 'three-mesh-ui';
 
 const pages = [
     { "title": "Backdrop", "menuPage": MenuPages.SKYBOX, isEditorOnly: true },
-    { "title": "User Settings", "menuPage": MenuPages.USER_SETTINGS },
+    { "title": "Visitor Settings", "menuPage": MenuPages.USER_SETTINGS },
     { "title": "Editor Settings", "menuPage": MenuPages.EDITOR_SETTINGS,
         isEditorOnly: true },
     { "title": "Update Avatar" },

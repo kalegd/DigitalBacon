@@ -6,7 +6,9 @@
 
 import global from '/scripts/core/global.js';
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
+import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
@@ -55,6 +57,32 @@ class SketchfabLoginPage extends MenuPage {
         });
         columnBlock.add(this._authorBlock);
 
+        this._downloadButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Download",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(this._downloadButton);
+        this._downloadInteractable = new PointerInteractable(
+            this._downloadButton, () => {
+                if(this._assetId) {
+                    this._controller.popPagesPast(MenuPages.UPLOAD);
+                    let assetPage = this._controller.getPage(MenuPages.ASSET);
+                    assetPage.setAsset(this._assetId);
+                    this._controller.pushPage(MenuPages.ASSET);
+                    return;
+                }
+                this._downloadButton.visible = false;
+                this._containerInteractable.removeChild(
+                    this._downloadInteractable);
+                Sketchfab.download(this._sketchfabAsset,
+                    (assetId) => { this._handleDownloadSuccess(assetId); },
+                    () => { this._handleDownloadError(); });
+            });
+        this._containerInteractable.addChild(this._downloadInteractable);
+
         let button = ThreeMeshUIHelper.createButtonBlock({
             'text': "View on Sketchfab",
             'fontSize': FontSizes.body,
@@ -69,24 +97,6 @@ class SketchfabLoginPage extends MenuPage {
         });
         this._containerInteractable.addChild(interactable);
 
-        this._downloadButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Download",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'margin': 0.006,
-        });
-        columnBlock.add(this._downloadButton);
-        this._downloadInteractable = new PointerInteractable(
-            this._downloadButton, () => {
-                this._downloadButton.visible = false;
-                this._containerInteractable.removeChild(
-                    this._downloadInteractable);
-                Sketchfab.download(this._sketchfabAsset,
-                    (assetId) => { this._handleDownloadSuccess(assetId); },
-                    () => { this._handleDownloadError(); });
-            });
-        this._containerInteractable.addChild(this._downloadInteractable);
         this._container.add(columnBlock);
     }
 
@@ -110,6 +120,10 @@ class SketchfabLoginPage extends MenuPage {
         });
         this._downloadButton.visible = true;
         this._containerInteractable.addChild(this._downloadInteractable);
+        this._assetId = LibraryHandler.getAssetIdFromSketchfabId(
+            this._sketchfabAsset.uid);
+        if(assetId == this._assetId)
+            this._downloadButton.children[1].set({ content: 'View in Library'});
     }
 
     _handleDownloadError() {
@@ -133,6 +147,11 @@ class SketchfabLoginPage extends MenuPage {
         } else {
             this._textureBlock.visible = false;
         }
+        this._assetId = LibraryHandler.getAssetIdFromSketchfabId(
+            sketchfabAsset.uid);
+        this._downloadButton.children[1].set({
+            content: (this._assetId) ? 'View in Library' : 'Download'
+        });
         this._sketchfabAsset = sketchfabAsset;
     }
 }

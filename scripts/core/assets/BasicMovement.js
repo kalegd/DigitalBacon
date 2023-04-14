@@ -119,7 +119,8 @@ export default class BasicMovement {
                     || InputHandler.isKeyCodePressed("KeyD"))
                 this._velocity.x += movementSpeed / 4;
             if (flightEnabled && InputHandler.isKeyCodePressed("Space")
-                    != InputHandler.isKeyCodePressed("ShiftLeft")) {
+                    != InputHandler.isKeyPressed("Shift")
+                    && !InputHandler.isKeyPressed("Meta")) {
                 this._verticalVelocity =
                     (InputHandler.isKeyCodePressed("Space"))
                         ? movementSpeed

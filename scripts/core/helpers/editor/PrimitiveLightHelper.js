@@ -31,14 +31,14 @@ export default class PrimitiveLightHelper extends AssetHelper {
         return;
     }
 
-    _updateVisualEdit(isVisualEdit) {
+    updateVisualEdit(isVisualEdit) {
         if(isVisualEdit) {
             this._object.add(this._mesh);
         } else {
             this._object.remove(this._mesh);
             fullDispose(this._mesh);
         }
-        super._updateVisualEdit(isVisualEdit);
+        super.updateVisualEdit(isVisualEdit);
     }
 
     _getMenuFieldsMap() {
