@@ -144,12 +144,16 @@ export default class AssetHelper extends EditorHelper {
         } else {
             this._object.states = States;
             this._object.setState = (state) => {
-                if(state == States.HOVERED
-                    && this._object != TransformControlsHandler.getObject())
-                {
+                if(state == States.HOVERED) {
                     this._boundingBox.setFromObject(this._object);
                     global.scene.add(this._boundingBoxObj);
                 } else {
+                    if(state == States.SELECTED
+                        && this._object == TransformControlsHandler.getObject()
+                        && !TransformControlsHandler._isDragging())
+                    {
+                        TransformControlsHandler.initiateDrag();
+                    }
                     global.scene.remove(this._boundingBoxObj);
                 }
             };

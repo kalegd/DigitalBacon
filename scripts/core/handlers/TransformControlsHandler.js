@@ -10,6 +10,7 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
@@ -410,6 +411,19 @@ class TransformControlsHandler {
         }
         delete this._attachedAssets[option];
         this._placingObject[option] = false;
+    }
+
+    initiateDrag(option) {
+        option = option || global.deviceType;
+        let asset = this._attachedAssets[option];
+        let pointerPosition = InputHandler.getPointerPosition();
+        let pointer = { x: pointerPosition.x, y: pointerPosition.y, button: 0 };
+        let plane = this._transformControls._plane;
+        plane.axis = 'XYZ';
+        plane.updateMatrixWorld();
+        plane.axis = null;
+        this._transformControls.axis = 'XYZ';
+        this._transformControls.pointerDown(pointer);
     }
 
     _isDragging(instance) {
