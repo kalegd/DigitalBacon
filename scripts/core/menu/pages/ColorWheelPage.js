@@ -17,7 +17,7 @@ const HSL = {};
 
 class ColorWheelPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
         this._createCursors();
     }

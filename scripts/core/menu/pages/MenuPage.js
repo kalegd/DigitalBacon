@@ -14,41 +14,17 @@ import ThreeMeshUI from 'three-mesh-ui';
 const FONT_FAMILY = Fonts.defaultFamily;
 const FONT_TEXTURE = Fonts.defaultTexture;
 const UI_BACKGROUND_COLOR = Colors.defaultMenuBackground;
-const UI_BACKGROUND_OPACITY = 0.5;
+const UI_BACKGROUND_OPACITY = 0.7;
 
 class MenuPage extends PointerInteractableEntity {
-    constructor(controller, hasSideBar, hasBackButton) {
+    constructor(controller, hasBackButton) {
         super();
         this._controller = controller;
         this._createPage();
         this._createCloseButton();
-        if(hasSideBar) {
-            this._createSideBarButton();
-        } else if(hasBackButton) {
+        if(hasBackButton) {
             this._createBackButton();
         }
-    }
-
-    _createSideBarButton() {
-        let sidebarButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: UI_BACKGROUND_COLOR,
-            backgroundOpacity: 0,
-        });
-        let sidebarButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.hamburgerIcon,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        sidebarButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
-        sidebarButtonParent.position.fromArray([-.225, 0.15, -0.001]);
-        sidebarButtonParent.add(sidebarButton);
-        let interactable = new PointerInteractable(sidebarButton, () => {
-            this._controller.setPage(MenuPages.NAVIGATION);
-        });
-        this._pointerInteractable.addChild(interactable);
-        this._object.add(sidebarButtonParent);
     }
 
     _createBackButton() {
@@ -72,6 +48,29 @@ class MenuPage extends PointerInteractableEntity {
         });
         this._pointerInteractable.addChild(interactable);
         this._object.add(backButtonParent);
+        this._createHomeButton();
+    }
+
+    _createHomeButton() {
+        let homeButtonParent = new ThreeMeshUI.Block({
+            height: 0.06,
+            width: 0.06,
+            backgroundColor: UI_BACKGROUND_COLOR,
+            backgroundOpacity: 0,
+        });
+        let homeButton = ThreeMeshUIHelper.createButtonBlock({
+            'backgroundTexture': Textures.homeIcon,
+            'height': 0.04,
+            'width': 0.04,
+        });
+        homeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        homeButtonParent.position.fromArray([-.225, 0.1, -0.001]);
+        homeButtonParent.add(homeButton);
+        let interactable = new PointerInteractable(homeButton, () => {
+            this._controller.popAllPages();
+        });
+        this._pointerInteractable.addChild(interactable);
+        this._object.add(homeButtonParent);
     }
 
     _createCloseButton() {

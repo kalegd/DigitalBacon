@@ -13,7 +13,7 @@ import ThreeMeshUI from 'three-mesh-ui';
 
 class TextInputPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 

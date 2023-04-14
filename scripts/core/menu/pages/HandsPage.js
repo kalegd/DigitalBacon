@@ -25,7 +25,7 @@ const hands = [
 
 class HandsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = hands;
         this._addPageContent();
     }

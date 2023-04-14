@@ -22,7 +22,7 @@ const OPTIONS = {
 
 class UploadPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = Object.keys(OPTIONS);
         this._addPageContent();
     }

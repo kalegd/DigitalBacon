@@ -12,7 +12,7 @@ import ThreeMeshUI from 'three-mesh-ui';
 
 class TwoButtonPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 

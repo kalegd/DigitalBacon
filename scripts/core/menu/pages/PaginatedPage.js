@@ -14,8 +14,8 @@ import ThreeMeshUI from 'three-mesh-ui';
 const OPTIONS = 5;
 
 class PaginatedPage extends MenuPage {
-    constructor(controller, hasSideBar, hasBackButton) {
-        super(controller, hasSideBar, hasBackButton);
+    constructor(controller, hasBackButton) {
+        super(controller, hasBackButton);
         this._paginatedListButtons = [];
         this._paginatedListInteractables = [];
         this._page = 0;

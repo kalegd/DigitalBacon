@@ -15,7 +15,7 @@ import { TextureLoader } from 'three';
 
 class AcknowledgementsPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._sketchfabAssets = [];
         this._addPageContent();
     }

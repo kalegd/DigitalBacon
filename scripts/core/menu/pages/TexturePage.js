@@ -17,7 +17,7 @@ import ThreeMeshUI from 'three-mesh-ui';
 
 class TexturePage extends DynamicFieldsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
     }
 
     _createTitleBlock() {

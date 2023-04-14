@@ -18,7 +18,7 @@ const FIELD_MAX_LENGTH = 25;
 
 class MaterialsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._materials = MaterialsHandler.getMaterials();
         this._items = Object.keys(this._materials);
         this._addPageContent();

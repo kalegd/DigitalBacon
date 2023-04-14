@@ -30,7 +30,7 @@ const sides = [
 
 class SkyboxPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._buttons = [];
         this._addPageContent();
     }

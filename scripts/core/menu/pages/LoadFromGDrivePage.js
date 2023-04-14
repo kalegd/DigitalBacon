@@ -16,7 +16,7 @@ import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
 class LoadFromGDrivePage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._instances = {};
         this._items = Object.keys(this._instances);
         this._addPageContent();

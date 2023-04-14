@@ -19,7 +19,7 @@ const FIELD_MAX_LENGTH = 25;
 
 class LightsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._assets = {};
         this._items = Object.keys(this._assets);
         this._addPageContent();

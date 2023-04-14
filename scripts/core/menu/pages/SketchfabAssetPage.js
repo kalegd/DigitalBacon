@@ -20,7 +20,7 @@ import ThreeMeshUI from 'three-mesh-ui';
 
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._staySignedIn = false;
         this._addPageContent();
     }

@@ -10,7 +10,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global.loadingLocks.add(blackPixelLock);
@@ -38,6 +38,10 @@ export const Textures = {
     "headphonesIcon": new THREE.TextureLoader().load(
         'images/icons/headphones_icon_white.png',
         function(texture) { global.loadingLocks.delete(locks['headphones']); },
+    ),
+    "homeIcon": new THREE.TextureLoader().load(
+        'images/icons/home_icon_white.png',
+        function(texture) { global.loadingLocks.delete(locks['home']); },
     ),
     "imageIcon": new THREE.TextureLoader().load(
         'images/icons/image_icon_white.png',
@@ -111,7 +115,7 @@ export const Colors = {
     "white": new THREE.Color(0xffffff),
     "yellow": new THREE.Color(0xffff00),
     "defaultIdle": new THREE.Color(0x969696),
-    "defaultHovered": new THREE.Color(0x43464b),
+    "defaultHovered": new THREE.Color(0x63666b),
     "defaultMenuBackground": new THREE.Color(0x000000),
     "keyboard": new THREE.Color(0x858585),
     "keyboardButtonIdle": new THREE.Color(0x363636),

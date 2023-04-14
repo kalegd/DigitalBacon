@@ -15,7 +15,7 @@ const FIELDS_CONTAINER_HEIGHT = 0.22;
 
 class DynamicFieldsPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._firstItemIndex = 0;
         this._lastItemIndex = -1;
         this._fields = [];

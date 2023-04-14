@@ -18,7 +18,7 @@ const FIELD_MAX_LENGTH = 25;
 
 class LibrarySearchPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._assets = LibraryHandler.getLibrary();
         this._items = Object.keys(this._assets);
         this._addPageContent();

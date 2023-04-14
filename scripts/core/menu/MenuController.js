@@ -90,6 +90,14 @@ export default class MenuController extends PointerInteractableEntity {
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
+    popAllPages() {
+        while(this._pageCalls.length > 1) {
+            let currentPage = this._getCurrentPage();
+            currentPage.back();
+        }
+        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
+    }
+
     back() {
         this._getCurrentPage().back();
     }

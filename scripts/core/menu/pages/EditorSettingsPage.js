@@ -16,7 +16,7 @@ import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
 
 class EditorSettingsPage extends DynamicFieldsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._createFields();
     }
 

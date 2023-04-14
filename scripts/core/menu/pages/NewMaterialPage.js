@@ -22,7 +22,7 @@ const PAGES = [
 
 class NewMaterialPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = PAGES;
         this._addPageContent();
     }

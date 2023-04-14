@@ -55,7 +55,7 @@ const ASSETS = [{
 
 class LibraryPage extends PaginatedIconsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = Object.keys(ASSETS);
         this._addPageContent();
         this._createSearchButton();

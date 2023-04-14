@@ -17,7 +17,7 @@ import { TextureLoader } from 'three';
 
 class SketchfabSearchPage extends PaginatedImagesPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = [];
         this._addPageContent();
     }

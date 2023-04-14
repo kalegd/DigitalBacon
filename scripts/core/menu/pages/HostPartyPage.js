@@ -18,7 +18,7 @@ import ThreeMeshUI from 'three-mesh-ui';
 
 class HostPartyPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 
