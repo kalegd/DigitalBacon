@@ -80,15 +80,14 @@ class ProjectPage extends PaginatedPage {
             });
             return;
         }
-        ProjectHandler.reset();
-        let ambientLight = new PrimitiveAmbientLight({
-            'visualEdit': false,
-        });
-        ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
-        GoogleDrive.clearActiveFile();
-        if(PartyHandler.isPartyActive() && PartyHandler.isHost()) {
-            PartyHandler.sendProject();
-        }
+        let page = this._controller.getPage(MenuPages.TWO_BUTTON);
+        page.setContent(
+            "You will lose any unsaved progress when starting a new project",
+            "Confirm New Project",
+            "Cancel",
+            () => { this._newProjectConfirm(); },
+            () => { this._controller.popPage(); });
+        this._controller.pushPage(MenuPages.TWO_BUTTON);
     }
 
     _localSave() {
@@ -205,6 +204,25 @@ class ProjectPage extends PaginatedPage {
                 this._loadErrorCallback();
             });
         });
+    }
+
+    _newProjectConfirm() {
+        if(PartyHandler.isPartyActive() && !PartyHandler.isHost()) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        }
+        ProjectHandler.reset();
+        let ambientLight = new PrimitiveAmbientLight({
+            'visualEdit': false,
+        });
+        ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+        GoogleDrive.clearActiveFile();
+        if(PartyHandler.isPartyActive() && PartyHandler.isHost()) {
+            PartyHandler.sendProject();
+        }
+        this._controller.popPage();
     }
 
     _loadErrorCallback() {

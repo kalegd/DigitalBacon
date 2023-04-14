@@ -36,6 +36,7 @@ import SkyboxPage from '/scripts/core/menu/pages/SkyboxPage.js';
 import TexturePage from '/scripts/core/menu/pages/TexturePage.js';
 import TexturesPage from '/scripts/core/menu/pages/TexturesPage.js';
 import TextInputPage from '/scripts/core/menu/pages/TextInputPage.js';
+import TwoButtonPage from '/scripts/core/menu/pages/TwoButtonPage.js';
 import UploadPage from '/scripts/core/menu/pages/UploadPage.js';
 import UserSettingsPage from '/scripts/core/menu/pages/UserSettingsPage.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
@@ -73,6 +74,7 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.TEXTURE] = new TexturePage(this);
         this._pages[MenuPages.TEXTURES] = new TexturesPage(this);
         this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
+        this._pages[MenuPages.TWO_BUTTON] = new TwoButtonPage(this);
         this._pages[MenuPages.UPLOAD] = new UploadPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         this._pageCalls.push(MenuPages.NAVIGATION);

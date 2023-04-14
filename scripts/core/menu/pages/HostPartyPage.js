@@ -73,6 +73,7 @@ class HostPartyPage extends MenuPage {
     }
 
     _hostParty() {
+        this._textField.deactivate();
         let roomId = this._textField.content;
         if(roomId.length == 0) {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
@@ -95,7 +96,10 @@ class HostPartyPage extends MenuPage {
         this._container.remove(this._connectingBlock);
         this._container.add(this._contentBlock);
         this._container.update(false, false, true);
-        if(this._object.parent) this._controller.back();
+        if(this._controller._getCurrentPage() == this) this._controller.back();
+        PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+            text: 'Party Started',
+        });
     }
 
     _errorCallback(message) {
