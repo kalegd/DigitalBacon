@@ -6,7 +6,9 @@
 
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 
 const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken'
 const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry'
@@ -34,6 +36,12 @@ class Sketchfab {
         }
 
         let tab = window.open(AUTH_URL, '_blank');
+        if(!tab) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Please check your popup blocker settings',
+            });
+            return;
+        }
         tab.focus();
         window._tab = tab;
         this._intervalId = setInterval(() => {
