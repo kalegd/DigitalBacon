@@ -23086,6 +23086,12 @@ class Sketchfab {
         }
 
         let tab = window.open(AUTH_URL, '_blank');
+        if(!tab) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Please check your popup blocker settings',
+            });
+            return;
+        }
         tab.focus();
         window._tab = tab;
         this._intervalId = setInterval(() => {
@@ -23304,10 +23310,63 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+class ClickAction {
+    constructor(action) {
+        this._action = action;
+        this._triggerAction = false;
+        this._addEventListeners();
+    }
+
+    _addEventListeners() {
+        if(global$1.deviceType != "XR") {
+            this._eventType = global$1.deviceType == "MOBILE"
+                ? 'touchend'
+                : 'click';
+            this._clickListener = (e) => {
+                setTimeout(() => {
+                    if(this._triggerAction) {
+                        this._triggerAction = false;
+                        if(this._action) this._action();
+                    }
+                }, 20);
+            };
+            //Why this convoluted chain of event listener checking a variable
+            //set by interactable action (which uses polling)? Because we can't
+            //trigger the file input with a click event outside of an event
+            //listener on Firefox and Safari :(
+        }
+    }
+
+
+    listen() {
+        document.addEventListener(this._eventType, this._clickListener);
+    }
+
+    triggerAction() {
+        if(global$1.deviceType == 'XR') {
+            if(this._action) this._action();
+        } else {
+            this._triggerAction = true;
+        }
+    }
+
+    stopListening() {
+        document.removeEventListener(this._eventType, this._clickListener);
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
         super(controller, true);
         this._staySignedIn = false;
+        this._clickAction = new ClickAction(() => { this._handleLogin(); });
         this._addPageContent();
     }
 
@@ -23351,17 +23410,30 @@ class SketchfabLoginPage extends MenuPage {
         });
         columnBlock.add(loginButton);
         let interactable = new PointerInteractable(loginButton, () => {
-            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
-            sketchfab.signIn(this._staySignedIn,
-                () => { this._handleLoginCallback(); });
+            this._clickAction.triggerAction();
         });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
     }
 
+    _handleLogin() {
+        if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+        sketchfab.signIn(this._staySignedIn,
+            () => { this._handleLoginCallback(); });
+    }
+
     _handleLoginCallback() {
         this._controller.popPage();
         this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
+    }
+
+    back() {
+        this._clickAction.stopListening();
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._clickAction.listen();
+        super.addToScene(scene, parentInteractable);
     }
 }
 
