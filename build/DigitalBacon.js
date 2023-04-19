@@ -8709,14 +8709,10 @@ class OrbitControls extends EventDispatcher {
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
 
 class SessionHandler {
-    init(container, params) {
+    init(container, onStart) {
         this._container = container;
-        if(params == null) {
-            params = {};
-        }
-        this._orbitControlsTarget = (params['Orbit Controls Target'])
-            ? params['Orbit Controls Target']
-            : new Vector3(0,0,0);
+        this._orbitControlsTarget = new Vector3(0,0,0);
+        this._onStart = onStart;
         global$1.sessionActive = false;
         if(global$1.deviceType == "XR") {
             this._configureForXR();
@@ -8739,6 +8735,10 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.init();
             global$1.renderer.xr.setFoveation(0);
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
         global$1.renderer.xr.addEventListener("sessionend", () => {
             global$1.sessionActive = false;
@@ -8772,6 +8772,10 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.init();
             inputHandler.createPointerControls();
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
     }
 
@@ -8803,6 +8807,10 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.init();
             inputHandler.createMobileControls();
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
     }
 
@@ -24759,7 +24767,7 @@ Stats.Panel = function ( name, fg, bg ) {
  */
 
 class Main {
-    constructor(callback, containerId, projectFilePath) {
+    constructor(callback, containerId, params) {
         this._renderer;
         this._scene;
         this._camera;
@@ -24774,9 +24782,9 @@ class Main {
         this._createScene();
         this._createCamera();
         this._createUser();
-        this._createHandlers();
+        this._createHandlers(params.onStart);
         this._createClients();
-        this._createAssets(projectFilePath);
+        this._createAssets(params.projectFilePath);
         this._addEventListeners();
         this._onResize();
         this._enableStats();
@@ -24824,10 +24832,10 @@ class Main {
         global$1.cameraFocus = this._cameraFocus;
     }
 
-    _createHandlers() {
+    _createHandlers(onStart) {
         ProjectHandler$1.init(this._scene);
         if(global$1.disableImmersion) return;
-        sessionHandler.init(this._container);
+        sessionHandler.init(this._container, onStart);
         inputHandler.init(this._container, this._renderer, this._userObj);
         pointerInteractableHandler.init();
         undoRedoHandler.init();
@@ -40786,9 +40794,9 @@ module.exports = JSZipUtils;
 global$1.deviceType = "MOBILE";
 global$1.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
 
-function start(callback, containerId, projectFilePath) {
+function start(callback, containerId, params) {
     setupContainer(containerId);
-    window.main = new Main(callback, containerId, projectFilePath);
+    window.main = new Main(callback, containerId, params);
 }
 
 function hasPointerLock() {
@@ -41012,11 +41020,11 @@ function setup(containerId, params) {
     let promise = new Promise((resolve) => {
         //Check mobile override for VR capable phones
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
             return;
         } else if(localStorage.getItem('DigitalBacon:PointerOverride')) {
             global$1.deviceType = "POINTER";
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
             return;
         }
         if('xr' in navigator) {
@@ -41030,11 +41038,11 @@ function setup(containerId, params) {
                 }).catch(function() {
                     checkIfPointer();
                 }).finally(function() {
-                    start(resolve, containerId, params.projectFilePath);
+                    start(resolve, containerId, params);
                 });
         } else {
             checkIfPointer();
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
         }
     });
     return promise;

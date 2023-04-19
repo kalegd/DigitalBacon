@@ -29,6 +29,7 @@
   <body>
     <div id="container"></div>
     <script type="module">
+      import Stats from '/scripts/stats.js';
       import {
           setupEditor,
           getDeviceType,
@@ -40,6 +41,9 @@
           projectFilePath: '/projects/default-project.zip',
           authUrl: 'https://api.mydigitalbacon.com/multi-user/auth/dh8D9qJBx8jL3TucVqFMaF',
           socketUrl: 'wss://websocket.mydigitalbacon.com',
+          onStart: () => {
+              Stats.put({ openedApp: true, deviceType: getDeviceType() });
+          },
       };
 
       setupEditor("container", params).then(() => {
