@@ -14,14 +14,10 @@ import { Vector3 } from 'three';
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
 
 class SessionHandler {
-    init(container, params) {
+    init(container, onStart) {
         this._container = container;
-        if(params == null) {
-            params = {};
-        }
-        this._orbitControlsTarget = (params['Orbit Controls Target'])
-            ? params['Orbit Controls Target']
-            : new Vector3(0,0,0);
+        this._orbitControlsTarget = new Vector3(0,0,0);
+        this._onStart = onStart;
         global.sessionActive = false;
         if(global.deviceType == "XR") {
             this._configureForXR();
@@ -44,6 +40,10 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.init();
             global.renderer.xr.setFoveation(0);
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
         global.renderer.xr.addEventListener("sessionend", () => {
             global.sessionActive = false;
@@ -77,6 +77,10 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.init();
             InputHandler.createPointerControls();
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
     }
 
@@ -108,6 +112,10 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.init();
             InputHandler.createMobileControls();
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
     }
 

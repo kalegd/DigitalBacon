@@ -29,7 +29,7 @@ import ThreeMeshUI from 'three-mesh-ui';
 import * as THREE from 'three';
 
 export default class Main {
-    constructor(callback, containerId, projectFilePath) {
+    constructor(callback, containerId, params) {
         this._renderer;
         this._scene;
         this._camera;
@@ -44,9 +44,9 @@ export default class Main {
         this._createScene();
         this._createCamera();
         this._createUser();
-        this._createHandlers();
+        this._createHandlers(params.onStart);
         this._createClients();
-        this._createAssets(projectFilePath);
+        this._createAssets(params.projectFilePath);
         this._addEventListeners();
         this._onResize();
         this._enableStats();
@@ -94,10 +94,10 @@ export default class Main {
         global.cameraFocus = this._cameraFocus;
     }
 
-    _createHandlers() {
+    _createHandlers(onStart) {
         ProjectHandler.init(this._scene);
         if(global.disableImmersion) return;
-        SessionHandler.init(this._container);
+        SessionHandler.init(this._container, onStart);
         InputHandler.init(this._container, this._renderer, this._userObj);
         PointerInteractableHandler.init();
         UndoRedoHandler.init();

@@ -32,9 +32,9 @@ import '/node_modules/nipplejs/dist/nipplejs.js';
 global.deviceType = "MOBILE";
 global.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
 
-function start(callback, containerId, projectFilePath) {
+function start(callback, containerId, params) {
     setupContainer(containerId);
-    window.main = new Main(callback, containerId, projectFilePath);
+    window.main = new Main(callback, containerId, params);
 }
 
 function hasPointerLock() {
@@ -258,11 +258,11 @@ function setup(containerId, params) {
     let promise = new Promise((resolve) => {
         //Check mobile override for VR capable phones
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
             return;
         } else if(localStorage.getItem('DigitalBacon:PointerOverride')) {
             global.deviceType = "POINTER";
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
             return;
         }
         if('xr' in navigator) {
@@ -276,11 +276,11 @@ function setup(containerId, params) {
                 }).catch(function() {
                     checkIfPointer();
                 }).finally(function() {
-                    start(resolve, containerId, params.projectFilePath);
+                    start(resolve, containerId, params);
                 });
         } else {
             checkIfPointer();
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
         }
     });
     return promise;
