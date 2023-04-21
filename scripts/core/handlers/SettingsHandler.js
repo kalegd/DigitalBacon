@@ -18,7 +18,9 @@ class SettingsHandler {
             "Skybox": {},
             "User Settings": {
                 "Movement Speed": 3,
+                "User Scale": 1,
                 "Enable Flying": true,
+                "Swap Joysticks": false,
             },
         };
         this.editorSettings = {
@@ -46,14 +48,31 @@ class SettingsHandler {
                 this.settings['Skybox'][side] = null;
             }
             this.settings['User Settings']['Movement Speed'] = 3;
+            this.settings['User Settings']['User Scale'] = 1;
             this.settings['User Settings']['Enable Flying'] = true;
+            this.settings['User Settings']['Swap Joysticks'] = false;
         } else {
             this.settings = settings;
             if(!this.settings['User Settings']) {
                 this.settings['User Settings'] = {
                     "Movement Speed": 3,
+                    "User Scale": 1,
                     "Enable Flying": true,
+                    "Swap Joysticks": false,
                 };
+            } else {
+                if(!this.settings['User Settings']['Movement Speed']) {
+                    this.settings['User Settings']['Movement Speed'] = 3;
+                }
+                if(!this.settings['User Settings']['User Scale']) {
+                    this.settings['User Settings']['User Scale'] = 1;
+                }
+                if(!this.settings['User Settings']['Enable Flying']) {
+                    this.settings['User Settings']['Enable Flying'] = true;
+                }
+                if(!this.settings['User Settings']['Swap Joysticks']) {
+                    this.settings['User Settings']['Swap Joysticks'] = false;
+                }
             }
         }
         Skybox.setSides(this.settings['Skybox']);
@@ -119,8 +138,7 @@ class SettingsHandler {
     getUserScale() {
         return (global.isEditor)
             ? this.editorSettings['User Scale']
-            : 1;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
+            : this.settings['User Settings']['User Scale'];
     }
 
     isFlyingEnabled() {
@@ -132,8 +150,7 @@ class SettingsHandler {
     areJoysticksSwapped() {
         return (global.isEditor)
             ? this.editorSettings['Swap Joysticks']
-            : false;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
+            : this.settings['User Settings']['Swap Joysticks'];
     }
 
     getSettings() {

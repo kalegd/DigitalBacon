@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
@@ -42,6 +43,22 @@ class UserSettingsPage extends DynamicFieldsPage {
                 return SettingsHandler.getUserSettings()['Movement Speed'];
             },
         }));
+        fields.push(new NumberInput({
+            'title': 'User Scale',
+            'minValue': 0.001,
+            'maxValue': 1000,
+            'initialValue': 1,
+            'onBlur': (oldValue, newValue) => {
+                if(!global.isEditor) {
+                    PubSub.publish(this._id, PubSubTopics.USER_SCALE_UPDATED,
+                        newValue);
+                }
+                SettingsHandler.setUserSetting('User Scale', newValue);
+            },
+            'getFromSource': () => {
+                return SettingsHandler.getUserSettings()['User Scale'];
+            },
+        }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
@@ -52,6 +69,19 @@ class UserSettingsPage extends DynamicFieldsPage {
                 return SettingsHandler.getUserSettings()['Enable Flying'];
             },
         }));
+        if(global.deviceType == "XR" && !global.isEditor) {
+            fields.push(new CheckboxInput({
+                'title': 'Swap Joysticks',
+                'initialValue': false,
+                'onUpdate': (value) => {
+                    SettingsHandler.setUserSetting('Swap Joysticks', value);
+                },
+                'getFromSource': () => {
+                    let settings = SettingsHandler.getUserSettings();
+                    return settings['Swap Joysticks'];
+                },
+            }));
+        }
         this._setFields(fields);
     }
 
