@@ -6667,7 +6667,9 @@ class SettingsHandler {
             "Skybox": {},
             "User Settings": {
                 "Movement Speed": 3,
+                "User Scale": 1,
                 "Enable Flying": true,
+                "Swap Joysticks": false,
             },
         };
         this.editorSettings = {
@@ -6695,14 +6697,31 @@ class SettingsHandler {
                 this.settings['Skybox'][side] = null;
             }
             this.settings['User Settings']['Movement Speed'] = 3;
+            this.settings['User Settings']['User Scale'] = 1;
             this.settings['User Settings']['Enable Flying'] = true;
+            this.settings['User Settings']['Swap Joysticks'] = false;
         } else {
             this.settings = settings;
             if(!this.settings['User Settings']) {
                 this.settings['User Settings'] = {
                     "Movement Speed": 3,
+                    "User Scale": 1,
                     "Enable Flying": true,
+                    "Swap Joysticks": false,
                 };
+            } else {
+                if(!this.settings['User Settings']['Movement Speed']) {
+                    this.settings['User Settings']['Movement Speed'] = 3;
+                }
+                if(!this.settings['User Settings']['User Scale']) {
+                    this.settings['User Settings']['User Scale'] = 1;
+                }
+                if(!this.settings['User Settings']['Enable Flying']) {
+                    this.settings['User Settings']['Enable Flying'] = true;
+                }
+                if(!this.settings['User Settings']['Swap Joysticks']) {
+                    this.settings['User Settings']['Swap Joysticks'] = false;
+                }
             }
         }
         skybox.setSides(this.settings['Skybox']);
@@ -6768,8 +6787,7 @@ class SettingsHandler {
     getUserScale() {
         return (global$1.isEditor)
             ? this.editorSettings['User Scale']
-            : 1;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
+            : this.settings['User Settings']['User Scale'];
     }
 
     isFlyingEnabled() {
@@ -6781,8 +6799,7 @@ class SettingsHandler {
     areJoysticksSwapped() {
         return (global$1.isEditor)
             ? this.editorSettings['Swap Joysticks']
-            : false;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
+            : this.settings['User Settings']['Swap Joysticks'];
     }
 
     getSettings() {
@@ -24408,6 +24425,22 @@ class UserSettingsPage extends DynamicFieldsPage {
                 return settingsHandler.getUserSettings()['Movement Speed'];
             },
         }));
+        fields.push(new NumberInput({
+            'title': 'User Scale',
+            'minValue': 0.001,
+            'maxValue': 1000,
+            'initialValue': 1,
+            'onBlur': (oldValue, newValue) => {
+                if(!global$1.isEditor) {
+                    pubSub.publish(this._id, PubSubTopics$1.USER_SCALE_UPDATED,
+                        newValue);
+                }
+                settingsHandler.setUserSetting('User Scale', newValue);
+            },
+            'getFromSource': () => {
+                return settingsHandler.getUserSettings()['User Scale'];
+            },
+        }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
@@ -24418,6 +24451,19 @@ class UserSettingsPage extends DynamicFieldsPage {
                 return settingsHandler.getUserSettings()['Enable Flying'];
             },
         }));
+        if(global$1.deviceType == "XR" && !global$1.isEditor) {
+            fields.push(new CheckboxInput({
+                'title': 'Swap Joysticks',
+                'initialValue': false,
+                'onUpdate': (value) => {
+                    settingsHandler.setUserSetting('Swap Joysticks', value);
+                },
+                'getFromSource': () => {
+                    let settings = settingsHandler.getUserSettings();
+                    return settings['Swap Joysticks'];
+                },
+            }));
+        }
         this._setFields(fields);
     }
 
