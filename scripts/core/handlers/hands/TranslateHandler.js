@@ -138,7 +138,7 @@ class TranslateHandler {
         if(positionDifference) {
             heldAsset.positionDifference = positionDifference;
         } else {
-            let position = asset.getWorldPosition();
+            let position = heldAsset.asset.getWorldPosition();
             heldAsset.positionDifference = position.sub(heldAsset
                 .controller.hands[heldAsset.hand].getWorldPosition()).toArray();
         }
