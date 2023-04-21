@@ -336,7 +336,7 @@ class Queue {
  */
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global$1.loadingLocks.add(blackPixelLock);
@@ -364,6 +364,10 @@ const Textures = {
     "headphonesIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
         function(texture) { global$1.loadingLocks.delete(locks['headphones']); },
+    ),
+    "homeIcon": new THREE.TextureLoader().load(
+        'data:image/png;base64,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',
+        function(texture) { global$1.loadingLocks.delete(locks['home']); },
     ),
     "imageIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
@@ -437,7 +441,7 @@ const Colors = {
     "white": new THREE.Color(0xffffff),
     "yellow": new THREE.Color(0xffff00),
     "defaultIdle": new THREE.Color(0x969696),
-    "defaultHovered": new THREE.Color(0x43464b),
+    "defaultHovered": new THREE.Color(0x63666b),
     "defaultMenuBackground": new THREE.Color(0x000000),
     "keyboard": new THREE.Color(0x858585),
     "keyboardButtonIdle": new THREE.Color(0x363636),
@@ -5065,12 +5069,13 @@ function parallelTraverse( a, b, callback ) {
  */
 
 const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL',
-    'Sketchfab Link'];
+    'Sketchfab Link', 'Sketchfab ID'];
 
 class LibraryHandler {
     constructor() {
         this.library = {};
         this._blobHashMap = {};
+        this._sketchfabIdMap = {};
     }
 
     addNewAsset(blob, name, type, callback) {
@@ -5134,6 +5139,8 @@ class LibraryHandler {
                 if(assetDetails[key])
                     this.library[assetId][key] = assetDetails[key];
             }
+            if(assetDetails['Sketchfab ID'])
+                this._sketchfabIdMap[assetDetails['Sketchfab ID']] = assetId;
             return this._loadMesh(assetId, blob, true);
         });
     }
@@ -5272,6 +5279,10 @@ class LibraryHandler {
         return null;
     }
 
+    getAssetIdFromSketchfabId(sketchfabId) {
+        return this._sketchfabIdMap[sketchfabId];
+    }
+
     setSketchfabDetails(assetId, sketchfabAsset) {
         let asset = this.library[assetId];
         if(!asset) {
@@ -5286,6 +5297,10 @@ class LibraryHandler {
             asset['Author'] = 'Sketchfab User ' + sketchfabAsset.user.username;
         if(sketchfabAsset.viewerUrl)
             asset['Sketchfab Link'] = sketchfabAsset.viewerUrl;
+        if(sketchfabAsset.uid) {
+            asset['Sketchfab ID'] = sketchfabAsset.uid;
+            this._sketchfabIdMap[sketchfabAsset.uid] = assetId;
+        }
         if(sketchfabAsset.previewTexture)
             asset.previewTexture = sketchfabAsset.previewTexture;
     }
@@ -5300,6 +5315,7 @@ class LibraryHandler {
         }
         this.library = newLibrary;
         this._blobHashMap = {};
+        this._sketchfabIdMap = {};
     }
 
     getLibraryDetails(assetIds) {
@@ -6310,12 +6326,10 @@ class InputHandler {
                 this._keysPressed.delete(event.key);
                 this._keyCodesPressed.delete(event.code);
             });
-            if(global$1.isChrome) {
-                document.addEventListener('pointerlockchange', (event) => {
-                    if(!global$1.sessionActive) this._keysPressed.clear();
-                    if(!global$1.sessionActive) this._keyCodesPressed.clear();
-                });
-            }
+            window.addEventListener('blur', (event) => {
+                this._keysPressed.clear();
+                this._keyCodesPressed.clear();
+            });
             this._renderer.domElement.addEventListener( 'mousedown', () => {
                 this._pointerPressed = true;
             });
@@ -6653,7 +6667,9 @@ class SettingsHandler {
             "Skybox": {},
             "User Settings": {
                 "Movement Speed": 3,
+                "User Scale": 1,
                 "Enable Flying": true,
+                "Swap Joysticks": false,
             },
         };
         this.editorSettings = {
@@ -6681,14 +6697,31 @@ class SettingsHandler {
                 this.settings['Skybox'][side] = null;
             }
             this.settings['User Settings']['Movement Speed'] = 3;
+            this.settings['User Settings']['User Scale'] = 1;
             this.settings['User Settings']['Enable Flying'] = true;
+            this.settings['User Settings']['Swap Joysticks'] = false;
         } else {
             this.settings = settings;
             if(!this.settings['User Settings']) {
                 this.settings['User Settings'] = {
                     "Movement Speed": 3,
+                    "User Scale": 1,
                     "Enable Flying": true,
+                    "Swap Joysticks": false,
                 };
+            } else {
+                if(!this.settings['User Settings']['Movement Speed']) {
+                    this.settings['User Settings']['Movement Speed'] = 3;
+                }
+                if(!this.settings['User Settings']['User Scale']) {
+                    this.settings['User Settings']['User Scale'] = 1;
+                }
+                if(!this.settings['User Settings']['Enable Flying']) {
+                    this.settings['User Settings']['Enable Flying'] = true;
+                }
+                if(!this.settings['User Settings']['Swap Joysticks']) {
+                    this.settings['User Settings']['Swap Joysticks'] = false;
+                }
             }
         }
         skybox.setSides(this.settings['Skybox']);
@@ -6754,8 +6787,7 @@ class SettingsHandler {
     getUserScale() {
         return (global$1.isEditor)
             ? this.editorSettings['User Scale']
-            : 1;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
+            : this.settings['User Settings']['User Scale'];
     }
 
     isFlyingEnabled() {
@@ -6767,8 +6799,7 @@ class SettingsHandler {
     areJoysticksSwapped() {
         return (global$1.isEditor)
             ? this.editorSettings['Swap Joysticks']
-            : false;//TODO: allow users to access menu and configure a specific
-                    //      set of settings
+            : this.settings['User Settings']['Swap Joysticks'];
     }
 
     getSettings() {
@@ -6893,7 +6924,8 @@ class BasicMovement {
                     || inputHandler.isKeyCodePressed("KeyD"))
                 this._velocity.x += movementSpeed / 4;
             if (flightEnabled && inputHandler.isKeyCodePressed("Space")
-                    != inputHandler.isKeyCodePressed("ShiftLeft")) {
+                    != inputHandler.isKeyPressed("Shift")
+                    && !inputHandler.isKeyPressed("Meta")) {
                 this._verticalVelocity =
                     (inputHandler.isKeyCodePressed("Space"))
                         ? movementSpeed
@@ -8694,14 +8726,10 @@ class OrbitControls extends EventDispatcher {
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
 
 class SessionHandler {
-    init(container, params) {
+    init(container, onStart) {
         this._container = container;
-        if(params == null) {
-            params = {};
-        }
-        this._orbitControlsTarget = (params['Orbit Controls Target'])
-            ? params['Orbit Controls Target']
-            : new Vector3(0,0,0);
+        this._orbitControlsTarget = new Vector3(0,0,0);
+        this._onStart = onStart;
         global$1.sessionActive = false;
         if(global$1.deviceType == "XR") {
             this._configureForXR();
@@ -8724,6 +8752,10 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.init();
             global$1.renderer.xr.setFoveation(0);
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
         global$1.renderer.xr.addEventListener("sessionend", () => {
             global$1.sessionActive = false;
@@ -8757,6 +8789,10 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.init();
             inputHandler.createPointerControls();
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
     }
 
@@ -8788,6 +8824,10 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.init();
             inputHandler.createMobileControls();
+            if(this._onStart) {
+                this._onStart();
+                this._onStart = null;
+            }
         });
     }
 
@@ -11594,6 +11634,19 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
     }
 
+    initiateDrag(option) {
+        option = option || global$1.deviceType;
+        this._attachedAssets[option];
+        let pointerPosition = inputHandler.getPointerPosition();
+        let pointer = { x: pointerPosition.x, y: pointerPosition.y, button: 0 };
+        let plane = this._transformControls._plane;
+        plane.axis = 'XYZ';
+        plane.updateMatrixWorld();
+        plane.axis = null;
+        this._transformControls.axis = 'XYZ';
+        this._transformControls.pointerDown(pointer);
+    }
+
     _isDragging(instance) {
         if(!instance) return this._transformControls.dragging;
         return this._transformControls.dragging
@@ -13094,7 +13147,7 @@ class TranslateHandler {
         if(positionDifference) {
             heldAsset.positionDifference = positionDifference;
         } else {
-            let position = asset.getWorldPosition();
+            let position = heldAsset.asset.getWorldPosition();
             heldAsset.positionDifference = position.sub(heldAsset
                 .controller.hands[heldAsset.hand].getWorldPosition()).toArray();
         }
@@ -15493,6 +15546,7 @@ const MenuPages = {
     TEXTURE: "TEXTURE",
     TEXTURES: "TEXTURES",
     TEXT_INPUT: "TEXT_INPUT",
+    TWO_BUTTON: "TWO_BUTTON",
     UPLOAD: "UPLOAD",
     USER_SETTINGS: "USER_SETTINGS",
 };
@@ -17523,12 +17577,16 @@ class AssetHelper extends EditorHelper {
         } else {
             this._object.states = InteractableStates;
             this._object.setState = (state) => {
-                if(state == InteractableStates.HOVERED
-                    && this._object != transformControlsHandler.getObject())
-                {
+                if(state == InteractableStates.HOVERED) {
                     this._boundingBox.setFromObject(this._object);
                     global$1.scene.add(this._boundingBoxObj);
                 } else {
+                    if(state == InteractableStates.SELECTED
+                        && this._object == transformControlsHandler.getObject()
+                        && !transformControlsHandler._isDragging())
+                    {
+                        transformControlsHandler.initiateDrag();
+                    }
                     global$1.scene.remove(this._boundingBoxObj);
                 }
             };
@@ -18644,6 +18702,14 @@ class MenuController extends PointerInteractableEntity {
         pubSub.publish(this._id, PubSubTopics$1.MENU_PAGE_CHANGED);
     }
 
+    popAllPages() {
+        while(this._pageCalls.length > 1) {
+            let currentPage = this._getCurrentPage();
+            currentPage.back();
+        }
+        pubSub.publish(this._id, PubSubTopics$1.MENU_PAGE_CHANGED);
+    }
+
     back() {
         this._getCurrentPage().back();
     }
@@ -18795,41 +18861,17 @@ class MenuController extends PointerInteractableEntity {
 const FONT_FAMILY = Fonts.defaultFamily;
 const FONT_TEXTURE = Fonts.defaultTexture;
 const UI_BACKGROUND_COLOR = Colors.defaultMenuBackground;
-const UI_BACKGROUND_OPACITY = 0.5;
+const UI_BACKGROUND_OPACITY = 0.7;
 
 class MenuPage extends PointerInteractableEntity {
-    constructor(controller, hasSideBar, hasBackButton) {
+    constructor(controller, hasBackButton) {
         super();
         this._controller = controller;
         this._createPage();
         this._createCloseButton();
-        if(hasSideBar) {
-            this._createSideBarButton();
-        } else if(hasBackButton) {
+        if(hasBackButton) {
             this._createBackButton();
         }
-    }
-
-    _createSideBarButton() {
-        let sidebarButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: UI_BACKGROUND_COLOR,
-            backgroundOpacity: 0,
-        });
-        let sidebarButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.hamburgerIcon,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        sidebarButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
-        sidebarButtonParent.position.fromArray([-.225, 0.15, -0.001]);
-        sidebarButtonParent.add(sidebarButton);
-        let interactable = new PointerInteractable(sidebarButton, () => {
-            this._controller.setPage(MenuPages.NAVIGATION);
-        });
-        this._pointerInteractable.addChild(interactable);
-        this._object.add(sidebarButtonParent);
     }
 
     _createBackButton() {
@@ -18853,6 +18895,29 @@ class MenuPage extends PointerInteractableEntity {
         });
         this._pointerInteractable.addChild(interactable);
         this._object.add(backButtonParent);
+        this._createHomeButton();
+    }
+
+    _createHomeButton() {
+        let homeButtonParent = new ThreeMeshUI.Block({
+            height: 0.06,
+            width: 0.06,
+            backgroundColor: UI_BACKGROUND_COLOR,
+            backgroundOpacity: 0,
+        });
+        let homeButton = ThreeMeshUIHelper.createButtonBlock({
+            'backgroundTexture': Textures.homeIcon,
+            'height': 0.04,
+            'width': 0.04,
+        });
+        homeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        homeButtonParent.position.fromArray([-.225, 0.1, -0.001]);
+        homeButtonParent.add(homeButton);
+        let interactable = new PointerInteractable(homeButton, () => {
+            this._controller.popAllPages();
+        });
+        this._pointerInteractable.addChild(interactable);
+        this._object.add(homeButtonParent);
     }
 
     _createCloseButton() {
@@ -18918,7 +18983,7 @@ class MenuPage extends PointerInteractableEntity {
 
 class AcknowledgementsPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._sketchfabAssets = [];
         this._addPageContent();
     }
@@ -19101,8 +19166,8 @@ class AcknowledgementsPage extends MenuPage {
 const OPTIONS$4 = 5;
 
 class PaginatedPage extends MenuPage {
-    constructor(controller, hasSideBar, hasBackButton) {
-        super(controller, hasSideBar, hasBackButton);
+    constructor(controller, hasBackButton) {
+        super(controller, hasBackButton);
         this._paginatedListButtons = [];
         this._paginatedListInteractables = [];
         this._page = 0;
@@ -19257,7 +19322,7 @@ class PaginatedPage extends MenuPage {
 
 class AssetPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._instances = {};
         this._items = Object.keys(this._instances);
         this._addPageContent();
@@ -19419,7 +19484,7 @@ const FIELD_MAX_LENGTH$4 = 25;
 
 class LightsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._assets = {};
         this._items = Object.keys(this._assets);
         this._addPageContent();
@@ -19538,7 +19603,7 @@ const FIELD_MAX_LENGTH$3 = 25;
 
 class AssetSelectPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._assets = {};
         this._items = Object.keys(this._assets);
         this._addPageContent();
@@ -19829,7 +19894,7 @@ const HSL = {};
 
 class ColorWheelPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
         this._createCursors();
     }
@@ -20010,7 +20075,7 @@ const FIELDS_CONTAINER_HEIGHT = 0.22;
 
 class DynamicFieldsPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._firstItemIndex = 0;
         this._lastItemIndex = -1;
         this._fields = [];
@@ -20196,7 +20261,7 @@ class DynamicFieldsPage extends MenuPage {
 
 class EditorSettingsPage extends DynamicFieldsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._createFields();
     }
 
@@ -20293,7 +20358,7 @@ const hands = [
 
 class HandsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = hands;
         this._addPageContent();
     }
@@ -20333,7 +20398,7 @@ class HandsPage extends PaginatedPage {
 
 class HostPartyPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 
@@ -20388,6 +20453,7 @@ class HostPartyPage extends MenuPage {
     }
 
     _hostParty() {
+        this._textField.deactivate();
         let roomId = this._textField.content;
         if(roomId.length == 0) {
             pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
@@ -20410,7 +20476,10 @@ class HostPartyPage extends MenuPage {
         this._container.remove(this._connectingBlock);
         this._container.add(this._contentBlock);
         this._container.update(false, false, true);
-        if(this._object.parent) this._controller.back();
+        if(this._controller._getCurrentPage() == this) this._controller.back();
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'Party Started',
+        });
     }
 
     _errorCallback(message) {
@@ -20465,7 +20534,7 @@ class HostPartyPage extends MenuPage {
 
 class InstancePage extends DynamicFieldsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
     }
 
     _createTitleBlock() {
@@ -20571,7 +20640,7 @@ class InstancePage extends DynamicFieldsPage {
 
 class JoinPartyPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 
@@ -20626,6 +20695,7 @@ class JoinPartyPage extends MenuPage {
     }
 
     _joinParty() {
+        this._textField.deactivate();
         let roomId = this._textField.content;
         if(roomId.length == 0) {
             pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
@@ -20648,7 +20718,10 @@ class JoinPartyPage extends MenuPage {
         this._container.remove(this._connectingBlock);
         this._container.add(this._contentBlock);
         this._container.update(false, false, true);
-        if(this._object.parent) this._controller.back();
+        if(this._controller._getCurrentPage() == this) this._controller.back();
+        pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+            text: 'Party Joined',
+        });
     }
 
     _errorCallback(message) {
@@ -20943,7 +21016,7 @@ let googleDrive = new GoogleDrive();
 
 class LoadFromGDrivePage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._instances = {};
         this._items = Object.keys(this._instances);
         this._addPageContent();
@@ -21085,8 +21158,8 @@ const ROWS$1 = 2;
 const OPTIONS$3 = 3;
 
 let PaginatedIconsPage$1 = class PaginatedIconsPage extends MenuPage {
-    constructor(controller, hasSideBar, hasBackButton) {
-        super(controller, hasSideBar, hasBackButton);
+    constructor(controller, hasBackButton) {
+        super(controller, hasBackButton);
         this._paginatedListButtons = [];
         this._paginatedListInteractables = [];
         this._page = 0;
@@ -21318,7 +21391,7 @@ const ASSETS = [{
 
 class LibraryPage extends PaginatedIconsPage$1 {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = Object.keys(ASSETS);
         this._addPageContent();
         this._createSearchButton();
@@ -21392,7 +21465,7 @@ const FIELD_MAX_LENGTH$2 = 25;
 
 class LibrarySearchPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._assets = libraryHandler.getLibrary();
         this._items = Object.keys(this._assets);
         this._addPageContent();
@@ -21469,7 +21542,7 @@ class LibrarySearchPage extends PaginatedPage {
 
 class MaterialPage extends DynamicFieldsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
     }
 
      _createTitleBlock() {
@@ -21570,7 +21643,7 @@ const FIELD_MAX_LENGTH$1 = 25;
 
 class MaterialsPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._materials = materialsHandler.getMaterials();
         this._items = Object.keys(this._materials);
         this._addPageContent();
@@ -21758,7 +21831,7 @@ const PAGES$1 = [
 
 class NewMaterialPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = PAGES$1;
         this._addPageContent();
     }
@@ -21808,7 +21881,7 @@ const PAGES = [
 
 class NewTexturePage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = PAGES;
         this._addPageContent();
     }
@@ -22277,7 +22350,7 @@ const options = [
 
 class PeerPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 
@@ -22392,14 +22465,14 @@ class PrimitiveLightHelper extends AssetHelper {
         return;
     }
 
-    _updateVisualEdit(isVisualEdit) {
+    updateVisualEdit(isVisualEdit) {
         if(isVisualEdit) {
             this._object.add(this._mesh);
         } else {
             this._object.remove(this._mesh);
             fullDispose(this._mesh);
         }
-        super._updateVisualEdit(isVisualEdit);
+        super.updateVisualEdit(isVisualEdit);
     }
 
     _getMenuFieldsMap() {
@@ -22595,7 +22668,7 @@ const OPTIONS$2 = {
 
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = Object.keys(OPTIONS$2).slice(0, -1);
         this._addPageContent();
         this._addSubscriptions();
@@ -22645,15 +22718,14 @@ class ProjectPage extends PaginatedPage {
             });
             return;
         }
-        ProjectHandler$1.reset();
-        let ambientLight = new PrimitiveAmbientLight({
-            'visualEdit': false,
-        });
-        ProjectHandler$1.addLight(ambientLight, ambientLight.getAssetId(), true);
-        googleDrive.clearActiveFile();
-        if(partyHandler.isPartyActive() && partyHandler.isHost()) {
-            partyHandler.sendProject();
-        }
+        let page = this._controller.getPage(MenuPages.TWO_BUTTON);
+        page.setContent(
+            "You will lose any unsaved progress when starting a new project",
+            "Confirm New Project",
+            "Cancel",
+            () => { this._newProjectConfirm(); },
+            () => { this._controller.popPage(); });
+        this._controller.pushPage(MenuPages.TWO_BUTTON);
     }
 
     _localSave() {
@@ -22770,6 +22842,25 @@ class ProjectPage extends PaginatedPage {
                 this._loadErrorCallback();
             });
         });
+    }
+
+    _newProjectConfirm() {
+        if(partyHandler.isPartyActive() && !partyHandler.isHost()) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Only Host Can Load Projects',
+            });
+            return;
+        }
+        ProjectHandler$1.reset();
+        let ambientLight = new PrimitiveAmbientLight({
+            'visualEdit': false,
+        });
+        ProjectHandler$1.addLight(ambientLight, ambientLight.getAssetId(), true);
+        googleDrive.clearActiveFile();
+        if(partyHandler.isPartyActive() && partyHandler.isHost()) {
+            partyHandler.sendProject();
+        }
+        this._controller.popPage();
     }
 
     _loadErrorCallback() {
@@ -22936,7 +23027,7 @@ let readyPlayerMe = new ReadyPlayerMe();
 
 const pages$1 = [
     { "title": "Backdrop", "menuPage": MenuPages.SKYBOX, isEditorOnly: true },
-    { "title": "User Settings", "menuPage": MenuPages.USER_SETTINGS },
+    { "title": "Visitor Settings", "menuPage": MenuPages.USER_SETTINGS },
     { "title": "Editor Settings", "menuPage": MenuPages.EDITOR_SETTINGS,
         isEditorOnly: true },
     { "title": "Update Avatar" },
@@ -22944,7 +23035,7 @@ const pages$1 = [
 
 class SettingsPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 
@@ -23020,6 +23111,12 @@ class Sketchfab {
         }
 
         let tab = window.open(AUTH_URL, '_blank');
+        if(!tab) {
+            pubSub.publish(this._id, PubSubTopics$1.MENU_NOTIFICATION, {
+                text: 'Please check your popup blocker settings',
+            });
+            return;
+        }
         tab.focus();
         window._tab = tab;
         this._intervalId = setInterval(() => {
@@ -23096,7 +23193,7 @@ let sketchfab = new Sketchfab();
 
 let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._staySignedIn = false;
         this._addPageContent();
     }
@@ -23133,6 +23230,32 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
         });
         columnBlock.add(this._authorBlock);
 
+        this._downloadButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "Download",
+            'fontSize': FontSizes.body,
+            'height': 0.035,
+            'width': 0.3,
+            'margin': 0.006,
+        });
+        columnBlock.add(this._downloadButton);
+        this._downloadInteractable = new PointerInteractable(
+            this._downloadButton, () => {
+                if(this._assetId) {
+                    this._controller.popPagesPast(MenuPages.UPLOAD);
+                    let assetPage = this._controller.getPage(MenuPages.ASSET);
+                    assetPage.setAsset(this._assetId);
+                    this._controller.pushPage(MenuPages.ASSET);
+                    return;
+                }
+                this._downloadButton.visible = false;
+                this._containerInteractable.removeChild(
+                    this._downloadInteractable);
+                sketchfab.download(this._sketchfabAsset,
+                    (assetId) => { this._handleDownloadSuccess(assetId); },
+                    () => { this._handleDownloadError(); });
+            });
+        this._containerInteractable.addChild(this._downloadInteractable);
+
         let button = ThreeMeshUIHelper.createButtonBlock({
             'text': "View on Sketchfab",
             'fontSize': FontSizes.body,
@@ -23147,24 +23270,6 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
         });
         this._containerInteractable.addChild(interactable);
 
-        this._downloadButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Download",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'margin': 0.006,
-        });
-        columnBlock.add(this._downloadButton);
-        this._downloadInteractable = new PointerInteractable(
-            this._downloadButton, () => {
-                this._downloadButton.visible = false;
-                this._containerInteractable.removeChild(
-                    this._downloadInteractable);
-                sketchfab.download(this._sketchfabAsset,
-                    (assetId) => { this._handleDownloadSuccess(assetId); },
-                    () => { this._handleDownloadError(); });
-            });
-        this._containerInteractable.addChild(this._downloadInteractable);
         this._container.add(columnBlock);
     }
 
@@ -23188,6 +23293,10 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
         });
         this._downloadButton.visible = true;
         this._containerInteractable.addChild(this._downloadInteractable);
+        this._assetId = libraryHandler.getAssetIdFromSketchfabId(
+            this._sketchfabAsset.uid);
+        if(assetId == this._assetId)
+            this._downloadButton.children[1].set({ content: 'View in Library'});
     }
 
     _handleDownloadError() {
@@ -23211,6 +23320,11 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
         } else {
             this._textureBlock.visible = false;
         }
+        this._assetId = libraryHandler.getAssetIdFromSketchfabId(
+            sketchfabAsset.uid);
+        this._downloadButton.children[1].set({
+            content: (this._assetId) ? 'View in Library' : 'Download'
+        });
         this._sketchfabAsset = sketchfabAsset;
     }
 };
@@ -23221,10 +23335,63 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+class ClickAction {
+    constructor(action) {
+        this._action = action;
+        this._triggerAction = false;
+        this._addEventListeners();
+    }
+
+    _addEventListeners() {
+        if(global$1.deviceType != "XR") {
+            this._eventType = global$1.deviceType == "MOBILE"
+                ? 'touchend'
+                : 'click';
+            this._clickListener = (e) => {
+                setTimeout(() => {
+                    if(this._triggerAction) {
+                        this._triggerAction = false;
+                        if(this._action) this._action();
+                    }
+                }, 20);
+            };
+            //Why this convoluted chain of event listener checking a variable
+            //set by interactable action (which uses polling)? Because we can't
+            //trigger the file input with a click event outside of an event
+            //listener on Firefox and Safari :(
+        }
+    }
+
+
+    listen() {
+        document.addEventListener(this._eventType, this._clickListener);
+    }
+
+    triggerAction() {
+        if(global$1.deviceType == 'XR') {
+            if(this._action) this._action();
+        } else {
+            this._triggerAction = true;
+        }
+    }
+
+    stopListening() {
+        document.removeEventListener(this._eventType, this._clickListener);
+    }
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._staySignedIn = false;
+        this._clickAction = new ClickAction(() => { this._handleLogin(); });
         this._addPageContent();
     }
 
@@ -23268,17 +23435,30 @@ class SketchfabLoginPage extends MenuPage {
         });
         columnBlock.add(loginButton);
         let interactable = new PointerInteractable(loginButton, () => {
-            if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
-            sketchfab.signIn(this._staySignedIn,
-                () => { this._handleLoginCallback(); });
+            this._clickAction.triggerAction();
         });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
     }
 
+    _handleLogin() {
+        if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
+        sketchfab.signIn(this._staySignedIn,
+            () => { this._handleLoginCallback(); });
+    }
+
     _handleLoginCallback() {
         this._controller.popPage();
         this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
+    }
+
+    back() {
+        this._clickAction.stopListening();
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._clickAction.listen();
+        super.addToScene(scene, parentInteractable);
     }
 }
 
@@ -23292,8 +23472,8 @@ const ROWS = 2;
 const OPTIONS$1 = 3;
 
 class PaginatedIconsPage extends MenuPage {
-    constructor(controller, hasSideBar, hasBackButton) {
-        super(controller, hasSideBar, hasBackButton);
+    constructor(controller, hasBackButton) {
+        super(controller, hasBackButton);
         this._paginatedListButtons = [];
         this._paginatedListInteractables = [];
         this._page = 0;
@@ -23484,7 +23664,7 @@ class PaginatedIconsPage extends MenuPage {
 
 class SketchfabSearchPage extends PaginatedIconsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = [];
         this._addPageContent();
     }
@@ -23627,7 +23807,7 @@ const sides = [
 
 class SkyboxPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._buttons = [];
         this._addPageContent();
     }
@@ -23766,7 +23946,7 @@ class SkyboxPage extends MenuPage {
 
 class TexturePage extends DynamicFieldsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
     }
 
     _createTitleBlock() {
@@ -23867,7 +24047,7 @@ const FIELD_MAX_LENGTH = 25;
 
 class TexturesPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._textures = texturesHandler.getTextures();
         this._items = Object.keys(this._textures);
         this._addPageContent();
@@ -23978,7 +24158,7 @@ class TexturesPage extends PaginatedPage {
 
 class TextInputPage extends MenuPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._addPageContent();
     }
 
@@ -24052,6 +24232,70 @@ class TextInputPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+class TwoButtonPage extends MenuPage {
+    constructor(controller) {
+        super(controller, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': ' ',
+            'fontSize': FontSizes.body,
+            'height': 0.08,
+            'width': 0.4,
+        });
+        this._container.add(this._titleBlock);
+
+        let columnBlock = new ThreeMeshUI.Block({
+            'height': 0.2,
+            'width': 0.45,
+            'contentDirection': 'column',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+        });
+        this._button1 = ThreeMeshUIHelper.createButtonBlock({
+            'text': ' ',
+            'fontSize': FontSizes.body,
+            'height': 0.04,
+            'width': 0.25,
+            'margin': 0.002,
+        });
+        this._button2 = ThreeMeshUIHelper.createButtonBlock({
+            'text': ' ',
+            'fontSize': FontSizes.body,
+            'height': 0.04,
+            'width': 0.25,
+            'margin': 0.002,
+        });
+        let interactable1 = new PointerInteractable(this._button1, () => {
+            if(this._action1) this._action1();
+        });
+        let interactable2 = new PointerInteractable(this._button2, () => {
+            if(this._action2) this._action2();
+        });
+        columnBlock.add(this._button1);
+        columnBlock.add(this._button2);
+        this._container.add(columnBlock);
+        this._containerInteractable.addChild(interactable1);
+        this._containerInteractable.addChild(interactable2);
+    }
+
+    setContent(title, button1Text, button2Text, action1, action2) {
+        this._titleBlock.children[1].set({ content: title });
+        this._button1.children[1].set({ content: button1Text });
+        this._button2.children[1].set({ content: button2Text });
+        this._action1 = action1;
+        this._action2 = action2;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 const OPTIONS = {
     'Select from Device': '_uploadAsset',
     'Select from Sketchfab': '_selectFromSketchfab',
@@ -24059,7 +24303,7 @@ const OPTIONS = {
 
 class UploadPage extends PaginatedPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._items = Object.keys(OPTIONS);
         this._addPageContent();
     }
@@ -24154,7 +24398,7 @@ class UploadPage extends PaginatedPage {
 
 class UserSettingsPage extends DynamicFieldsPage {
     constructor(controller) {
-        super(controller, false, true);
+        super(controller, true);
         this._createFields();
     }
 
@@ -24181,6 +24425,22 @@ class UserSettingsPage extends DynamicFieldsPage {
                 return settingsHandler.getUserSettings()['Movement Speed'];
             },
         }));
+        fields.push(new NumberInput({
+            'title': 'User Scale',
+            'minValue': 0.001,
+            'maxValue': 1000,
+            'initialValue': 1,
+            'onBlur': (oldValue, newValue) => {
+                if(!global$1.isEditor) {
+                    pubSub.publish(this._id, PubSubTopics$1.USER_SCALE_UPDATED,
+                        newValue);
+                }
+                settingsHandler.setUserSetting('User Scale', newValue);
+            },
+            'getFromSource': () => {
+                return settingsHandler.getUserSettings()['User Scale'];
+            },
+        }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
             'initialValue': true,
@@ -24191,6 +24451,19 @@ class UserSettingsPage extends DynamicFieldsPage {
                 return settingsHandler.getUserSettings()['Enable Flying'];
             },
         }));
+        if(global$1.deviceType == "XR" && !global$1.isEditor) {
+            fields.push(new CheckboxInput({
+                'title': 'Swap Joysticks',
+                'initialValue': false,
+                'onUpdate': (value) => {
+                    settingsHandler.setUserSetting('Swap Joysticks', value);
+                },
+                'getFromSource': () => {
+                    let settings = settingsHandler.getUserSettings();
+                    return settings['Swap Joysticks'];
+                },
+            }));
+        }
         this._setFields(fields);
     }
 
@@ -24258,6 +24531,7 @@ class EditorMenuController extends MenuController {
         this._pages[MenuPages.TEXTURE] = new TexturePage(this);
         this._pages[MenuPages.TEXTURES] = new TexturesPage(this);
         this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
+        this._pages[MenuPages.TWO_BUTTON] = new TwoButtonPage(this);
         this._pages[MenuPages.UPLOAD] = new UploadPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         this._pageCalls.push(MenuPages.NAVIGATION);
@@ -24539,7 +24813,7 @@ Stats.Panel = function ( name, fg, bg ) {
  */
 
 class Main {
-    constructor(callback, containerId, projectFilePath) {
+    constructor(callback, containerId, params) {
         this._renderer;
         this._scene;
         this._camera;
@@ -24554,9 +24828,9 @@ class Main {
         this._createScene();
         this._createCamera();
         this._createUser();
-        this._createHandlers();
+        this._createHandlers(params.onStart);
         this._createClients();
-        this._createAssets(projectFilePath);
+        this._createAssets(params.projectFilePath);
         this._addEventListeners();
         this._onResize();
         this._enableStats();
@@ -24604,10 +24878,10 @@ class Main {
         global$1.cameraFocus = this._cameraFocus;
     }
 
-    _createHandlers() {
+    _createHandlers(onStart) {
         ProjectHandler$1.init(this._scene);
         if(global$1.disableImmersion) return;
-        sessionHandler.init(this._container);
+        sessionHandler.init(this._container, onStart);
         inputHandler.init(this._container, this._renderer, this._userObj);
         pointerInteractableHandler.init();
         undoRedoHandler.init();
@@ -40566,9 +40840,9 @@ module.exports = JSZipUtils;
 global$1.deviceType = "MOBILE";
 global$1.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
 
-function start(callback, containerId, projectFilePath) {
+function start(callback, containerId, params) {
     setupContainer(containerId);
-    window.main = new Main(callback, containerId, projectFilePath);
+    window.main = new Main(callback, containerId, params);
 }
 
 function hasPointerLock() {
@@ -40792,11 +41066,11 @@ function setup(containerId, params) {
     let promise = new Promise((resolve) => {
         //Check mobile override for VR capable phones
         if(localStorage.getItem('DigitalBacon:MobileOverride')) {
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
             return;
         } else if(localStorage.getItem('DigitalBacon:PointerOverride')) {
             global$1.deviceType = "POINTER";
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
             return;
         }
         if('xr' in navigator) {
@@ -40810,11 +41084,11 @@ function setup(containerId, params) {
                 }).catch(function() {
                     checkIfPointer();
                 }).finally(function() {
-                    start(resolve, containerId, params.projectFilePath);
+                    start(resolve, containerId, params);
                 });
         } else {
             checkIfPointer();
-            start(resolve, containerId, params.projectFilePath);
+            start(resolve, containerId, params);
         }
     });
     return promise;
@@ -40826,7 +41100,7 @@ function setup(containerId, params) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const version = "0.1.1";
+const version = "0.1.2";
 
 function getDeviceType() {
     return global$1.deviceType;
