@@ -41100,7 +41100,7 @@ function setup(containerId, params) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const version = "0.1.1";
+const version = "0.1.2";
 
 function getDeviceType() {
     return global$1.deviceType;
