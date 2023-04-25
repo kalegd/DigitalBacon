@@ -38,6 +38,11 @@ export default class PrimitiveMeshHelper extends AssetHelper {
                 }
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (e) => {
+            if(this._asset.getMaterial() == e.getId()) {
+                this._asset.setMaterial(e.getId());
+            }
+        });
     }
 
     _removeSubscriptions() {

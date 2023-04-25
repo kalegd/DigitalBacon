@@ -25,8 +25,9 @@ export default class PrimitiveMesh extends Asset {
     }
 
     _getMaterial() {
-        if(this._material) {
-            return MaterialsHandler.getMaterial(this._material).getMaterial();
+        let material = MaterialsHandler.getMaterial(this._material);
+        if(material) {
+            return material.getMaterial();
         } else {
             return Materials.defaultMeshMaterial;
         }
@@ -48,7 +49,6 @@ export default class PrimitiveMesh extends Asset {
     }
 
     setMaterial(newValue) {
-        if(newValue == this._material) return;
         let wasTranslucent = this._mesh.material.userData['oldMaterial'];
         if(wasTranslucent) this.returnTransparency();
 

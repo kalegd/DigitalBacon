@@ -66,14 +66,22 @@ export default class MaterialHelper extends EditorHelper {
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
             let textureId = message.asset.getId();
-            for(let map of maps) {
-                let capitalizedMap = capitalizeFirstLetter(map);
-                if(this._asset['get' + capitalizedMap]() == textureId) {
-                    this._asset._setTexture(map, textureId);
-                    this.updateMenuField(map);
-                }
-            }
+            this._updateMapIfUsed(textureId, maps);
         });
+        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_ADDED, (message) => {
+            let textureId = message.getId();
+            this._updateMapIfUsed(textureId, maps);
+        });
+    }
+
+    _updateMapIfUsed(textureId, maps) {
+        for(let map of maps) {
+            let capitalizedMap = capitalizeFirstLetter(map);
+            if(this._asset['get' + capitalizedMap]() == textureId) {
+                this._asset._setTexture(map, textureId);
+                this.updateMenuField(map);
+            }
+        }
     }
 
     _removeSubscriptions() {
