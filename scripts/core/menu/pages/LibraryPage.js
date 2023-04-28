@@ -50,6 +50,14 @@ const ASSETS = [{
         'text': 'Textures',
         'icon': Textures.textureIcon,
         'page': MenuPages.TEXTURES,
+    }, {
+        'text': 'Components',
+        'icon': Textures.componentIcon,
+        'page': MenuPages.COMPONENTS,
+    }, {
+        'text': 'Systems',
+        'icon': Textures.systemIcon,
+        'page': MenuPages.SYSTEMS,
     }
 ];
 
@@ -57,6 +65,7 @@ class LibraryPage extends PaginatedIconsPage {
     constructor(controller) {
         super(controller, true);
         this._items = Object.keys(ASSETS);
+        this._labelSizeOverride = 0.015;
         this._addPageContent();
         this._createSearchButton();
     }

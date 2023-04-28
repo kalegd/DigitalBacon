@@ -9,6 +9,7 @@ import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
 import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';

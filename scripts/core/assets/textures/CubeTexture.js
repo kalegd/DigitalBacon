@@ -6,8 +6,10 @@
 
 import Texture from '/scripts/core/assets/textures/Texture.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
 import CubeTextureHelper from '/scripts/core/helpers/editor/CubeTextureHelper.js';

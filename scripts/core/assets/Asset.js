@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import Entity from '/scripts/core/assets/Entity.js';
+import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { disposeMaterial } from '/scripts/core/helpers/utils.module.js';
 import AssetHelper from '/scripts/core/helpers/editor/AssetHelper.js';
@@ -17,6 +18,10 @@ export default class Asset extends Entity {
         this._id = params['id'] || this._id;
         this._assetId = params['assetId'];
         this._name = ('name' in params) ? params['name'] : 'Object';
+        this._components = new Set();
+        if(params['components']) {
+            params['components'].forEach((id) => { this.addComponent(id); });
+        }
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
@@ -116,6 +121,10 @@ export default class Asset extends Entity {
         return this._assetId;
     }
 
+    getComponents() {
+        return this._components;
+    }
+
     getEditorHelper() {
         return this._editorHelper;
     }
@@ -186,6 +195,26 @@ export default class Asset extends Entity {
     setName(name) {
         if(name == null || this._name == name) return;
         this._name = name;
+    }
+
+    addComponent(componentId) {
+        let component = ComponentsHandler.getComponent(componentId);
+        if(!component) {
+            console.error('ERROR: Component not found');
+            return;
+        }
+        this._components.add(component);
+        return component;
+    }
+
+    removeComponent(componentId) {
+        let component = ComponentsHandler.getSessionComponent(componentId);
+        if(!component) {
+            console.error('ERROR: Component not found');
+            return;
+        }
+        this._components.delete(component);
+        return component;
     }
 
     addToScene(scene) {

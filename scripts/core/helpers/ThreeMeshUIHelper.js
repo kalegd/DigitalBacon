@@ -30,6 +30,7 @@ export default class ThreeMeshUIHelper {
         let backgroundOpacity = (params['backgroundOpacity'])
             ? params['backgroundOpacity']
             : 0;
+        let bestFit = params['bestFit'] || 'none';
         let justifyContent = params['justifyContent'] || 'center';
         let textAlign = params['textAlign'] || 'center';
         let height = (params['height']) ? params['height'] : 0.05;
@@ -44,6 +45,7 @@ export default class ThreeMeshUIHelper {
             textAlign: textAlign,
             backgroundColor: backgroundColor,
             backgroundOpacity: backgroundOpacity,
+            bestFit: bestFit,
             interLine: 0,
         });
         let textComponent = new ThreeMeshUI.Text({

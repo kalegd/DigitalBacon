@@ -11,13 +11,12 @@ import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
-const ROWS = 2;
-const OPTIONS = 3;
+const OPTIONS = 5;
 
-class PaginatedIconsPage extends MenuPage {
+class PaginatedPage extends MenuPage {
     constructor(controller, hasBackButton) {
         super(controller, hasBackButton);
-        this._paginatedListButtons = [];
+        this._paginatedListRows = [];
         this._paginatedListInteractables = [];
         this._page = 0;
         this._optionsInteractable = PointerInteractable.emptyGroup();
@@ -33,66 +32,77 @@ class PaginatedIconsPage extends MenuPage {
             'backgroundOpacity': 0,
             'offset': 0,
         });
-        let params = {
+        this._optionsBlock = new ThreeMeshUI.Block({
             'height': 0.17,
             'width': 0.31,
             'contentDirection': 'column',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
             'offset': 0,
-        };
-        this._optionsBlock = new ThreeMeshUI.Block(params);
-        params['height'] = 0.085;
-        params['contentDirection'] = 'row';
-        params['justifyContent'] = 'center';
-        params['margin'] = 0.005;
-        this._rows = [];
-        this._rows.push(new ThreeMeshUI.Block(params));
-        this._rows.push(new ThreeMeshUI.Block(params));
-        for(let i = 0; i < ROWS; i++) {
-            let row = this._rows[i];
-            for(let j = 0; j < OPTIONS; j++) {
-                let button = ThreeMeshUIHelper.createButtonBlock({
-                    'height': 0.085,
-                    'width': 0.1,
-                    'margin': 0.002,
-                    'justifyContent': 'start',
-                    'fontFamily': Fonts.defaultFamily,
-                    'fontTexture': Fonts.defaultTexture,
-                });
-                let imageBlock = new ThreeMeshUI.Block({
-                    height: 0.04,
-                    width: 0.04,
-                    backgroundTexture: Textures.searchIcon,
-                    offset: 0.0001,
-                    borderRadius: 0,
-                });
-                let textBlock = ThreeMeshUIHelper.createTextBlock({
-                    'text': ' ',
-                    'height': 0.035,
-                    'width': 0.1,
-                    'margin': 0,
-                    'fontSize': this._labelSizeOverride || FontSizes.body,
-                });
-                button.add(imageBlock);
-                button.add(textBlock);
-                row.add(button);
-                this._paginatedListButtons.push(button);
-                let interactable = new PointerInteractable(button, () => {
-                    let index = this._page * ROWS * OPTIONS + OPTIONS * i + j;
-                    if(this._items.length > index) {
-                        this._handleItemInteraction(this._items[index]);
-                    } else {
-                        console.error(
-                            "PaginatedIconsPage displaying non existant option");
-                    }
-                });
-                this._optionsInteractable.addChild(interactable);
-                this._paginatedListInteractables.push(interactable);
-            }
+        });
+        for(let i = 0; i < OPTIONS; i++) {
+            let row = new ThreeMeshUI.Block({
+                'height': 0.035,
+                'width': 0.3,
+                'margin': 0.002,
+                'contentDirection': 'row',
+                'justifyContent': 'start',
+                'backgroundOpacity': 0,
+            });
+            let textBlock = ThreeMeshUIHelper.createTextBlock({
+                'text': ' ',
+                'fontSize': FontSizes.body,
+                'height': 0.035,
+                'width': 0.21,
+                'margin': 0.002,
+                'fontFamily': Fonts.defaultFamily,
+                'fontTexture': Fonts.defaultTexture,
+            });
+            let editButton = ThreeMeshUIHelper.createButtonBlock({
+                'backgroundTexture': Textures.pencilIcon,
+                'backgroundTextureScale': 0.7,
+                'height': 0.04,
+                'width': 0.04,
+                'margin': 0.002,
+            });
+            let deleteButton = ThreeMeshUIHelper.createButtonBlock({
+                'text': 'X',
+                'fontSize': 0.03,
+                'height': 0.04,
+                'width': 0.04,
+                'margin': 0.002,
+                'fontFamily': Fonts.defaultFamily,
+                'fontTexture': Fonts.defaultTexture,
+            });
+            row.add(textBlock);
+            row.add(editButton);
+            row.add(deleteButton);
+            this._optionsBlock.add(row);
+            this._paginatedListRows.push(row);
+            let interactableParent = PointerInteractable.emptyGroup();
+            let interactable = new PointerInteractable(editButton, () => {
+                let index = this._page * OPTIONS + i;
+                if(this._items.length > index) {
+                    this._handleEditItemInteraction(this._items[index]);
+                } else {
+                    console.error(
+                        "PaginatedPage displaying non existant option");
+                }
+            });
+            interactableParent.addChild(interactable);
+            interactable = new PointerInteractable(deleteButton, () => {
+                let index = this._page * OPTIONS + i;
+                if(this._items.length > index) {
+                    this._handleDeleteItemInteraction(this._items[index]);
+                } else {
+                    console.error(
+                        "PaginatedPage displaying non existant option");
+                }
+            });
+            interactableParent.addChild(interactable);
+            this._optionsInteractable.addChild(interactableParent);
+            this._paginatedListInteractables.push(interactableParent);
         }
-        this._optionsBlock.add(this._rows[0]);
-        this._optionsBlock.add(this._rows[1]);
         this._optionsContainer.add(this._previousButton);
         this._optionsContainer.add(this._optionsBlock);
         this._optionsContainer.add(this._nextButton);
@@ -131,20 +141,18 @@ class PaginatedIconsPage extends MenuPage {
     }
 
     _updateItemsGUI() {
-        let firstIndex = this._page * ROWS * OPTIONS;
-        for(let i = 0; i < ROWS * OPTIONS; i++) {
+        let firstIndex = this._page * OPTIONS;
+        for(let i = 0; i < OPTIONS; i++) {
             let interactable = this._paginatedListInteractables[i];
-            let button = this._paginatedListButtons[i];
+            let row = this._paginatedListRows[i];
+            let title = row.children[1];
             if(firstIndex + i < this._items.length) {
                 let item = this._items[firstIndex + i];
-                button.children[2].children[1]
-                    .set({ content: this._getItemName(item) });
-                button.children[1]
-                    .set({ backgroundTexture: this._getItemIcon(item) });
-                button.visible = true;
+                title.children[1].set({ content: this._getItemName(item) });
+                row.visible = true;
                 this._optionsInteractable.addChild(interactable);
             } else {
-                button.visible = false;
+                row.visible = false;
                 this._optionsInteractable.removeChild(interactable);
             }
         }
@@ -155,7 +163,7 @@ class PaginatedIconsPage extends MenuPage {
             this._previousButton.visible = true;
             this._optionsInteractable.addChild(this._previousInteractable);
         }
-        if(this._items.length > firstIndex + ROWS * OPTIONS) {
+        if(this._items.length > firstIndex + OPTIONS) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
         } else {
@@ -167,26 +175,28 @@ class PaginatedIconsPage extends MenuPage {
 
     //Needs to be overridden
     _getItemName() {
-        console.error("PaginatedIconsPage._getItemName() should be overridden");
+        console.error("PaginatedPage._getItemName() should be overridden");
         return "";
     }
 
     //Needs to be overridden
-    _getItemIcon() {
-        console.error("PaginatedIconsPage._getItemIcon() should be overridden");
-        return "";
-    }
-
-    //Needs to be overridden
-    _handleItemInteraction() {
+    _handleEditItemInteraction() {
         console.error(
-            "PaginatedIconsPage._handleItemInteraction() should be overridden");
+            "PaginatedPage._handleEditItemInteraction() should be overridden");
+        return;
+    }
+
+    //Needs to be overridden
+    _handleDeleteItemInteraction() {
+        console.error(
+            "PaginatedPage._handleDeleteItemInteraction() should be overridden"
+        );
         return;
     }
 
     //Needs to be overridden
     _refreshItems() {
-        console.error("PaginatedIconsPage._refreshItems() should be overridden");
+        console.error("PaginatedPage._refreshItems() should be overridden");
         return;
     }
 
@@ -200,4 +210,4 @@ class PaginatedIconsPage extends MenuPage {
 
 }
 
-export default PaginatedIconsPage;
+export default PaginatedPage;

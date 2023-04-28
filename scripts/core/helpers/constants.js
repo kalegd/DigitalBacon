@@ -10,7 +10,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'system', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global.loadingLocks.add(blackPixelLock);
@@ -26,6 +26,10 @@ export const Textures = {
     "checkmarkIcon": new THREE.TextureLoader().load(
         'images/icons/checkmark_icon_white.png',
         function(texture) { global.loadingLocks.delete(locks['checkmark']); },
+    ),
+    "componentIcon": new THREE.TextureLoader().load(
+        'images/icons/component_icon_white.png',
+        function(texture) { global.loadingLocks.delete(locks['component']); },
     ),
     "ellipsisIcon": new THREE.TextureLoader().load(
         'images/icons/ellipsis_icon_white.png',
@@ -74,6 +78,10 @@ export const Textures = {
     "shapesIcon": new THREE.TextureLoader().load(
         'images/icons/shapes_icon_white.png',
         function(texture) { global.loadingLocks.delete(locks['shapes']); },
+    ),
+    "systemIcon": new THREE.TextureLoader().load(
+        'images/icons/system_icon_white.png',
+        function(texture) { global.loadingLocks.delete(locks['system']); },
     ),
     "textureIcon": new THREE.TextureLoader().load(
         'images/icons/texture_icon_white.png',

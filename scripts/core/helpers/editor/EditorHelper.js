@@ -140,6 +140,38 @@ export default class EditorHelper {
         }
     }
 
+    addComponent(componentId, ignoreUndoRedo) {
+        let component = this._asset.addComponent(componentId);
+        if(!component) return;
+        PubSub.publish(this._id, 'COMPONENT_ATTACHED:' + component.getId(), {
+            assetId: this._asset.getId(),
+            componentId: componentId,
+        });
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this.removeComponent(componentId, true);
+            }, () => {
+                this.addComponent(componentId, true);
+            });
+        }
+    }
+
+    removeComponent(componentId, ignoreUndoRedo) {
+        let component = this._asset.removeComponent(componentId);
+        if(!component) return;
+        PubSub.publish(this._id, 'COMPONENT_DETACHED:' + component.getId(), {
+            assetId: this._asset.getId(),
+            componentId: componentId,
+        });
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this.addComponent(componentId, true);
+            }, () => {
+                this.removeComponent(componentId, true);
+            });
+        }
+    }
+
     getMenuFields(fields) {
         if(this._menuFields) return this._menuFields;
 

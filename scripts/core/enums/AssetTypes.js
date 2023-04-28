@@ -1,9 +1,11 @@
 const AssetTypes = {
-    MODEL: "MODEL",
+    COMPONENT: "COMPONENT",
     IMAGE: "IMAGE",
-    SHAPE: "SHAPE",
     LIGHT: "LIGHT",
     MATERIAL: "MATERIAL",
+    MODEL: "MODEL",
+    SHAPE: "SHAPE",
+    SYSTEM: "SYSTEM",
     TEXTURE: "TEXTURE",
 };
 
