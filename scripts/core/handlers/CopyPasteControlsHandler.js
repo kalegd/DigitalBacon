@@ -57,7 +57,7 @@ class CopyPasteControlsHandler {
             controller['closestPoint'] = intersections[0].point;
             if(isPressed && this._copiedAsset) {
                 let clonedAsset = this._copiedAsset.clone();
-                clonedAsset.getEditorHelper().place(intersections[0]);
+                clonedAsset.editorHelper.place(intersections[0]);
                 this._assetAlreadyPastedByTrigger = true;
             }
         }

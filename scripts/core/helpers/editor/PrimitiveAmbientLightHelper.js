@@ -4,7 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PrimitiveAmbientLight from '/scripts/core/assets/primitives/PrimitiveAmbientLight.js';
 import { Colors } from '/scripts/core/helpers/constants.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import PrimitiveLightHelper from '/scripts/core/helpers/editor/PrimitiveLightHelper.js';
 import * as THREE from 'three';
 
@@ -33,3 +35,5 @@ export default class PrimitiveAmbientLightHelper extends PrimitiveLightHelper {
         return super.getMenuFields(FIELDS);
     }
 }
+
+EditorHelperFactory.registerEditorHelper(PrimitiveAmbientLightHelper, PrimitiveAmbientLight);

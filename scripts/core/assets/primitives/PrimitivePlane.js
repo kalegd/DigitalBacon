@@ -4,10 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
+import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitivePlaneHelper from '/scripts/core/helpers/editor/PrimitivePlaneHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
@@ -25,15 +24,15 @@ export default class PrimitivePlane extends PrimitiveMesh {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitivePlaneHelper(this);
-    }
-
     _createMesh() {
         let geometry = new THREE.PlaneGeometry(this._width, this._height,
             this._widthSegments, this._heightSegments);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateGeometry() {

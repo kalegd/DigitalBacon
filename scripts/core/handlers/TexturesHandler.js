@@ -4,10 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
 class TexturesHandler {
@@ -27,6 +29,7 @@ class TexturesHandler {
         if(this._textures[texture.getId()]) return;
         this._textures[texture.getId()] = texture;
         this._sessionTextures[texture.getId()] = texture;
+        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(texture);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.deleteTexture(texture, true, ignorePublish);

@@ -4,6 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PrimitiveSphere from '/scripts/core/assets/primitives/PrimitiveSphere.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
@@ -47,3 +49,5 @@ export default class PrimitiveSphereHelper extends PrimitiveMeshHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(PrimitiveSphereHelper, PrimitiveSphere);

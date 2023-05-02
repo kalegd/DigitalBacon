@@ -4,10 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
 class MaterialsHandler {
@@ -27,6 +29,7 @@ class MaterialsHandler {
         if(this._materials[material.getId()]) return;
         this._materials[material.getId()] = material;
         this._sessionMaterials[material.getId()] = material;
+        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(material);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.deleteMaterial(material, true, ignorePublish);
@@ -34,7 +37,7 @@ class MaterialsHandler {
                 this.addMaterial(material, true, ignorePublish);
             });
         }
-        material.undoDispose();
+        if(material.editorHelper) material.editorHelper.undoDispose();
         if(!ignorePublish)
             PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
     }
@@ -50,6 +53,7 @@ class MaterialsHandler {
             });
         }
         material.dispose();
+        if(material.editorHelper) material.editorHelper.dispose();
         delete this._materials[material.getId()];
         if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.MATERIAL_DELETED, {

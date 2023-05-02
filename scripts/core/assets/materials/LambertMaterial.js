@@ -8,7 +8,6 @@ import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import LambertMaterialHelper from '/scripts/core/helpers/editor/LambertMaterialHelper.js';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "emissiveMap", "envMap"];
@@ -28,10 +27,6 @@ export default class LambertMaterial extends Material {
         this._refractionRatio = numberOr(params['refractionRatio'], 0.98);
         this._wireframe = params['wireframe'] || false;
         this._createMaterial();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new LambertMaterialHelper(this);
     }
 
     _getDefaultName() {

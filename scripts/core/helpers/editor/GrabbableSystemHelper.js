@@ -4,7 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import GrabbableSystem from '/scripts/core/assets/systems/GrabbableSystem.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import SystemHelper from '/scripts/core/helpers/editor/SystemHelper.js';
 
 const FIELDS = [
@@ -33,3 +35,5 @@ export default class GrabbableSystemHelper extends SystemHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(GrabbableSystemHelper, GrabbableSystem);

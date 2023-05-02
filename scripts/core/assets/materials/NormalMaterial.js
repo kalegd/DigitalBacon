@@ -8,7 +8,6 @@ import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import NormalMaterialHelper from '/scripts/core/helpers/editor/NormalMaterialHelper.js';
 import * as THREE from 'three';
 
 const MAPS = ["bumpMap", "displacementMap", "normalMap"];
@@ -28,10 +27,6 @@ export default class NormalMaterial extends Material {
         this._normalScale = params['normalScale'] || [1,1];
         this._wireframe = params['wireframe'] || false;
         this._createMaterial();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new NormalMaterialHelper(this);
     }
 
     _getDefaultName() {

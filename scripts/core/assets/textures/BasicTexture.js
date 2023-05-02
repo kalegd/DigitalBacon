@@ -10,7 +10,6 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
 import { compareLists, numberOr } from '/scripts/core/helpers/utils.module.js';
-import BasicTextureHelper from '/scripts/core/helpers/editor/BasicTextureHelper.js';
 import * as THREE from 'three';
 
 export default class BasicTexture extends Texture {
@@ -22,14 +21,6 @@ export default class BasicTexture extends Texture {
         this._repeat = params['repeat'] || [1, 1];
         this._offset = params['offset'] || [0, 0];
         this._createTexture();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new BasicTextureHelper(this);
-    }
-
-    _getDefaultName() {
-        return "Texture";
     }
 
     _createTexture() {

@@ -137,7 +137,7 @@ class PartyMessageHelper {
     _handleInstanceAttached(peer, message) {
         let instance = ProjectHandler.getSessionInstance(message.id);
         if(instance) {
-            let editorHelper = instance.getEditorHelper();
+            let editorHelper = instance.editorHelper;
             if(editorHelper) editorHelper.attachToPeer(peer, message);
         }
     }
@@ -145,7 +145,7 @@ class PartyMessageHelper {
     _handleInstanceDetached(peer, message) {
         let instance = ProjectHandler.getSessionInstance(message.id);
         if(instance) {
-            let editorHelper = instance.getEditorHelper();
+            let editorHelper = instance.editorHelper;
             if(editorHelper) editorHelper.detachFromPeer(peer, message);
         }
     }
@@ -242,7 +242,7 @@ class PartyMessageHelper {
             let capitalizedParam = capitalizeFirstLetter(param);
             if(('set' + capitalizedParam) in asset)
                 asset['set' + capitalizedParam](params[param]);
-            if(global.isEditor) asset.getEditorHelper().updateMenuField(param);
+            if(global.isEditor) asset.editorHelper.updateMenuField(param);
         }
         let message = {
             asset: asset,

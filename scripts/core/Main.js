@@ -6,7 +6,7 @@
 
 import EditorMenuController from '/scripts/core/menu/EditorMenuController.js';
 import LiveMenuController from '/scripts/core/menu/LiveMenuController.js';
-import PrimitiveAmbientLight from '/scripts/core/assets/PrimitiveAmbientLight.js';
+import PrimitiveAmbientLight from '/scripts/core/assets/primitives/PrimitiveAmbientLight.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';

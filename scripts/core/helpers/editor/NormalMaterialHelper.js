@@ -4,9 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import NormalMaterial from '/scripts/core/assets/materials/NormalMaterial.js';
 import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import { NORMAL_TYPE_MAP, REVERSE_NORMAL_TYPE_MAP } from '/scripts/core/helpers/constants.js';
 import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
@@ -61,3 +63,5 @@ export default class NormalMaterialHelper extends MaterialHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(NormalMaterialHelper, NormalMaterial);

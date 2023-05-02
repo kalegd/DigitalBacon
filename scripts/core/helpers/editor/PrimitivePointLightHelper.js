@@ -4,7 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PrimitivePointLight from '/scripts/core/assets/primitives/PrimitivePointLight.js';
 import { Colors } from '/scripts/core/helpers/constants.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import PrimitiveLightHelper from '/scripts/core/helpers/editor/PrimitiveLightHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
@@ -51,3 +53,5 @@ export default class PrimitivePointLightHelper extends PrimitiveLightHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(PrimitivePointLightHelper, PrimitivePointLight);

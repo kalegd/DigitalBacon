@@ -4,10 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
+import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveBoxHelper from '/scripts/core/helpers/editor/PrimitiveBoxHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
@@ -27,16 +26,16 @@ export default class PrimitiveBox extends PrimitiveMesh {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveBoxHelper(this);
-    }
-
     _createMesh() {
         let geometry = new THREE.BoxGeometry(this._width, this._height,
             this._depth, this._widthSegments, this._heightSegments,
             this._depthSegments);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateGeometry() {

@@ -5,6 +5,8 @@
  */
 
 import global from '/scripts/core/global.js';
+import PrimitivePlane from '/scripts/core/assets/primitives/PrimitivePlane.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
@@ -58,3 +60,5 @@ export default class PrimitivePlaneHelper extends PrimitiveMeshHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(PrimitivePlaneHelper, PrimitivePlane);

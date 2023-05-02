@@ -8,7 +8,6 @@ import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import ToonMaterialHelper from '/scripts/core/helpers/editor/ToonMaterialHelper.js';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
@@ -33,10 +32,6 @@ export default class ToonMaterial extends Material {
         this._normalScale = params['normalScale'] || [1,1];
         this._wireframe = params['wireframe'] || false;
         this._createMaterial();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new ToonMaterialHelper(this);
     }
 
     _getDefaultName() {

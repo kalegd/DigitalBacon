@@ -4,10 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
+import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveCircleHelper from '/scripts/core/helpers/editor/PrimitiveCircleHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
@@ -24,16 +23,16 @@ export default class PrimitiveCircle extends PrimitiveMesh {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveCircleHelper(this);
-    }
-
     _createMesh() {
         let thetaLength = this._thetaLength * Math.PI / 180;
         let geometry = new THREE.CircleGeometry(this._radius, this._segments, 0,
             thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateGeometry() {

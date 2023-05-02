@@ -4,116 +4,37 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
-import Entity from '/scripts/core/assets/Entity.js';
 import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
-import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import { disposeMaterial } from '/scripts/core/helpers/utils.module.js';
-import AssetHelper from '/scripts/core/helpers/editor/AssetHelper.js';
-import * as THREE from 'three';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
-export default class Asset extends Entity {
+export default class Asset {
     constructor(params = {}) {
-        super();
-        this._id = params['id'] || this._id;
+        this._id = params['id'] || uuidv4();
         this._assetId = params['assetId'];
-        this._name = ('name' in params) ? params['name'] : 'Object';
+        this._name = ('name' in params)
+            ? params['name']
+            : this._getDefaultName();
         this._components = new Set();
         if(params['components']) {
             params['components'].forEach((id) => { this.addComponent(id); });
         }
-        let position = (params['position']) ? params['position'] : [0,0,0];
-        let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
-        let scale = (params['scale']) ? params['scale'] : [1,1,1];
-        this.visualEdit = params['visualEdit'] || false;
-        this._object.position.fromArray(position);
-        this._object.rotation.fromArray(rotation);
-        this._object.scale.fromArray(scale);
-        if(global.isEditor) this._createEditorHelper();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new AssetHelper(this);
-    }
-
-    makeTranslucent() {
-        this._object.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        for(let i = 0; i < node.material.length; i++) {
-                            let mtrl = node.material[i];
-                            let newMaterial = mtrl.clone();
-                            makeMaterialTranslucent(newMaterial);
-                            newMaterial.userData['oldMaterial'] = mtrl;
-                            node.material[i] = newMaterial;
-                        }
-                    }
-                    else {
-                        let newMaterial = node.material.clone();
-                        makeMaterialTranslucent(newMaterial);
-                        newMaterial.userData['oldMaterial'] = node.material;
-                        node.material = newMaterial;
-                    }
-                }
-            }
-        });
-    }
-
-    returnTransparency() {
-        this._object.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        for(let i = 0; i < node.material.length; i++) {
-                            let mtrl = node.material[i];
-                            node.material[i] =
-                                mtrl.userData['oldMaterial'];
-                            disposeMaterial(mtrl);
-                        }
-                    }
-                    else {
-                        let oldMaterial = node.material;
-                        node.material = node.material.userData['oldMaterial'];
-                        disposeMaterial(oldMaterial);
-                    }
-                }
-            }
-        });
-    }
-
-    _fetchCloneParams(visualEditOverride) {
-        let params = this.exportParams();
-        let visualEdit = (visualEditOverride != null)
-            ? visualEditOverride
-            : this.visualEdit;
-        let position = this._object.getWorldPosition(vector3s[0]).toArray();
-        let rotation = euler.setFromQuaternion(
-            this._object.getWorldQuaternion(quaternion)).toArray();
-        params['visualEdit'] = visualEdit;
-        params['position'] = position;
-        params['rotation'] = rotation;
-        delete params['id'];
-        return params;
-    }
-
-    preview() {
-        let params = this.exportParams();
-        params['visualEdit'] = false;
-        params['isPreview'] = true;
-        delete params['id'];
-        return new this.constructor(params);
+    _getDefaultName() {
+        console.error("Asset._getDefaultName() should be overridden");
+        return;
     }
 
     exportParams() {
+        let componentIds = [];
+        for(let component of this._components) {
+            componentIds.push(component.getId());
+        }
         return {
             "id": this._id,
             "name": this._name,
             "assetId": this._assetId,
-            "position": this.getPosition(),
-            "rotation": this.getRotation(),
-            "scale": this.getScale(),
-            "visualEdit": this.visualEdit,
+            "components": componentIds,
         };
     }
 
@@ -125,71 +46,12 @@ export default class Asset extends Entity {
         return this._components;
     }
 
-    getEditorHelper() {
-        return this._editorHelper;
+    getId() {
+        return this._id;
     }
 
     getName() {
         return this._name;
-    }
-
-    getPosition() {
-        return this._object.position.toArray();
-    }
-
-    getRotation() {
-        return this._object.rotation.toArray();
-    }
-
-    getScale() {
-        return this._object.scale.toArray();
-    }
-
-    getVisualEdit() {
-        return this.visualEdit;
-    }
-
-    getWorldPosition(vector3) {
-        if(!vector3) vector3 = vector3s[0];
-        this._object.getWorldPosition(vector3);
-        return vector3;
-    }
-
-    getWorldQuaternion(quat) {
-        if(!quat) quat = quaternion;
-        this._object.getWorldQuaternion(quat);
-        return quat;
-    }
-
-    getWorldScale(vector3) {
-        if(!vector3) vector3 = vector3s[0];
-        this._object.getWorldScale(vector3);
-        return vector3;
-    }
-
-    setPosition(position) {
-        this._object.position.fromArray(position);
-    }
-
-    setRotation(rotation) {
-        this._object.rotation.fromArray(rotation);
-    }
-
-    setRotationFromQuaternion(quat) {
-        quaternion.fromArray(quat);
-        this._object.setRotationFromQuaternion(quaternion);
-    }
-
-    setScale(scale) {
-        this._object.scale.fromArray(scale);
-    }
-
-    setVisualEdit(visualEdit) {
-        if(this._editorHelper) {
-            this._editorHelper.updateVisualEdit(visualEdit, true, true);
-        } else {
-            this.visualEdit = visualEdit;
-        }
     }
 
     setName(name) {
@@ -216,19 +78,4 @@ export default class Asset extends Entity {
         this._components.delete(component);
         return component;
     }
-
-    addToScene(scene) {
-        super.addToScene(scene);
-        if(global.isEditor) this._editorHelper.addToScene();
-    }
-
-    removeFromScene() {
-        super.removeFromScene();
-        if(global.isEditor) this._editorHelper.removeFromScene();
-    }
-}
-
-function makeMaterialTranslucent(material) {
-    material.opacity = 0.5;
-    material.transparent = true;
 }

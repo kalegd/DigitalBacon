@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import Hands from '/scripts/core/enums/Hands.js';
@@ -26,6 +27,7 @@ import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EulerInput from '/scripts/core/menu/input/EulerInput.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
@@ -50,7 +52,7 @@ const FIELDS = [
         "type": CheckboxInput },
 ];
 
-export default class AssetHelper extends EditorHelper {
+export default class AssetEntityHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.INSTANCE_UPDATED);
         this._object = asset.getObject();
@@ -64,6 +66,7 @@ export default class AssetHelper extends EditorHelper {
         this._boundingBox = new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
         this._createInteractables();
+        this._overwriteAssetFunctions();
     }
 
     _createInteractables() {
@@ -348,6 +351,22 @@ export default class AssetHelper extends EditorHelper {
         return menuFieldsMap;
     }
 
+    _overwriteAssetFunctions() {
+        this._asset._addToScene = this._asset.addToScene;
+        this._asset._removeFromScene = this._asset.removeFromScene;
+        this._asset.addToScene = (scene) => {
+            this._asset._addToScene(scene);
+            this.addToScene();
+        };
+        this._asset.removeFromScene = (scene) => {
+            this._asset._removeFromScene();
+            this.removeFromScene();
+        };
+        this._asset.setVisualEdit = (visualEdit) => {
+            this.updateVisualEdit(visualEdit, true, true);
+        }
+    }
+
     addToScene(scene) {
         if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
         this._addInteractables();
@@ -360,3 +379,5 @@ export default class AssetHelper extends EditorHelper {
         this._removeInteractables();
     }
 }
+
+EditorHelperFactory.registerEditorHelper(AssetEntityHelper, AssetEntity);

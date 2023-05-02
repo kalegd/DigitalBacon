@@ -4,21 +4,21 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
+import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveConeHelper from '/scripts/core/helpers/editor/PrimitiveConeHelper.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '42779f01-e2cc-495a-a4b3-b286197fa762';
-const ASSET_NAME = 'Cone';
+const ASSET_ID = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
+const ASSET_NAME = 'Cylinder';
 
-export default class PrimitiveCone extends PrimitiveMesh {
+export default class PrimitiveCylinder extends PrimitiveMesh {
     constructor(params = {}) {
         super(params);
         this._assetId = ASSET_ID;
         this._height = numberOr(params['height'], 0.2);
-        this._radius = numberOr(params['radius'], 0.1);
+        this._radiusTop = numberOr(params['radiusTop'], 0.1);
+        this._radiusBottom = numberOr(params['radiusBottom'], 0.1);
         this._radialSegments = params['radialSegments'] || 32;
         this._heightSegments = params['heightSegments'] || 1;
         this._thetaLength = numberOr(params['thetaLength'], 360);
@@ -27,25 +27,25 @@ export default class PrimitiveCone extends PrimitiveMesh {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveConeHelper(this);
-    }
-
     _createMesh() {
         let thetaLength = this._thetaLength * Math.PI / 180;
-        let geometry = new THREE.ConeGeometry(this._radius, this._height,
-            this._radialSegments, this._heightSegments, this._openEnded, 0,
-            thetaLength);
+        let geometry = new THREE.CylinderGeometry(this._radiusTop,
+            this._radiusBottom, this._height, this._radialSegments,
+            this._heightSegments, this._openEnded, 0, thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateGeometry() {
         let thetaLength = this._thetaLength * Math.PI / 180;
         let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.ConeGeometry(this._radius, this._height,
-            this._radialSegments, this._heightSegments, this._openEnded, 0,
-            thetaLength);
+        let geometry = new THREE.CylinderGeometry(this._radiusTop,
+            this._radiusBottom, this._height, this._radialSegments,
+            this._heightSegments, this._openEnded, 0, thetaLength);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
     }
@@ -53,7 +53,8 @@ export default class PrimitiveCone extends PrimitiveMesh {
     exportParams() {
         let params = super.exportParams();
         params['height'] = this._height;
-        params['radius'] = this._radius;
+        params['radiusTop'] = this._radiusTop;
+        params['radiusBottom'] = this._radiusBottom;
         params['radialSegments'] = this._radialSegments;
         params['heightSegments'] = this._heightSegments;
         params['thetaLength'] = this._thetaLength;
@@ -65,8 +66,12 @@ export default class PrimitiveCone extends PrimitiveMesh {
         return this._height;
     }
 
-    getRadius() {
-        return this._radius;
+    getRadiusTop() {
+        return this._radiusTop;
+    }
+
+    getRadiusBottom() {
+        return this._radiusBottom;
     }
 
     getRadialSegments() {
@@ -91,9 +96,15 @@ export default class PrimitiveCone extends PrimitiveMesh {
         this._updateGeometry();
     }
 
-    setRadius(radius) {
-        if(this._radius == radius) return;
-        this._radius = radius;
+    setRadiusTop(radiusTop) {
+        if(this._radiusTop == radiusTop) return;
+        this._radiusTop = radiusTop;
+        this._updateGeometry();
+    }
+
+    setRadiusBottom(radiusBottom) {
+        if(this._radiusBottom == radiusBottom) return;
+        this._radiusBottom = radiusBottom;
         this._updateGeometry();
     }
 
@@ -120,6 +131,7 @@ export default class PrimitiveCone extends PrimitiveMesh {
         this._openEnded = openEnded;
         this._updateGeometry();
     }
+
 }
 
-ProjectHandler.registerShape(PrimitiveCone, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitiveCylinder, ASSET_ID, ASSET_NAME);

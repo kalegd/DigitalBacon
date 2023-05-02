@@ -4,20 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Asset from '/scripts/core/assets/Asset.js';
+import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Materials } from '/scripts/core/helpers/constants.js';
-import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
 
-export default class PrimitiveMesh extends Asset {
+export default class PrimitiveMesh extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._material = params['material'];
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveMeshHelper(this);
     }
 
     _updateGeometry() {

@@ -4,13 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Asset from '/scripts/core/assets/Asset.js';
+import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import ClampedTexturePlaneHelper from '/scripts/core/helpers/editor/ClampedTexturePlaneHelper.js';
 import * as THREE from 'three';
 
-export default class ClampedTexturePlane extends Asset {
+export default class ClampedTexturePlane extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);
@@ -19,10 +18,6 @@ export default class ClampedTexturePlane extends Asset {
         this._transparent = params['transparent'] != false;
         if(!this._transparent) this._updateTransparent(false);
         if(params['isPreview']) this.makeTranslucent();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new ClampedTexturePlaneHelper(this);
     }
 
     _createMesh(assetId) {

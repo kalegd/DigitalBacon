@@ -4,20 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Asset from '/scripts/core/assets/Asset.js';
+import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import GLTFAssetHelper from '/scripts/core/helpers/editor/GLTFAssetHelper.js';
 
-export default class GLTFAsset extends Asset {
+export default class GLTFAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);
         if(params['isPreview']) this.makeTranslucent();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new GLTFAssetHelper(this);
     }
 
     _createMesh(assetId) {

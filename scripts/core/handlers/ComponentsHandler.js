@@ -4,10 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
 class ComponentsHandler {
@@ -27,6 +29,7 @@ class ComponentsHandler {
         if(this._components[component.getId()]) return;
         this._components[component.getId()] = component;
         this._sessionComponents[component.getId()] = component;
+        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(component);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.deleteComponent(component, true, ignorePublish);

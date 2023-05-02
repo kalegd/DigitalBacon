@@ -4,20 +4,19 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Asset from '/scripts/core/assets/Asset.js';
+import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveLightHelper from '/scripts/core/helpers/editor/PrimitiveLightHelper.js';
 
-export default class PrimitiveLight extends Asset {
+export default class PrimitiveLight extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._color = numberOr(params['color'], 0xffffff);
         this._intensity = numberOr(params['intensity'], 1);
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveLightHelper(this);
+    _getDefaultName() {
+        return 'Light';
     }
 
     clone(visualEditOverride) {

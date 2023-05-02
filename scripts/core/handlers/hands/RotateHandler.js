@@ -37,7 +37,7 @@ class RotateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.asset == e.instance) {
-                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let assetHelper = heldAsset.asset.editorHelper;
                     let object = heldAsset.asset.getObject();
                     if(heldAsset.preTransformState) {
                         object.quaternion.fromArray(
@@ -97,7 +97,7 @@ class RotateHandler {
         delete this._heldAssets[controllerId + ':' + hand];
         if(!rotation) {
             rotation = this._update(heldAsset);
-            let assetHelper = heldAsset.asset.getEditorHelper();
+            let assetHelper = heldAsset.asset.editorHelper;
             this._quaternion.fromArray(heldAsset.preTransformState);
             this._euler1.setFromQuaternion(this._quaternion);
             this._quaternion.fromArray(rotation);

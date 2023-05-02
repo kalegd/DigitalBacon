@@ -4,9 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import Asset from '/scripts/core/assets/Asset.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
@@ -144,7 +146,8 @@ export default class EditorHelper {
         let component = this._asset.addComponent(componentId);
         if(!component) return;
         PubSub.publish(this._id, 'COMPONENT_ATTACHED:' + component.getId(), {
-            assetId: this._asset.getId(),
+            id: this._asset.getId(),
+            assetId: this._asset.getAssetId(),
             componentId: componentId,
         });
         if(!ignoreUndoRedo) {
@@ -160,7 +163,8 @@ export default class EditorHelper {
         let component = this._asset.removeComponent(componentId);
         if(!component) return;
         PubSub.publish(this._id, 'COMPONENT_DETACHED:' + component.getId(), {
-            assetId: this._asset.getId(),
+            id: this._asset.getId(),
+            assetId: this._asset.getAssetId(),
             componentId: componentId,
         });
         if(!ignoreUndoRedo) {
@@ -355,3 +359,5 @@ export default class EditorHelper {
         });
     }
 }
+
+EditorHelperFactory.registerEditorHelper(EditorHelper, Asset);

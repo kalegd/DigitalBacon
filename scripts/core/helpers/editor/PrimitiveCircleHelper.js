@@ -5,6 +5,8 @@
  */
 
 import global from '/scripts/core/global.js';
+import PrimitiveCircle from '/scripts/core/assets/primitives/PrimitiveCircle.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
@@ -57,3 +59,5 @@ export default class PrimitiveCircleHelper extends PrimitiveMeshHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(PrimitiveCircleHelper, PrimitiveCircle);

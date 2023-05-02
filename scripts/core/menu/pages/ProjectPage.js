@@ -5,7 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import PrimitiveAmbientLight from '/scripts/core/assets/PrimitiveAmbientLight.js';
+import PrimitiveAmbientLight from '/scripts/core/assets/primitives/PrimitiveAmbientLight.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';

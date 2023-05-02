@@ -4,8 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { Colors } from '/scripts/core/helpers/constants.js';
-import AssetHelper from '/scripts/core/helpers/editor/AssetHelper.js';
+import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
+import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
 const FIELDS = [
@@ -15,7 +16,7 @@ const FIELDS = [
     { "parameter": "scale" },
 ];
 
-export default class GLTFAssetHelper extends AssetHelper {
+export default class GLTFAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset);
     }
@@ -24,3 +25,5 @@ export default class GLTFAssetHelper extends AssetHelper {
         return super.getMenuFields(FIELDS);
     }
 }
+
+EditorHelperFactory.registerEditorHelper(GLTFAssetHelper, GLTFAsset);

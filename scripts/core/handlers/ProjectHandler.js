@@ -16,6 +16,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
   
@@ -125,6 +126,7 @@ class ProjectHandler {
 
     addImage(params, ignoreUndoRedo, ignorePublish) {
         let image = new ClampedTexturePlane(params);
+        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(image);
         image.addToScene(this._scene);
         this.addAsset(image, ignoreUndoRedo, ignorePublish);
         return image;
@@ -138,6 +140,7 @@ class ProjectHandler {
 
     addGLTF(params, ignoreUndoRedo, ignorePublish) {
         let gltf = new GLTFAsset(params);
+        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(gltf);
         gltf.addToScene(this._scene);
         this.addAsset(gltf, ignoreUndoRedo, ignorePublish);
         return gltf;
@@ -151,6 +154,7 @@ class ProjectHandler {
 
     addLight(params, assetId, ignoreUndoRedo, ignorePublish) {
         let instance = new this._lightClassMap[assetId](params);
+        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(instance);
         instance.addToScene(this._scene);
         this.addAsset(instance, ignoreUndoRedo, ignorePublish);
         return instance;
@@ -169,6 +173,7 @@ class ProjectHandler {
 
     addShape(params, assetId, ignoreUndoRedo, ignorePublish) {
         let instance = new this._shapeClassMap[assetId](params);
+        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(instance);
         instance.addToScene(this._scene);
         this.addAsset(instance, ignoreUndoRedo, ignorePublish);
         return instance;

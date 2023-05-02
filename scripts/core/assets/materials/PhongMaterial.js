@@ -8,7 +8,6 @@ import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PhongMaterialHelper from '/scripts/core/helpers/editor/PhongMaterialHelper.js';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "normalMap", "specularMap"];
@@ -42,10 +41,6 @@ export default class PhongMaterial extends Material {
         this._specularMap = params['specularMap'];
         this._wireframe = params['wireframe'] || false;
         this._createMaterial();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new PhongMaterialHelper(this);
     }
 
     _getDefaultName() {

@@ -8,7 +8,6 @@ import Material from '/scripts/core/assets/materials/Material.js';
 import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import BasicMaterialHelper from '/scripts/core/helpers/editor/BasicMaterialHelper.js';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "envMap"];
@@ -25,10 +24,6 @@ export default class BasicMaterial extends Material {
         this._refractionRatio = numberOr(params['refractionRatio'],0.98);
         this._wireframe = params['wireframe'] || false;
         this._createMaterial();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new BasicMaterialHelper(this);
     }
 
     _getDefaultName() {

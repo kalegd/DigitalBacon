@@ -4,8 +4,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import System from '/scripts/core/assets/systems/System.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 
 const FIELDS = [
@@ -30,3 +32,5 @@ export default class SystemHelper extends EditorHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(SystemHelper, System);

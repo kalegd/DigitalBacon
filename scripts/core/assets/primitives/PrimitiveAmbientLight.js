@@ -4,13 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveLight from '/scripts/core/assets/PrimitiveLight.js';
+import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveAmbientLightHelper from '/scripts/core/helpers/editor/PrimitiveAmbientLightHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '7605bff2-8ca3-4a47-b6f7-311d745507de';
@@ -24,13 +23,13 @@ export default class PrimitiveAmbientLight extends PrimitiveLight {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveAmbientLightHelper(this);
-    }
-
     _createLight() {
         this._light = new THREE.AmbientLight(this._color, this._intensity);
         this._object.add(this._light);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 }
 

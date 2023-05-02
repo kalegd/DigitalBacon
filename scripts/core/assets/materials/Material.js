@@ -5,31 +5,22 @@
  */
 
 import global from '/scripts/core/global.js';
+import Asset from '/scripts/core/assets/Asset.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { Textures, SIDE_MAP, REVERSE_SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import { uuidv4, numberOr, disposeMaterial } from '/scripts/core/helpers/utils.module.js';
-import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
 import * as THREE from 'three';
 
-export default class Material {
+export default class Material extends Asset {
     constructor(params = {}) {
-        this._id = params['id'] || uuidv4();
-        this._name = ('name' in params)
-            ? params['name']
-            : this._getDefaultName();
+        super(params);
         this._opacity = numberOr(params['opacity'], 1);
         this._side = params['side'] || THREE.FrontSide;
         this._transparent = params['transparent'] || false;
-        if(global.isEditor) this._createEditorHelper();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new MaterialHelper(this);
     }
 
     _getDefaultName() {
-        console.error("Material._getDefaultName() should be overridden");
-        return;
+        return 'Material';
     }
 
     _createMaterial() {
@@ -47,13 +38,11 @@ export default class Material {
     }
 
     exportParams() {
-        return {
-            "id": this._id,
-            "name": this._name,
-            "opacity": this._material.opacity,
-            "side": this._material.side,
-            "transparent": this._material.transparent,
-        };
+        let params = super.exportParams();
+        params['opacity'] = this._material.opacity;
+        params['side'] = this._material.side;
+        params['transparent'] = this._material.transparent;
+        return params;
     }
 
     _updateMaterialParamsWithMaps(params, maps) {
@@ -67,11 +56,6 @@ export default class Material {
 
     dispose() {
         disposeMaterial(this._material);
-        if(global.isEditor) this._editorHelper.dispose();
-    }
-
-    undoDispose() {
-        if(global.isEditor) this._editorHelper.undoDispose();
     }
 
     getMaps() {
@@ -93,18 +77,6 @@ export default class Material {
         return;
     }
 
-    getId() {
-        return this._id;
-    }
-
-    getEditorHelper() {
-        return this._editorHelper;
-    }
-
-    getName() {
-        return this._name;
-    }
-
     getOpacity() {
         return this._opacity;
     }
@@ -115,11 +87,6 @@ export default class Material {
 
     getTransparent() {
         return this._transparent;
-    }
-
-    setName(name) {
-        if(name == null || this._name == name) return;
-        this._name = name;
     }
 
     setOpacity(opacity) {

@@ -33,7 +33,7 @@ class ScaleHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.asset == e.instance) {
-                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let assetHelper = heldAsset.asset.editorHelper;
                     let object = heldAsset.asset.getObject();
                     if(heldAsset.preTransformState) {
                         object.scale.fromArray(heldAsset.preTransformState);
@@ -91,7 +91,7 @@ class ScaleHandler {
         delete this._heldAssets[controllerId + ':' + hand];
         if(!scale) {
             scale = this._update(heldAsset);
-            let assetHelper = heldAsset.asset.getEditorHelper();
+            let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = scale;
             assetHelper._updateVector3('scale', postState, false, true,

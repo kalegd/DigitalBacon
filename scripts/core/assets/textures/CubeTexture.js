@@ -12,7 +12,6 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
-import CubeTextureHelper from '/scripts/core/helpers/editor/CubeTextureHelper.js';
 import * as THREE from 'three';
 
 export default class CubeTexture extends Texture {
@@ -21,10 +20,6 @@ export default class CubeTexture extends Texture {
         this._images = params['images'] || {};
         this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
         this._createTexture();
-    }
-
-    _createEditorHelper() {
-        this._editorHelper = new CubeTextureHelper(this);
     }
 
     _getDefaultName() {

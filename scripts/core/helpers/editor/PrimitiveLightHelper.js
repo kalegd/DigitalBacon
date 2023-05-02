@@ -4,8 +4,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
-import AssetHelper from '/scripts/core/helpers/editor/AssetHelper.js';
+import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
@@ -19,7 +21,7 @@ const FIELDS = [
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveLightHelper extends AssetHelper {
+export default class PrimitiveLightHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset);
         this._createMesh();
@@ -54,3 +56,5 @@ export default class PrimitiveLightHelper extends AssetHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(PrimitiveLightHelper, PrimitiveLight);

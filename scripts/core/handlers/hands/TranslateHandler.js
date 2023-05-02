@@ -33,7 +33,7 @@ class TranslateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.asset == e.instance) {
-                    let assetHelper = heldAsset.asset.getEditorHelper();
+                    let assetHelper = heldAsset.asset.editorHelper;
                     let object = heldAsset.asset.getObject();
                     if(heldAsset.preTransformState) {
                         object.position.fromArray(heldAsset.preTransformState);
@@ -90,7 +90,7 @@ class TranslateHandler {
         delete this._heldAssets[controllerId + ':' + hand];
         if(!position) {
             position = this._update(heldAsset);
-            let assetHelper = heldAsset.asset.getEditorHelper();
+            let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = position;
             assetHelper._updateVector3('position', postState, false, true,

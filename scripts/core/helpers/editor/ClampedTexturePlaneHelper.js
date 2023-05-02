@@ -5,8 +5,10 @@
  */
 
 import global from '/scripts/core/global.js';
+import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
-import AssetHelper from '/scripts/core/helpers/editor/AssetHelper.js';
+import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 
 const FIELDS = [
@@ -18,7 +20,7 @@ const FIELDS = [
     { "parameter": "scale" },
 ];
 
-export default class ClampedTexturePlaneHelper extends AssetHelper {
+export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset);
     }
@@ -51,3 +53,5 @@ export default class ClampedTexturePlaneHelper extends AssetHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(ClampedTexturePlaneHelper, ClampedTexturePlane);

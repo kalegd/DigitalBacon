@@ -4,10 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
+import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveTorusHelper from '/scripts/core/helpers/editor/PrimitiveTorusHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
@@ -26,16 +25,16 @@ export default class PrimitiveTorus extends PrimitiveMesh {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveTorusHelper(this);
-    }
-
     _createMesh() {
         let arc = this._arc * Math.PI / 180;
         let geometry = new THREE.TorusGeometry(this._radius, this._tube,
             this._radialSegments, this._tubularSegments, arc);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateGeometry() {

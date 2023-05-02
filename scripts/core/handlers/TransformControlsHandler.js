@@ -73,12 +73,12 @@ class TransformControlsHandler {
             SessionHandler.disableOrbit();
             let instance = this._attachedAssets[global.deviceType];
             this._preTransformStates[instance.getId()]
-                = instance.getEditorHelper().getObjectTransformation();
+                = instance.editorHelper.getObjectTransformation();
         });
         this._transformControls.addEventListener('mouseUp', () => {
             SessionHandler.enableOrbit();
             let instance = this._attachedAssets[global.deviceType];
-            let instanceHelper = instance.getEditorHelper();
+            let instanceHelper = instance.editorHelper;
             instanceHelper.roundAttributes(true);
             let preState = this._preTransformStates[instance.getId()];
             let postState = instanceHelper.getObjectTransformation();
@@ -86,7 +86,7 @@ class TransformControlsHandler {
         });
         this._transformControls.addEventListener('objectChange', () => {
             if(global.renderer.info.render.frame % 6 == 0) {
-                this._attachedAssets[global.deviceType].getEditorHelper()
+                this._attachedAssets[global.deviceType].editorHelper
                     .roundAttributes();
             }
         });
@@ -226,7 +226,7 @@ class TransformControlsHandler {
         vector3s[1].applyAxisAngle(vector3s[0], -Math.PI / 4);
         object.position.add(vector3s[1]);
 
-        instance.getEditorHelper().roundAttributes(true);
+        instance.editorHelper.roundAttributes(true);
     }
 
     _delete(option) {
@@ -262,7 +262,7 @@ class TransformControlsHandler {
                             attachedAsset.getObject());
                         this._placingObject[option] = false;
                     }
-                    let assetHelper = attachedAsset.getEditorHelper();
+                    let assetHelper = attachedAsset.editorHelper;
                     let preState = assetHelper.getObjectTransformation();
                     assetHelper.place(intersections[0]);
                     if(global.deviceType == 'XR') {
@@ -286,7 +286,7 @@ class TransformControlsHandler {
             factor * this._initialScalingValues.z);
 
         if(global.renderer.info.render.frame % 6 == 0)
-            this._attachedAssets[Hands.LEFT].getEditorHelper()
+            this._attachedAssets[Hands.LEFT].editorHelper
                 ._publish(['scale']);
     }
 
@@ -330,7 +330,7 @@ class TransformControlsHandler {
                 this._initialScalingValues = asset.getObject().scale.clone();
             } else {
                 this._preTransformStates[asset.getId()]
-                    = asset.getEditorHelper().getObjectTransformation();
+                    = asset.editorHelper.getObjectTransformation();
                 UserController.hands[option].attach(asset.getObject());
                 asset.makeTranslucent();
             }
@@ -362,7 +362,7 @@ class TransformControlsHandler {
                 this._twoHandScaling = false;
             } else {
                 asset.returnTransparency();
-                assetHelper = asset.getEditorHelper();
+                assetHelper = asset.editorHelper;
                 assetHelper.roundAttributes(true);
                 preState = this._preTransformStates[asset.getId()];
                 postState = assetHelper.getObjectTransformation();
@@ -391,7 +391,7 @@ class TransformControlsHandler {
             } else {
                 asset.returnTransparency();
                 let preState = this._preTransformStates[asset.getId()];
-                let assetHelper = asset.getEditorHelper();
+                let assetHelper = asset.editorHelper;
                 for(let param in preState) {
                     asset.getObject()[param].fromArray(preState[param]);
                 }
@@ -403,7 +403,7 @@ class TransformControlsHandler {
             this._transformControls.detach();
             $("#transform-controls").addClass("hidden");
             let preState = this._preTransformStates[global.deviceType];
-            let assetHelper = asset.getEditorHelper();
+            let assetHelper = asset.editorHelper;
             for(let param in preState) {
                 asset.getObject()[param].fromArray(preState[param]);
             }

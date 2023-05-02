@@ -4,10 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
+import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveRingHelper from '/scripts/core/helpers/editor/PrimitiveRingHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '534f29c3-1e85-4510-bb84-459011de6722';
@@ -26,10 +25,6 @@ export default class PrimitiveRing extends PrimitiveMesh {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveRingHelper(this);
-    }
-
     _createMesh() {
         let thetaLength = this._thetaLength * Math.PI / 180;
         let geometry = new THREE.RingGeometry(this._innerRadius,
@@ -37,6 +32,10 @@ export default class PrimitiveRing extends PrimitiveMesh {
             thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateGeometry() {

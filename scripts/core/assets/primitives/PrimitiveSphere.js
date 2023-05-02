@@ -4,10 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/PrimitiveMesh.js';
+import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitiveSphereHelper from '/scripts/core/helpers/editor/PrimitiveSphereHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '423c9506-52f4-4725-b848-69913cce2b00';
@@ -26,10 +25,6 @@ export default class PrimitiveSphere extends PrimitiveMesh {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitiveSphereHelper(this);
-    }
-
     _createMesh() {
         let phiLength = this._phiLength * Math.PI / 180;
         let thetaLength = this._thetaLength * Math.PI / 180;
@@ -38,6 +33,10 @@ export default class PrimitiveSphere extends PrimitiveMesh {
             thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateGeometry() {

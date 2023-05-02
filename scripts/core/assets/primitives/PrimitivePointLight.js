@@ -4,10 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveLight from '/scripts/core/assets/PrimitiveLight.js';
+import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import PrimitivePointLightHelper from '/scripts/core/helpers/editor/PrimitivePointLightHelper.js';
 import * as THREE from 'three';
 
 const ASSET_ID = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
@@ -23,14 +22,14 @@ export default class PrimitivePointLight extends PrimitiveLight {
         if(params['isPreview']) this.makeTranslucent();
     }
 
-    _createEditorHelper() {
-        this._editorHelper = new PrimitivePointLightHelper(this);
-    }
-
     _createLight() {
         this._light = new THREE.PointLight(this._color, this._intensity,
             this._distance, this._decay);
         this._object.add(this._light);
+    }
+
+    _getDefaultName() {
+        return ASSET_NAME;
     }
 
     _updateLight() {

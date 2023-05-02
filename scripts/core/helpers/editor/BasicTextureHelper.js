@@ -4,9 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import BasicTexture from '/scripts/core/assets/textures/BasicTexture.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { WRAP_MAP, REVERSE_WRAP_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import ImageInput from '/scripts/core/menu/input/ImageInput.js';
 import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
@@ -45,3 +47,5 @@ export default class BasicTextureHelper extends EditorHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(BasicTextureHelper, BasicTexture);

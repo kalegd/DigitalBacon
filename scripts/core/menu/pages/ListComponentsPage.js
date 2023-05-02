@@ -80,7 +80,7 @@ class ListComponentsPage extends PaginatedListPage {
     }
 
     _addComponent(componentId) {
-        this._asset.getEditorHelper().addComponent(componentId);
+        this._asset.editorHelper.addComponent(componentId);
         this._controller.back();
     }
 
@@ -102,7 +102,7 @@ class ListComponentsPage extends PaginatedListPage {
     }
 
     _handleDeleteItemInteraction(item) {
-        this._asset.getEditorHelper().removeComponent(item.getId());
+        this._asset.editorHelper.removeComponent(item.getId());
     }
 
     _refreshItems() {
@@ -117,13 +117,13 @@ class ListComponentsPage extends PaginatedListPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
-            if(message.assetId == this._asset.getId()) {
+            if(message.id == this._asset.getId()) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED, (message)=>{
-            if(message.assetId == this._asset.getId()) {
+            if(message.id == this._asset.getId()) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }

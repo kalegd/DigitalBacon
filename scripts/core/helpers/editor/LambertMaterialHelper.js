@@ -4,8 +4,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import LambertMaterial from '/scripts/core/assets/materials/LambertMaterial.js';
 import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import { COMBINE_MAP, REVERSE_COMBINE_MAP } from '/scripts/core/helpers/constants.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
@@ -61,3 +63,5 @@ export default class LambertMaterialHelper extends MaterialHelper {
         return menuFieldsMap;
     }
 }
+
+EditorHelperFactory.registerEditorHelper(LambertMaterialHelper, LambertMaterial);
