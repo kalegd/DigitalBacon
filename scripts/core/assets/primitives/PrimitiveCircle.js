@@ -20,7 +20,6 @@ export default class PrimitiveCircle extends PrimitiveMesh {
         this._segments = params['segments'] || 32;
         this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {

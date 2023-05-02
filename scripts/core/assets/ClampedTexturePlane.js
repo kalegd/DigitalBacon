@@ -17,7 +17,6 @@ export default class ClampedTexturePlane extends AssetEntity {
         if(!this._doubleSided) this._updateDoubleSided(false);
         this._transparent = params['transparent'] != false;
         if(!this._transparent) this._updateTransparent(false);
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh(assetId) {

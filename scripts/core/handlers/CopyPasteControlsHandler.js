@@ -32,7 +32,7 @@ class CopyPasteControlsHandler {
     copy(asset) {
         if(this._copiedAsset) this._clear();
         this._copiedAsset = asset;
-        this._previewAsset = asset.preview();
+        this._previewAsset = asset.editorHelper.preview();
         UserController.hands[Hands.LEFT].attach(this._previewAsset.getObject());
         UserController.hands[Hands.RIGHT].add(this._previewAsset.getObject());
     }

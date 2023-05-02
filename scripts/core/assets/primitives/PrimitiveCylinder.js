@@ -24,7 +24,6 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
         this._thetaLength = numberOr(params['thetaLength'], 360);
         this._openEnded = params['openEnded'] || false;
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {

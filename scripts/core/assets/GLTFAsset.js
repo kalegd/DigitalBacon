@@ -12,7 +12,6 @@ export default class GLTFAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh(assetId) {

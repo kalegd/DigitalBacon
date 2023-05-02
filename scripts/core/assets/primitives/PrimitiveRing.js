@@ -22,7 +22,6 @@ export default class PrimitiveRing extends PrimitiveMesh {
         this._phiSegments = params['phiSegments'] || 1;
         this._thetaLength = numberOr(params['thetaLength'], 360);
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {

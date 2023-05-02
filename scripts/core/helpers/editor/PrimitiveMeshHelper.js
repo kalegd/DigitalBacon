@@ -13,6 +13,7 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 export default class PrimitiveMeshHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset);
+        this._overwriteSetMaterial();
     }
 
     _getMenuFieldsMap() {
@@ -22,6 +23,17 @@ export default class PrimitiveMeshHelper extends AssetEntityHelper {
             'name': 'Material',
         });
         return menuFieldsMap;
+    }
+
+    _overwriteSetMaterial() {
+        this._asset._setMaterial = this._asset.setMaterial;
+        this._asset.setMaterial = (material) => {
+            let mesh = this._asset.getMesh();
+            let wasTranslucent = mesh.material.userData['oldMaterial'];
+            if(wasTranslucent) this.returnTransparency();
+            this._asset._setMaterial(material);
+            if(wasTranslucent) this.makeTranslucent();
+        };
     }
 
     _addSubscriptions() {

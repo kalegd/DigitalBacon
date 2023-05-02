@@ -20,7 +20,6 @@ export default class PrimitiveAmbientLight extends PrimitiveLight {
         super(params);
         this._assetId = ASSET_ID;
         this._createLight();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createLight() {

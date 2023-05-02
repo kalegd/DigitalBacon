@@ -21,7 +21,6 @@ export default class PrimitivePlane extends PrimitiveMesh {
         this._widthSegments = params['widthSegments'] || 1;
         this._heightSegments = params['heightSegments'] || 1;
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {

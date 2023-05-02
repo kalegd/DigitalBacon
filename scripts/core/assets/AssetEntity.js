@@ -28,52 +28,6 @@ export default class AssetEntity extends Asset {
         return 'Object';
     }
 
-    makeTranslucent() {
-        this._object.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        for(let i = 0; i < node.material.length; i++) {
-                            let mtrl = node.material[i];
-                            let newMaterial = mtrl.clone();
-                            makeMaterialTranslucent(newMaterial);
-                            newMaterial.userData['oldMaterial'] = mtrl;
-                            node.material[i] = newMaterial;
-                        }
-                    }
-                    else {
-                        let newMaterial = node.material.clone();
-                        makeMaterialTranslucent(newMaterial);
-                        newMaterial.userData['oldMaterial'] = node.material;
-                        node.material = newMaterial;
-                    }
-                }
-            }
-        });
-    }
-
-    returnTransparency() {
-        this._object.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        for(let i = 0; i < node.material.length; i++) {
-                            let mtrl = node.material[i];
-                            node.material[i] =
-                                mtrl.userData['oldMaterial'];
-                            disposeMaterial(mtrl);
-                        }
-                    }
-                    else {
-                        let oldMaterial = node.material;
-                        node.material = node.material.userData['oldMaterial'];
-                        disposeMaterial(oldMaterial);
-                    }
-                }
-            }
-        });
-    }
-
     _fetchCloneParams(visualEditOverride) {
         let params = this.exportParams();
         let visualEdit = (visualEditOverride != null)
@@ -195,9 +149,4 @@ export default class AssetEntity extends Asset {
             fullDispose(this._object);
         }
     }
-}
-
-function makeMaterialTranslucent(material) {
-    material.opacity = 0.5;
-    material.transparent = true;
 }

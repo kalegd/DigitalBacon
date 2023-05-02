@@ -19,7 +19,6 @@ export default class PrimitivePointLight extends PrimitiveLight {
         this._distance = numberOr(params['distance'], 0);
         this._decay = numberOr(params['decay'], 2);
         this._createLight();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createLight() {

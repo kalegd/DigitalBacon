@@ -332,7 +332,7 @@ class TransformControlsHandler {
                 this._preTransformStates[asset.getId()]
                     = asset.editorHelper.getObjectTransformation();
                 UserController.hands[option].attach(asset.getObject());
-                asset.makeTranslucent();
+                asset.editorHelper.makeTranslucent();
             }
             publishMessage.position = asset.getPosition();
             publishMessage.rotation = asset.getRotation();
@@ -361,7 +361,7 @@ class TransformControlsHandler {
                 publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {
-                asset.returnTransparency();
+                asset.editorHelper.returnTransparency();
                 assetHelper = asset.editorHelper;
                 assetHelper.roundAttributes(true);
                 preState = this._preTransformStates[asset.getId()];
@@ -389,7 +389,7 @@ class TransformControlsHandler {
             if(this._attachedAssets[otherOption] == asset) {
                 this._twoHandScaling = false;
             } else {
-                asset.returnTransparency();
+                asset.editorHelper.returnTransparency();
                 let preState = this._preTransformStates[asset.getId()];
                 let assetHelper = asset.editorHelper;
                 for(let param in preState) {

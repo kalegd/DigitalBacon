@@ -22,7 +22,6 @@ export default class PrimitiveSphere extends PrimitiveMesh {
         this._phiLength = numberOr(params['phiLength'], 360);
         this._thetaLength = numberOr(params['thetaLength'], 180);
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {

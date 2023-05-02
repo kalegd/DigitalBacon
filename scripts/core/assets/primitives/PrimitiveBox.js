@@ -23,7 +23,6 @@ export default class PrimitiveBox extends PrimitiveMesh {
         this._heightSegments = params['heightSegments'] || 1;
         this._depthSegments = params['depthSegments'] || 1;
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {

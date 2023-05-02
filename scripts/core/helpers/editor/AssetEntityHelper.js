@@ -25,7 +25,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
-import { fullDispose } from '/scripts/core/helpers/utils.module.js';
+import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
@@ -278,6 +278,52 @@ export default class AssetEntityHelper extends EditorHelper {
         this._addInteractables();
     }
 
+    makeTranslucent() {
+        this._object.traverse(function (node) {
+            if (node instanceof THREE.Mesh) {
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        for(let i = 0; i < node.material.length; i++) {
+                            let mtrl = node.material[i];
+                            let newMaterial = mtrl.clone();
+                            makeMaterialTranslucent(newMaterial);
+                            newMaterial.userData['oldMaterial'] = mtrl;
+                            node.material[i] = newMaterial;
+                        }
+                    }
+                    else {
+                        let newMaterial = node.material.clone();
+                        makeMaterialTranslucent(newMaterial);
+                        newMaterial.userData['oldMaterial'] = node.material;
+                        node.material = newMaterial;
+                    }
+                }
+            }
+        });
+    }
+
+    returnTransparency() {
+        this._object.traverse(function (node) {
+            if (node instanceof THREE.Mesh) {
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        for(let i = 0; i < node.material.length; i++) {
+                            let mtrl = node.material[i];
+                            node.material[i] =
+                                mtrl.userData['oldMaterial'];
+                            disposeMaterial(mtrl);
+                        }
+                    }
+                    else {
+                        let oldMaterial = node.material;
+                        node.material = node.material.userData['oldMaterial'];
+                        disposeMaterial(oldMaterial);
+                    }
+                }
+            }
+        });
+    }
+
     getObjectTransformation() {
         return {
             "position": this._object.position.toArray(),
@@ -332,6 +378,16 @@ export default class AssetEntityHelper extends EditorHelper {
         this.roundAttributes(true);
     }
 
+    preview() {
+        let params = this._asset.exportParams();
+        params['visualEdit'] = false;
+        delete params['id'];
+        let instance = new this._asset.constructor(params);
+        instance.makeTranslucent = this.makeTranslucent;
+        instance.makeTranslucent();
+        return instance;
+    }
+
     _getMenuFieldsMap() {
         let menuFieldsMap = super._getMenuFieldsMap();
         for(let field of FIELDS) {
@@ -378,6 +434,11 @@ export default class AssetEntityHelper extends EditorHelper {
         fullDispose(this._boundingBoxObj);
         this._removeInteractables();
     }
+}
+
+function makeMaterialTranslucent(material) {
+    material.opacity = 0.5;
+    material.transparent = true;
 }
 
 EditorHelperFactory.registerEditorHelper(AssetEntityHelper, AssetEntity);

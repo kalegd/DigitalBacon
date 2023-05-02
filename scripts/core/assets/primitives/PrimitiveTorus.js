@@ -22,7 +22,6 @@ export default class PrimitiveTorus extends PrimitiveMesh {
         this._tubularSegments = params['tubularSegments'] || 32;
         this._arc = numberOr(params['arc'], 360);
         this._createMesh();
-        if(params['isPreview']) this.makeTranslucent();
     }
 
     _createMesh() {

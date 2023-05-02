@@ -43,16 +43,15 @@ export default class PrimitiveMesh extends AssetEntity {
         return this._material;
     }
 
-    setMaterial(newValue) {
-        let wasTranslucent = this._mesh.material.userData['oldMaterial'];
-        if(wasTranslucent) this.returnTransparency();
+    getMesh() {
+        return this._mesh;
+    }
 
+    setMaterial(newValue) {
         this._material = newValue;
         let oldMaterial = this._mesh.material;
         let material = this._getMaterial();
         this._mesh.material = material;
         oldMaterial.dispose();
-
-        if(wasTranslucent) this.makeTranslucent();
     }
 }
