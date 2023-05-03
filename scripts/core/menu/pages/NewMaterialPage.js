@@ -4,26 +4,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { FontSizes, vector3s } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
-const PAGES = [
-    { "title": "Basic", "materialType": MaterialTypes.BASIC },
-    { "title": "Lambert", "materialType": MaterialTypes.LAMBERT },
-    { "title": "Normal", "materialType": MaterialTypes.NORMAL },
-    { "title": "Phong", "materialType": MaterialTypes.PHONG },
-    { "title": "Standard", "materialType": MaterialTypes.STANDARD },
-    { "title": "Toon", "materialType": MaterialTypes.TOON },
-];
-
 class NewMaterialPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._items = PAGES;
+        this._items = MaterialsHandler.getMaterialClasses();
         this._addPageContent();
     }
 
@@ -40,17 +30,17 @@ class NewMaterialPage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        return item['title'];
+        return item.assetName;
     }
 
     _handleItemInteraction(item) {
-        let material = MaterialsHandler.addNewMaterial(item.materialType);
+        let material = MaterialsHandler.addNewMaterial(item.assetId);
         this.back();
         if(this._additionalAction) this._additionalAction(material);
     }
 
     _refreshItems() {
-        //Don't need to do anything as materials list is static
+        this._items = MaterialsHandler.getMaterialClasses();
     }
 
     setContent(additionalAction) {

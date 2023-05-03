@@ -13,7 +13,7 @@ import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 class NewComponentPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._items = ComponentsHandler.getTypeIds();
+        this._items = ComponentsHandler.getComponentClasses();
         this._addPageContent();
     }
 
@@ -30,17 +30,17 @@ class NewComponentPage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        return ComponentsHandler.getTypeName(item);
+        return item.assetName;
     }
 
     _handleItemInteraction(item) {
-        let component = ComponentsHandler.addNewComponent(item);
+        let component = ComponentsHandler.addNewComponent(item.assetId);
         this.back();
         if(this._additionalAction) this._additionalAction(component);
     }
 
     _refreshItems() {
-        this._items = ComponentsHandler.getTypeIds();
+        this._items = ComponentsHandler.getComponentClasses();
     }
 
     setContent(additionalAction) {

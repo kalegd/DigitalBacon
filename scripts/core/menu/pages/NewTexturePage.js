@@ -11,15 +11,10 @@ import { vector3s } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
-const PAGES = [
-    { "title": "Basic", "textureType": TextureTypes.BASIC },
-    { "title": "Cube", "textureType": TextureTypes.CUBE },
-];
-
 class NewTexturePage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._items = PAGES;
+        this._items = TexturesHandler.getTextureClasses();
         this._addPageContent();
     }
 
@@ -36,17 +31,17 @@ class NewTexturePage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        return item['title'];
+        return item.assetName;
     }
 
     _handleItemInteraction(item) {
-        let texture = TexturesHandler.addNewTexture(item.textureType);
+        let texture = TexturesHandler.addNewTexture(item.assetId);
         this.back();
         if(this._additionalAction) this._additionalAction(texture);
     }
 
     _refreshItems() {
-        //Don't need to do anything as materials list is static
+        this._items = TexturesHandler.getTextureClasses();
     }
 
     setContent(additionalAction) {

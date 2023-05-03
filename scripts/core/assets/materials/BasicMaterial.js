@@ -4,17 +4,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Material from '/scripts/core/assets/materials/Material.js';
-import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import { Material, MaterialsHandler, utils } from 'digitalbacon';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "envMap"];
+let numberOr = utils.numberOr;
 
 export default class BasicMaterial extends Material {
     constructor(params = {}) {
         super(params);
+        this._assetId = BasicMaterial.assetId;
         this._alphaMap = params['alphaMap'];
         this._color = numberOr(params['color'], 0x3d9970);
         this._combine = params['combine'] || THREE.MultiplyOperation;
@@ -27,7 +26,7 @@ export default class BasicMaterial extends Material {
     }
 
     _getDefaultName() {
-        return "Basic Material";
+        return BasicMaterial.assetName;
     }
 
     _createMaterial() {
@@ -47,10 +46,6 @@ export default class BasicMaterial extends Material {
 
     getMaps() {
         return MAPS;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.BASIC;
     }
 
     getSampleTexture() {
@@ -148,6 +143,9 @@ export default class BasicMaterial extends Material {
         this._material.wireframe = wireframe;
         this._material.needsUpdate = true;
     }
+
+    static assetId = '943b7a57-7e8f-4717-9bc6-0ba2637d9e3b';
+    static assetName = 'Basic Material';
 }
 
-MaterialsHandler.registerMaterial(BasicMaterial, MaterialTypes.BASIC);
+MaterialsHandler.registerMaterial(BasicMaterial);

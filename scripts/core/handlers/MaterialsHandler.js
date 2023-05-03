@@ -12,15 +12,25 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
+const SHOULD_HAVE_REFACTORED_SOONER = {
+    BASIC: '943b7a57-7e8f-4717-9bc6-0ba2637d9e3b',
+    LAMBERT: '5169a83b-1e75-4cb1-8c33-c049726d97e4',
+    NORMAL: '61262e1f-5495-4280-badc-b9e4599026f7',
+    PHONG: 'c9cfa45a-99b4-4166-b252-1c68b52773b0',
+    STANDARD: 'a6a1aa81-50a6-4773-aaf5-446d418c9817',
+    TOON: 'be461019-0fc2-4c88-bee4-290ee3a585eb',
+};
+
 class MaterialsHandler {
     constructor() {
+        this._id = uuidv4();
         this._materials = {};
         this._materialClassMap = {};
         this._sessionMaterials = {};
     }
 
-    addNewMaterial(type, params, ignoreUndoRedo, ignorePublish) {
-        let material = new this._materialClassMap[type](params);
+    addNewMaterial(assetId, params, ignoreUndoRedo, ignorePublish) {
+        let material = new this._materialClassMap[assetId](params);
         this.addMaterial(material, ignoreUndoRedo, ignorePublish);
         return material;
     }
@@ -64,19 +74,37 @@ class MaterialsHandler {
 
     load(materials) {
         if(!materials) return;
-        for(let materialType in materials) {
-            if(!(materialType in this._materialClassMap)) {
+        this._handleOldVersion(materials);
+        for(let assetId in materials) {
+            if(!(assetId in this._materialClassMap)) {
                 console.error("Unrecognized material found");
                 continue;
             }
-            for(let params of materials[materialType]) {
-                this.addNewMaterial(materialType, params, true, true);
+            for(let params of materials[assetId]) {
+                this.addNewMaterial(assetId, params, true, true);
             }
         }
     }
 
-    registerMaterial(materialClass, materialType) {
-        this._materialClassMap[materialType] = materialClass;
+    _handleOldVersion(materials) {
+        let usingOldVersion = false;
+        for(let type in SHOULD_HAVE_REFACTORED_SOONER) {
+            if(type in materials) {
+                let id = SHOULD_HAVE_REFACTORED_SOONER[type];
+                materials[id] = materials[type];
+                delete materials[type];
+                usingOldVersion = true;
+            }
+        }
+        if(usingOldVersion) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: "The project's version is outdated and won't be supported starting in July. Please save a new copy of it",
+            });
+        }
+    }
+
+    registerMaterial(materialClass) {
+        this._materialClassMap[materialClass.assetId] = materialClass;
     }
 
     getMaterials() {
@@ -87,12 +115,16 @@ class MaterialsHandler {
         return this._materials[materialId];
     }
 
+    getMaterialClasses() {
+        return Object.values(this._materialClassMap);
+    }
+
     getSessionMaterial(id) {
         return this._sessionMaterials[id];
     }
 
-    getType(materialId) {
-        return this._materials[materialId].getMaterialType();
+    getAssetId(materialId) {
+        return this._materials[materialId].getAssetId();
     }
 
     reset() {
@@ -110,10 +142,10 @@ class MaterialsHandler {
         let materialsDetails = {};
         for(let materialId in this._materials) {
             let material = this._materials[materialId];
-            let type = material.getMaterialType();
+            let assetId = material.getAssetId();
             let params = material.exportParams();
-            if(!(type in materialsDetails)) materialsDetails[type] = [];
-            materialsDetails[type].push(params);
+            if(!(assetId in materialsDetails)) materialsDetails[assetId] = [];
+            materialsDetails[assetId].push(params);
         }
         return materialsDetails;
     }

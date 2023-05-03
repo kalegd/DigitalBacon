@@ -15,12 +15,17 @@ import * as THREE from 'three';
 export default class BasicTexture extends Texture {
     constructor(params = {}) {
         super(params);
+        this._assetId = BasicTexture.assetId;
         this._image = params['image'];
         this._wrapS = params['wrapS'] || THREE.ClampToEdgeWrapping;
         this._wrapT = params['wrapT'] || THREE.ClampToEdgeWrapping;
         this._repeat = params['repeat'] || [1, 1];
         this._offset = params['offset'] || [0, 0];
         this._createTexture();
+    }
+
+    _getDefaultName() {
+        return BasicTexture.assetName;
     }
 
     _createTexture() {
@@ -42,7 +47,7 @@ export default class BasicTexture extends Texture {
     }
 
     getTextureType() {
-        return TextureTypes.BASIC;
+        return BasicTexture.textureType;
     }
 
     exportParams() {
@@ -104,6 +109,10 @@ export default class BasicTexture extends Texture {
         this._wrapT = wrapT;
         this._updateTexture();
     }
+
+    static assetId = '95f63d4b-06d1-4211-912b-556b6ce7bf5f';
+    static assetName = 'Basic Texture';
+    static textureType = TextureTypes.BASIC;
 }
 
-TexturesHandler.registerTexture(BasicTexture, TextureTypes.BASIC);
+TexturesHandler.registerTexture(BasicTexture);

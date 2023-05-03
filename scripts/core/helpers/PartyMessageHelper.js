@@ -7,16 +7,21 @@
 import global from '/scripts/core/global.js';
 import PeerController from '/scripts/core/assets/PeerController.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
+import SystemsHandler from '/scripts/core/handlers/SystemsHandler.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { uuidv4, capitalizeFirstLetter, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
 const BLOCKABLE_HANDLERS_MAP = {
+    component_added: '_handleComponentAdded',
+    component_deleted: '_handleComponentDeleted',
+    component_updated: '_handleComponentUpdated',
     instance_added: '_handleInstanceAdded',
     instance_deleted: '_handleInstanceDeleted',
     instance_updated: '_handleInstanceUpdated',
@@ -26,6 +31,9 @@ const BLOCKABLE_HANDLERS_MAP = {
     material_deleted: '_handleMaterialDeleted',
     material_updated: '_handleMaterialUpdated',
     settings_updated: '_handleSettingsUpdated',
+    system_added: '_handleSystemAdded',
+    system_deleted: '_handleSystemDeleted',
+    system_updated: '_handleSystemUpdated',
     texture_added: '_handleTextureAdded',
     texture_deleted: '_handleTextureDeleted',
     texture_updated: '_handleTextureUpdated',
@@ -101,6 +109,39 @@ class PartyMessageHelper {
         this[handler](peer, message);
     }
 
+    _handleComponentAdded(peer, message) {
+        let component = ComponentsHandler.getSessionComponent(
+            message.component.id);
+        if(component) {
+            ComponentsHandler.addComponent(component, true, true);
+        } else {
+            component = ComponentsHandler.addNewComponent(
+                message.component.assetId, message.component, true, true);
+        }
+        PubSub.publish(this._id, PubSubTopics.COMPONENT_ADDED, component);
+    }
+
+    _handleComponentDeleted(peer, peerMessage) {
+        let component = ComponentsHandler.getComponent(peerMessage.id);
+        if(component) {
+            ComponentsHandler.deleteComponent(component, true, true);
+            let topic = PubSubTopics.COMPONENT_DELETED + ":" + peerMessage.id;
+            let message = { component: component };
+            PubSub.publish(this._id, topic, message, true);
+        } else {
+            console.error("Component to delete does not exist");
+        }
+    }
+
+    _handleComponentUpdated(peer, message) {
+        let params = message.component;
+        let component = ComponentsHandler.getSessionComponent(params.id);
+        if(component) {
+            this._handleAssetUpdate(component, params,
+                PubSubTopics.COMPONENT_UPDATED);
+        }
+    }
+
     _handleInstanceAdded(peer, message) {
         let instance = ProjectHandler.getSessionInstance(message.instance.id);
         if(instance) {
@@ -155,7 +196,7 @@ class PartyMessageHelper {
         if(material) {
             MaterialsHandler.addMaterial(material, true, true);
         } else {
-            material = MaterialsHandler.addNewMaterial(message.type,
+            material = MaterialsHandler.addNewMaterial(message.material.assetId,
                         message.material, true, true);
         }
         PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
@@ -202,12 +243,44 @@ class PartyMessageHelper {
             { settings: settings });
     }
 
+    _handleSystemAdded(peer, message) {
+        let system = SystemsHandler.getSessionSystem(message.system.id);
+        if(system) {
+            SystemsHandler.addSystem(system, true, true);
+        } else {
+            system = SystemsHandler.addNewSystem(message.system.assetId,
+                        message.system, true, true);
+        }
+        PubSub.publish(this._id, PubSubTopics.SYSTEM_ADDED, system);
+    }
+
+    _handleSystemDeleted(peer, peerMessage) {
+        let system = SystemsHandler.getSystem(peerMessage.id);
+        if(system) {
+            SystemsHandler.deleteSystem(system, true, true);
+            let topic = PubSubTopics.SYSTEM_DELETED + ":" + peerMessage.id;
+            let message = { system: system };
+            PubSub.publish(this._id, topic, message, true);
+        } else {
+            console.error("System to delete does not exist");
+        }
+    }
+
+    _handleSystemUpdated(peer, message) {
+        let params = message.system;
+        let system = SystemsHandler.getSessionSystem(params.id);
+        if(system) {
+            this._handleAssetUpdate(system, params,
+                PubSubTopics.SYSTEM_UPDATED);
+        }
+    }
+
     _handleTextureAdded(peer, message) {
         let texture = TexturesHandler.getSessionTexture(message.texture.id);
         if(texture) {
             TexturesHandler.addTexture(texture, true, true);
         } else {
-            texture = TexturesHandler.addNewTexture(message.type,
+            texture = TexturesHandler.addNewTexture(message.texture.assetId,
                         message.texture, true, true);
         }
         PubSub.publish(this._id, PubSubTopics.TEXTURE_ADDED, texture);
@@ -324,6 +397,24 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishComponentAdded(component) {
+        let message = {
+            topic: 'component_added',
+            component: component.exportParams(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishComponentDeleted(component) {
+        let message = {
+            topic: 'component_deleted',
+            id: component.getId(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
     _publishInstanceAdded(instance) {
         let message = {
             topic: 'instance_added',
@@ -385,7 +476,6 @@ class PartyMessageHelper {
         let message = {
             topic: 'material_added',
             material: material.exportParams(),
-            type: material.getMaterialType(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
         return Promise.resolve();
@@ -413,11 +503,28 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishSystemAdded(system) {
+        let message = {
+            topic: 'system_added',
+            system: system.exportParams(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishSystemDeleted(system) {
+        let message = {
+            topic: 'system_deleted',
+            id: system.getId(),
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
     _publishTextureAdded(texture) {
         let message = {
             topic: 'texture_added',
             texture: texture.exportParams(),
-            type: texture.getTextureType(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
         return Promise.resolve();
@@ -473,6 +580,21 @@ class PartyMessageHelper {
         PubSub.subscribe(this._id, PubSubTopics.BOOT_PEER, (peerId) => {
             this._partyHandler.bootPeer(peerId);
         });
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED, (component) =>{
+            this._publishQueue.enqueue(() => {
+                return this._publishComponentAdded(component);
+            });
+        });
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (message) =>{
+            this._publishQueue.enqueue(() => {
+                return this._publishComponentDeleted(message.component);
+            });
+        });
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_UPDATED, (message) =>{
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "component");
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
             this._publishQueue.enqueue(() => {
                 return this._publishInstanceAdded(instance);
@@ -518,6 +640,21 @@ class PartyMessageHelper {
                 return this._publishSettingsUpdate(message);
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.SYSTEM_ADDED, (system) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishSystemAdded(system);
+            });
+        });
+        PubSub.subscribe(this._id, PubSubTopics.SYSTEM_DELETED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishSystemDeleted(message.system);
+            });
+        });
+        PubSub.subscribe(this._id, PubSubTopics.SYSTEM_UPDATED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetUpdate(message, "system");
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_ADDED, (texture) => {
             this._publishQueue.enqueue(() => {
                 return this._publishTextureAdded(texture);
@@ -545,6 +682,9 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.AVATAR_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.BECOME_PARTY_HOST);
         PubSub.unsubscribe(this._id, PubSubTopics.BOOT_PEER);
+        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DELETED);
+        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
@@ -554,6 +694,9 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.SYSTEM_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.SYSTEM_DELETED);
+        PubSub.unsubscribe(this._id, PubSubTopics.SYSTEM_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);

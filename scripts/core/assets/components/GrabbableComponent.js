@@ -4,22 +4,19 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Asset from '/scripts/core/assets/Asset.js';
+import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import Component from '/scripts/core/assets/components/Component.js';
 import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
-
-const COMPONENT_TYPE_ID = 'c07025cf-776a-4f4e-9201-edfd2ce7be50';
-const NAME = 'Grabbable';
 
 export default class GrabbableComponent extends Component {
     constructor(params = {}) {
         super(params);
-        this._componentTypeId = COMPONENT_TYPE_ID;
+        this._assetId = GrabbableComponent.assetId;
         this._stealable = params['stealable'] == true;
     }
 
     _getDefaultName() {
-        return NAME;
+        return GrabbableComponent.assetName;
     }
 
     getStealable() {
@@ -27,20 +24,15 @@ export default class GrabbableComponent extends Component {
     }
 
     isSupported(asset) {
-        return asset instanceof Asset;
+        return asset instanceof AssetEntity;
     }
 
     setStealable(stealable) {
         this._stealable = stealable;
     }
 
-    static getComponentTypeId() {
-        return COMPONENT_TYPE_ID;
-    }
-
-    static getName() {
-        return NAME;
-    }
+    static assetId = 'd9891de1-914d-4448-9e66-8867211b5dc8';
+    static assetName = 'Grabbable';
 }
 
-ComponentsHandler.registerComponent(GrabbableComponent, COMPONENT_TYPE_ID);
+ComponentsHandler.registerComponent(GrabbableComponent);

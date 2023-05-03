@@ -5,6 +5,7 @@
  */
 
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 
@@ -49,5 +50,9 @@ export default class PrimitiveLight extends AssetEntity {
         if(this._intensity == intensity) return;
         this._intensity = intensity;
         this._light.intensity = intensity;
+    }
+
+    static getAssetType() {
+        return AssetTypes.LIGHT;
     }
 }

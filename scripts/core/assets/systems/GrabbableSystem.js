@@ -7,30 +7,22 @@
 import System from '/scripts/core/assets/systems/System.js';
 import SystemsHandler from '/scripts/core/handlers/SystemsHandler.js';
 
-const NAME = 'Grabbable';
-const SYSTEM_TYPE_ID = '6329e98a-4311-4457-9198-48d75640f8cc';
-
 export default class GrabbableSystem extends System {
     constructor(params = {}) {
         super(params);
-        this._systemTypeId = SYSTEM_TYPE_ID;
+        this._assetId = GrabbableSystem.assetId;
     }
 
     _getDefaultName() {
-        return NAME;
+        return GrabbableSystem.assetName;
     }
 
     getDescription() {
         return 'Enables assets to be picked up by the user';
     }
 
-    static getSystemTypeId() {
-        return SYSTEM_TYPE_ID;
-    }
-
-    static getName() {
-        return NAME;
-    }
+    static assetId = '6329e98a-4311-4457-9198-48d75640f8cc';
+    static assetName = 'Grabbable System';
 }
 
-SystemsHandler.registerSystem(GrabbableSystem, SYSTEM_TYPE_ID);
+SystemsHandler.registerSystem(GrabbableSystem);

@@ -4,17 +4,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Material from '/scripts/core/assets/materials/Material.js';
-import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import { Material, MaterialsHandler, utils } from 'digitalbacon';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
+let numberOr = utils.numberOr;
 
 export default class ToonMaterial extends Material {
     constructor(params = {}) {
         super(params);
+        this._assetId = ToonMaterial.assetId;
         this._alphaMap = params['alphaMap'];
         this._color = numberOr(params['color'], 0x3d9970);
         this._bumpMap = params['bumpMap'];
@@ -35,7 +34,7 @@ export default class ToonMaterial extends Material {
     }
 
     _getDefaultName() {
-        return "Toon Material";
+        return ToonMaterial.assetName;
     }
 
     _createMaterial() {
@@ -59,10 +58,6 @@ export default class ToonMaterial extends Material {
 
     getMaps() {
         return MAPS;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.TOON;
     }
 
     getSampleTexture() {
@@ -234,6 +229,9 @@ export default class ToonMaterial extends Material {
         this._material.wireframe = wireframe;
         this._material.needsUpdate = true;
     }
+
+    static assetId = 'be461019-0fc2-4c88-bee4-290ee3a585eb';
+    static assetName = 'Toon Material';
 }
 
-MaterialsHandler.registerMaterial(ToonMaterial, MaterialTypes.TOON);
+MaterialsHandler.registerMaterial(ToonMaterial);

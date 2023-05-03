@@ -4,17 +4,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Material from '/scripts/core/assets/materials/Material.js';
-import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import { Material, MaterialsHandler, utils } from 'digitalbacon';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "metalnessMap", "normalMap", "roughnessMap"];
+let numberOr = utils.numberOr;
 
 export default class StandardMaterial extends Material {
     constructor(params = {}) {
         super(params);
+        this._assetId = StandardMaterial.assetId;
         this._color = numberOr(params['color'], 0x3d9970);
         this._alphaMap = params['alphaMap'];
         this._bumpMap = params['bumpMap'];
@@ -42,7 +41,7 @@ export default class StandardMaterial extends Material {
     }
 
     _getDefaultName() {
-        return "Standard Material";
+        return StandardMaterial.assetName;
     }
 
     _createMaterial() {
@@ -70,10 +69,6 @@ export default class StandardMaterial extends Material {
 
     getMaps() {
         return MAPS;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.STANDARD;
     }
 
     getSampleTexture() {
@@ -320,6 +315,9 @@ export default class StandardMaterial extends Material {
         this._material.wireframe = wireframe;
         this._material.needsUpdate = true;
     }
+
+    static assetId = 'a6a1aa81-50a6-4773-aaf5-446d418c9817';
+    static assetName = 'Standard Material';
 }
 
-MaterialsHandler.registerMaterial(StandardMaterial, MaterialTypes.STANDARD);
+MaterialsHandler.registerMaterial(StandardMaterial);

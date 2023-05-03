@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 export default class Component extends Asset {
@@ -13,8 +14,11 @@ export default class Component extends Asset {
         super(params);
     }
 
-
     isSupported(asset) {
         return true;
+    }
+
+    static getAssetType() {
+        return AssetTypes.COMPONENT;
     }
 }

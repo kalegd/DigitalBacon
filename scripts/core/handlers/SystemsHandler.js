@@ -19,8 +19,8 @@ class SystemsHandler {
         this._sessionSystems = {};
     }
 
-    addNewSystem(typeId, params, ignoreUndoRedo, ignorePublish) {
-        let system = new this._systemClassMap[typeId](params);
+    addNewSystem(assetId, params, ignoreUndoRedo, ignorePublish) {
+        let system = new this._systemClassMap[assetId](params);
         this.addSystem(system, ignoreUndoRedo, ignorePublish);
         return system;
     }
@@ -72,8 +72,8 @@ class SystemsHandler {
         }
     }
 
-    registerSystem(systemClass, systemTypeId) {
-        this._systemClassMap[systemTypeId] = systemClass;
+    registerSystem(systemClass) {
+        this._systemClassMap[systemClass.assetId] = systemClass;
     }
 
     getSystems() {
@@ -84,22 +84,12 @@ class SystemsHandler {
         return this._systems[systemId];
     }
 
+    getSystemClasses() {
+        return Object.values(this._systemClassMap);
+    }
+
     getSessionSystem(id) {
         return this._sessionSystems[id];
-    }
-
-    getTypeName(typeId) {
-        if(typeId in this._systemClassMap)
-            return this._systemClassMap[typeId].getName();
-        return null;
-    }
-
-    getTypeId(systemId) {
-        return this._systems[systemId].getSystemTypeId();
-    }
-
-    getTypeIds() {
-        return Object.keys(this._systemClassMap);
     }
 
     reset() {

@@ -4,17 +4,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Material from '/scripts/core/assets/materials/Material.js';
-import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import { Material, MaterialsHandler, utils } from 'digitalbacon';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "normalMap", "specularMap"];
+let numberOr = utils.numberOr;
 
 export default class PhongMaterial extends Material {
     constructor(params = {}) {
         super(params);
+        this._assetId = PhongMaterial.assetId;
         this._alphaMap = params['alphaMap'];
         this._bumpMap = params['bumpMap'];
         this._bumpScale = numberOr(params['bumpScale'], 1);
@@ -44,7 +43,7 @@ export default class PhongMaterial extends Material {
     }
 
     _getDefaultName() {
-        return "Phong Material";
+        return PhongMaterial.assetName;
     }
 
     _createMaterial() {
@@ -74,10 +73,6 @@ export default class PhongMaterial extends Material {
 
     getMaps() {
         return MAPS;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.PHONG;
     }
 
     getSampleTexture() {
@@ -337,6 +332,9 @@ export default class PhongMaterial extends Material {
         this._material.wireframe = wireframe;
         this._material.needsUpdate = true;
     }
+
+    static assetId = 'c9cfa45a-99b4-4166-b252-1c68b52773b0';
+    static assetName = 'Phong Material';
 }
 
-MaterialsHandler.registerMaterial(PhongMaterial, MaterialTypes.PHONG);
+MaterialsHandler.registerMaterial(PhongMaterial);

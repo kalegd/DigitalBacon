@@ -4,17 +4,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Material from '/scripts/core/assets/materials/Material.js';
-import MaterialTypes from '/scripts/core/enums/MaterialTypes.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import { Material, MaterialsHandler, utils } from 'digitalbacon';
 import * as THREE from 'three';
 
 const MAPS = ["map", "alphaMap", "emissiveMap", "envMap"];
+let numberOr = utils.numberOr;
 
 export default class LambertMaterial extends Material {
     constructor(params = {}) {
         super(params);
+        this._assetId = LambertMaterial.assetId;
         this._alphaMap = params['alphaMap'];
         this._color = numberOr(params['color'], 0x3d9970);
         this._combine = params['combine'] || THREE.MultiplyOperation;
@@ -30,7 +29,7 @@ export default class LambertMaterial extends Material {
     }
 
     _getDefaultName() {
-        return "Lambert Material";
+        return LambertMaterial.assetName;
     }
 
     _createMaterial() {
@@ -52,10 +51,6 @@ export default class LambertMaterial extends Material {
 
     getMaps() {
         return MAPS;
-    }
-
-    getMaterialType() {
-        return MaterialTypes.LAMBERT;
     }
 
     getSampleTexture() {
@@ -185,6 +180,9 @@ export default class LambertMaterial extends Material {
         this._material.wireframe = wireframe;
         this._material.needsUpdate = true;
     }
+
+    static assetId = '5169a83b-1e75-4cb1-8c33-c049726d97e4';
+    static assetName = 'Lambert Material';
 }
 
-MaterialsHandler.registerMaterial(LambertMaterial, MaterialTypes.LAMBERT);
+MaterialsHandler.registerMaterial(LambertMaterial);

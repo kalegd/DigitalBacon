@@ -12,6 +12,11 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
+const SHOULD_HAVE_REFACTORED_SOONER = {
+    BASIC: '95f63d4b-06d1-4211-912b-556b6ce7bf5f',
+    CUBE: '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2',
+};
+
 class TexturesHandler {
     constructor() {
         this._textures = {};
@@ -19,8 +24,8 @@ class TexturesHandler {
         this._sessionTextures = {};
     }
 
-    addNewTexture(type, params, ignoreUndoRedo, ignorePublish) {
-        let texture = new this._textureClassMap[type](params);
+    addNewTexture(assetId, params, ignoreUndoRedo, ignorePublish) {
+        let texture = new this._textureClassMap[assetId](params);
         this.addTexture(texture, ignoreUndoRedo, ignorePublish);
         return texture;
     }
@@ -62,19 +67,37 @@ class TexturesHandler {
 
     load(textures) {
         if(!textures) return;
-        for(let textureType in textures) {
-            if(!(textureType in this._textureClassMap)) {
+        this._handleOldVersion(textures);
+        for(let assetId in textures) {
+            if(!(assetId in this._textureClassMap)) {
                 console.error("Unrecognized texture found");
                 continue;
             }
-            for(let params of textures[textureType]) {
-                this.addNewTexture(textureType, params, true, true);
+            for(let params of textures[assetId]) {
+                this.addNewTexture(assetId, params, true, true);
             }
         }
     }
 
-    registerTexture(textureClass, textureType) {
-        this._textureClassMap[textureType] = textureClass;
+    _handleOldVersion(textures) {
+        let usingOldVersion = false;
+        for(let type in SHOULD_HAVE_REFACTORED_SOONER) {
+            if(type in textures) {
+                let id = SHOULD_HAVE_REFACTORED_SOONER[type];
+                textures[id] = textures[type];
+                delete textures[type];
+                usingOldVersion = true;
+            }
+        }
+        if(usingOldVersion) {
+            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: "The project's version is outdated and won't be supported starting in July. Please save a new copy of it",
+            });
+        }
+    }
+
+    registerTexture(textureClass) {
+        this._textureClassMap[textureClass.assetId] = textureClass;
     }
 
     getTextures() {
@@ -83,6 +106,10 @@ class TexturesHandler {
 
     getTexture(textureId) {
         return this._textures[textureId];
+    }
+
+    getTextureClasses() {
+        return Object.values(this._textureClassMap);
     }
 
     getSessionTexture(id) {
@@ -120,10 +147,10 @@ class TexturesHandler {
         let texturesDetails = {};
         for(let textureId in this._textures) {
             let texture = this._textures[textureId];
-            let type = texture.getTextureType();
+            let assetId = texture.getAssetId();
             let params = texture.exportParams();
-            if(!(type in texturesDetails)) texturesDetails[type] = [];
-            texturesDetails[type].push(params);
+            if(!(assetId in texturesDetails)) texturesDetails[assetId] = [];
+            texturesDetails[assetId].push(params);
         }
         return texturesDetails;
     }

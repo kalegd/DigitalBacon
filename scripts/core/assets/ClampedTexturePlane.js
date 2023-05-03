@@ -5,6 +5,7 @@
  */
 
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import * as THREE from 'three';
@@ -59,5 +60,9 @@ export default class ClampedTexturePlane extends AssetEntity {
             ? THREE.DoubleSide
             : THREE.FrontSide;
         this._doubleSided = doubleSided;
+    }
+
+    static getAssetType() {
+        return AssetTypes.IMAGE;
     }
 }

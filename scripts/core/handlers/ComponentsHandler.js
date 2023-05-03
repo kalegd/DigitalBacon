@@ -19,8 +19,8 @@ class ComponentsHandler {
         this._sessionComponents = {};
     }
 
-    addNewComponent(typeId, params, ignoreUndoRedo, ignorePublish) {
-        let component = new this._componentClassMap[typeId](params);
+    addNewComponent(assetId, params, ignoreUndoRedo, ignorePublish) {
+        let component = new this._componentClassMap[assetId](params);
         this.addComponent(component, ignoreUndoRedo, ignorePublish);
         return component;
     }
@@ -72,8 +72,8 @@ class ComponentsHandler {
         }
     }
 
-    registerComponent(componentClass, componentTypeId) {
-        this._componentClassMap[componentTypeId] = componentClass;
+    registerComponent(componentClass) {
+        this._componentClassMap[componentClass.assetId] = componentClass;
     }
 
     getComponents() {
@@ -84,22 +84,12 @@ class ComponentsHandler {
         return this._components[componentId];
     }
 
+    getComponentClasses() {
+        return Object.values(this._componentClassMap);
+    }
+
     getSessionComponent(id) {
         return this._sessionComponents[id];
-    }
-
-    getTypeName(typeId) {
-        if(typeId in this._componentClassMap)
-            return this._componentClassMap[typeId].getName();
-        return null;
-    }
-
-    getTypeId(componentId) {
-        return this._components[componentId].getComponentTypeId();
-    }
-
-    getTypeIds() {
-        return Object.keys(this._componentClassMap);
     }
 
     reset() {

@@ -5,6 +5,7 @@
  */
 
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Materials } from '/scripts/core/helpers/constants.js';
@@ -53,5 +54,9 @@ export default class PrimitiveMesh extends AssetEntity {
         let material = this._getMaterial();
         this._mesh.material = material;
         oldMaterial.dispose();
+    }
+
+    static getAssetType() {
+        return AssetTypes.SHAPE;
     }
 }

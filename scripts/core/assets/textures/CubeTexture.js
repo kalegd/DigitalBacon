@@ -17,13 +17,14 @@ import * as THREE from 'three';
 export default class CubeTexture extends Texture {
     constructor(params = {}) {
         super(params);
+        this._assetId = CubeTexture.assetId;
         this._images = params['images'] || {};
         this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
         this._createTexture();
     }
 
     _getDefaultName() {
-        return "Cube Texture";
+        return CubeTexture.assetName;
     }
 
     _createTexture() {
@@ -96,7 +97,7 @@ export default class CubeTexture extends Texture {
     }
 
     getTextureType() {
-        return TextureTypes.CUBE;
+        return CubeTexture.textureType;
     }
 
     exportParams() {
@@ -137,6 +138,9 @@ export default class CubeTexture extends Texture {
         this._updateTexture();
     }
 
+    static assetId = '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2';
+    static assetName = 'Cube Texture';
+    static textureType = TextureTypes.CUBE;
 }
 
 //https://stackoverflow.com/a/30924333
@@ -144,4 +148,4 @@ function powerOf2(v) {
     return v && !(v & (v - 1));
 }
 
-TexturesHandler.registerTexture(CubeTexture, TextureTypes.CUBE);
+TexturesHandler.registerTexture(CubeTexture);

@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { Textures, SIDE_MAP, REVERSE_SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import { uuidv4, numberOr, disposeMaterial } from '/scripts/core/helpers/utils.module.js';
@@ -67,11 +68,6 @@ export default class Material extends Asset {
         return this._material;
     }
 
-    getMaterialType() {
-        console.error("Material.getMaterialType() should be overridden");
-        return;
-    }
-
     getSampleTexture() {
         console.error("Material.getSampleTexture() should be overridden");
         return;
@@ -108,9 +104,8 @@ export default class Material extends Asset {
         this._material.transparent = transparent;
         this._material.needsUpdate = true;
     }
-}
 
-function makeMaterialTranslucent(material) {
-    material.opacity = 0.5;
-    material.transparent = true;
+    static getAssetType() {
+        return AssetTypes.MATERIAL;
+    }
 }
