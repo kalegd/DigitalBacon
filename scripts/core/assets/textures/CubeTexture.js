@@ -16,8 +16,8 @@ import * as THREE from 'three';
 
 export default class CubeTexture extends Texture {
     constructor(params = {}) {
+        params['assetId'] = CubeTexture.assetId;
         super(params);
-        this._assetId = CubeTexture.assetId;
         this._images = params['images'] || {};
         this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
         this._createTexture();

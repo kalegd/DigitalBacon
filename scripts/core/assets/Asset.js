@@ -4,6 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
@@ -66,6 +68,12 @@ export default class Asset {
             return;
         }
         this._components.add(component);
+        let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentId;
+        PubSub.publish(this._id, topic, {
+            id: this._id,
+            assetId: this._assetId,
+            componentId: componentId,
+        });
         return component;
     }
 
@@ -76,6 +84,12 @@ export default class Asset {
             return;
         }
         this._components.delete(component);
+        let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentId;
+        PubSub.publish(this._id, topic, {
+            id: this._id,
+            assetId: this._assetId,
+            componentId: componentId,
+        });
         return component;
     }
 }

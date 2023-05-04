@@ -107,10 +107,10 @@ class SystemsHandler {
         let systemsDetails = {};
         for(let systemId in this._systems) {
             let system = this._systems[systemId];
-            let typeId = system.getSystemTypeId();
+            let assetId = system.getAssetId();
             let params = system.exportParams();
-            if(!(typeId in systemsDetails)) systemsDetails[typeId] = [];
-            systemsDetails[typeId].push(params);
+            if(!(assetId in systemsDetails)) systemsDetails[assetId] = [];
+            systemsDetails[assetId].push(params);
         }
         return systemsDetails;
     }

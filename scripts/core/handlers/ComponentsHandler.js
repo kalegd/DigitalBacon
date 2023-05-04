@@ -107,10 +107,10 @@ class ComponentsHandler {
         let componentsDetails = {};
         for(let componentId in this._components) {
             let component = this._components[componentId];
-            let typeId = component.getComponentTypeId();
+            let assetId = component.getAssetId();
             let params = component.exportParams();
-            if(!(typeId in componentsDetails)) componentsDetails[typeId] = [];
-            componentsDetails[typeId].push(params);
+            if(!(assetId in componentsDetails)) componentsDetails[assetId] = [];
+            componentsDetails[assetId].push(params);
         }
         return componentsDetails;
     }

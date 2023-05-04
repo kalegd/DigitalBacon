@@ -56,7 +56,5 @@ export default class PrimitiveMesh extends AssetEntity {
         oldMaterial.dispose();
     }
 
-    static getAssetType() {
-        return AssetTypes.SHAPE;
-    }
+    static assetType = AssetTypes.SHAPE;
 }

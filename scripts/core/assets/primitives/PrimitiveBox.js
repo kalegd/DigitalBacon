@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
-const ASSET_NAME = 'Box';
-
 export default class PrimitiveBox extends PrimitiveMesh {
     constructor(params = {}) {
+        params['assetId'] = PrimitiveBox.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._width = numberOr(params['width'], 0.1);
         this._height = numberOr(params['height'], 0.1);
         this._depth = numberOr(params['depth'], 0.1);
@@ -34,7 +31,7 @@ export default class PrimitiveBox extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitiveBox.assetName;
     }
 
     _updateGeometry() {
@@ -116,6 +113,9 @@ export default class PrimitiveBox extends PrimitiveMesh {
         this._widthSegments = widthSegments;
         this._updateGeometry();
     }
+
+    static assetId = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
+    static assetName = 'Box';
 }
 
-ProjectHandler.registerShape(PrimitiveBox, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitiveBox);

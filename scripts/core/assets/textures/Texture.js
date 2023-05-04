@@ -59,7 +59,5 @@ export default class Texture extends Asset {
         return;
     }
 
-    static getAssetType() {
-        return AssetTypes.TEXTURE;
-    }
+    static assetType = AssetTypes.TEXTURE;
 }

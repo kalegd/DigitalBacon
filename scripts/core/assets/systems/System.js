@@ -40,7 +40,5 @@ export default class System extends Asset {
         return false;
     }
 
-    static getAssetType() {
-        return AssetTypes.SYSTEM;
-    }
+    static assetType = AssetTypes.SYSTEM;
 }

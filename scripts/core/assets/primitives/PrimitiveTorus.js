@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
-const ASSET_NAME = 'Torus';
-
 export default class PrimitiveTorus extends PrimitiveMesh {
     constructor(params = {}) {
+        params['assetId'] = PrimitiveTorus.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._radius = numberOr(params['radius'], 0.1);
         this._tube = numberOr(params['tube'], 0.05);
         this._radialSegments = params['radialSegments'] || 16;
@@ -33,7 +30,7 @@ export default class PrimitiveTorus extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitiveTorus.assetName;
     }
 
     _updateGeometry() {
@@ -105,6 +102,9 @@ export default class PrimitiveTorus extends PrimitiveMesh {
         this._updateGeometry();
     }
 
+
+    static assetId = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
+    static assetName = 'Torus';
 }
 
-ProjectHandler.registerShape(PrimitiveTorus, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitiveTorus);

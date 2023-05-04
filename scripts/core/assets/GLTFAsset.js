@@ -25,7 +25,5 @@ export default class GLTFAsset extends AssetEntity {
         return ProjectHandler.addGLTF(params);
     }
 
-    static getAssetType() {
-        return AssetTypes.MODEL;
-    }
+    static assetType = AssetTypes.MODEL;
 }

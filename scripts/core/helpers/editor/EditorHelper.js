@@ -40,6 +40,7 @@ export default class EditorHelper {
         this._asset = asset;
         this._id = asset.getId();
         this._updatedTopic = updatedTopic;
+        this._deletedAttachedComponents = {};
     }
 
     _publish(params) {
@@ -145,11 +146,6 @@ export default class EditorHelper {
     addComponent(componentId, ignoreUndoRedo) {
         let component = this._asset.addComponent(componentId);
         if(!component) return;
-        PubSub.publish(this._id, 'COMPONENT_ATTACHED:' + component.getId(), {
-            id: this._asset.getId(),
-            assetId: this._asset.getAssetId(),
-            componentId: componentId,
-        });
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.removeComponent(componentId, true);
@@ -162,11 +158,6 @@ export default class EditorHelper {
     removeComponent(componentId, ignoreUndoRedo) {
         let component = this._asset.removeComponent(componentId);
         if(!component) return;
-        PubSub.publish(this._id, 'COMPONENT_DETACHED:' + component.getId(), {
-            id: this._asset.getId(),
-            assetId: this._asset.getAssetId(),
-            componentId: componentId,
-        });
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.addComponent(componentId, true);

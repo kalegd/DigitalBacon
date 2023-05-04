@@ -18,7 +18,5 @@ export default class Component extends Asset {
         return true;
     }
 
-    static getAssetType() {
-        return AssetTypes.COMPONENT;
-    }
+    static assetType = AssetTypes.COMPONENT;
 }

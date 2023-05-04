@@ -14,6 +14,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
+import SystemsHandler from '/scripts/core/handlers/SystemsHandler.js';
 import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
@@ -68,6 +69,8 @@ class ProjectHandler {
                 LibraryHandler.load(projectDetails['library'], jsZip, () => {
                     global.loadingLocks.delete(lock);
                     SettingsHandler.load(projectDetails['settings']);
+                    SystemsHandler.load(projectDetails['systems']);
+                    ComponentsHandler.load(projectDetails['components']);
                     TexturesHandler.load(projectDetails['textures']);
                     MaterialsHandler.load(projectDetails['materials']);
                     try {
@@ -160,9 +163,9 @@ class ProjectHandler {
         return instance;
     }
 
-    registerLight(lightClass, assetId, assetName) {
-        this._lightClassMap[assetId] = lightClass;
-        LibraryHandler.loadLight(assetId, assetName);
+    registerLight(lightClass) {
+        this._lightClassMap[lightClass.assetId] = lightClass;
+        LibraryHandler.loadLight(lightClass.assetId, lightClass.assetName);
     }
 
     _addShapes(instancesParams, assetId, ignoreUndoRedo, ignorePublish) {
@@ -179,9 +182,9 @@ class ProjectHandler {
         return instance;
     }
 
-    registerShape(shapeClass, assetId, assetName) {
-        this._shapeClassMap[assetId] = shapeClass;
-        LibraryHandler.loadShape(assetId, assetName);
+    registerShape(shapeClass) {
+        this._shapeClassMap[shapeClass.assetId] = shapeClass;
+        LibraryHandler.loadShape(shapeClass.assetId, shapeClass.assetName);
     }
 
     getObjects() {
@@ -260,6 +263,8 @@ class ProjectHandler {
             }
         }
         if(!global.disableImmersion) UndoRedoHandler.reset();
+        ComponentsHandler.reset();
+        SystemsHandler.reset();
         LibraryHandler.reset();
         MaterialsHandler.reset();
         TexturesHandler.reset();
@@ -294,6 +299,8 @@ class ProjectHandler {
         let assetIds = Object.keys(assets);
         let settings = SettingsHandler.getSettings();
         let materials = MaterialsHandler.getMaterialsDetails();
+        let components = ComponentsHandler.getComponentsDetails();
+        let systems = SystemsHandler.getSystemsDetails();
         let textures = TexturesHandler.getTexturesDetails();
         for(let side in settings['Skybox']) {
             let assetId = settings['Skybox'][side];
@@ -305,9 +312,11 @@ class ProjectHandler {
         let projectDetails = {
             'library': LibraryHandler.getLibraryDetails(assetIds),
             'assets': assets,
-            'settings': settings,
+            'components': components,
             'materials': materials,
             'textures': textures,
+            'settings': settings,
+            'systems': systems,
         };
         return projectDetails;
     }

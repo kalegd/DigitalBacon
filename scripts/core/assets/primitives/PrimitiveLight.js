@@ -52,7 +52,5 @@ export default class PrimitiveLight extends AssetEntity {
         this._light.intensity = intensity;
     }
 
-    static getAssetType() {
-        return AssetTypes.LIGHT;
-    }
+    static assetType = AssetTypes.LIGHT;
 }

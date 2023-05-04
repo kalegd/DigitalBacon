@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
-const ASSET_NAME = 'Cylinder';
-
 export default class PrimitiveCylinder extends PrimitiveMesh {
     constructor(params = {}) {
+        params['assetId'] = PrimitiveCylinder.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._height = numberOr(params['height'], 0.2);
         this._radiusTop = numberOr(params['radiusTop'], 0.1);
         this._radiusBottom = numberOr(params['radiusBottom'], 0.1);
@@ -36,7 +33,7 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitiveCylinder.assetName;
     }
 
     _updateGeometry() {
@@ -131,6 +128,9 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
         this._updateGeometry();
     }
 
+
+    static assetId = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
+    static assetName = 'Cylinder';
 }
 
-ProjectHandler.registerShape(PrimitiveCylinder, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitiveCylinder);

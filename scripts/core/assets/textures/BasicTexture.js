@@ -14,8 +14,8 @@ import * as THREE from 'three';
 
 export default class BasicTexture extends Texture {
     constructor(params = {}) {
+        params['assetId'] = BasicTexture.assetId;
         super(params);
-        this._assetId = BasicTexture.assetId;
         this._image = params['image'];
         this._wrapS = params['wrapS'] || THREE.ClampToEdgeWrapping;
         this._wrapT = params['wrapT'] || THREE.ClampToEdgeWrapping;

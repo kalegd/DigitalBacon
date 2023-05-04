@@ -62,7 +62,5 @@ export default class ClampedTexturePlane extends AssetEntity {
         this._doubleSided = doubleSided;
     }
 
-    static getAssetType() {
-        return AssetTypes.IMAGE;
-    }
+    static assetType = AssetTypes.IMAGE;
 }

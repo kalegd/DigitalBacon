@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
-const ASSET_NAME = 'Plane';
-
 export default class PrimitivePlane extends PrimitiveMesh {
     constructor(params = {}) {
+        params['assetId'] = PrimitivePlane.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._width = numberOr(params['width'], 0.1);
         this._height = numberOr(params['height'], 0.1);
         this._widthSegments = params['widthSegments'] || 1;
@@ -31,7 +28,7 @@ export default class PrimitivePlane extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitivePlane.assetName;
     }
 
     _updateGeometry() {
@@ -90,6 +87,9 @@ export default class PrimitivePlane extends PrimitiveMesh {
         this._widthSegments = widthSegments;
         this._updateGeometry();
     }
+
+    static assetId = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
+    static assetName = 'Plane';
 }
 
-ProjectHandler.registerShape(PrimitivePlane, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitivePlane);

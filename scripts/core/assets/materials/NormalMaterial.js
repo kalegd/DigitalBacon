@@ -4,16 +4,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { Material, MaterialsHandler, utils } from 'digitalbacon';
+import Material from '/scripts/core/assets/materials/Material.js';
+import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 const MAPS = ["bumpMap", "displacementMap", "normalMap"];
-let numberOr = utils.numberOr;
 
 export default class NormalMaterial extends Material {
     constructor(params = {}) {
+        params['assetId'] = NormalMaterial.assetId;
         super(params);
-        this._assetId = NormalMaterial.assetId;
         this._bumpMap = params['bumpMap'];
         this._bumpScale = numberOr(params['bumpScale'], 1);
         this._displacementMap = params['displacementMap'];

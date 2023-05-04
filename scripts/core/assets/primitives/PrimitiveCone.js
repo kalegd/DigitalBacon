@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '42779f01-e2cc-495a-a4b3-b286197fa762';
-const ASSET_NAME = 'Cone';
-
 export default class PrimitiveCone extends PrimitiveMesh {
     constructor(params = {}) {
+        params['assetId'] = PrimitiveCone.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._height = numberOr(params['height'], 0.2);
         this._radius = numberOr(params['radius'], 0.1);
         this._radialSegments = params['radialSegments'] || 32;
@@ -35,7 +32,7 @@ export default class PrimitiveCone extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitiveCone.assetName;
     }
 
     _updateGeometry() {
@@ -118,6 +115,9 @@ export default class PrimitiveCone extends PrimitiveMesh {
         this._openEnded = openEnded;
         this._updateGeometry();
     }
+
+    static assetId = '42779f01-e2cc-495a-a4b3-b286197fa762';
+    static assetName = 'Cone';
 }
 
-ProjectHandler.registerShape(PrimitiveCone, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitiveCone);

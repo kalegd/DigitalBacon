@@ -12,13 +12,10 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '7605bff2-8ca3-4a47-b6f7-311d745507de';
-const ASSET_NAME = 'Ambient Light';
-
 export default class PrimitiveAmbientLight extends PrimitiveLight {
     constructor(params = {}) {
+        params['assetId'] = PrimitiveAmbientLight.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._createLight();
     }
 
@@ -28,8 +25,11 @@ export default class PrimitiveAmbientLight extends PrimitiveLight {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitiveAmbientLight.assetName;
     }
+
+    static assetId = '7605bff2-8ca3-4a47-b6f7-311d745507de';
+    static assetName = 'Ambient Light';
 }
 
-ProjectHandler.registerLight(PrimitiveAmbientLight, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerLight(PrimitiveAmbientLight);

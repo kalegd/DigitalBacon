@@ -105,7 +105,5 @@ export default class Material extends Asset {
         this._material.needsUpdate = true;
     }
 
-    static getAssetType() {
-        return AssetTypes.MATERIAL;
-    }
+    static assetType = AssetTypes.MATERIAL;
 }

@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '534f29c3-1e85-4510-bb84-459011de6722';
-const ASSET_NAME = 'Ring';
-
 export default class PrimitiveRing extends PrimitiveMesh {
     constructor(params = {}) {
+        params['assetId'] = PrimitiveRing.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._innerRadius = numberOr(params['innerRadius'], 0.05);
         this._outerRadius = numberOr(params['outerRadius'], 0.1);
         this._thetaSegments = params['thetaSegments'] || 32;
@@ -34,7 +31,7 @@ export default class PrimitiveRing extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitiveRing.assetName;
     }
 
     _updateGeometry() {
@@ -106,6 +103,9 @@ export default class PrimitiveRing extends PrimitiveMesh {
         this._thetaLength = thetaLength;
         this._updateGeometry();
     }
+
+    static assetId = '534f29c3-1e85-4510-bb84-459011de6722';
+    static assetName = 'Ring';
 }
 
-ProjectHandler.registerShape(PrimitiveRing, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitiveRing);

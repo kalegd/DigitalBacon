@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
-const ASSET_NAME = 'Circle';
-
 export default class PrimitiveCircle extends PrimitiveMesh {
     constructor(params = {}) {
+        params['assetId'] = PrimitiveCircle.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._radius = numberOr(params['radius'], 0.1);
         this._segments = params['segments'] || 32;
         this._thetaLength = numberOr(params['thetaLength'], 360);
@@ -31,7 +28,7 @@ export default class PrimitiveCircle extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitiveCircle.assetName;
     }
 
     _updateGeometry() {
@@ -80,6 +77,9 @@ export default class PrimitiveCircle extends PrimitiveMesh {
         this._thetaLength = thetaLength;
         this._updateGeometry();
     }
+
+    static assetId = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
+    static assetName = 'Circle';
 }
 
-ProjectHandler.registerShape(PrimitiveCircle, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerShape(PrimitiveCircle);

@@ -9,13 +9,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const ASSET_ID = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
-const ASSET_NAME = 'Basic Light';
-
 export default class PrimitivePointLight extends PrimitiveLight {
     constructor(params = {}) {
+        params['assetId'] = PrimitivePointLight.assetId;
         super(params);
-        this._assetId = ASSET_ID;
         this._distance = numberOr(params['distance'], 0);
         this._decay = numberOr(params['decay'], 2);
         this._createLight();
@@ -28,7 +25,7 @@ export default class PrimitivePointLight extends PrimitiveLight {
     }
 
     _getDefaultName() {
-        return ASSET_NAME;
+        return PrimitivePointLight.assetName;
     }
 
     _updateLight() {
@@ -63,6 +60,9 @@ export default class PrimitivePointLight extends PrimitiveLight {
         this._decay = decay;
         this._light.decay = decay;
     }
+
+    static assetId = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
+    static assetName = 'Basic Light';
 }
 
-ProjectHandler.registerLight(PrimitivePointLight, ASSET_ID, ASSET_NAME);
+ProjectHandler.registerLight(PrimitivePointLight);

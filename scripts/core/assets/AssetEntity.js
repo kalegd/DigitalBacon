@@ -6,7 +6,6 @@
 
 import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
-import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
@@ -117,26 +116,6 @@ export default class AssetEntity extends Asset {
 
     setVisualEdit(visualEdit) {
         this.visualEdit = visualEdit;
-    }
-
-    addComponent(componentId) {
-        let component = ComponentsHandler.getComponent(componentId);
-        if(!component) {
-            console.error('ERROR: Component not found');
-            return;
-        }
-        this._components.add(component);
-        return component;
-    }
-
-    removeComponent(componentId) {
-        let component = ComponentsHandler.getSessionComponent(componentId);
-        if(!component) {
-            console.error('ERROR: Component not found');
-            return;
-        }
-        this._components.delete(component);
-        return component;
     }
 
     addToScene(scene) {

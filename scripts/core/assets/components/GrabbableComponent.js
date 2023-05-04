@@ -10,8 +10,8 @@ import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 
 export default class GrabbableComponent extends Component {
     constructor(params = {}) {
+        params['assetId'] = GrabbableComponent.assetId;
         super(params);
-        this._assetId = GrabbableComponent.assetId;
         this._stealable = params['stealable'] == true;
     }
 
