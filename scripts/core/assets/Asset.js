@@ -73,6 +73,7 @@ export default class Asset {
         PubSub.publish(this._id, topic, {
             id: this._id,
             assetId: this._assetId,
+            assetType: this.constructor.assetType,
             componentId: componentId,
         });
         return component;
@@ -90,6 +91,7 @@ export default class Asset {
         PubSub.publish(this._id, topic, {
             id: this._id,
             assetId: this._assetId,
+            assetType: this.constructor.assetType,
             componentId: componentId,
         });
         return component;
