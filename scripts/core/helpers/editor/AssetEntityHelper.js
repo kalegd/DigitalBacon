@@ -164,8 +164,7 @@ export default class AssetEntityHelper extends EditorHelper {
                 () => {
                     TransformControlsHandler.attach(this._asset);
                 },
-                true,
-                true
+                false,
             );
             this._pointerInteractables[TOOL_AGNOSTIC].push(interactable);
         }

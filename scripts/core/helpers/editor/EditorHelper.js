@@ -5,6 +5,7 @@
  */
 
 import Asset from '/scripts/core/assets/Asset.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
@@ -40,7 +41,8 @@ export default class EditorHelper {
         this._asset = asset;
         this._id = asset.getId();
         this._updatedTopic = updatedTopic;
-        this._deletedAttachedComponents = {};
+        this._deletedAttachedComponents = new Set();
+        this._addComponentSubscriptions();
     }
 
     _publish(params) {
@@ -165,6 +167,22 @@ export default class EditorHelper {
                 this.removeComponent(componentId, true);
             });
         }
+    }
+
+    _addComponentSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED, (component) =>{
+            if(this._deletedAttachedComponents.has(component)) {
+                this._deletedAttachedComponents.delete(component);
+                this._asset.addComponent(component.getId(), true);
+            }
+        });
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (message) =>{
+            let component = message.component;
+            if(this._asset._components.has(component)) {
+                this._deletedAttachedComponents.add(component);
+                this._asset.removeComponent(component.getId(), true);
+            }
+        });
     }
 
     getMenuFields(fields) {

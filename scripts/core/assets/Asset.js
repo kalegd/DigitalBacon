@@ -61,13 +61,14 @@ export default class Asset {
         this._name = name;
     }
 
-    addComponent(componentId) {
+    addComponent(componentId, ignorePublish) {
         let component = ComponentsHandler.getComponent(componentId);
         if(!component) {
             console.error('ERROR: Component not found');
             return;
         }
         this._components.add(component);
+        if(ignorePublish) return component;
         let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentId;
         PubSub.publish(this._id, topic, {
             id: this._id,
@@ -77,13 +78,14 @@ export default class Asset {
         return component;
     }
 
-    removeComponent(componentId) {
+    removeComponent(componentId, ignorePublish) {
         let component = ComponentsHandler.getSessionComponent(componentId);
         if(!component) {
             console.error('ERROR: Component not found');
             return;
         }
         this._components.delete(component);
+        if(ignorePublish) return component;
         let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentId;
         PubSub.publish(this._id, topic, {
             id: this._id,

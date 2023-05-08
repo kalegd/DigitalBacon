@@ -128,10 +128,21 @@ class ListComponentsPage extends PaginatedListPage {
                 this._updateItemsGUI();
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED, (component) =>{
+            if(this._asset.getComponents().has(component)) {
+                this._refreshItems();
+                this._updateItemsGUI();
+            }
+        });
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (message) =>{
+            if(this._items.includes(message.component)) {
+                this._refreshItems();
+                this._updateItemsGUI();
+            }
+        });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_UPDATED, (message)=>{
             for(let field of message.fields) {
                 if(field == 'name') {
-                    console.log("Updating UI");
                     this._refreshItems();
                     this._updateItemsGUI();
                     break;
@@ -147,6 +158,8 @@ class ListComponentsPage extends PaginatedListPage {
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DETACHED);
+        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
