@@ -18,7 +18,6 @@ export default class PeerHand extends Entity {
             throw new Error("constructor for PeerHand must be LEFT or RIGHT");
         }
         this._hand = hand;
-        this._isGripPressed = false;
         this._vector3 = new THREE.Vector3();
         this._euler = new THREE.Euler();
         this._quaternion = new THREE.Quaternion();

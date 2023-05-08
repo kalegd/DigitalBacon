@@ -71,6 +71,9 @@ class UserController {
         return this._id;
     }
 
+    getAvatar() {
+        return this._avatar;
+    }
     getAvatarUrl() {
         return this._avatarUrl;
     }
@@ -142,6 +145,20 @@ class UserController {
         return [codesArray.buffer, Float32Array.from(data).buffer];
     }
 
+    attach(object) {
+        this._userObj.attach(object);
+    }
+
+    remove(object) {
+        if(object.parent == this._userObj) {
+            this._userObj.parent.attach(object);
+        }
+    }
+
+    hasChild(object) {
+        return object.parent == this._userObj;
+    }
+
     addToScene(scene) {
         if(global.deviceType != "XR") {
             this._avatar.addToScene(global.cameraFocus);
@@ -170,14 +187,14 @@ class UserController {
         if(Math.abs(diff) < EPSILON) return;
         //Fade Logic Start
         this._avatarFadeCameraDistance = cameraDistance;
-        let object = this._avatar.getObject();
         let fadePercent = Math.max(cameraDistance, FADE_END);
         fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
         if(fadePercent == 0) {
-            if(object.parent) this._avatar.removeFromScene();
+            if(this._avatar.isDisplayingAvatar())
+                this._avatar.hideAvatar();
             return;
-        } else if(!object.parent) {
-            this._avatar.addToScene(global.cameraFocus);
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            this._avatar.displayAvatar();
         }
         (fadePercent < 1)
             ? this._avatar.fade(fadePercent)

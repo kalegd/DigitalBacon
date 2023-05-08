@@ -14,6 +14,7 @@ import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHa
 import InteractableHandler from '/scripts/core/handlers/InteractableHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import { vector3s } from '/scripts/core/helpers/constants.js';
 import * as THREE from 'three';
 
 class PointerInteractableHandler extends InteractableHandler {
@@ -123,6 +124,18 @@ class PointerInteractableHandler extends InteractableHandler {
                 }
                 let distance = intersections[0].distance;
                 if(distance < controller['closestPointDistance']) {
+                    if(interactable.maximumDistance) {
+                        if(global.deviceType == 'XR') {
+                            if(distance > interactable.maximumDistance)
+                                continue;
+                        } else {
+                            global.cameraFocus.getWorldPosition(vector3s[0]);
+                            let userDistance = intersections[0].point
+                                .distanceTo(vector3s[0]);
+                            if(userDistance > interactable.maximumDistance)
+                                continue;
+                        }
+                    }
                     controller['closestPointDistance'] = distance;
                     controller['closestPoint'] = intersections[0].point;
                     controller['closestInteractable'] = interactable;
@@ -381,6 +394,12 @@ class PointerInteractableHandler extends InteractableHandler {
         }
         this._raycastInteractables(controllers["POINTER"], this._interactables);
         this._updateInteractables(controllers);
+        let style = global.renderer.domElement.style;
+        if(this._hoveredInteractables['POINTER']) {
+            if(!style.cursor) style.cursor = 'pointer';
+        } else if(style.cursor == 'pointer') {
+            style.cursor = '';
+        }
     }
 
     _updateForMobile() {

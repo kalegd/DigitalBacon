@@ -18,7 +18,6 @@ export default class UserHand {
             throw new Error("UserXRInputSource is for XR only");
         }
         this._hand = hand;
-        this._isGripPressed = false;
         this._vector3 = new Vector3();
         this._euler = new Euler();
         this._quaternion = new Quaternion();

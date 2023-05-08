@@ -19,8 +19,10 @@ export default class Avatar {
         let focusCamera = params['Focus Camera'] || false;
         let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
         this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._avatarParent = new THREE.Object3D();
         this._pivotPoint = new THREE.Object3D();
         this._pivotPoint.position.setY(verticalOffset);
+        this._pivotPoint.add(this._avatarParent);
         this._createBoundingBox(params);
         //this._pivotPoint.position.setY(1.3);
 
@@ -67,7 +69,7 @@ export default class Avatar {
                     hands.forEach((hand) => { hand.parent.remove(hand); });
                     gltf.scene.position.setY(-0.7);
                 }
-                this._pivotPoint.add(gltf.scene);
+                this._avatarParent.add(gltf.scene);
                 this._saveOriginalTransparencyStates();
                 this._dimensions = 3;
             }, () => {}, (error) => {
@@ -99,10 +101,10 @@ export default class Avatar {
                 let geometry = new THREE.PlaneGeometry(width, height);
                 geometry.rotateY(Math.PI);
                 let mesh = new THREE.Mesh(geometry, material);
-                this._pivotPoint.add(mesh);
+                this._avatarParent.add(mesh);
                 this._saveOriginalTransparencyStates();
                 //let sprite = new THREE.Sprite(material);
-                //this._pivotPoint.add(sprite);
+                //this._avatarParent.add(sprite);
                 this._dimensions = 2;
             }, () => {}, () => {
                 if(filename != this._defaultURL) {
@@ -121,7 +123,7 @@ export default class Avatar {
     }
 
     _saveOriginalTransparencyStates() {
-        this._pivotPoint.traverse(function(node) {
+        this._avatarParent.traverse(function(node) {
             if(node instanceof THREE.Mesh && node.material) {
                 if(Array.isArray(node.material)) {
                     for(let i = 0; i < node.material.length; i++) {
@@ -140,8 +142,9 @@ export default class Avatar {
 
     fade(percent) {
         this._isFading = true;
-        this._pivotPoint.traverse(function(node) {
+        this._avatarParent.traverse(function(node) {
             if(node instanceof THREE.Mesh && node.material) {
+                node.renderOrder = Infinity;
                 if(Array.isArray(node.material)) {
                     for(let i = 0; i < node.material.length; i++) {
                         let material = node.material[i];
@@ -166,7 +169,7 @@ export default class Avatar {
     endFade() {
         if(!this._isFading) return;
         this._isFading = false;
-        this._pivotPoint.traverse(function(node) {
+        this._avatarParent.traverse(function(node) {
             if(node instanceof THREE.Mesh && node.material) {
                 if(Array.isArray(node.material)) {
                     for(let i = 0; i < node.material.length; i++) {
@@ -198,9 +201,9 @@ export default class Avatar {
     }
 
     updateSourceUrl(url) {
-        while(this._pivotPoint.children[0]) {
-            let child = this._pivotPoint.children[0];
-            this._pivotPoint.remove(child);
+        while(this._avatarParent.children[0]) {
+            let child = this._avatarParent.children[0];
+            this._avatarParent.remove(child);
             fullDispose(child, true);
         }
         this._createMesh(url);
@@ -208,6 +211,32 @@ export default class Avatar {
 
     getObject() {
         return this._pivotPoint;
+    }
+
+    attach(object) {
+        this._pivotPoint.attach(object);
+    }
+
+    remove(object) {
+        if(object.parent == this._pivotPoint) {
+            global.scene.attach(object);
+        }
+    }
+
+    hasChild(object) {
+        return object.parent == this._pivotPoint;
+    }
+
+    displayAvatar() {
+        this._pivotPoint.add(this._avatarParent);
+    }
+
+    hideAvatar() {
+        this._pivotPoint.remove(this._avatarParent);
+    }
+
+    isDisplayingAvatar() {
+        return this._avatarParent.parent == this._pivotPoint;
     }
 
     addToScene(scene) {

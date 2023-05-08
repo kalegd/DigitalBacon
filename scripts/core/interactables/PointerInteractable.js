@@ -83,6 +83,10 @@ class PointerInteractable extends Interactable {
         this._actionFunc = newActionFunc;
     }
 
+    setMaximumDistance(maximumDistance) {
+        this.maximumDistance = maximumDistance;
+    }
+
     static emptyGroup() {
         return new PointerInteractable(null, null, false, false);
     }

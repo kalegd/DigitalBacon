@@ -57,8 +57,14 @@ export default class GrabbableSystem extends System {
     _addPointerInteractable(object) {
         let interactable = new PointerInteractable(object,
             () => {
-                console.log("TODO: Handle grabbing an object for normies");
+                let avatar = UserController.getAvatar();
+                if(avatar.hasChild(object)) {
+                    avatar.remove(object);
+                } else {
+                    avatar.attach(object);
+                }
             }, false);
+        interactable.setMaximumDistance(2);
         PointerInteractableHandler.addInteractable(interactable);
     }
 
