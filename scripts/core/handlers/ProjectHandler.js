@@ -59,23 +59,23 @@ class ProjectHandler {
         global.loadingLocks.add(lock);
         jsZip.file("projectDetails.json").async("string").then(
             (projectDetailsString) => {
-                let projectDetails;
                 try {
-                    projectDetails = JSON.parse(projectDetailsString);
+                    this._projectDetails = JSON.parse(projectDetailsString);
                 } catch(error) {
                     this._handleLoadingError(errorCallback);
                     return;
                 }
-                LibraryHandler.load(projectDetails['library'], jsZip, () => {
+                LibraryHandler.load(this._projectDetails['library'], jsZip,()=>{
                     global.loadingLocks.delete(lock);
-                    SettingsHandler.load(projectDetails['settings']);
-                    SystemsHandler.load(projectDetails['systems']);
-                    ComponentsHandler.load(projectDetails['components']);
-                    TexturesHandler.load(projectDetails['textures']);
-                    MaterialsHandler.load(projectDetails['materials']);
+                    SettingsHandler.load(this._projectDetails['settings']);
+                    SystemsHandler.load(this._projectDetails['systems']);
+                    ComponentsHandler.load(this._projectDetails['components']);
+                    TexturesHandler.load(this._projectDetails['textures']);
+                    MaterialsHandler.load(this._projectDetails['materials']);
                     try {
-                        for(let assetId in projectDetails['assets']) {
-                            let instances = projectDetails['assets'][assetId];
+                        for(let assetId in this._projectDetails['assets']) {
+                            let instances =
+                                this._projectDetails['assets'][assetId];
                             let type = LibraryHandler.getType(assetId);
                             if(type == AssetTypes.IMAGE) {
                                 this._addImages(instances, true, true);
@@ -96,6 +96,43 @@ class ProjectHandler {
                     if(successCallback) successCallback();
                 }, () => { this._handleLoadingError(errorCallback); });
             }, () => { this._handleLoadingError(errorCallback); });
+    }
+
+    loadDiffZip(jsZip, successCallback, errorCallback) {
+        jsZip.file("projectDetails.json").async("string").then(
+            (projectDetailsString) => {
+                let projectDetails;
+                try {
+                    projectDetails = JSON.parse(projectDetailsString);
+                } catch(error) {
+                    if(errorCallback) errorCallback();
+                    return;
+                }
+                LibraryHandler.load(projectDetails['library'], jsZip,()=>{
+                    SystemsHandler.load(projectDetails['systems'], true);
+                    ComponentsHandler.load(projectDetails['components'], true);
+                    TexturesHandler.load(projectDetails['textures'], true);
+                    MaterialsHandler.load(projectDetails['materials'], true);
+                    try {
+                        for(let assetId in projectDetails['assets']) {
+                            let instances = projectDetails['assets'][assetId];
+                            for(let params of instances) {
+                                let instance = this.project[assetId][params.id];
+                                if(instance) {
+                                    instance.updateFromParams(params);
+                                } else {
+                                    this.addInstance(params, true, true);
+                                }
+                            }
+                        }
+                    } catch(error) {
+                        console.error(error);
+                        if(errorCallback) errorCallback();
+                        return;
+                    }
+                    if(successCallback) successCallback();
+                }, () => { if(errorCallback) errorCallback(); });
+            }, () => { if(errorCallback) errorCallback(); });
     }
 
     _handleLoadingError(errorCallback) {
@@ -271,8 +308,24 @@ class ProjectHandler {
         SettingsHandler.reset();
     }
 
+    exportDiff() {
+        let assetIds = [];
+        let projectDetails = this._getProjectDetails(true);
+        for(let assetId in projectDetails.assets) {
+            if(!(assetId in this._projectDetails.assets)) {
+                assetIds.push(assetId);
+            }
+        }
+        projectDetails['library'] = LibraryHandler.getLibraryDetails(assetIds);
+        return this._exportBlob(projectDetails);
+    }
+
     exportProject() {
         let projectDetails = this._getProjectDetails();
+        return this._exportBlob(projectDetails);
+    }
+
+    _exportBlob(projectDetails) {
         let zip = new JSZip();
         zip.file("projectDetails.json", JSON.stringify(projectDetails));
         let library = LibraryHandler.getLibrary();
@@ -286,7 +339,7 @@ class ProjectHandler {
         return zip;
     }
 
-    _getProjectDetails() {
+    _getProjectDetails(skipLibrary) {
         let assets = {};
         for(let assetId in this.project) {
             let instances = this.project[assetId];
@@ -310,7 +363,6 @@ class ProjectHandler {
         for(let assetId of texturesAssetIds) assetIds.push(assetId);
 
         let projectDetails = {
-            'library': LibraryHandler.getLibraryDetails(assetIds),
             'assets': assets,
             'components': components,
             'materials': materials,
@@ -318,6 +370,10 @@ class ProjectHandler {
             'settings': settings,
             'systems': systems,
         };
+        if(!skipLibrary) {
+            projectDetails['library'] = LibraryHandler.getLibraryDetails(
+                assetIds);
+        }
         return projectDetails;
     }
 }

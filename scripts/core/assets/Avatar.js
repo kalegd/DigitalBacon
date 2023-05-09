@@ -26,7 +26,7 @@ export default class Avatar {
         this._createBoundingBox(params);
         //this._pivotPoint.position.setY(1.3);
 
-        this._createMesh((params['URL']) ? params['URL'] : this._defaultURL);
+        if(params['URL']) this._createMesh(params['URL']);
         if(focusCamera) {
             global.cameraFocus.position.fromArray(cameraFocalPoint);
         }
@@ -213,6 +213,10 @@ export default class Avatar {
         return this._pivotPoint;
     }
 
+    setVerticalOffset(verticalOffset) {
+        this._pivotPoint.position.setY(verticalOffset);
+    }
+
     attach(object) {
         this._pivotPoint.attach(object);
     }
@@ -220,7 +224,9 @@ export default class Avatar {
     remove(object) {
         if(object.parent == this._pivotPoint) {
             global.scene.attach(object);
+            return true;
         }
+        return false;
     }
 
     hasChild(object) {

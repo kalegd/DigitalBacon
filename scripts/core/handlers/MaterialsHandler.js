@@ -72,16 +72,32 @@ class MaterialsHandler {
         });
     }
 
-    load(materials) {
+    load(materials, isDiff) {
         if(!materials) return;
         this._handleOldVersion(materials);
+        if(isDiff) {
+            let materialsToDelete = [];
+            for(let id in this._materials) {
+                let material = this._materials[id];
+                let assetId = material.getAssetId();
+                if(!(assetId in materials) || !materials[assetId].includes(id))
+                    materialsToDelete.push(material);
+            }
+            for(let material of materialsToDelete) {
+                this.deleteMaterial(material, true, true);
+            }
+        }
         for(let assetId in materials) {
             if(!(assetId in this._materialClassMap)) {
                 console.error("Unrecognized material found");
                 continue;
             }
             for(let params of materials[assetId]) {
-                this.addNewMaterial(assetId, params, true, true);
+                if(isDiff && this._materials[params.id]) {
+                    this._materials[params.id].updateFromParams(params);
+                } else {
+                    this.addNewMaterial(assetId, params, true, true);
+                }
             }
         }
     }

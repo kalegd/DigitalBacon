@@ -65,16 +65,32 @@ class TexturesHandler {
         });
     }
 
-    load(textures) {
+    load(textures, isDiff) {
         if(!textures) return;
         this._handleOldVersion(textures);
+        if(isDiff) {
+            let texturesToDelete = [];
+            for(let id in this._textures) {
+                let texture = this._textures[id];
+                let assetId = texture.getAssetId();
+                if(!(assetId in textures) || !textures[assetId].includes(id))
+                    texturesToDelete.push(texture);
+            }
+            for(let texture of texturesToDelete) {
+                this.deleteTexture(texture, true, true);
+            }
+        }
         for(let assetId in textures) {
             if(!(assetId in this._textureClassMap)) {
                 console.error("Unrecognized texture found");
                 continue;
             }
             for(let params of textures[assetId]) {
-                this.addNewTexture(assetId, params, true, true);
+                if(isDiff && this._textures[params.id]) {
+                    this._textures[params.id].updateFromParams(params);
+                } else {
+                    this.addNewTexture(assetId, params, true, true);
+                }
             }
         }
     }

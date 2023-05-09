@@ -74,6 +74,7 @@ class UserController {
     getAvatar() {
         return this._avatar;
     }
+
     getAvatarUrl() {
         return this._avatarUrl;
     }
@@ -152,7 +153,9 @@ class UserController {
     remove(object) {
         if(object.parent == this._userObj) {
             this._userObj.parent.attach(object);
+            return true;
         }
+        return false;
     }
 
     hasChild(object) {

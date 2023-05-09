@@ -19,31 +19,19 @@ const ERROR_FIX_FRAMES = 30;
 const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
 
 export default class PeerController extends Entity {
-    constructor(avatarUrl, username, displayingUsername, isXR) {
+    constructor(username, displayingUsername) {
         super();
         this._velocity = new THREE.Vector3();
         this._positionError = new THREE.Vector3();
         this._errorFixFrame = ERROR_FIX_FRAMES;
         this._username = username || '...';
         this._displayingUsername = displayingUsername;
-        this._isXR = isXR;
-        this._setup(avatarUrl);
+        this._setup();
     }
 
     _setup(avatarUrl) {
-        this._avatar = new Avatar({
-            'URL': avatarUrl,
-            'Vertical Offset': this._isXR ? 0 : 1.7,
-        });
+        this._avatar = new Avatar({ 'Vertical Offset': 1.7 });
         this._avatar.addToScene(this._object);
-        if(this._isXR) {
-            this.hands = {};
-            for(let hand of [Hands.RIGHT, Hands.LEFT]) {
-                let peerHand = new PeerHand(hand);
-                this.hands[hand] = peerHand;
-                peerHand.addToScene(this._object);
-            }
-        }
         let usernameParams = {
             'text': this._username, 
             'fontFamily': Fonts.defaultFamily,
@@ -74,6 +62,7 @@ export default class PeerController extends Entity {
     }
 
     _updateHandData(float32Array, index, hand) {
+        if(!this.hands) return;
         let peerHand = this.hands[hand].getObject();
         peerHand.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
@@ -97,6 +86,10 @@ export default class PeerController extends Entity {
         this._errorFixFrame = 0;
     }
 
+    getAvatar() {
+        return this._avatar;
+    }
+
     updateAvatar(url) {
         this._avatar.updateSourceUrl(url);
     }
@@ -108,6 +101,18 @@ export default class PeerController extends Entity {
             this._object.add(this._usernameBlock);
         } else {
             this._object.remove(this._usernameBlock);
+        }
+    }
+
+    configureAsXR() {
+        if(this._isXR) return;
+        this._isXR = true;
+        this._avatar.setVerticalOffset(0);
+        this.hands = {};
+        for(let hand of [Hands.RIGHT, Hands.LEFT]) {
+            let peerHand = new PeerHand(hand);
+            this.hands[hand] = peerHand;
+            peerHand.addToScene(this._object);
         }
     }
 

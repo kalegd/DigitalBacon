@@ -63,7 +63,9 @@ export default class UserHand {
     remove(threeObj) {
         if(threeObj.parent == this._controller) {
             global.scene.attach(threeObj);
+            return true;
         }
+        return false;
     }
 
     addToScene(scene) {

@@ -5,7 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import PeerController from '/scripts/core/assets/PeerController.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
@@ -59,20 +58,39 @@ class PartyMessageHelper {
             user_scale: (p, m) => { this._handleUserScale(p,m);},
         };
         for(let topic in BLOCKABLE_HANDLERS_MAP) {
-            let handler = BLOCKABLE_HANDLERS_MAP[topic];
+            let handler = (p,m) => {this[BLOCKABLE_HANDLERS_MAP[topic]](p, m);};
             handlers[topic] = (p, m) => { this._handleBlockable(handler,p,m); };
         }
         this._partyHandler.addMessageHandlers(handlers);
     }
 
-    _handleAvatar(peer, message) {
-        if(peer.controller) {
-            peer.controller.updateAvatar(message.url);
+    registerHandler(topic, handler) {
+        this._partyHandler.addMessageHandler(topic, handler);
+    }
+
+    registerBlockableHandler(topic, handler) {
+        let blockableHandler = (p, m) => { this._handleBlockable(handler,p,m);};
+        this._partyHandler.addMessageHandler(topic, blockableHandler);
+    }
+
+    publish(message) {
+        this._partyHandler.sendToAllPeers(message);
+    }
+
+    queuePublish(message) {
+        if(typeof message == 'function') {
+            this._publishQueue.enqueue(f);
         } else {
-            peer.controller = new PeerController(message.url, peer.username,
-                this._partyHandler.getDisplayingUsernames(), message.isXR);
-            peer.controller.addToScene(global.scene);
+            this._publishQueue.enqueue(() => {
+                this._partyHandler.sendToAllPeers(message);
+                return Promise.resolve();
+            });
         }
+    }
+
+    _handleAvatar(peer, message) {
+        peer.controller.updateAvatar(message.url);
+        if(message.isXR) peer.controller.configureAsXR();
     }
 
     _handleAssetAdded(peer, message) {
@@ -105,11 +123,11 @@ class PartyMessageHelper {
     _handleBlockable(handler, peer, message) {
         if(this._handlingLocks.size > 0) {
             this._handleQueue.enqueue(() => {
-                this[handler](peer, message)
+                handler(peer, message)
             });
             return;
         }
-        this[handler](peer, message);
+        handler(peer, message);
     }
 
     _handleComponentAdded(peer, message) {
@@ -151,7 +169,7 @@ class PartyMessageHelper {
             asset.addComponent(message.componentId, true);
             delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
-                + message.componentId, message);
+                + message.componentAssetId, message);
         }
     }
 
@@ -161,7 +179,7 @@ class PartyMessageHelper {
             asset.removeComponent(message.componentId, true);
             delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
-                + message.componentId, message);
+                + message.componentAssetId, message);
         }
     }
 

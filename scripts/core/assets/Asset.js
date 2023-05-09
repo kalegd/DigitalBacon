@@ -40,12 +40,24 @@ export default class Asset {
         };
     }
 
+    updateFromParams(params) {
+        for(let key in params) {
+            let setter = 'set' + key.charAt(0).toUpperCase() + key.slice(1);
+            if(this[setter]) this[setter](params[key]);
+        }
+    }
+
     getAssetId() {
         return this._assetId;
     }
 
-    getComponents() {
-        return this._components;
+    getComponents(getActualComponents) {
+        if(getActualComponents) return this._components;
+        let componentIds = [];
+        for(let component of this._components) {
+            componentIds.push(component.getId());
+        }
+        return componentIds;
     }
 
     getId() {
@@ -54,6 +66,19 @@ export default class Asset {
 
     getName() {
         return this._name;
+    }
+
+    setComponents(componentIds) {
+        for(let component of this._components) {
+            let componentId = component.getId();
+            if(!componentIds.includes(componentId))
+                this.removeComponent(componentId);
+        }
+        for(let componentId of componentIds) {
+            let component = ComponentsHandler.getComponent(componentId);
+            if(!this._components.has(component))
+                this.addComponent(componentId);
+        }
     }
 
     setName(name) {
@@ -69,12 +94,14 @@ export default class Asset {
         }
         this._components.add(component);
         if(ignorePublish) return component;
-        let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentId;
+        let componentAssetId = component.constructor.assetId;
+        let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,
             assetId: this._assetId,
             assetType: this.constructor.assetType,
             componentId: componentId,
+            componentAssetId: componentAssetId,
         });
         return component;
     }
@@ -87,12 +114,14 @@ export default class Asset {
         }
         this._components.delete(component);
         if(ignorePublish) return component;
-        let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentId;
+        let componentAssetId = component.constructor.assetId;
+        let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,
             assetId: this._assetId,
             assetType: this.constructor.assetType,
             componentId: componentId,
+            componentAssetId: componentAssetId,
         });
         return component;
     }

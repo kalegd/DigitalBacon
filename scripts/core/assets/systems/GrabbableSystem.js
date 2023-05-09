@@ -10,16 +10,25 @@ import System from '/scripts/core/assets/systems/System.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SystemsHandler from '/scripts/core/handlers/SystemsHandler.js';
+import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
+
+const AVATAR = 'AVATAR';
+const GRABBED_TOPIC = 'GrabbableSystem:Grabbed';
+const RELEASED_TOPIC = 'GrabbableSystem:Released';
+const COMPONENT_ASSET_ID = 'd9891de1-914d-4448-9e66-8867211b5dc8';
 
 export default class GrabbableSystem extends System {
     constructor(params = {}) {
         params['assetId'] = GrabbableSystem.assetId;
         super(params);
+        this._interactables = {};
+        this._notStealable = {};
         this._addSubscriptions();
     }
 
@@ -33,39 +42,131 @@ export default class GrabbableSystem extends System {
 
     _addSubscriptions() {
         if(global.isEditor || global.disableImmersion) return;
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
+                + COMPONENT_ASSET_ID, (message) => {
+            if(this._interactables[message.id]) return;
             let instance = ProjectHandler.getSessionInstance(message.id);
+            let component = ComponentsHandler.getSessionComponent(
+                message.componentId);
             if(global.deviceType == 'XR') {
-                this._addGripInteractable(instance.getObject());
+                this._addGripInteractable(instance, component.getStealable());
             } else {
-                this._addPointerInteractable(instance.getObject());
+                this._addPointerInteractable(instance,component.getStealable());
             }
+        });
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
+                + COMPONENT_ASSET_ID, (message) => {
+            let interactable = this._interactables[message.id];
+            if(!interactable) return;
+            if(global.deviceType == 'XR') {
+                GripInteractableHandler.removeInteractable(interactable);
+            } else {
+                PointerInteractableHandler.removeInteractable(interactable);
+            }
+            delete this._interactables[message.id];
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PEER_CONNECTED, (message) => {
+            //TODO: Let peer know if we have an asset held
+        });
+        PartyMessageHelper.registerBlockableHandler(GRABBED_TOPIC, (p, m) => {
+            this._handlePeerGrabbed(p, m);
+        });
+        PartyMessageHelper.registerBlockableHandler(RELEASED_TOPIC, (p, m) => {
+            this._handlePeerReleased(p, m);
         });
     }
 
-    _addGripInteractable(object) {
+    _addGripInteractable(instance, stealable) {
+        let object = instance.getObject();
         let interactable = new GripInteractable(object,
             (hand) => {
                 UserController.hands[hand].attach(object);
+                this._publish(GRABBED_TOPIC, instance, hand, stealable);
             }, (hand) => {
-                UserController.hands[hand].remove(object);
+                if(UserController.hands[hand].remove(object))
+                    this._publish(RELEASED_TOPIC, instance, hand, stealable);
             }
         );
         GripInteractableHandler.addInteractable(interactable);
+        this._interactables[instance.getId()] = interactable;
     }
 
-    _addPointerInteractable(object) {
+    _addPointerInteractable(instance, stealable) {
+        let object = instance.getObject();
         let interactable = new PointerInteractable(object,
             () => {
                 let avatar = UserController.getAvatar();
                 if(avatar.hasChild(object)) {
-                    avatar.remove(object);
+                    if(avatar.remove(object)) {
+                        this._publish(RELEASED_TOPIC, instance, AVATAR,
+                            stealable);
+                    }
                 } else {
                     avatar.attach(object);
+                    this._publish(GRABBED_TOPIC, instance, AVATAR, stealable);
                 }
             }, false);
         interactable.setMaximumDistance(2);
         PointerInteractableHandler.addInteractable(interactable);
+        this._interactables[instance.getId()] = interactable;
+    }
+
+    _handlePeerGrabbed(peer, message) {
+        let instance = ProjectHandler.getSessionInstance(message.id);
+        if(message.attachTo == AVATAR) {
+            let avatar = peer.controller.getAvatar();
+            avatar.attach(instance.getObject());
+        } else {
+            let hand = peer.controller.hands[message.attachTo];
+            hand.attach(instance.getObject());
+        }
+        instance.setPosition(message.position);
+        instance.setRotation(message.rotation);
+        if(!message.stealable && this._interactables[message.id]) {
+            let interactable = this._interactables[message.id];
+            this._notStealable[message.id] = interactable;
+            if(interactable instanceof GripInteractable) {
+                GripInteractableHandler.removeInteractable(interactable);
+            } else {
+                PointerInteractableHandler.removeInteractable(interactable);
+            }
+            delete this._interactables[message.id];
+        }
+    }
+
+    _handlePeerReleased(peer, message) {
+        let instance = ProjectHandler.getSessionInstance(message.id);
+        if(message.attachTo == AVATAR) {
+            let avatar = peer.controller.getAvatar();
+            avatar.remove(instance.getObject());
+        } else {
+            let hand = peer.controller.hands[message.attachTo];
+            hand.remove(instance.getObject());
+        }
+        instance.setPosition(message.position);
+        instance.setRotation(message.rotation);
+        if(!message.stealable && this._notStealable[message.id]) {
+            let interactable = this._notStealable[message.id];
+            this._interactables[message.id] = interactable;
+            if(interactable instanceof GripInteractable) {
+                GripInteractableHandler.addInteractable(interactable);
+            } else {
+                PointerInteractableHandler.addInteractable(interactable);
+            }
+            delete this._notStealable[message.id];
+        }
+    }
+
+    _publish(topic, object, attachTo, stealable) {
+        let message = {
+            topic: topic,
+            attachTo: attachTo,
+            id: object.getId(),
+            position: object.getPosition(),
+            rotation: object.getRotation(),
+            stealable: stealable,
+        };
+        PartyMessageHelper.queuePublish(JSON.stringify(message));
     }
 
     static assetId = '6329e98a-4311-4457-9198-48d75640f8cc';

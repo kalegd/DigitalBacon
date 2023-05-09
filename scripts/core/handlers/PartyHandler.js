@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import PeerController from '/scripts/core/assets/PeerController.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import Party from '/scripts/core/clients/Party.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -49,7 +50,9 @@ class PartyHandler {
         rtc.setOnSendDataChannelOpen(() => {
             if(this._successCallback) this._successCallback();
             peer.rtc = rtc;
-            PartyMessageHelper.handlePeerConnected(peer);
+            peer.controller = new PeerController(peer.username,
+                this._displayingUsernames);
+            peer.controller.addToScene(global.scene);
             rtc.sendData(JSON.stringify({
                 "topic": "avatar",
                 "url": UserController.getAvatarUrl(),
@@ -63,13 +66,12 @@ class PartyHandler {
                 topic: 'user_scale',
                 scale: SettingsHandler.getUserScale(),
             }));
+            PartyMessageHelper.handlePeerConnected(peer);
             if(this._isHost) {
-                if(global.isEditor) {
-                    this._sendProject([rtc]);
-                } else {
-                    //TODO: Send only the diff whenever we support state changes
-                    //      in the live mode
-                }
+                let zip = (global.isEditor)
+                    ? ProjectHandler.exportProject()
+                    : ProjectHandler.exportDiff();
+                this._sendProjectZip(zip, [rtc]);
             }
         });
         rtc.setOnSendDataChannelClose(() => {
@@ -141,21 +143,20 @@ class PartyHandler {
         return uint16array[0];
     }
 
-    _sendProject(rtcs, parts) {
-        if(!parts) {
-            let zip = ProjectHandler.exportProject();
-            zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
-                let parts = [];
-                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
-                for(let i = 0; i < n; i++) {
-                    let chunkStart = i * SIXTEEN_KB;
-                    let chunkEnd = (i + 1) * SIXTEEN_KB;
-                    parts.push(buffer.slice(chunkStart, chunkEnd));
-                }
-                this._sendProject(rtcs, parts);
-            });
-            return;
-        }
+    _sendProjectZip(zip, rtcs) {
+        zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
+            let parts = [];
+            let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
+            for(let i = 0; i < n; i++) {
+                let chunkStart = i * SIXTEEN_KB;
+                let chunkEnd = (i + 1) * SIXTEEN_KB;
+                parts.push(buffer.slice(chunkStart, chunkEnd));
+            }
+            this._sendProjectParts(rtcs, parts);
+        });
+    }
+
+    _sendProjectParts(rtcs, parts) {
         rtcs.forEach((rtc) => rtc.sendData(JSON.stringify({
             "topic": "project",
             "parts": parts.length,
@@ -175,10 +176,22 @@ class PartyHandler {
                 let buffer = concatenateArrayBuffers(parts);
                 let zip = new JSZip();
                 zip.loadAsync(buffer).then((zip) => {
-                    ProjectHandler.loadZip(zip);
+                    if(global.isEditor) {
+                        ProjectHandler.loadZip(zip);
+                    } else {
+                        ProjectHandler.loadDiffZip(zip, () => {
+                            //TODO: Publish that we are up to date with stuffs 
+                        }, () => {
+                            //TODO: Notify there was an error and quit party
+                        });
+                    }
                 });
             }
         }
+    }
+
+    addMessageHandler(topic, messageHandler) {
+        this._messageHandlers[topic] = messageHandler;
     }
 
     addMessageHandlers(messageHandlers) {
@@ -217,7 +230,8 @@ class PartyHandler {
         for(let peerId in this._peers) {
             if(this._peers[peerId].rtc) rtcs.push(this._peers[peerId].rtc);
         }
-        this._sendProject(rtcs);
+        let zip = ProjectHandler.exportProject();
+        this._sendProjectZip(zip, rtcs);
     }
 
     setDisplayingUsernames(displayingUsernames) {

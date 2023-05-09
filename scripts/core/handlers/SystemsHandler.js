@@ -59,15 +59,31 @@ class SystemsHandler {
         });
     }
 
-    load(systems) {
+    load(systems, isDiff) {
         if(!systems) return;
+        if(isDiff) {
+            let systemsToDelete = [];
+            for(let id in this._systems) {
+                let system = this._systems[id];
+                let assetId = system.getAssetId();
+                if(!(assetId in systems) || !systems[assetId].includes(id))
+                    systemsToDelete.push(system);
+            }
+            for(let system of systemsToDelete) {
+                this.deleteSystem(system, true, true);
+            }
+        }
         for(let systemTypeId in systems) {
             if(!(systemTypeId in this._systemClassMap)) {
                 console.error("Unrecognized system found");
                 continue;
             }
             for(let params of systems[systemTypeId]) {
-                this.addNewSystem(systemTypeId, params, true, true);
+                if(isDiff && this._systems[params.id]) {
+                    this._systems[params.id].updateFromParams(params);
+                } else {
+                    this.addNewSystem(systemTypeId, params, true, true);
+                }
             }
         }
     }

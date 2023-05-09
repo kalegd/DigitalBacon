@@ -60,6 +60,8 @@ export default class PeerHand extends Entity {
     remove(threeObj) {
         if(threeObj.parent == this._object) {
             global.scene.attach(threeObj);
+            return true;
         }
+        return false;
     }
 }

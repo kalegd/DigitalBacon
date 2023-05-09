@@ -59,15 +59,31 @@ class ComponentsHandler {
         });
     }
 
-    load(components) {
+    load(components, isDiff) {
         if(!components) return;
+        if(isDiff) {
+            let componentsToDelete = [];
+            for(let id in this._components) {
+                let component = this._components[id];
+                let assetId = component.getAssetId();
+                if(!(assetId in components) ||!components[assetId].includes(id))
+                    componentsToDelete.push(component);
+            }
+            for(let component of componentsToDelete) {
+                this.deleteComponent(component, true, true);
+            }
+        }
         for(let componentTypeId in components) {
             if(!(componentTypeId in this._componentClassMap)) {
                 console.error("Unrecognized component found");
                 continue;
             }
             for(let params of components[componentTypeId]) {
-                this.addNewComponent(componentTypeId, params, true, true);
+                if(isDiff && this._components[params.id]) {
+                    this._components[params.id].updateFromParams(params);
+                } else {
+                    this.addNewComponent(componentTypeId, params, true, true);
+                }
             }
         }
     }

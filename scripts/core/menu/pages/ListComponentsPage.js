@@ -56,7 +56,7 @@ class ListComponentsPage extends PaginatedListPage {
         this._addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         this._addButtonParent.add(addButton);
         this._addInteractable = new PointerInteractable(addButton, () => {
-            let assetComponents = this._asset.getComponents();
+            let assetComponents = this._asset.getComponents(true);
             let components = ComponentsHandler.getComponents();
             let filteredComponents = {};
             for(let componentId in components) {
@@ -106,12 +106,12 @@ class ListComponentsPage extends PaginatedListPage {
     }
 
     _refreshItems() {
-        this._items = Array.from(this._asset.getComponents());
+        this._items = Array.from(this._asset.getComponents(true));
     }
 
     setContent(asset) {
         this._asset = asset;
-        this._items = Array.from(asset.getComponents());
+        this._items = Array.from(asset.getComponents(true));
         this._page = 0;
     }
 
@@ -129,7 +129,7 @@ class ListComponentsPage extends PaginatedListPage {
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED, (component) =>{
-            if(this._asset.getComponents().has(component)) {
+            if(this._asset.getComponents(true).has(component)) {
                 this._refreshItems();
                 this._updateItemsGUI();
             }

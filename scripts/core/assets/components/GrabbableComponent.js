@@ -19,6 +19,12 @@ export default class GrabbableComponent extends Component {
         return GrabbableComponent.assetName;
     }
 
+    exportParams() {
+        let params = super.exportParams();
+        params['stealable'] = this._stealable;
+        return params;
+    }
+
     getStealable() {
         return this._stealable;
     }
