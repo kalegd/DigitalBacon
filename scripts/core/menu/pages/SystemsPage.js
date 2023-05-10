@@ -19,7 +19,7 @@ const FIELD_MAX_LENGTH = 25;
 class SystemsPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._systems = SystemsHandler.getSystems();
+        this._systems = SystemsHandler.getAssets();
         this._items = Object.keys(this._systems);
         this._addPageContent();
         this._createAddButton();
@@ -78,7 +78,7 @@ class SystemsPage extends PaginatedPage {
     }
 
     _refreshItems() {
-        this._systems = SystemsHandler.getSystems();
+        this._systems = SystemsHandler.getAssets();
         this._items = Object.keys(this._systems);
     }
 

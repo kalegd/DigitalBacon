@@ -13,7 +13,7 @@ import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 class NewSystemPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._items = SystemsHandler.getSystemClasses();
+        this._items = SystemsHandler.getAssetClasses();
         this._addPageContent();
     }
 
@@ -34,13 +34,13 @@ class NewSystemPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let system = SystemsHandler.addNewSystem(item.assetId);
+        let system = SystemsHandler.addNewAsset(item.assetId);
         this.back();
         if(this._additionalAction) this._additionalAction(system);
     }
 
     _refreshItems() {
-        this._items = SystemsHandler.getSystemClasses();
+        this._items = SystemsHandler.getAssetClasses();
     }
 
     setContent(additionalAction) {

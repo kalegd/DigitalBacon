@@ -177,7 +177,7 @@ export default class EditorHelper {
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (message) =>{
-            let component = message.component;
+            let component = message.asset;
             if(this._asset._components.has(component)) {
                 this._deletedAttachedComponents.add(component);
                 this._asset.removeComponent(component.getId(), true);

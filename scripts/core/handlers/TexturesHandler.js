@@ -5,6 +5,7 @@
  */
 
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 
 const SHOULD_HAVE_REFACTORED_SOONER = {
@@ -12,7 +13,7 @@ const SHOULD_HAVE_REFACTORED_SOONER = {
     CUBE: '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2',
 };
 
-class TexturesHandler {
+class TexturesHandler extends AssetsHandler {
     constructor() {
         super(PubSubTopics.TEXTURE_ADDED, PubSubTopics.TEXTURE_DELETED);
     }

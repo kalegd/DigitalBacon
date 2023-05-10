@@ -138,23 +138,23 @@ class PartyMessageHelper {
     }
 
     _handleComponentAdded(peer, message) {
-        let component = ComponentsHandler.getSessionComponent(
+        let component = ComponentsHandler.getSessionAsset(
             message.component.id);
         if(component) {
-            ComponentsHandler.addComponent(component, true, true);
+            ComponentsHandler.addAsset(component, true, true);
         } else {
-            component = ComponentsHandler.addNewComponent(
+            component = ComponentsHandler.addNewAsset(
                 message.component.assetId, message.component, true, true);
         }
         PubSub.publish(this._id, PubSubTopics.COMPONENT_ADDED, component);
     }
 
     _handleComponentDeleted(peer, message) {
-        let component = ComponentsHandler.getComponent(message.id);
+        let component = ComponentsHandler.getAsset(message.id);
         if(component) {
-            ComponentsHandler.deleteComponent(component, true, true);
+            ComponentsHandler.deleteAsset(component, true, true);
             let topic = PubSubTopics.COMPONENT_DELETED + ":" + message.id;
-            message = { component: component };
+            message = { asset: component };
             PubSub.publish(this._id, topic, message, true);
         } else {
             console.error("Component to delete does not exist");
@@ -163,7 +163,7 @@ class PartyMessageHelper {
 
     _handleComponentUpdated(peer, message) {
         let params = message.component;
-        let component = ComponentsHandler.getSessionComponent(params.id);
+        let component = ComponentsHandler.getSessionAsset(params.id);
         if(component) {
             this._handleAssetUpdate(component, params,
                 PubSubTopics.COMPONENT_UPDATED);
@@ -196,9 +196,9 @@ class PartyMessageHelper {
         } else if(message.assetType == AssetTypes.TEXTURE) {
             return TexturesHandler.getSessionAsset(message.id);
         } else if(message.assetType == AssetTypes.COMPONENT) {
-            return ComponentsHandler.getSessionComponent(message.id);
+            return ComponentsHandler.getSessionAsset(message.id);
         } else if(message.assetType == AssetTypes.SYSTEM) {
-            return SystemsHandler.getSessionSystem(message.id);
+            return SystemsHandler.getSessionAsset(message.id);
         } else {
             return ProjectHandler.getSessionInstance(message.id);
         }
@@ -309,22 +309,22 @@ class PartyMessageHelper {
     }
 
     _handleSystemAdded(peer, message) {
-        let system = SystemsHandler.getSessionSystem(message.system.id);
+        let system = SystemsHandler.getSessionAsset(message.system.id);
         if(system) {
-            SystemsHandler.addSystem(system, true, true);
+            SystemsHandler.addAsset(system, true, true);
         } else {
-            system = SystemsHandler.addNewSystem(message.system.assetId,
+            system = SystemsHandler.addNewAsset(message.system.assetId,
                         message.system, true, true);
         }
         PubSub.publish(this._id, PubSubTopics.SYSTEM_ADDED, system);
     }
 
     _handleSystemDeleted(peer, peerMessage) {
-        let system = SystemsHandler.getSystem(peerMessage.id);
+        let system = SystemsHandler.getAsset(peerMessage.id);
         if(system) {
-            SystemsHandler.deleteSystem(system, true, true);
+            SystemsHandler.deleteAsset(system, true, true);
             let topic = PubSubTopics.SYSTEM_DELETED + ":" + peerMessage.id;
-            let message = { system: system };
+            let message = { asset: system };
             PubSub.publish(this._id, topic, message, true);
         } else {
             console.error("System to delete does not exist");
@@ -333,7 +333,7 @@ class PartyMessageHelper {
 
     _handleSystemUpdated(peer, message) {
         let params = message.system;
-        let system = SystemsHandler.getSessionSystem(params.id);
+        let system = SystemsHandler.getSessionAsset(params.id);
         if(system) {
             this._handleAssetUpdate(system, params,
                 PubSubTopics.SYSTEM_UPDATED);
@@ -664,7 +664,7 @@ class PartyMessageHelper {
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (message) =>{
             this._publishQueue.enqueue(() => {
-                return this._publishComponentDeleted(message.component);
+                return this._publishComponentDeleted(message.asset);
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_UPDATED, (message) =>{
@@ -736,7 +736,7 @@ class PartyMessageHelper {
         });
         PubSub.subscribe(this._id, PubSubTopics.SYSTEM_DELETED, (message) => {
             this._publishQueue.enqueue(() => {
-                return this._publishSystemDeleted(message.system);
+                return this._publishSystemDeleted(message.asset);
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.SYSTEM_UPDATED, (message) => {

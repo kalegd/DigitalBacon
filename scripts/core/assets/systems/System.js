@@ -28,10 +28,6 @@ export default class System extends Asset {
         return this._disabled;
     }
 
-    getSystemTypeId() {
-        return this._systemTypeId;
-    }
-
     setDisabled(disabled) {
         this._disabled = disabled;
     }

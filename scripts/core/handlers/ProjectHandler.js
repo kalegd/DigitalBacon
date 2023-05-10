@@ -368,8 +368,8 @@ class ProjectHandler {
         let assetIds = Object.keys(assets);
         let settings = SettingsHandler.getSettings();
         let materials = MaterialsHandler.getAssetsDetails();
-        let components = ComponentsHandler.getComponentsDetails();
-        let systems = SystemsHandler.getSystemsDetails();
+        let components = ComponentsHandler.getAssetsDetails();
+        let systems = SystemsHandler.getAssetsDetails();
         let textures = TexturesHandler.getAssetsDetails();
         for(let side in settings['Skybox']) {
             let assetId = settings['Skybox'][side];

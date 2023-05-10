@@ -19,7 +19,7 @@ const FIELD_MAX_LENGTH = 25;
 class ComponentsPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._components = ComponentsHandler.getComponents();
+        this._components = ComponentsHandler.getAssets();
         this._items = Object.keys(this._components);
         this._addPageContent();
         this._createAddButton();
@@ -78,7 +78,7 @@ class ComponentsPage extends PaginatedPage {
     }
 
     _refreshItems() {
-        this._components = ComponentsHandler.getComponents();
+        this._components = ComponentsHandler.getAssets();
         this._items = Object.keys(this._components);
     }
 

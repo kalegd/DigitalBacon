@@ -41,4 +41,4 @@ export default class GrabbableComponent extends Component {
     static assetName = 'Grabbable';
 }
 
-ComponentsHandler.registerComponent(GrabbableComponent);
+ComponentsHandler.registerAsset(GrabbableComponent);

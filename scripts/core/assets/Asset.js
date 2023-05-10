@@ -75,7 +75,7 @@ export default class Asset {
                 this.removeComponent(componentId);
         }
         for(let componentId of componentIds) {
-            let component = ComponentsHandler.getComponent(componentId);
+            let component = ComponentsHandler.getAsset(componentId);
             if(!this._components.has(component))
                 this.addComponent(componentId);
         }
@@ -87,7 +87,7 @@ export default class Asset {
     }
 
     addComponent(componentId, ignorePublish) {
-        let component = ComponentsHandler.getComponent(componentId);
+        let component = ComponentsHandler.getAsset(componentId);
         if(!component) {
             console.error('ERROR: Component not found');
             return;
@@ -107,7 +107,7 @@ export default class Asset {
     }
 
     removeComponent(componentId, ignorePublish) {
-        let component = ComponentsHandler.getSessionComponent(componentId);
+        let component = ComponentsHandler.getSessionAsset(componentId);
         if(!component) {
             console.error('ERROR: Component not found');
             return;

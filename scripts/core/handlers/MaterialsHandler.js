@@ -54,18 +54,6 @@ class MaterialsHandler extends AssetsHandler {
             });
         }
     }
-
-    getMaterialsDetails() {
-        let materialsDetails = {};
-        for(let materialId in this._materials) {
-            let material = this._materials[materialId];
-            let assetId = material.getAssetId();
-            let params = material.exportParams();
-            if(!(assetId in materialsDetails)) materialsDetails[assetId] = [];
-            materialsDetails[assetId].push(params);
-        }
-        return materialsDetails;
-    }
 }
 
 let materialsHandler = new MaterialsHandler();

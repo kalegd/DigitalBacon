@@ -51,7 +51,7 @@ class ComponentPage extends DynamicFieldsPage {
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
         let interactable = new PointerInteractable(deleteButton, () => {
-            ComponentsHandler.deleteComponent(this._component);
+            ComponentsHandler.deleteAsset(this._component);
         });
         this._containerInteractable.addChild(interactable);
     }
@@ -65,7 +65,7 @@ class ComponentPage extends DynamicFieldsPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (e) => {
-            if(e.component == this._component) {
+            if(e.asset == this._component) {
                 this._controller.popPagesPast(MenuPages.COMPONENT);
             }
         });

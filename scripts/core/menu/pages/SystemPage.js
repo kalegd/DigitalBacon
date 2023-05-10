@@ -50,7 +50,7 @@ class SystemPage extends DynamicFieldsPage {
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
         let interactable = new PointerInteractable(deleteButton, () => {
-            SystemsHandler.deleteSystem(this._system);
+            SystemsHandler.deleteAsset(this._system);
         });
         this._containerInteractable.addChild(interactable);
     }
@@ -64,7 +64,7 @@ class SystemPage extends DynamicFieldsPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.SYSTEM_DELETED, (e) => {
-            if(e.system == this._system) {
+            if(e.asset == this._system) {
                 this._controller.popPagesPast(MenuPages.SYSTEM);
             }
         });
