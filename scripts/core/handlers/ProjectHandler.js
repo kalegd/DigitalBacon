@@ -370,7 +370,7 @@ class ProjectHandler {
         let materials = MaterialsHandler.getAssetsDetails();
         let components = ComponentsHandler.getComponentsDetails();
         let systems = SystemsHandler.getSystemsDetails();
-        let textures = TexturesHandler.getTexturesDetails();
+        let textures = TexturesHandler.getAssetsDetails();
         for(let side in settings['Skybox']) {
             let assetId = settings['Skybox'][side];
             if(assetId && !assets[assetId]) assetIds.push(assetId);

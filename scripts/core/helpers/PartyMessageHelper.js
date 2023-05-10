@@ -194,7 +194,7 @@ class PartyMessageHelper {
         if(message.assetType == AssetTypes.MATERIAL) {
             return MaterialsHandler.getSessionAsset(message.id);
         } else if(message.assetType == AssetTypes.TEXTURE) {
-            return TexturesHandler.getSessionTexture(message.id);
+            return TexturesHandler.getSessionAsset(message.id);
         } else if(message.assetType == AssetTypes.COMPONENT) {
             return ComponentsHandler.getSessionComponent(message.id);
         } else if(message.assetType == AssetTypes.SYSTEM) {
@@ -341,22 +341,22 @@ class PartyMessageHelper {
     }
 
     _handleTextureAdded(peer, message) {
-        let texture = TexturesHandler.getSessionTexture(message.texture.id);
+        let texture = TexturesHandler.getSessionAsset(message.texture.id);
         if(texture) {
             TexturesHandler.addTexture(texture, true, true);
         } else {
-            texture = TexturesHandler.addNewTexture(message.texture.assetId,
+            texture = TexturesHandler.addNewAsset(message.texture.assetId,
                         message.texture, true, true);
         }
         PubSub.publish(this._id, PubSubTopics.TEXTURE_ADDED, texture);
     }
 
     _handleTextureDeleted(peer, peerMessage) {
-        let texture = TexturesHandler.getTexture(peerMessage.id);
+        let texture = TexturesHandler.getAsset(peerMessage.id);
         if(texture) {
-            TexturesHandler.deleteTexture(texture, true, true);
+            TexturesHandler.deleteAsset(texture, true, true);
             let topic = PubSubTopics.TEXTURE_DELETED + ":" + peerMessage.id;
-            let message = { texture: texture };
+            let message = { asset: texture };
             PubSub.publish(this._id, topic, message, true);
         } else {
             console.error("Texture to delete does not exist");
@@ -365,7 +365,7 @@ class PartyMessageHelper {
 
     _handleTextureUpdated(peer, message) {
         let params = message.texture;
-        let texture = TexturesHandler.getSessionTexture(params.id);
+        let texture = TexturesHandler.getSessionAsset(params.id);
         if(texture) {
             this._handleAssetUpdate(texture, params,
                 PubSubTopics.TEXTURE_UPDATED);
@@ -751,7 +751,7 @@ class PartyMessageHelper {
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (message) => {
             this._publishQueue.enqueue(() => {
-                return this._publishTextureDeleted(message.texture);
+                return this._publishTextureDeleted(message.asset);
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {

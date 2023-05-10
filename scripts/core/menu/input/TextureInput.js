@@ -83,7 +83,7 @@ class TextureInput extends PointerInteractableEntity {
         this._object.add(this._textureSelection);
         this._object.add(this._editButton);
         let interactable = new PointerInteractable(this._textureSelection, () => {
-            let textures = TexturesHandler.getTextures();
+            let textures = TexturesHandler.getAssets();
             let filteredTextures = {};
             filteredTextures["null\n"] = { Name: "Blank" };
             for(let textureId in textures) {
@@ -105,7 +105,7 @@ class TextureInput extends PointerInteractableEntity {
         });
         this._editInteractable = new PointerInteractable(this._editButton, () => {
             if(!this._lastValue) return;
-            let texture = TexturesHandler.getTexture(this._lastValue);
+            let texture = TexturesHandler.getAsset(this._lastValue);
             let texturePage = global.menuController.getPage(
                 MenuPages.TEXTURE);
             texturePage.setTexture(texture);
@@ -116,7 +116,7 @@ class TextureInput extends PointerInteractableEntity {
 
     _selectNewTexture() {
         if(this._filter) {
-            let texture = TexturesHandler.addNewTexture(this._filter)
+            let texture = TexturesHandler.addNewAsset(this._filter)
             this._handleTextureSelection(texture.getId());
             let texturePage = global.menuController.getPage(
                 MenuPages.TEXTURE);
@@ -151,7 +151,7 @@ class TextureInput extends PointerInteractableEntity {
 
     _updateTexture(textureId) {
         this._lastValue = textureId;
-        let texture = TexturesHandler.getTexture(this._lastValue);
+        let texture = TexturesHandler.getAsset(this._lastValue);
         let textureName = texture
             ? texture.getName()
             : " ";

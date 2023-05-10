@@ -148,4 +148,4 @@ function powerOf2(v) {
     return v && !(v & (v - 1));
 }
 
-TexturesHandler.registerTexture(CubeTexture);
+TexturesHandler.registerAsset(CubeTexture);

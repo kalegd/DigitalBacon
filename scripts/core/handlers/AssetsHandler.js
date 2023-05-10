@@ -9,7 +9,6 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import * as THREE from 'three';
 
 export default class AssetsHandler {
     constructor(addedTopic, deletedTopic) {
@@ -113,12 +112,6 @@ export default class AssetsHandler {
     reset() {
         this._assets = {};
         this._sessionAssets = {};
-    }
-
-    getAssetsAssetIds() {
-        let assetIds = new Set();
-        //TODO: Fetch assetIds of each asset
-        return assetIds;
     }
 
     getAssetsDetails() {

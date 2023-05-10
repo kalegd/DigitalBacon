@@ -19,7 +19,7 @@ const FIELD_MAX_LENGTH = 25;
 class TexturesPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._textures = TexturesHandler.getTextures();
+        this._textures = TexturesHandler.getAssets();
         this._items = Object.keys(this._textures);
         this._addPageContent();
         this._createAddButton();
@@ -78,7 +78,7 @@ class TexturesPage extends PaginatedPage {
     }
 
     _refreshItems() {
-        this._textures = TexturesHandler.getTextures();
+        this._textures = TexturesHandler.getAssets();
         this._items = Object.keys(this._textures);
     }
 

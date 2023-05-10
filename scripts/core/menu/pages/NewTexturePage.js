@@ -14,7 +14,7 @@ import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 class NewTexturePage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._items = TexturesHandler.getTextureClasses();
+        this._items = TexturesHandler.getAssetClasses();
         this._addPageContent();
     }
 
@@ -35,13 +35,13 @@ class NewTexturePage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        let texture = TexturesHandler.addNewTexture(item.assetId);
+        let texture = TexturesHandler.addNewAsset(item.assetId);
         this.back();
         if(this._additionalAction) this._additionalAction(texture);
     }
 
     _refreshItems() {
-        this._items = TexturesHandler.getTextureClasses();
+        this._items = TexturesHandler.getAssetClasses();
     }
 
     setContent(additionalAction) {

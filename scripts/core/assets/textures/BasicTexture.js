@@ -115,4 +115,4 @@ export default class BasicTexture extends Texture {
     static textureType = TextureTypes.BASIC;
 }
 
-TexturesHandler.registerTexture(BasicTexture);
+TexturesHandler.registerAsset(BasicTexture);

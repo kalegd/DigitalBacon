@@ -49,7 +49,7 @@ export default class MaterialHelper extends EditorHelper {
             let updatedMaps = [];
             for(let map of maps) {
                 let capitalizedMap = capitalizeFirstLetter(map);
-                if(this._asset['get' + capitalizedMap]() == e.texture.getId()) {
+                if(this._asset['get' + capitalizedMap]() == e.asset.getId()) {
                     this._updateParameter(map, null, true);
                     this.updateMenuField(map);
                     updatedMaps.push(map);
@@ -60,7 +60,7 @@ export default class MaterialHelper extends EditorHelper {
                 e.undoRedoAction.undo = () => {
                     undo();
                     for(let map of updatedMaps) {
-                        this._updateParameter(map, e.texture.getId(), true);
+                        this._updateParameter(map, e.asset.getId(), true);
                         this.updateMenuField(map);
                     }
                 }

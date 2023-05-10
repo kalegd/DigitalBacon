@@ -50,7 +50,7 @@ class TexturePage extends DynamicFieldsPage {
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
         let interactable = new PointerInteractable(deleteButton, () => {
-            TexturesHandler.deleteTexture(this._texture);
+            TexturesHandler.deleteAsset(this._texture);
         });
         this._containerInteractable.addChild(interactable);
     }
@@ -64,7 +64,7 @@ class TexturePage extends DynamicFieldsPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (e) => {
-            if(e.texture == this._texture) {
+            if(e.asset == this._texture) {
                 this._controller.popPagesPast(MenuPages.TEXTURE);
             }
         });

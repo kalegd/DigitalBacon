@@ -4,14 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import * as THREE from 'three';
 
 const SHOULD_HAVE_REFACTORED_SOONER = {
     BASIC: '943b7a57-7e8f-4717-9bc6-0ba2637d9e3b',
