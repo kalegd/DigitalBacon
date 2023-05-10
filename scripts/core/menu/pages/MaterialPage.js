@@ -51,7 +51,7 @@ class MaterialPage extends DynamicFieldsPage {
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
         let interactable = new PointerInteractable(deleteButton, () => {
-            MaterialsHandler.deleteMaterial(this._material);
+            MaterialsHandler.deleteAsset(this._material);
         });
         this._containerInteractable.addChild(interactable);
     }
@@ -65,7 +65,7 @@ class MaterialPage extends DynamicFieldsPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
-            if(e.material == this._material) {
+            if(e.asset == this._material) {
                 this._controller.popPagesPast(MenuPages.MATERIAL);
             }
         });

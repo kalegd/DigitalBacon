@@ -338,4 +338,4 @@ export default class PhongMaterial extends Material {
     static assetName = 'Phong Material';
 }
 
-MaterialsHandler.registerMaterial(PhongMaterial);
+MaterialsHandler.registerAsset(PhongMaterial);

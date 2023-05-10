@@ -192,7 +192,7 @@ class PartyMessageHelper {
 
     _getComponentAsset(message) {
         if(message.assetType == AssetTypes.MATERIAL) {
-            return MaterialsHandler.getSessionMaterial(message.id);
+            return MaterialsHandler.getSessionAsset(message.id);
         } else if(message.assetType == AssetTypes.TEXTURE) {
             return TexturesHandler.getSessionTexture(message.id);
         } else if(message.assetType == AssetTypes.COMPONENT) {
@@ -257,22 +257,22 @@ class PartyMessageHelper {
     }
 
     _handleMaterialAdded(peer, message) {
-        let material = MaterialsHandler.getSessionMaterial(message.material.id);
+        let material = MaterialsHandler.getSessionAsset(message.material.id);
         if(material) {
-            MaterialsHandler.addMaterial(material, true, true);
+            MaterialsHandler.addAsset(material, true, true);
         } else {
-            material = MaterialsHandler.addNewMaterial(message.material.assetId,
+            material = MaterialsHandler.addNewAsset(message.material.assetId,
                         message.material, true, true);
         }
         PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
     }
 
     _handleMaterialDeleted(peer, peerMessage) {
-        let material = MaterialsHandler.getMaterial(peerMessage.id);
+        let material = MaterialsHandler.getAsset(peerMessage.id);
         if(material) {
-            MaterialsHandler.deleteMaterial(material, true, true);
+            MaterialsHandler.deleteAsset(material, true, true);
             let topic = PubSubTopics.MATERIAL_DELETED + ":" + peerMessage.id;
-            let message = { material: material };
+            let message = { asset: material };
             PubSub.publish(this._id, topic, message, true);
         } else {
             console.error("Material to delete does not exist");
@@ -281,7 +281,7 @@ class PartyMessageHelper {
 
     _handleMaterialUpdated(peer, message) {
         let params = message.material;
-        let material = MaterialsHandler.getSessionMaterial(params.id);
+        let material = MaterialsHandler.getSessionAsset(params.id);
         if(material) {
             this._handleAssetUpdate(material, params,
                 PubSubTopics.MATERIAL_UPDATED);
@@ -716,7 +716,7 @@ class PartyMessageHelper {
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (message) => {
             this._publishQueue.enqueue(() => {
-                return this._publishMaterialDeleted(message.material);
+                return this._publishMaterialDeleted(message.asset);
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {

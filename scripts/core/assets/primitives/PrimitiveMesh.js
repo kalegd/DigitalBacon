@@ -21,7 +21,7 @@ export default class PrimitiveMesh extends AssetEntity {
     }
 
     _getMaterial() {
-        let material = MaterialsHandler.getMaterial(this._material);
+        let material = MaterialsHandler.getAsset(this._material);
         if(material) {
             return material.getMaterial();
         } else {

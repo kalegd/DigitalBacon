@@ -186,4 +186,4 @@ export default class LambertMaterial extends Material {
     static assetName = 'Lambert Material';
 }
 
-MaterialsHandler.registerMaterial(LambertMaterial);
+MaterialsHandler.registerAsset(LambertMaterial);

@@ -321,4 +321,4 @@ export default class StandardMaterial extends Material {
     static assetName = 'Standard Material';
 }
 
-MaterialsHandler.registerMaterial(StandardMaterial);
+MaterialsHandler.registerAsset(StandardMaterial);

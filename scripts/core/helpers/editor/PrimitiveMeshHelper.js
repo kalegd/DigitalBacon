@@ -38,14 +38,14 @@ export default class PrimitiveMeshHelper extends AssetEntityHelper {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
-            if(this._asset.getMaterial() == e.material.getId()) {
+            if(this._asset.getMaterial() == e.asset.getId()) {
                 this._updateParameter('material', null, true);
                 this.updateMenuField('material');
                 if(e.undoRedoAction) {
                     let undo = e.undoRedoAction.undo;
                     e.undoRedoAction.undo = () => {
                         undo();
-                        this._updateParameter('material', e.material.getId(),
+                        this._updateParameter('material', e.asset.getId(),
                             true);
                         this.updateMenuField('material');
                     }

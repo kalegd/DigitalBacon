@@ -149,4 +149,4 @@ export default class BasicMaterial extends Material {
     static assetName = 'Basic Material';
 }
 
-MaterialsHandler.registerMaterial(BasicMaterial);
+MaterialsHandler.registerAsset(BasicMaterial);

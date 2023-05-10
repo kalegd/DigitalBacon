@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
@@ -21,95 +22,34 @@ const SHOULD_HAVE_REFACTORED_SOONER = {
     TOON: 'be461019-0fc2-4c88-bee4-290ee3a585eb',
 };
 
-class MaterialsHandler {
+class MaterialsHandler extends AssetsHandler {
     constructor() {
-        this._id = uuidv4();
-        this._materials = {};
-        this._materialClassMap = {};
-        this._sessionMaterials = {};
+        super(PubSubTopics.MATERIAL_ADDED, PubSubTopics.MATERIAL_DELETED);
     }
 
-    addNewMaterial(assetId, params, ignoreUndoRedo, ignorePublish) {
-        let material = new this._materialClassMap[assetId](params);
-        this.addMaterial(material, ignoreUndoRedo, ignorePublish);
-        return material;
+    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        if(asset.editorHelper) asset.editorHelper.undoDispose();
     }
 
-    addMaterial(material, ignoreUndoRedo, ignorePublish) {
-        if(this._materials[material.getId()]) return;
-        this._materials[material.getId()] = material;
-        this._sessionMaterials[material.getId()] = material;
-        if(global.isEditor) EditorHelperFactory.addEditorHelperTo(material);
-        if(!ignoreUndoRedo) {
-            UndoRedoHandler.addAction(() => {
-                this.deleteMaterial(material, true, ignorePublish);
-            }, () => {
-                this.addMaterial(material, true, ignorePublish);
-            });
-        }
-        if(material.editorHelper) material.editorHelper.undoDispose();
-        if(!ignorePublish)
-            PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
+    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+        asset.dispose();
+        if(asset.editorHelper) asset.editorHelper.dispose();
     }
 
-    deleteMaterial(material, ignoreUndoRedo, ignorePublish) {
-        if(!(material.getId() in this._materials)) return;
-        let undoRedoAction;
-        if(!ignoreUndoRedo) {
-            undoRedoAction = UndoRedoHandler.addAction(() => {
-                this.addMaterial(material, true, ignorePublish);
-            }, () => {
-                this.deleteMaterial(material, true, ignorePublish);
-            });
-        }
-        material.dispose();
-        if(material.editorHelper) material.editorHelper.dispose();
-        delete this._materials[material.getId()];
-        if(ignorePublish) return;
-        PubSub.publish(this._id, PubSubTopics.MATERIAL_DELETED, {
-            material: material,
-            undoRedoAction: undoRedoAction,
-        });
+    load(assets, isDiff) {
+        if(assets) this._handleOldVersion(assets);
+        super.load(assets, isDiff);
     }
 
-    load(materials, isDiff) {
-        if(!materials) return;
-        this._handleOldVersion(materials);
-        if(isDiff) {
-            let materialsToDelete = [];
-            for(let id in this._materials) {
-                let material = this._materials[id];
-                let assetId = material.getAssetId();
-                if(!(assetId in materials)
-                        || !materials[assetId].some(p => p.id == id))
-                    materialsToDelete.push(material);
-            }
-            for(let material of materialsToDelete) {
-                this.deleteMaterial(material, true, true);
-            }
-        }
-        for(let assetId in materials) {
-            if(!(assetId in this._materialClassMap)) {
-                console.error("Unrecognized material found");
-                continue;
-            }
-            for(let params of materials[assetId]) {
-                if(isDiff && this._materials[params.id]) {
-                    this._materials[params.id].updateFromParams(params);
-                } else {
-                    this.addNewMaterial(assetId, params, true, true);
-                }
-            }
-        }
-    }
-
-    _handleOldVersion(materials) {
+    _handleOldVersion(assets) {
         let usingOldVersion = false;
         for(let type in SHOULD_HAVE_REFACTORED_SOONER) {
-            if(type in materials) {
+            if(type in assets) {
                 let id = SHOULD_HAVE_REFACTORED_SOONER[type];
-                materials[id] = materials[type];
-                delete materials[type];
+                assets[id] = assets[type];
+                delete assets[type];
                 usingOldVersion = true;
             }
         }
@@ -118,41 +58,6 @@ class MaterialsHandler {
                 text: "The project's version is outdated and won't be supported starting in July. Please save a new copy of it",
             });
         }
-    }
-
-    registerMaterial(materialClass) {
-        this._materialClassMap[materialClass.assetId] = materialClass;
-    }
-
-    getMaterials() {
-        return this._materials;
-    }
-
-    getMaterial(materialId) {
-        return this._materials[materialId];
-    }
-
-    getMaterialClasses() {
-        return Object.values(this._materialClassMap);
-    }
-
-    getSessionMaterial(id) {
-        return this._sessionMaterials[id];
-    }
-
-    getAssetId(materialId) {
-        return this._materials[materialId].getAssetId();
-    }
-
-    reset() {
-        this._materials = {};
-        this._sessionMaterials = {};
-    }
-
-    getMaterialsAssetIds() {
-        let assetIds = new Set();
-        //TODO: Fetch assetIds of each material
-        return assetIds;
     }
 
     getMaterialsDetails() {

@@ -98,8 +98,6 @@ class ProjectHandler {
             }, () => { this._handleLoadingError(errorCallback); });
     }
 
-    //TODO: Rename this to something like loadCurrentStateZip. It's not really
-    //      a diff...
     loadDiffZip(jsZip, successCallback, errorCallback) {
         jsZip.file("projectDetails.json").async("string").then(
             (projectDetailsString) => {
@@ -117,7 +115,7 @@ class ProjectHandler {
                     TexturesHandler.load(projectDetails['textures'], true);
                     MaterialsHandler.load(projectDetails['materials'], true);
                     try {
-                        //TODO: Delete assets that don't exist in diff
+                        this._deleteUnusedAssets(projectDetails);
                         for(let assetId in projectDetails['assets']) {
                             let instances = projectDetails['assets'][assetId];
                             for(let params of instances) {
@@ -139,6 +137,18 @@ class ProjectHandler {
                     if(successCallback) successCallback();
                 }, () => { if(errorCallback) errorCallback(); });
             }, () => { if(errorCallback) errorCallback(); });
+    }
+
+    _deleteUnusedAssets(projectDetails) {
+        for(let assetId in this.project) {
+            let instances = Object.values(this.project[assetId]);
+            for(let instance of instances) {
+                let assets = projectDetails['assets'][assetId];
+                if(!assets || !assets.some(a => a.id == instance.getId())) {
+                    this.deleteAssetInstance(instance, true, true);
+                }
+            }
+        }
     }
 
     _handleLoadingError(errorCallback) {
@@ -357,7 +367,7 @@ class ProjectHandler {
         }
         let assetIds = Object.keys(assets);
         let settings = SettingsHandler.getSettings();
-        let materials = MaterialsHandler.getMaterialsDetails();
+        let materials = MaterialsHandler.getAssetsDetails();
         let components = ComponentsHandler.getComponentsDetails();
         let systems = SystemsHandler.getSystemsDetails();
         let textures = TexturesHandler.getTexturesDetails();

@@ -235,4 +235,4 @@ export default class ToonMaterial extends Material {
     static assetName = 'Toon Material';
 }
 
-MaterialsHandler.registerMaterial(ToonMaterial);
+MaterialsHandler.registerAsset(ToonMaterial);
