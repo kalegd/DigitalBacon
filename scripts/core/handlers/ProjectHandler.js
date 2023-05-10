@@ -98,6 +98,8 @@ class ProjectHandler {
             }, () => { this._handleLoadingError(errorCallback); });
     }
 
+    //TODO: Rename this to something like loadCurrentStateZip. It's not really
+    //      a diff...
     loadDiffZip(jsZip, successCallback, errorCallback) {
         jsZip.file("projectDetails.json").async("string").then(
             (projectDetailsString) => {
@@ -105,6 +107,7 @@ class ProjectHandler {
                 try {
                     projectDetails = JSON.parse(projectDetailsString);
                 } catch(error) {
+                    console.error(error);
                     if(errorCallback) errorCallback();
                     return;
                 }
@@ -114,12 +117,15 @@ class ProjectHandler {
                     TexturesHandler.load(projectDetails['textures'], true);
                     MaterialsHandler.load(projectDetails['materials'], true);
                     try {
+                        //TODO: Delete assets that don't exist in diff
                         for(let assetId in projectDetails['assets']) {
                             let instances = projectDetails['assets'][assetId];
                             for(let params of instances) {
-                                let instance = this.project[assetId][params.id];
-                                if(instance) {
-                                    instance.updateFromParams(params);
+                                if(this.project[assetId]
+                                    && this.project[assetId][params.id])
+                                {
+                                    this.project[assetId][params.id]
+                                        .updateFromParams(params);
                                 } else {
                                     this.addInstance(params, true, true);
                                 }

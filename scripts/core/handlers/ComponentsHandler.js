@@ -66,7 +66,8 @@ class ComponentsHandler {
             for(let id in this._components) {
                 let component = this._components[id];
                 let assetId = component.getAssetId();
-                if(!(assetId in components) ||!components[assetId].includes(id))
+                if(!(assetId in components)
+                        || !components[assetId].some(p => p.id == id))
                     componentsToDelete.push(component);
             }
             for(let component of componentsToDelete) {

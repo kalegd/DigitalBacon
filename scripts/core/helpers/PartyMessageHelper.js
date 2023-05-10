@@ -29,6 +29,7 @@ const BLOCKABLE_HANDLERS_MAP = {
     instance_updated: '_handleInstanceUpdated',
     instance_attached: '_handleInstanceAttached',
     instance_detached: '_handleInstanceDetached',
+    loaded_diff: '_handleLoadedDiff',
     material_added: '_handleMaterialAdded',
     material_deleted: '_handleMaterialDeleted',
     material_updated: '_handleMaterialUpdated',
@@ -86,6 +87,12 @@ class PartyMessageHelper {
                 return Promise.resolve();
             });
         }
+    }
+
+    notifyDiffError() {
+        PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+            text: "An unexpected error occured when loading the host's state",
+        });
     }
 
     _handleAvatar(peer, message) {
@@ -243,6 +250,10 @@ class PartyMessageHelper {
             let editorHelper = instance.editorHelper;
             if(editorHelper) editorHelper.detachFromPeer(peer, message);
         }
+    }
+
+    _handleLoadedDiff(peer, message) {
+        PubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
     }
 
     _handleMaterialAdded(peer, message) {

@@ -173,4 +173,9 @@ export default class PeerController extends Entity {
     _updateWithoutMessage(timeDelta, message) {
         this._object.position.addScaledVector(this._velocity, timeDelta);
     }
+
+    removeFromScene() {
+        if(this._avatar) this._avatar.removeFromScene();
+        super.removeFromScene();
+    }
 }

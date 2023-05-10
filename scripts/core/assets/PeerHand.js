@@ -57,6 +57,10 @@ export default class PeerHand extends Entity {
         this._object.attach(threeObj);
     }
 
+    hasChild(threeObj) {
+        return threeObj.parent == this._object;
+    }
+
     remove(threeObj) {
         if(threeObj.parent == this._object) {
             global.scene.attach(threeObj);

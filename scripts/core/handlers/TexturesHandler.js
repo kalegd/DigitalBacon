@@ -73,7 +73,8 @@ class TexturesHandler {
             for(let id in this._textures) {
                 let texture = this._textures[id];
                 let assetId = texture.getAssetId();
-                if(!(assetId in textures) || !textures[assetId].includes(id))
+                if(!(assetId in textures)
+                        || !textures[assetId].some(p => p.id == id))
                     texturesToDelete.push(texture);
             }
             for(let texture of texturesToDelete) {

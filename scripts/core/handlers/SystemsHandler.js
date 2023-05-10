@@ -66,7 +66,7 @@ class SystemsHandler {
             for(let id in this._systems) {
                 let system = this._systems[id];
                 let assetId = system.getAssetId();
-                if(!(assetId in systems) || !systems[assetId].includes(id))
+                if(!(assetId in systems) || !systems[assetId].some(p=>p.id==id))
                     systemsToDelete.push(system);
             }
             for(let system of systemsToDelete) {

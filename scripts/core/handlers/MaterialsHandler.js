@@ -80,7 +80,8 @@ class MaterialsHandler {
             for(let id in this._materials) {
                 let material = this._materials[id];
                 let assetId = material.getAssetId();
-                if(!(assetId in materials) || !materials[assetId].includes(id))
+                if(!(assetId in materials)
+                        || !materials[assetId].some(p => p.id == id))
                     materialsToDelete.push(material);
             }
             for(let material of materialsToDelete) {

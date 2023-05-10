@@ -60,6 +60,10 @@ export default class UserHand {
         this._controller.attach(threeObj);
     }
 
+    hasChild(threeObj) {
+        return threeObj.parent == this._controller;
+    }
+
     remove(threeObj) {
         if(threeObj.parent == this._controller) {
             global.scene.attach(threeObj);

@@ -12,6 +12,7 @@ import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -29,6 +30,8 @@ export default class GrabbableSystem extends System {
         super(params);
         this._interactables = {};
         this._notStealable = {};
+        this._publishForNewPeers = {};
+        this._onPartyJoined = {};
         this._addSubscriptions();
     }
 
@@ -44,8 +47,9 @@ export default class GrabbableSystem extends System {
         if(global.isEditor || global.disableImmersion) return;
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
                 + COMPONENT_ASSET_ID, (message) => {
-            if(this._interactables[message.id]) return;
-            let instance = ProjectHandler.getSessionInstance(message.id);
+            let id = message.id;
+            if(this._interactables[id] || this._notStealable[id]) return;
+            let instance = ProjectHandler.getSessionInstance(id);
             let component = ComponentsHandler.getSessionComponent(
                 message.componentId);
             if(global.deviceType == 'XR') {
@@ -65,8 +69,16 @@ export default class GrabbableSystem extends System {
             }
             delete this._interactables[message.id];
         });
-        PubSub.subscribe(this._id, PubSubTopics.PEER_CONNECTED, (message) => {
-            //TODO: Let peer know if we have an asset held
+        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            for(let key in this._publishForNewPeers) {
+                this._publishForNewPeers[key]();
+            }
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
+            if(PartyHandler.isHost()) return;
+            for(let key in this._onPartyJoined) {
+                this._onPartyJoined[key]();
+            }
         });
         PartyMessageHelper.registerBlockableHandler(GRABBED_TOPIC, (p, m) => {
             this._handlePeerGrabbed(p, m);
@@ -82,6 +94,13 @@ export default class GrabbableSystem extends System {
             (hand) => {
                 UserController.hands[hand].attach(object);
                 this._publish(GRABBED_TOPIC, instance, hand, stealable);
+                this._publishForNewPeers[hand] = () => {
+                    if(UserController.hands[hand].hasChild(object))
+                        this._publish(GRABBED_TOPIC, instance, hand, stealable);
+                };
+                this._onPartyJoined[hand] = () => {
+                    UserController.hands[hand].remove(object);
+                };
             }, (hand) => {
                 if(UserController.hands[hand].remove(object))
                     this._publish(RELEASED_TOPIC, instance, hand, stealable);
@@ -104,6 +123,12 @@ export default class GrabbableSystem extends System {
                 } else {
                     avatar.attach(object);
                     this._publish(GRABBED_TOPIC, instance, AVATAR, stealable);
+                    this._publishForNewPeers[AVATAR] = () => {
+                        if(avatar.hasChild(object))
+                            this._publish(GRABBED_TOPIC, instance, AVATAR,
+                                stealable);
+                    };
+                    this._onPartyJoined[AVATAR] = () =>{avatar.remove(object);};
                 }
             }, false);
         interactable.setMaximumDistance(2);

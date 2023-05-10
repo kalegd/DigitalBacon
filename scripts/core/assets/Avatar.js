@@ -251,6 +251,11 @@ export default class Avatar {
 
     removeFromScene() {
         if(this._pivotPoint.parent) {
+            for(let child of this._pivotPoint.children) {
+                if(child != this._avatarParent) {
+                    global.scene.attach(child);
+                }
+            }
             this._pivotPoint.parent.remove(this._pivotPoint);
         }
     }

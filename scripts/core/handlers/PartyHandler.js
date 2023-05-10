@@ -180,9 +180,12 @@ class PartyHandler {
                         ProjectHandler.loadZip(zip);
                     } else {
                         ProjectHandler.loadDiffZip(zip, () => {
-                            //TODO: Publish that we are up to date with stuffs 
+                            this.sendToAllPeers(JSON.stringify({
+                                topic: 'loaded_diff',
+                            }));
                         }, () => {
-                            //TODO: Notify there was an error and quit party
+                            Party.disconnect();
+                            PartyMessageHelper.notifyDiffError();
                         });
                     }
                 });
