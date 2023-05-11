@@ -85,7 +85,15 @@ class ListComponentsPage extends PaginatedListPage {
     }
 
     _selectNewComponent() {
-        console.log("TODO: Have user select a new component to create");
+        let page = this._controller.getPage(MenuPages.NEW_COMPONENT);
+        page.setContent((component) => {
+            this._asset.editorHelper.addComponent(component.getId());
+            this._controller.back();
+            let componentPage = this._controller.getPage(MenuPages.COMPONENT);
+            componentPage.setComponent(component);
+            this._controller.pushPage(MenuPages.COMPONENT);
+        });
+        this._controller.pushPage(MenuPages.NEW_COMPONENT);
     }
 
     _getItemName(item) {
