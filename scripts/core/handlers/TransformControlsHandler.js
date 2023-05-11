@@ -135,7 +135,11 @@ class TransformControlsHandler {
         window.addEventListener('copy', (event) => { this._copy(event); });
         window.addEventListener('paste', (event) => { this._paste(event); });
         this._canvas.addEventListener('keydown', (event) => {
-            if(event.code == "Backspace") this._delete();
+            if(event.code == "Backspace") {
+                this._delete();
+            } else if(event.code == 'Escape') {
+                this.detach();
+            }
         });
     }
 

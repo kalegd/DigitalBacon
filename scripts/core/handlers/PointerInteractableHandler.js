@@ -20,6 +20,7 @@ import * as THREE from 'three';
 class PointerInteractableHandler extends InteractableHandler {
     constructor() {
         super();
+        this._wasPressed = {};
     }
 
     init() {
@@ -186,6 +187,10 @@ class PointerInteractableHandler extends InteractableHandler {
                     }
                 }
             } else if(!isPressed) {
+                if(this._wasPressed[option] && !hoveredInteractable
+                        && !selectedInteractable) {
+                    PubSub.publish(this._id, PubSubTopics.EMPTY_CLICK);
+                }
                 if(hoveredInteractable) {
                     hoveredInteractable.removeHoveredBy(option);
                     this._hoveredInteractables[option] = null;
@@ -197,6 +202,7 @@ class PointerInteractableHandler extends InteractableHandler {
                         selectedInteractable.triggerAction();
                 }
             }
+            this._wasPressed[option] = isPressed;
         }
     }
 
