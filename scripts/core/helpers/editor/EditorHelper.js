@@ -6,6 +6,7 @@
 
 import Asset from '/scripts/core/assets/Asset.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
@@ -145,42 +146,70 @@ export default class EditorHelper {
         }
     }
 
-    addComponent(componentId, ignoreUndoRedo) {
-        let component = this._asset.addComponent(componentId);
-        if(!component) return;
+    addComponent(componentId, ignorePublish, ignoreUndoRedo) {
+        let component = this._asset.addComponent(componentId, ignorePublish);
+        if(!component) {
+            component = ComponentsHandler.getSessionAsset(componentId);
+            if(!component) return;
+            this._deletedAttachedComponents.add(component);
+            if(!ignorePublish) {
+                this._publishComponentAttachment(
+                    PubSubTopics.COMPONENT_ATTACHED, component);
+            }
+        }
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this.removeComponent(componentId, true);
+                this.removeComponent(componentId, ignorePublish, true);
             }, () => {
-                this.addComponent(componentId, true);
+                this.addComponent(componentId, ignorePublish, true);
             });
         }
     }
 
-    removeComponent(componentId, ignoreUndoRedo) {
-        let component = this._asset.removeComponent(componentId);
-        if(!component) return;
+    removeComponent(componentId, ignorePublish, ignoreUndoRedo) {
+        let component = this._asset.removeComponent(componentId, ignorePublish);
+        if(!component) {
+            component = ComponentsHandler.getSessionAsset(componentId);
+            if(!component) return;
+            this._deletedAttachedComponents.delete(component);
+            if(!ignorePublish) {
+                this._publishComponentAttachment(
+                    PubSubTopics.COMPONENT_DETACHED, component);
+            }
+        }
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this.addComponent(componentId, true);
+                this.addComponent(componentId, ignorePublish, true);
             }, () => {
-                this.removeComponent(componentId, true);
+                this.removeComponent(componentId, ignorePublish, true);
             });
         }
+    }
+
+    _publishComponentAttachment(topicPrefix, component) {
+        let componentAssetId = component.getAssetId();
+        let topic = topicPrefix + ':' + componentAssetId;
+        PubSub.publish(this._id, topic, {
+            id: this._id,
+            assetId: this._asset.getAssetId(),
+            assetType: this._asset.constructor.assetType,
+            componentId: component.getId(),
+            componentAssetId: componentAssetId,
+        });
     }
 
     _addComponentSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED, (component) =>{
             if(this._deletedAttachedComponents.has(component)) {
                 this._deletedAttachedComponents.delete(component);
-                this._asset.addComponent(component.getId(), true);
+                this._asset._components.add(component);
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (message) =>{
             let component = message.asset;
             if(this._asset._components.has(component)) {
                 this._deletedAttachedComponents.add(component);
-                this._asset.removeComponent(component.getId(), true);
+                this._asset._components.delete(component);
             }
         });
     }

@@ -173,7 +173,11 @@ class PartyMessageHelper {
     _handleComponentAttached(peer, message) {
         let asset = this._getComponentAsset(message);
         if(asset) {
-            asset.addComponent(message.componentId, true);
+            if(asset.editorHelper) {
+                asset.editorHelper.addComponent(message.componentId, true,true);
+            } else {
+                asset.addComponent(message.componentId, true);
+            }
             delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
                 + message.componentAssetId, message);
@@ -183,7 +187,12 @@ class PartyMessageHelper {
     _handleComponentDetached(peer, message) {
         let asset = this._getComponentAsset(message);
         if(asset) {
-            asset.removeComponent(message.componentId, true);
+            if(asset.editorHelper) {
+                asset.editorHelper.removeComponent(message.componentId, true,
+                    true);
+            } else {
+                asset.removeComponent(message.componentId, true);
+            }
             delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
                 + message.componentAssetId, message);
@@ -343,7 +352,7 @@ class PartyMessageHelper {
     _handleTextureAdded(peer, message) {
         let texture = TexturesHandler.getSessionAsset(message.texture.id);
         if(texture) {
-            TexturesHandler.addTexture(texture, true, true);
+            TexturesHandler.addAsset(texture, true, true);
         } else {
             texture = TexturesHandler.addNewAsset(message.texture.assetId,
                         message.texture, true, true);

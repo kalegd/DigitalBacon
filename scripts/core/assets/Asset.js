@@ -88,13 +88,11 @@ export default class Asset {
 
     addComponent(componentId, ignorePublish) {
         let component = ComponentsHandler.getAsset(componentId);
-        if(!component) {
-            console.error('ERROR: Component not found');
-            return;
-        }
+        if(!component) return;
+
         this._components.add(component);
         if(ignorePublish) return component;
-        let componentAssetId = component.constructor.assetId;
+        let componentAssetId = component.getAssetId();
         let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,
@@ -107,11 +105,9 @@ export default class Asset {
     }
 
     removeComponent(componentId, ignorePublish) {
-        let component = ComponentsHandler.getSessionAsset(componentId);
-        if(!component) {
-            console.error('ERROR: Component not found');
-            return;
-        }
+        let component = ComponentsHandler.getAsset(componentId);
+        if(!component) return;
+
         this._components.delete(component);
         if(ignorePublish) return component;
         let componentAssetId = component.constructor.assetId;
