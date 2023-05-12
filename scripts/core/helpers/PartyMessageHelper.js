@@ -113,7 +113,7 @@ class PartyMessageHelper {
             parts.push(message);
             if(parts.length == partsLength) {
                 this._partyHandler.setEventBufferHandler(peer);
-                let blob = new Blob(parts);
+                let blob = new Blob(parts, { type: 'application/javascript' });
                 let assetDetails = {
                     Name: name,
                     Type: type,

@@ -8,6 +8,7 @@ import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
+import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
@@ -92,6 +93,8 @@ class UploadPage extends PaginatedPage {
                     "rotation": rotation,
                     "visualEdit": true,
                 });
+            } else if(type == AssetTypes.COMPONENT) {
+                ComponentsHandler.addNewAsset(assetId);
             }
         }
     }

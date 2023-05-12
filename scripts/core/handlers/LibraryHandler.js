@@ -37,7 +37,35 @@ class LibraryHandler {
                 'Name': name,
                 'Type': type,
             }
-            this._loadMesh(assetId, blob).then(() => { callback(assetId) });
+            this._loadAsset(assetId, blob).then(() => { callback(assetId) });
+        });
+    }
+
+    addNewScript(blob, successCallback, errorCallback) {
+        blobToHash(blob).then((hash) => {
+            if(hash in this._blobHashMap) {
+                if(successCallback) successCallback(this._blobHashMap[hash]);
+                return;
+            }
+            let objectURL = URL.createObjectURL(blob);
+            import(objectURL).then(module => {
+                let moduleDefault = module.default || {};
+                let { assetId, assetName, assetType } = moduleDefault;
+                if(!assetId || !assetName || !assetType) {
+                    console.error('Module provided does not have required '
+                        +' static attributes (assetId, assetName, assetType)');
+                    if(errorCallback) errorCallback();
+                    return;
+                }
+                this._blobHashMap[hash] = assetId;
+                this.library[assetId] = {
+                    'Blob': blob,
+                    'Name': assetName,
+                    'Type': assetType,
+                };
+                PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                if(successCallback) successCallback(assetId);
+            });
         });
     }
 
@@ -46,17 +74,25 @@ class LibraryHandler {
             let loadPromises = [];
             for(let assetId in library) {
                 let assetDetails = library[assetId];
-                if(assetDetails['Type'] == AssetTypes.SHAPE) {
+                let type = assetDetails['Type'];
+                if(type == AssetTypes.SHAPE) {
                     this.loadShape(assetId, assetDetails['Name']);
                     continue;
-                } else if(assetDetails['Type'] == AssetTypes.LIGHT) {
+                } else if(type == AssetTypes.LIGHT) {
                     this.loadLight(assetId, assetDetails['Name']);
                     continue;
                 }
                 let assetPath = assetDetails['Filepath'];
-                let promise = jsZip.file(assetPath).async('blob').then((blob)=>{
-                    return this.loadLibraryAsset(assetId, assetDetails, blob);
-                });
+                let promise = jsZip.file(assetPath).async('arraybuffer')
+                    .then((arraybuffer)=>{
+                        let options;
+                        if(type != AssetTypes.MODEL
+                                && type != AssetTypes.IMAGE) {
+                            options = { type: 'application/javascript' };
+                        }
+                        let blob = new Blob([arraybuffer], options);
+                        return this.loadLibraryAsset(assetId, assetDetails, blob);
+                    });
                 loadPromises.push(promise);
             }
             Promise.all(loadPromises).then(successCallback).catch(error => {
@@ -87,7 +123,7 @@ class LibraryHandler {
             }
             if(assetDetails['Sketchfab ID'])
                 this._sketchfabIdMap[assetDetails['Sketchfab ID']] = assetId;
-            return this._loadMesh(assetId, blob, true);
+            return this._loadAsset(assetId, blob, true);
         });
     }
 
@@ -102,6 +138,10 @@ class LibraryHandler {
             type = AssetTypes.MODEL;
         }
         fetch(filepath).then(response => response.blob()).then((blob) => {
+            if(extension == 'js') {
+                this.addNewScript(blob, callback);
+                return;
+            }
             blobToHash(blob).then((hash) => {
                 if(hash in this._blobHashMap) {
                     if(callback) callback(this._blobHashMap[hash]);
@@ -113,7 +153,7 @@ class LibraryHandler {
                     'Name': name,
                     'Type': type,
                 };
-                this._loadMesh(assetId, blob).then(() => { callback(assetId) });
+                this._loadAsset(assetId, blob).then(() => { callback(assetId)});
             });
         });
     }
@@ -134,11 +174,13 @@ class LibraryHandler {
         }
     }
 
-    _loadMesh(assetId, blob, ignorePublish) {
+    _loadAsset(assetId, blob, ignorePublish) {
         if(this.library[assetId]['Type'] == AssetTypes.MODEL) {
             return this._loadGLB(assetId, blob, ignorePublish);
         } else if(this.library[assetId]['Type'] == AssetTypes.IMAGE) {
             return this._loadImage(assetId, blob, ignorePublish);
+        } else {
+            return this._loadScript(assetId, blob, ignorePublish);
         }
     }
 
@@ -184,6 +226,17 @@ class LibraryHandler {
                     resolve();
                 }
             );
+        });
+    }
+
+    _loadScript(assetId, blob, ignorePublish) {
+        return new Promise((resolve, reject) => {
+            let objectURL = URL.createObjectURL(blob);
+            import(objectURL).then(module => {
+                if(!ignorePublish)
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                resolve();
+            });
         });
     }
 
@@ -277,7 +330,7 @@ class LibraryHandler {
                 if(assetDetails[key])
                     libraryDetails[assetId][key] = assetDetails[key];
             }
-            if(assetType == AssetTypes.MODEL || assetType == AssetTypes.IMAGE) {
+            if(assetType == AssetTypes.MODEL || assetType == AssetTypes.IMAGE || assetType == AssetTypes.COMPONENT) {
                 let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];
                 libraryDetails[assetId]['Filepath'] = filepath;
             }

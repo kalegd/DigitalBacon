@@ -377,6 +377,7 @@ class ProjectHandler {
         }
         let texturesAssetIds = TexturesHandler.getTexturesAssetIds();
         for(let assetId of texturesAssetIds) assetIds.push(assetId);
+        for(let assetId in components) assetIds.push(assetId);
 
         let projectDetails = {
             'assets': assets,

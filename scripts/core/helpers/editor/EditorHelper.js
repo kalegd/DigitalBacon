@@ -215,6 +215,7 @@ export default class EditorHelper {
     }
 
     getMenuFields(fields) {
+        if(!fields) return [];
         if(this._menuFields) return this._menuFields;
 
         this._menuFieldsMap = this._getMenuFieldsMap();

@@ -4,9 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import AssetEntity from '/scripts/core/assets/AssetEntity.js';
-import Component from '/scripts/core/assets/components/Component.js';
-import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
+if(!window.DigitalBacon) {
+    console.error('Missing global DigitalBacon reference');
+    throw new Error('Missing global DigitalBacon reference');
+}
+
+const { AssetEntity, Component, ComponentsHandler, ComponentHelper, EditorHelperFactory, MenuInputs } = window.DigitalBacon;
 
 export default class GrabbableComponent extends Component {
     constructor(params = {}) {
@@ -42,3 +45,36 @@ export default class GrabbableComponent extends Component {
 }
 
 ComponentsHandler.registerAsset(GrabbableComponent);
+
+if(EditorHelperFactory && ComponentHelper && MenuInputs) {
+    const FIELDS = [
+        { "parameter": "stealable", "name": "Stealable",
+            "type": MenuInputs.CheckboxInput },
+    ];
+
+    class GrabbableComponentHelper extends ComponentHelper {
+        constructor(asset) {
+            super(asset);
+        }
+
+        getMenuFields() {
+            return super.getMenuFields(FIELDS);
+        }
+
+        _getMenuFieldsMap() {
+            let menuFieldsMap = super._getMenuFieldsMap();
+            for(let field of FIELDS) {
+                if(field.parameter in menuFieldsMap) {
+                    continue;
+                } else {
+                    let input = this._createStandardInput(field);
+                    if(input) menuFieldsMap[field.parameter] = input;
+                }
+            }
+            return menuFieldsMap;
+        }
+    }
+
+    EditorHelperFactory.registerEditorHelper(GrabbableComponentHelper,
+        GrabbableComponent);
+}

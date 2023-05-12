@@ -77,6 +77,13 @@ class UploadHandler {
                         (assetId) => {
                             this._libraryCallback(assetId, lock, callback);
                         });
+                } else if(extension == 'js') {
+                    this._locks.add(lock);
+                    LibraryHandler.addNewScript(file, (assetId) => {
+                        this._libraryCallback(assetId, lock, callback);
+                    }, () => {
+                        console.log("TODO: Tell user an error occurred");
+                    });
                 } else {
                     console.log("TODO: Support other file types");
                 }
