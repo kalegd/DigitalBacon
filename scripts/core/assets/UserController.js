@@ -93,8 +93,30 @@ class UserController {
         return leftPosition.distanceTo(rightPosition);
     }
 
-    _pushXRDataForRTC(data) {
+    getDataForRTC() {
         let codes = 0;
+        let data = [];
+        if(global.deviceType == "XR") {
+            codes += this._pushAvatarDataForRTC(data);
+            codes += this._pushHandsDataForRTC(data);
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            codes += this._pushAvatarDataForRTC(data);
+        }
+        let worldVelocity = this._basicMovement.getWorldVelocity();
+        if(worldVelocity.length() >= 0.00001) {
+            data.push(...this._basicMovement.getWorldVelocity().toArray());
+            codes += UserMessageCodes.USER_VELOCITY;
+        }
+        if(global.renderer.info.render.frame % 300 == 0) {
+            this._userObj.getWorldPosition(vector3s[0]);
+            data.push(...vector3s[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
+    }
+
+    _pushAvatarDataForRTC(data) {
         let userScale = SettingsHandler.getUserScale();
         global.camera.getWorldPosition(vector3s[0]);
         this._userObj.getWorldPosition(vector3s[1]);
@@ -109,14 +131,19 @@ class UserController {
 
         data.push(...position);
         data.push(...rotation);
-        codes += UserMessageCodes.AVATAR;
+        return UserMessageCodes.AVATAR;
+    }
 
+    _pushHandsDataForRTC(data) {
+        let codes = 0;
+        let userScale = SettingsHandler.getUserScale();
         for(let hand of [Hands.LEFT, Hands.RIGHT]) {
             let userHand = this.hands[hand];
             if(userHand.isInScene()) {
-                position = userHand.getWorldPosition().sub(vector3s[1])
+                //Assumes userObj.getWorldPosition() already in vector3s[1]
+                let position = userHand.getWorldPosition().sub(vector3s[1])
                     .divideScalar(userScale);
-                rotation = userHand.getWorldRotation().toArray();
+                let rotation = userHand.getWorldRotation().toArray();
                 rotation.pop();
                 data.push(...position.toArray());
                 data.push(...rotation);
@@ -124,26 +151,6 @@ class UserController {
             }
         }
         return codes;
-    }
-
-    getDataForRTC() {
-        let codes = 0;
-        let data = [];
-        if(global.deviceType == "XR") {
-            codes += this._pushXRDataForRTC(data);
-        }
-        let worldVelocity = this._basicMovement.getWorldVelocity();
-        if(worldVelocity.length() >= 0.00001) {
-            data.push(...this._basicMovement.getWorldVelocity().toArray());
-            codes += UserMessageCodes.USER_VELOCITY;
-        }
-        if(global.renderer.info.render.frame % 300 == 0) {
-            this._userObj.getWorldPosition(vector3s[0]);
-            data.push(...vector3s[0].toArray());
-            codes += UserMessageCodes.USER_POSITION;
-        }
-        let codesArray = new Uint8Array([codes]);
-        return [codesArray.buffer, Float32Array.from(data).buffer];
     }
 
     attach(object) {
@@ -181,6 +188,12 @@ class UserController {
     }
 
     _updateAvatar() {
+        if(!this._avatar.isDisplayingAvatar()) {
+            let data = [];
+            this._pushAvatarDataForRTC(data);
+            let rotation = data.slice(3, 6);
+            this._avatar.getObject().rotation.fromArray(rotation);
+        }
         let updateNumber = SessionHandler.getControlsUpdateNumber();
         if(this._avatarFadeUpdateNumber == updateNumber) return;
         this._avatarFadeUpdateNumber = updateNumber;
@@ -193,10 +206,16 @@ class UserController {
         let fadePercent = Math.max(cameraDistance, FADE_END);
         fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
         if(fadePercent == 0) {
-            if(this._avatar.isDisplayingAvatar())
+            if(this._avatar.isDisplayingAvatar()) {
+                this._basicMovement.setPerspective(1);
+                PubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
+                    1);
                 this._avatar.hideAvatar();
+            }
             return;
         } else if(!this._avatar.isDisplayingAvatar()) {
+            this._basicMovement.setPerspective(3);
+            PubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
             this._avatar.displayAvatar();
         }
         (fadePercent < 1)

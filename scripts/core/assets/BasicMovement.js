@@ -79,6 +79,10 @@ export default class BasicMovement {
         return this._worldVelocity;
     }
 
+    setPerspective(perspective) {
+        this._perspective = perspective;
+    }
+
     update(timeDelta) {
         if(global.deviceType == "XR") {
             this._updatePositionVR(timeDelta);
@@ -136,7 +140,8 @@ export default class BasicMovement {
             vector3s[1].copy(vector3s[0]);
             this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
-            if(vector3s[1].length() > 0.001 * SettingsHandler.getUserScale()) {
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
@@ -180,7 +185,8 @@ export default class BasicMovement {
             vector3s[1].copy(vector3s[0]);
             this._moveForward(this._velocity.z, timeDelta);
             vector3s[1].add(vector3s[0]);
-            if(vector3s[1].length() > 0.001 * SettingsHandler.getUserScale()) {
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2);
                 this._avatar.lookAtLocal(vector3s[1]);
             }

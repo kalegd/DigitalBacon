@@ -56,7 +56,7 @@ export default class PeerController extends Entity {
 
     _updateAvatarData(float32Array, index) {
         let object = this._avatar.getObject();
-        object.position.fromArray(float32Array, index);
+        if(this._isXR) object.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
         object.rotation.fromArray(rotation);
     }
@@ -72,11 +72,13 @@ export default class PeerController extends Entity {
     _updateVelocity(float32Array, index, timeDelta) {
         this._velocity.fromArray(float32Array, index);
         this._object.position.addScaledVector(this._velocity, timeDelta);
-        if(!this._isXR) {
+        if(!this._isXR && !this._firstPerson) {
+            let object = this._avatar.getObject();
             vector3s[0].copy(this._velocity).setY(0);
             if(vector3s[0].length() < 0.001) return;
-            vector3s[0].multiplyScalar(-1).add(this._object.position);
-            this._object.lookAt(vector3s[0]);
+            vector3s[0].multiplyScalar(-1).add(this._object.position)
+                .add(object.position);
+            object.lookAt(vector3s[0]);
         }
     }
 
@@ -104,10 +106,13 @@ export default class PeerController extends Entity {
         }
     }
 
+    setFirstPerson(firstPerson) {
+        this._firstPerson = firstPerson;
+    }
+
     configureAsXR() {
         if(this._isXR) return;
         this._isXR = true;
-        this._avatar.setVerticalOffset(0);
         this.hands = {};
         for(let hand of [Hands.RIGHT, Hands.LEFT]) {
             let peerHand = new PeerHand(hand);

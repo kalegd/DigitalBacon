@@ -56,6 +56,7 @@ class PartyMessageHelper {
             avatar: (p, m) => { this._handleAvatar(p, m); },
             asset_added: (p, m) => { this._handleAssetAdded(p, m); },
             username: (p, m) => { this._handleUsername(p, m); },
+            user_perspective: (p, m) => { this._handleUserPerspective(p,m);},
             user_scale: (p, m) => { this._handleUserScale(p,m);},
         };
         for(let topic in BLOCKABLE_HANDLERS_MAP) {
@@ -408,6 +409,11 @@ class PartyMessageHelper {
         });
     }
 
+    _handleUserPerspective(peer, message) {
+        let perspective = message.perspective;
+        if(peer.controller) peer.controller.setFirstPerson(perspective == 1);
+    }
+
     _handleUserScale(peer, message) {
         let scale = message.scale;
         if(peer.controller) peer.controller.updateScale(scale);
@@ -639,6 +645,15 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishUserPerspectiveChanged(perspective) {
+        let message = {
+            topic: 'user_perspective',
+            perspective: perspective,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
     _publishUserScaleUpdated(scale) {
         let message = {
             topic: 'user_scale',
@@ -647,7 +662,6 @@ class PartyMessageHelper {
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
         return Promise.resolve();
     }
-
 
     addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
@@ -768,6 +782,11 @@ class PartyMessageHelper {
                 return this._publishAssetUpdate(message, "texture");
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, (n)=>{
+            this._publishQueue.enqueue(() => {
+                return this._publishUserPerspectiveChanged(n);
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.USER_SCALE_UPDATED, (scale) => {
             this._publishQueue.enqueue(() => {
                 return this._publishUserScaleUpdated(scale);
@@ -800,6 +819,8 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
         PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED);
+        PubSub.unsubscribe(this._id, PubSubTopics.USER_SCALE_UPDATED);
     }
 
     update() {
