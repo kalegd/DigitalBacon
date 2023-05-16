@@ -7,7 +7,7 @@
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import ImagesHandler from '/scripts/core/handlers/ImagesHandler.js';
 import * as THREE from 'three';
 
 export default class ClampedTexturePlane extends AssetEntity {
@@ -36,7 +36,7 @@ export default class ClampedTexturePlane extends AssetEntity {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addImage(params);
+        return ImagesHandler.addNewAsset(this._assetId, params);
     }
 
     exportParams() {

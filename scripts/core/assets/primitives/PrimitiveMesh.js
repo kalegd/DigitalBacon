@@ -7,7 +7,7 @@
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { Materials } from '/scripts/core/helpers/constants.js';
 
 export default class PrimitiveMesh extends AssetEntity {
@@ -31,7 +31,7 @@ export default class PrimitiveMesh extends AssetEntity {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addShape(params, this._assetId);
+        return ShapesHandler.addNewAsset(this._assetId, params);
     }
 
     exportParams() {

@@ -5,6 +5,7 @@
  */
 
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
+import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
@@ -77,24 +78,16 @@ class UploadPage extends PaginatedPage {
         let rotation = euler.toArray();
         for(let assetId of assetIds) {
             let type = LibraryHandler.getType(assetId);
-            if(type == AssetTypes.IMAGE) {
-                ProjectHandler.addImage({
-                    "assetId": assetId,
-                    "position": position,
-                    "rotation": rotation,
-                    "doubleSided": true,
-                    "transparent": true,
-                    "visualEdit": true,
-                });
-            } else if(type == AssetTypes.MODEL) {
-                ProjectHandler.addGLTF({
+            if(type in AssetEntityTypes) {
+                let params = {
                     "assetId": assetId,
                     "position": position,
                     "rotation": rotation,
                     "visualEdit": true,
-                });
-            } else if(type == AssetTypes.COMPONENT) {
-                ComponentsHandler.addNewAsset(assetId);
+                };
+                ProjectHandler.addNewAsset(assetId, params);
+            } else {
+                ProjectHandler.addNewAsset(assetId);
             }
         }
     }

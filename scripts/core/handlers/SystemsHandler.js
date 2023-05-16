@@ -4,12 +4,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
 
 class SystemsHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.SYSTEM_ADDED, PubSubTopics.SYSTEM_DELETED);
+        super(PubSubTopics.SYSTEM_ADDED, PubSubTopics.SYSTEM_DELETED,
+            AssetTypes.SYSTEM);
     }
 }
 

@@ -217,7 +217,7 @@ class ProjectPage extends PaginatedPage {
         let ambientLight = new PrimitiveAmbientLight({
             'visualEdit': false,
         });
-        ProjectHandler.addLight(ambientLight, ambientLight.getAssetId(), true);
+        LightsHandler.addAsset(ambientLight, true);
         GoogleDrive.clearActiveFile();
         if(PartyHandler.isPartyActive() && PartyHandler.isHost()) {
             PartyHandler.sendProject();

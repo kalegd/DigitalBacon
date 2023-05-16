@@ -307,8 +307,7 @@ class LibraryHandler {
     reset() {
         let newLibrary = {};
         for(let assetId in this.library) {
-            let assetType = this.library[assetId]['Type'];
-            if(assetType == AssetTypes.LIGHT || assetType == AssetTypes.SHAPE) {
+            if(!this.library[assetId]['Blob']) {
                 newLibrary[assetId] = this.library[assetId];
             }
         }
@@ -321,6 +320,7 @@ class LibraryHandler {
         let libraryDetails = {};
         for(let assetId of assetIds) {
             let assetDetails = this.library[assetId];
+            if(!assetDetails['Blob']) continue;//Built-in asset
             let assetType = assetDetails['Type'];
             libraryDetails[assetId] = {
                 'Name': assetDetails['Name'],

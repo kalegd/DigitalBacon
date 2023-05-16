@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -19,7 +20,8 @@ const SHOULD_HAVE_REFACTORED_SOONER = {
 
 class MaterialsHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.MATERIAL_ADDED, PubSubTopics.MATERIAL_DELETED);
+        super(PubSubTopics.MATERIAL_ADDED, PubSubTopics.MATERIAL_DELETED,
+            AssetTypes.MATERIAL);
     }
 
     addAsset(asset, ignoreUndoRedo, ignorePublish) {

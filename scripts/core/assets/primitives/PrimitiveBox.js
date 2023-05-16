@@ -5,7 +5,7 @@
  */
 
 import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -118,4 +118,4 @@ export default class PrimitiveBox extends PrimitiveMesh {
     static assetName = 'Box';
 }
 
-ProjectHandler.registerShape(PrimitiveBox);
+ShapesHandler.registerAsset(PrimitiveBox);

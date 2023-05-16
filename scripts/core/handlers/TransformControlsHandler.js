@@ -7,6 +7,7 @@
 import global from '/scripts/core/global.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
@@ -54,13 +55,15 @@ class TransformControlsHandler {
                 this.detach(option);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (e) => {
-            for(let option in this._attachedAssets) {
-                if(this._attachedAssets[option] == e.instance) {
-                    this._detachDeleted(option);
+        for(let assetType in AssetEntityTypes) {
+            PubSub.subscribe(this._id, assetType + '_DELETED', (e) => {
+                for(let option in this._attachedAssets) {
+                    if(this._attachedAssets[option] == e.asset) {
+                        this._detachDeleted(option);
+                    }
                 }
-            }
-        });
+            });
+        }
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let option in this._attachedAssets) {
                 this._detachDeleted(option);
@@ -191,23 +194,13 @@ class TransformControlsHandler {
             let rotation = euler.toArray();
             for(let assetId of assetIds) {
                 let type = LibraryHandler.getType(assetId);
-                if(type == AssetTypes.IMAGE) {
-                    ProjectHandler.addImage({
-                        "assetId": assetId,
-                        "position": position,
-                        "rotation": rotation,
-                        "doubleSided": true,
-                        "transparent": true,
-                        "visualEdit": true,
-                    });
-                } else if(type == AssetTypes.MODEL) {
-                    ProjectHandler.addGLTF({
-                        "assetId": assetId,
-                        "position": position,
-                        "rotation": rotation,
-                        "visualEdit": true,
-                    });
-                }
+                let params = {
+                    "assetId": assetId,
+                    "position": position,
+                    "rotation": rotation,
+                    "visualEdit": true,
+                };
+                ProjectHandler.addNewAsset(assetId, params);
             }
         });
     }
@@ -237,7 +230,7 @@ class TransformControlsHandler {
         option = option || global.deviceType
         let asset = this._attachedAssets[option];
         if(asset) {
-            ProjectHandler.deleteAssetInstance(asset);
+            ProjectHandler.deleteAsset(asset);
         }
     }
 

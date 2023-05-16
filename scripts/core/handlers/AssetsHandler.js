@@ -5,19 +5,21 @@
  */
 
 import global from '/scripts/core/global.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 
 export default class AssetsHandler {
-    constructor(addedTopic, deletedTopic) {
+    constructor(addedTopic, deletedTopic, detailsName) {
         this._id = uuidv4();
         this._assets = {};
         this._assetClassMap = {};
         this._sessionAssets = {};
         this._addedTopic = addedTopic;
         this._deletedTopic = deletedTopic;
+        ProjectHandler.registerAssetHandler(this, detailsName);
     }
 
     addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {

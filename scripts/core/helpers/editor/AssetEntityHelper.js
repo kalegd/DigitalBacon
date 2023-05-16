@@ -81,13 +81,13 @@ export default class AssetEntityHelper extends EditorHelper {
             this._gripInteractables[HandTools.EDIT].push(interactable);
             let deleteInteractable = new GripInteractable(this._object,
                 (hand) => {
-                    ProjectHandler.deleteAssetInstance(this._asset);
+                    ProjectHandler.deleteAsset(this._asset);
                 }
             );
             this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
             deleteInteractable = new PointerInteractable(this._object,
                 (hand) => {
-                    ProjectHandler.deleteAssetInstance(this._asset);
+                    ProjectHandler.deleteAsset(this._asset);
                 },
                 true,
                 true

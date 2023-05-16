@@ -72,18 +72,7 @@ class AssetPage extends PaginatedPage {
                 rotation: rotation,
                 visualEdit: true,
             };
-            let type = LibraryHandler.getType(this._assetId);
-            if(type == AssetTypes.IMAGE) {
-                params['doubleSided'] = true;
-                params['transparent'] = true;
-                ProjectHandler.addImage(params);
-            } else if(type == AssetTypes.MODEL) {
-                ProjectHandler.addGLTF(params);
-            } else if(type == AssetTypes.SHAPE) {
-                ProjectHandler.addShape(params, this._assetId);
-            } else if(type == AssetTypes.LIGHT) {
-                ProjectHandler.addLight(params, this._assetId);
-            }
+            ProjectHandler.addNewAsset(this._assetId, params);
         });
         this._containerInteractable.addChild(interactable);
         this._object.add(addButtonParent);

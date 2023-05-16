@@ -5,7 +5,7 @@
  */
 
 import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -65,4 +65,4 @@ export default class PrimitivePointLight extends PrimitiveLight {
     static assetName = 'Basic Light';
 }
 
-ProjectHandler.registerLight(PrimitivePointLight);
+LightsHandler.registerAsset(PrimitivePointLight);

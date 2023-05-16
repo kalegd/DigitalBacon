@@ -19,9 +19,6 @@ import { uuidv4, capitalizeFirstLetter, Queue } from '/scripts/core/helpers/util
 
 const SIXTEEN_KB = 1024 * 16;
 const BLOCKABLE_HANDLERS_MAP = {
-    component_added: '_handleComponentAdded',
-    component_deleted: '_handleComponentDeleted',
-    component_updated: '_handleComponentUpdated',
     component_attached: '_handleComponentAttached',
     component_detached: '_handleComponentDetached',
     instance_added: '_handleInstanceAdded',
@@ -30,16 +27,7 @@ const BLOCKABLE_HANDLERS_MAP = {
     instance_attached: '_handleInstanceAttached',
     instance_detached: '_handleInstanceDetached',
     loaded_diff: '_handleLoadedDiff',
-    material_added: '_handleMaterialAdded',
-    material_deleted: '_handleMaterialDeleted',
-    material_updated: '_handleMaterialUpdated',
     settings_updated: '_handleSettingsUpdated',
-    system_added: '_handleSystemAdded',
-    system_deleted: '_handleSystemDeleted',
-    system_updated: '_handleSystemUpdated',
-    texture_added: '_handleTextureAdded',
-    texture_deleted: '_handleTextureDeleted',
-    texture_updated: '_handleTextureUpdated',
 };
 
 class PartyMessageHelper {
@@ -138,39 +126,6 @@ class PartyMessageHelper {
         handler(peer, message);
     }
 
-    _handleComponentAdded(peer, message) {
-        let component = ComponentsHandler.getSessionAsset(
-            message.component.id);
-        if(component) {
-            ComponentsHandler.addAsset(component, true, true);
-        } else {
-            component = ComponentsHandler.addNewAsset(
-                message.component.assetId, message.component, true, true);
-        }
-        PubSub.publish(this._id, PubSubTopics.COMPONENT_ADDED, component);
-    }
-
-    _handleComponentDeleted(peer, message) {
-        let component = ComponentsHandler.getAsset(message.id);
-        if(component) {
-            ComponentsHandler.deleteAsset(component, true, true);
-            let topic = PubSubTopics.COMPONENT_DELETED + ":" + message.id;
-            message = { asset: component };
-            PubSub.publish(this._id, topic, message, true);
-        } else {
-            console.error("Component to delete does not exist");
-        }
-    }
-
-    _handleComponentUpdated(peer, message) {
-        let params = message.component;
-        let component = ComponentsHandler.getSessionAsset(params.id);
-        if(component) {
-            this._handleAssetUpdate(component, params,
-                PubSubTopics.COMPONENT_UPDATED);
-        }
-    }
-
     _handleComponentAttached(peer, message) {
         let asset = this._getComponentAsset(message);
         if(asset) {
@@ -201,48 +156,39 @@ class PartyMessageHelper {
     }
 
     _getComponentAsset(message) {
-        if(message.assetType == AssetTypes.MATERIAL) {
-            return MaterialsHandler.getSessionAsset(message.id);
-        } else if(message.assetType == AssetTypes.TEXTURE) {
-            return TexturesHandler.getSessionAsset(message.id);
-        } else if(message.assetType == AssetTypes.COMPONENT) {
-            return ComponentsHandler.getSessionAsset(message.id);
-        } else if(message.assetType == AssetTypes.SYSTEM) {
-            return SystemsHandler.getSessionAsset(message.id);
-        } else {
-            return ProjectHandler.getSessionInstance(message.id);
-        }
-    }
-    _handleInstanceAdded(peer, message) {
-        let instance = ProjectHandler.getSessionInstance(message.instance.id);
-        if(instance) {
-            instance.addToScene(global.scene);
-            ProjectHandler.addAsset(instance, true, true);
-        } else {
-            instance = ProjectHandler.addInstance(message.instance, true, true);
-        }
-        PubSub.publish(this._id, PubSubTopics.INSTANCE_ADDED, instance);
+        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
+        return assetHandler.getSessionAsset(message.id);
     }
 
-    _handleInstanceDeleted(peer, peerMessage) {
-        let assets = ProjectHandler.getInstancesForAssetId(peerMessage.assetId);
-        let instance = assets[peerMessage.id];
-        if(instance) {
-            ProjectHandler.deleteAssetInstance(instance, true, true);
-            let topic = PubSubTopics.INSTANCE_DELETED + ":" + peerMessage.id;
-            let message = { instance: instance };
-            PubSub.publish(this._id, topic, message, true);
+    _handleInstanceAdded(peer, message) {
+        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
+        let asset = assetHandler.getSessionAsset(message.asset.id);
+        if(asset) {
+            assetHandler.addAsset(asset, true, true);
         } else {
-            console.error("Instance to delete does not exist");
+            asset = assetHandler.addNewAsset(message.asset.assetId,
+                message.asset, true, true);
+        }
+        PubSub.publish(this._id, message.assetType + '_ADDED', asset);
+    }
+
+    _handleInstanceDeleted(peer, message) {
+        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
+        let asset = assetHandler.getAsset(message.id);
+        if(asset) {
+            assetHandler.deleteAsset(asset, true, true);
+            let topic = message.assetType + '_DELETED:' + message.id;
+            PubSub.publish(this._id, topic, { asset: asset });
+        } else {
+            console.error("Asset to delete does not exist");
         }
     }
 
     _handleInstanceUpdated(peer, message) {
-        let params = message.instance;
-        let instance = ProjectHandler.getSessionInstance(params.id);
-        if(instance) {
-            this._handleAssetUpdate(instance, params,
-                PubSubTopics.INSTANCE_UPDATED);
+        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
+        let asset = assetHandler.getSessionAsset(message.params.id);
+        if(asset) {
+            this._handleAssetUpdate(asset, params,message.assetType+'_UPDATED');
         }
     }
 
@@ -266,38 +212,6 @@ class PartyMessageHelper {
         PubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
     }
 
-    _handleMaterialAdded(peer, message) {
-        let material = MaterialsHandler.getSessionAsset(message.material.id);
-        if(material) {
-            MaterialsHandler.addAsset(material, true, true);
-        } else {
-            material = MaterialsHandler.addNewAsset(message.material.assetId,
-                        message.material, true, true);
-        }
-        PubSub.publish(this._id, PubSubTopics.MATERIAL_ADDED, material);
-    }
-
-    _handleMaterialDeleted(peer, peerMessage) {
-        let material = MaterialsHandler.getAsset(peerMessage.id);
-        if(material) {
-            MaterialsHandler.deleteAsset(material, true, true);
-            let topic = PubSubTopics.MATERIAL_DELETED + ":" + peerMessage.id;
-            let message = { asset: material };
-            PubSub.publish(this._id, topic, message, true);
-        } else {
-            console.error("Material to delete does not exist");
-        }
-    }
-
-    _handleMaterialUpdated(peer, message) {
-        let params = message.material;
-        let material = MaterialsHandler.getSessionAsset(params.id);
-        if(material) {
-            this._handleAssetUpdate(material, params,
-                PubSubTopics.MATERIAL_UPDATED);
-        }
-    }
-
     _handleSettingsUpdated(peer, message) {
         let settings = message.settings;
         for(let setting in settings) {
@@ -316,70 +230,6 @@ class PartyMessageHelper {
         }
         PubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED,
             { settings: settings });
-    }
-
-    _handleSystemAdded(peer, message) {
-        let system = SystemsHandler.getSessionAsset(message.system.id);
-        if(system) {
-            SystemsHandler.addAsset(system, true, true);
-        } else {
-            system = SystemsHandler.addNewAsset(message.system.assetId,
-                        message.system, true, true);
-        }
-        PubSub.publish(this._id, PubSubTopics.SYSTEM_ADDED, system);
-    }
-
-    _handleSystemDeleted(peer, peerMessage) {
-        let system = SystemsHandler.getAsset(peerMessage.id);
-        if(system) {
-            SystemsHandler.deleteAsset(system, true, true);
-            let topic = PubSubTopics.SYSTEM_DELETED + ":" + peerMessage.id;
-            let message = { asset: system };
-            PubSub.publish(this._id, topic, message, true);
-        } else {
-            console.error("System to delete does not exist");
-        }
-    }
-
-    _handleSystemUpdated(peer, message) {
-        let params = message.system;
-        let system = SystemsHandler.getSessionAsset(params.id);
-        if(system) {
-            this._handleAssetUpdate(system, params,
-                PubSubTopics.SYSTEM_UPDATED);
-        }
-    }
-
-    _handleTextureAdded(peer, message) {
-        let texture = TexturesHandler.getSessionAsset(message.texture.id);
-        if(texture) {
-            TexturesHandler.addAsset(texture, true, true);
-        } else {
-            texture = TexturesHandler.addNewAsset(message.texture.assetId,
-                        message.texture, true, true);
-        }
-        PubSub.publish(this._id, PubSubTopics.TEXTURE_ADDED, texture);
-    }
-
-    _handleTextureDeleted(peer, peerMessage) {
-        let texture = TexturesHandler.getAsset(peerMessage.id);
-        if(texture) {
-            TexturesHandler.deleteAsset(texture, true, true);
-            let topic = PubSubTopics.TEXTURE_DELETED + ":" + peerMessage.id;
-            let message = { asset: texture };
-            PubSub.publish(this._id, topic, message, true);
-        } else {
-            console.error("Texture to delete does not exist");
-        }
-    }
-
-    _handleTextureUpdated(peer, message) {
-        let params = message.texture;
-        let texture = TexturesHandler.getSessionAsset(params.id);
-        if(texture) {
-            this._handleAssetUpdate(texture, params,
-                PubSubTopics.TEXTURE_UPDATED);
-        }
     }
 
     _handleAssetUpdate(asset, params, topic) {
@@ -477,24 +327,6 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
-    _publishComponentAdded(component) {
-        let message = {
-            topic: 'component_added',
-            component: component.exportParams(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishComponentDeleted(component) {
-        let message = {
-            topic: 'component_deleted',
-            id: component.getId(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
     _publishComponentAttachedDetached(topic, message) {
         let peerMessage = {
             topic: topic,
@@ -507,22 +339,41 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
-    _publishInstanceAdded(instance) {
+    _publishInstanceAdded(asset, assetType) {
         let message = {
             topic: 'instance_added',
-            instance: instance.exportParams(),
+            asset: asset.exportParams(),
+            assetType: assetType,
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
         return Promise.resolve();
     }
 
-    _publishInstanceDeleted(instance) {
+    _publishInstanceDeleted(asset, assetType) {
         let message = {
             topic: 'instance_deleted',
-            id: instance.getId(),
-            assetId: instance.getAssetId(),
+            id: asset.getId(),
+            assetId: asset.getAssetId(),
+            assetType: assetType,
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
+        return Promise.resolve();
+    }
+
+    _publishInstanceUpdated(updateMessage, assetType) {
+        let asset = {};
+        asset['id'] = updateMessage.asset.getId();
+        for(let param of updateMessage.fields) {
+            let capitalizedParam = capitalizeFirstLetter(param);
+            asset[param] = updateMessage.asset['get' + capitalizedParam]();
+        }
+        let peerMessage = {
+            topic: "instance_updated",
+            asset: asset,
+            assetType: assetType,
+        };
+        this._partyHandler.sendToAllPeers(
+            JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
         return Promise.resolve();
     }
 
@@ -564,24 +415,6 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
-    _publishMaterialAdded(material) {
-        let message = {
-            topic: 'material_added',
-            material: material.exportParams(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishMaterialDeleted(material) {
-        let message = {
-            topic: 'material_deleted',
-            id: material.getId(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
     _publishSettingsUpdate(updateMessage) {
         let settings = updateMessage.settings;
         let keys = updateMessage.keys;
@@ -592,56 +425,6 @@ class PartyMessageHelper {
         peerMessage.settings[keys[0]] = {};
         peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
         this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-        return Promise.resolve();
-    }
-
-    _publishSystemAdded(system) {
-        let message = {
-            topic: 'system_added',
-            system: system.exportParams(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishSystemDeleted(system) {
-        let message = {
-            topic: 'system_deleted',
-            id: system.getId(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishTextureAdded(texture) {
-        let message = {
-            topic: 'texture_added',
-            texture: texture.exportParams(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishTextureDeleted(texture) {
-        let message = {
-            topic: 'texture_deleted',
-            id: texture.getId(),
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishAssetUpdate(updateMessage, type) {
-        let asset = {};
-        asset['id'] = updateMessage.asset.getId();
-        for(let param of updateMessage.fields) {
-            let capitalizedParam = capitalizeFirstLetter(param);
-            asset[param] = updateMessage.asset['get' + capitalizedParam]();
-        }
-        let peerMessage = { "topic": type + "_updated" };
-        peerMessage[type] = asset;
-        this._partyHandler.sendToAllPeers(
-            JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
         return Promise.resolve();
     }
 
@@ -680,21 +463,6 @@ class PartyMessageHelper {
         PubSub.subscribe(this._id, PubSubTopics.BOOT_PEER, (peerId) => {
             this._partyHandler.bootPeer(peerId);
         });
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED, (component) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishComponentAdded(component);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED, (message) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishComponentDeleted(message.asset);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_UPDATED, (message) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetUpdate(message, "component");
-            });
-        });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
             this._publishQueue.enqueue(() => {
                 return this._publishComponentAttachedDetached(
@@ -707,21 +475,6 @@ class PartyMessageHelper {
                     'component_detached', message);
             });
         });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ADDED, (instance) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishInstanceAdded(instance);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishInstanceDeleted(message.instance);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_UPDATED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetUpdate(message, "instance");
-            });
-        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (message) =>{
             this._publishQueue.enqueue(() => {
                 return this._publishInstanceAttached(message);
@@ -732,54 +485,9 @@ class PartyMessageHelper {
                 return this._publishInstanceDetached(message);
             });
         });
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (material) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishMaterialAdded(material);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishMaterialDeleted(message.asset);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetUpdate(message, "material");
-            });
-        });
         PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
             this._publishQueue.enqueue(() => {
                 return this._publishSettingsUpdate(message);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.SYSTEM_ADDED, (system) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishSystemAdded(system);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.SYSTEM_DELETED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishSystemDeleted(message.asset);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.SYSTEM_UPDATED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetUpdate(message, "system");
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_ADDED, (texture) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishTextureAdded(texture);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishTextureDeleted(message.asset);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetUpdate(message, "texture");
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, (n)=>{
@@ -792,6 +500,27 @@ class PartyMessageHelper {
                 return this._publishUserScaleUpdated(scale);
             });
         });
+        for(let assetType in AssetTypes) {
+            let addedTopic = PubSubTopics[assetType + '_ADDED'];
+            let deletedTopic = PubSubTopics[assetType + '_DELETED'];
+            let updatedTopic = PubSubTopics[assetType + '_UPDATED'];
+            PubSub.subscribe(this._id, addedTopic, (asset) => {
+                this._publishQueue.enqueue(() => {
+                    return this._publishInstanceAdded(asset, assetType);
+                });
+            });
+                PubSub.subscribe(this._id, deletedTopic, (message) => {
+                this._publishQueue.enqueue(() => {
+                    return this._publishInstanceDeleted(message.asset,
+                        assetType);
+                });
+            });
+            PubSub.subscribe(this._id, updatedTopic, (message) => {
+                this._publishQueue.enqueue(() => {
+                    return this._publishInstanceUpdated(message,assetType);
+                });
+            });
+        }
     }
 
     removeSubscriptions() {
@@ -799,28 +528,18 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.AVATAR_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.BECOME_PARTY_HOST);
         PubSub.unsubscribe(this._id, PubSubTopics.BOOT_PEER);
-        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ADDED);
-        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DELETED);
-        PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DETACHED);
-        PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ADDED);
-        PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DELETED);
-        PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
-        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_ADDED);
-        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
-        PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
-        PubSub.unsubscribe(this._id, PubSubTopics.SYSTEM_ADDED);
-        PubSub.unsubscribe(this._id, PubSubTopics.SYSTEM_DELETED);
-        PubSub.unsubscribe(this._id, PubSubTopics.SYSTEM_UPDATED);
-        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_ADDED);
-        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_DELETED);
-        PubSub.unsubscribe(this._id, PubSubTopics.TEXTURE_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED);
         PubSub.unsubscribe(this._id, PubSubTopics.USER_SCALE_UPDATED);
+        for(let assetType in AssetTypes) {
+            PubSub.unsubscribe(this._id, PubSubTopics[assetType + '_ADDED']);
+            PubSub.unsubscribe(this._id, PubSubTopics[assetType + '_DELETED']);
+            PubSub.unsubscribe(this._id, PubSubTopics[assetType + '_UPDATED']);
+        }
     }
 
     update() {

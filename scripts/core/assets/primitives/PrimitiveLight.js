@@ -6,7 +6,7 @@
 
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 
 export default class PrimitiveLight extends AssetEntity {
@@ -22,7 +22,7 @@ export default class PrimitiveLight extends AssetEntity {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addLight(params, this._assetId);
+        return LightsHandler.addNewAsset(this._assetId, params);
     }
 
     exportParams() {
