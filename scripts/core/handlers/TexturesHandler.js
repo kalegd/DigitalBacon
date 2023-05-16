@@ -31,19 +31,12 @@ class TexturesHandler extends AssetsHandler {
     }
 
     _handleOldVersion(assets) {
-        let usingOldVersion = false;
         for(let type in SHOULD_HAVE_REFACTORED_SOONER) {
             if(type in assets) {
                 let id = SHOULD_HAVE_REFACTORED_SOONER[type];
                 assets[id] = assets[type];
                 delete assets[type];
-                usingOldVersion = true;
             }
-        }
-        if(usingOldVersion) {
-            PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                text: "The project's version is outdated and won't be supported starting in July. Please save a new copy of it",
-            });
         }
     }
 

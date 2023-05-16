@@ -4,11 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -17,9 +15,11 @@ import ThreeMeshUI from 'three-mesh-ui';
 
 const FIELD_MAX_LENGTH = 25;
 
-class LightsPage extends PaginatedPage {
-    constructor(controller) {
+class AssetsPage extends PaginatedPage {
+    constructor(controller, assetType) {
         super(controller, true);
+        this._assetHandler = ProjectHandler.getAssetHandler(assetType);
+        this._assetType = assetType;
         this._assets = {};
         this._items = Object.keys(this._assets);
         this._addPageContent();
@@ -27,19 +27,20 @@ class LightsPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': ' ',
+        let title = this._assetType[0] + this._assetType.slice(1).toLowerCase();
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
             'fontSize': FontSizes.header,
             'height': 0.04,
             'width': 0.2,
         });
-        this._container.add(this._titleBlock);
+        this._container.add(titleBlock);
 
         this._addList();
     }
 
     _createAddButton() {
-        this._addButtonParent = new ThreeMeshUI.Block({
+        let addButtonParent = new ThreeMeshUI.Block({
             height: 0.06,
             width: 0.06,
             backgroundColor: Colors.defaultMenuBackground,
@@ -51,58 +52,50 @@ class LightsPage extends PaginatedPage {
             'height': 0.04,
             'width': 0.04,
         });
-        this._addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
-        this._addButtonParent.position.fromArray([.175, 0.12, -0.001]);
-        this._addButtonParent.add(addButton);
-        this._addInteractable = new PointerInteractable(addButton, () => {
-            this._controller.pushPage(MenuPages.UPLOAD);
+        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.position.fromArray([.175, 0.12, -0.001]);
+        addButtonParent.add(addButton);
+        let interactable = new PointerInteractable(addButton, () => {
+            let page = this._controller.getPage('NEW_' + this._assetType);
+            page.setContent((asset) => {
+                this._handleItemInteraction(asset.getId());
+            });
+            this._controller.pushPage('NEW_' + this._assetType);
         });
-        this._containerInteractable.addChild(this._addInteractable);
-        this._object.add(this._addButtonParent);
+        this._containerInteractable.addChild(interactable);
+        this._object.add(addButtonParent);
     }
 
     _getItemName(item) {
-        let name = this._assets[item]['Name'];
+        let name = this._assets[item].getName();
         if(name.length > FIELD_MAX_LENGTH)
             name = "..." + name.substring(name.length - FIELD_MAX_LENGTH);
         return name;
     }
 
     _handleItemInteraction(item) {
-        let assetPage = this._controller.getPage(MenuPages.ASSET);
-        assetPage.setAsset(item);
-        this._controller.pushPage(MenuPages.ASSET);
+        let assetPage = this._controller.getPage(this._assetType);
+        assetPage.setAsset(this._assets[item]);
+        this._controller.pushPage(this._assetType);
     }
 
     _refreshItems() {
-        let library = LibraryHandler.getLibrary();
-        for(let assetId in library) {
-            if(library[assetId]['Type'] == this._assetType) {
-                this._assets[assetId] = library[assetId];
-            }
-        }
+        this._assets = this._assetHandler.getAssets();
         this._items = Object.keys(this._assets);
     }
 
-    setContent(assetType, title) {
-        this._assets = {};
-        this._assetType = assetType;
-        if(assetType == AssetTypes.MODEL || assetType == AssetTypes.IMAGE) {
-            this._object.add(this._addButtonParent);
-            this._containerInteractable.addChild(this._addInteractable);
-        } else {
-            this._object.remove(this._addButtonParent);
-            this._containerInteractable.removeChild(this._addInteractable);
-        }
-        this._titleBlock.children[1].set({ content: title });
-    }
-
     _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
-            if(LibraryHandler.getType(assetId) == this._assetType) {
-                this._refreshItems();
-                this._updateItemsGUI();
-            }
+        PubSub.subscribe(this._id, this._assetType + '_ADDED', (asset) => {
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
+        PubSub.subscribe(this._id, this._assetType + '_UPDATED', (message) => {
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
+        PubSub.subscribe(this._id, this._assetType + '_DELETED', (e) => {
+            this._refreshItems();
+            this._updateItemsGUI();
         });
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             if(!done) return;
@@ -112,7 +105,9 @@ class LightsPage extends PaginatedPage {
     }
 
     _removeSubscriptions() {
-        PubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+        PubSub.unsubscribe(this._id, this._assetType + '_ADDED');
+        PubSub.unsubscribe(this._id, this._assetType + '_UPDATED');
+        PubSub.unsubscribe(this._id, this._assetType + '_DELETED');
         PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
@@ -128,4 +123,4 @@ class LightsPage extends PaginatedPage {
 
 }
 
-export default LightsPage;
+export default AssetsPage;

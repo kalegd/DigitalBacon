@@ -25,6 +25,11 @@ export default class ClampedTexturePlane extends AssetEntity {
         this._object.add(this._mesh);
     }
 
+    _getDefaultName() {
+        return LibraryHandler.getAssetName(this._assetId)
+            || super._getDefaultName();
+    }
+
     _updateTransparent(isTransparent) {
         if(!this._materialAlreadyCloned) {
             this._mesh.material = this._mesh.material.clone();

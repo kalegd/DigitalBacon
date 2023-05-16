@@ -20,6 +20,11 @@ export default class GLTFAsset extends AssetEntity {
         this._object.add(this._mesh);
     }
 
+    _getDefaultName() {
+        return LibraryHandler.getAssetName(this._assetId)
+            || super._getDefaultName();
+    }
+
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
         return ModelsHandler.addNewAsset(this._assetId, params);

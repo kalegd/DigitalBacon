@@ -112,6 +112,9 @@ export default class AssetsHandler {
     }
 
     reset() {
+        for(let assetId in this._assets) {
+            this.deleteAsset(this._assets[assetId], true, true);
+        }
         this._assets = {};
         this._sessionAssets = {};
     }

@@ -106,7 +106,7 @@ class MaterialInput extends PointerInteractableEntity {
             let material = MaterialsHandler.getAsset(this._lastValue);
             let materialPage = global.menuController.getPage(
                 MenuPages.MATERIAL);
-            materialPage.setMaterial(material);
+            materialPage.setAsset(material);
             global.menuController.pushPage(MenuPages.MATERIAL);
         });
         this._pointerInteractable.addChild(interactable);
@@ -119,7 +119,7 @@ class MaterialInput extends PointerInteractableEntity {
             this._handleMaterialSelection(material.getId());
             let materialPage = global.menuController.getPage(
                 MenuPages.MATERIAL);
-            materialPage.setMaterial(material);
+            materialPage.setAsset(material);
             global.menuController.pushPage(MenuPages.MATERIAL);
         });
         global.menuController.pushPage(MenuPages.NEW_MATERIAL);

@@ -46,18 +46,22 @@ const ASSETS = [{
         'text': 'Materials',
         'icon': Textures.materialIcon,
         'page': MenuPages.MATERIALS,
+        'assetType': AssetTypes.MATERIAL,
     }, {
         'text': 'Textures',
         'icon': Textures.textureIcon,
         'page': MenuPages.TEXTURES,
+        'assetType': AssetTypes.TEXTURE,
     }, {
         'text': 'Components',
         'icon': Textures.componentIcon,
         'page': MenuPages.COMPONENTS,
+        'assetType': AssetTypes.COMPONENT,
     }, {
         'text': 'Systems',
         'icon': Textures.systemIcon,
         'page': MenuPages.SYSTEMS,
+        'assetType': AssetTypes.SYSTEM,
     }
 ];
 
@@ -115,11 +119,7 @@ class LibraryPage extends PaginatedIconsPage {
     }
 
     _handleItemInteraction(item) {
-        if(ASSETS[item].assetType) {
-            let page = this._controller.getPage(ASSETS[item].page);
-            page.setContent(ASSETS[item].assetType, ASSETS[item].text);
-        }
-        this._controller.pushPage(ASSETS[item].page);
+        this._controller.pushPage(ASSETS[item].assetType + 'S');
     }
 
     _refreshItems() {

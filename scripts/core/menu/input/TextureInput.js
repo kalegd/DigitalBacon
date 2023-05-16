@@ -108,7 +108,7 @@ class TextureInput extends PointerInteractableEntity {
             let texture = TexturesHandler.getAsset(this._lastValue);
             let texturePage = global.menuController.getPage(
                 MenuPages.TEXTURE);
-            texturePage.setTexture(texture);
+            texturePage.setAsset(texture);
             global.menuController.pushPage(MenuPages.TEXTURE);
         });
         this._pointerInteractable.addChild(interactable);
@@ -123,7 +123,7 @@ class TextureInput extends PointerInteractableEntity {
             this._handleTextureSelection(texture.getId());
             let texturePage = global.menuController.getPage(
                 MenuPages.TEXTURE);
-            texturePage.setTexture(texture);
+            texturePage.setAsset(texture);
             global.menuController.pushPage(MenuPages.TEXTURE);
         } else {
             let newTexturePage = global.menuController.getPage(
@@ -132,7 +132,7 @@ class TextureInput extends PointerInteractableEntity {
                 this._handleTextureSelection(texture.getId());
                 let texturePage = global.menuController.getPage(
                     MenuPages.TEXTURE);
-                texturePage.setTexture(texture);
+                texturePage.setAsset(texture);
                 global.menuController.pushPage(MenuPages.TEXTURE);
             });
             global.menuController.pushPage(MenuPages.NEW_TEXTURE);

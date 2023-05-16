@@ -280,7 +280,7 @@ class ProjectHandler {
             let details = handler.getAssetsDetails();
             projectDetails[type.toLowerCase() + 's'] = details;
             if(type == AssetTypes.TEXTURE) {
-                let textureAssetIds = handler.getTexturesAssetIds();
+                let texturesAssetIds = handler.getTexturesAssetIds();
                 for(let assetId of texturesAssetIds) assetIds.push(assetId);
             } else if (type == AssetTypes.COMPONENT) {
                 for(let assetId in details) assetIds.push(assetId);
