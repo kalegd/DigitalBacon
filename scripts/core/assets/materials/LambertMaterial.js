@@ -5,6 +5,7 @@
  */
 
 import Material from '/scripts/core/assets/materials/Material.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
@@ -187,3 +188,4 @@ export default class LambertMaterial extends Material {
 }
 
 MaterialsHandler.registerAsset(LambertMaterial);
+LibraryHandler.loadBuiltIn(LambertMaterial);

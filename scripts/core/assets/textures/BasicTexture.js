@@ -116,3 +116,4 @@ export default class BasicTexture extends Texture {
 }
 
 TexturesHandler.registerAsset(BasicTexture);
+LibraryHandler.loadBuiltIn(BasicTexture);

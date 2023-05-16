@@ -15,52 +15,42 @@ import ThreeMeshUI from 'three-mesh-ui';
 const ASSETS = [{
         'text': 'Models',
         'icon': Textures.objectIcon,
-        'page': MenuPages.ASSETS,
         'assetType': AssetTypes.MODEL,
     }, {
         'text': 'Images',
         'icon': Textures.imageIcon,
-        'page': MenuPages.ASSETS,
         'assetType': AssetTypes.IMAGE,
     }, {
         'text': 'Shapes',
         'icon': Textures.shapesIcon,
-        'page': MenuPages.ASSETS,
         'assetType': AssetTypes.SHAPE,
     }, {
         'text': 'Lights',
         'icon': Textures.lightbulbIcon,
-        'page': MenuPages.ASSETS,
         'assetType': AssetTypes.LIGHT,
     }, {
 //        'text': 'Audio',
 //        'icon': Textures.audioIcon,
-//        'page': MenuPages.AUDIOS,
 //        'assetType': AssetTypes.MODEL,
 //    }, {
 //        'text': 'Video',
 //        'icon': Textures.videoIcon,
-//        'page': MenuPages.VIDEOS,
 //        'assetType': AssetTypes.MODEL,
 //    }, {
         'text': 'Materials',
         'icon': Textures.materialIcon,
-        'page': MenuPages.MATERIALS,
         'assetType': AssetTypes.MATERIAL,
     }, {
         'text': 'Textures',
         'icon': Textures.textureIcon,
-        'page': MenuPages.TEXTURES,
         'assetType': AssetTypes.TEXTURE,
     }, {
         'text': 'Components',
         'icon': Textures.componentIcon,
-        'page': MenuPages.COMPONENTS,
         'assetType': AssetTypes.COMPONENT,
     }, {
         'text': 'Systems',
         'icon': Textures.systemIcon,
-        'page': MenuPages.SYSTEMS,
         'assetType': AssetTypes.SYSTEM,
     }
 ];

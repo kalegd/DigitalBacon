@@ -72,16 +72,18 @@ class NewAssetPage extends PaginatedPage {
     }
 
     _uploadCallback(assetIds) {
+        let newAssets = [];
         let params = this._getNewEntityParams();
         for(let assetId of assetIds) {
             params['assetId'] = assetId;
             let type = LibraryHandler.getType(assetId);
-            if(type in AssetEntityTypes) {
-                ProjectHandler.addNewAsset(assetId, params);
-            } else {
-                ProjectHandler.addNewAsset(assetId);
-            }
+            let asset = (type in AssetEntityTypes)
+                ? ProjectHandler.addNewAsset(assetId, params)
+                : ProjectHandler.addNewAsset(assetId);
+            newAssets.push(asset);
         }
+        if(newAssets.length == 1 && this._additionalAction)
+            this._additionalAction(newAssets[0]);
     }
 
     _getNewEntityParams() {

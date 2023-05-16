@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -29,20 +30,23 @@ class TranslateHandler {
                     this.detach(heldAsset.controller, heldAsset.hand);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DELETED, (e) => {
-            for(let key in this._heldAssets) {
-                let heldAsset = this._heldAssets[key];
-                if(heldAsset.asset == e.instance) {
-                    let assetHelper = heldAsset.asset.editorHelper;
-                    let object = heldAsset.asset.getObject();
-                    if(heldAsset.preTransformState) {
-                        object.position.fromArray(heldAsset.preTransformState);
-                        assetHelper._publish(['position']);
+        for(let assetType in AssetEntityTypes) {
+            PubSub.subscribe(this._id, assetType + '_DELETED', (message) => {
+                for(let key in this._heldAssets) {
+                    let heldAsset = this._heldAssets[key];
+                    if(heldAsset.asset == message.asset) {
+                        let assetHelper = heldAsset.asset.editorHelper;
+                        let object = heldAsset.asset.getObject();
+                        if(heldAsset.preTransformState) {
+                            object.position.fromArray(
+                                heldAsset.preTransformState);
+                            assetHelper._publish(['position']);
+                        }
+                        delete this._heldAssets[key];
                     }
-                    delete this._heldAssets[key];
                 }
-            }
-        });
+            });
+        }
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let key in this._heldAssets) {
                 delete this._heldAssets[key];

@@ -12,7 +12,7 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 
 export default class PrimitiveMeshHelper extends AssetEntityHelper {
     constructor(asset) {
-        super(asset);
+        super(asset, PubSubTopics.SHAPE_UPDATED);
         this._overwriteSetMaterial();
     }
 

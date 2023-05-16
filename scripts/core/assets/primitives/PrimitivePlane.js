@@ -5,6 +5,7 @@
  */
 
 import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
@@ -93,3 +94,4 @@ export default class PrimitivePlane extends PrimitiveMesh {
 }
 
 ShapesHandler.registerAsset(PrimitivePlane);
+LibraryHandler.loadBuiltIn(PrimitivePlane);

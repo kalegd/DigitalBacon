@@ -22,7 +22,7 @@ class AssetPage extends DynamicFieldsPage {
         this._assetType = assetType;
     }
 
-     _createTitleBlock() {
+    _createTitleBlock() {
         this._titleBlock = new ThreeMeshUI.Block({
             'height': 0.04,
             'width': 0.43,
@@ -34,7 +34,7 @@ class AssetPage extends DynamicFieldsPage {
         });
         this._titleField = new TextField({
             'height': 0.04,
-            'width': 0.31,
+            'width': 0.30,
             'fontSize': FontSizes.header,
             'margin': 0,
             'onBlur': () => {
@@ -42,17 +42,30 @@ class AssetPage extends DynamicFieldsPage {
                     this._titleField.content);
             },
         });
+        let componentsButton = ThreeMeshUIHelper.createButtonBlock({
+            'backgroundTexture': Textures.componentIcon,
+            'backgroundTextureScale': 0.7,
+            'height': 0.04,
+            'width': 0.04,
+        });
         let deleteButton = ThreeMeshUIHelper.createButtonBlock({
             'backgroundTexture': Textures.trashIcon,
             'backgroundTextureScale': 0.7,
             'height': 0.04,
             'width': 0.04,
         });
+        this._titleBlock.add(componentsButton);
         this._titleBlock.add(this._titleField.getObject());
         this._titleBlock.add(deleteButton);
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
-        let interactable = new PointerInteractable(deleteButton, () => {
+        let interactable = new PointerInteractable(componentsButton, () => {
+            let page = this._controller.getPage(MenuPages.LIST_COMPONENTS);
+            page.setContent(this._asset);
+            this._controller.pushPage(MenuPages.LIST_COMPONENTS);
+        });
+        this._containerInteractable.addChild(interactable);
+        interactable = new PointerInteractable(deleteButton, () => {
             this._assetHandler.deleteAsset(this._asset);
         });
         this._containerInteractable.addChild(interactable);

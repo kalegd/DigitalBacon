@@ -20,6 +20,8 @@ import * as MenuInputs from '/scripts/core/menu/input/MenuInputs.js';
 
 const version = "0.1.2";
 
+global.version = version;
+
 function getDeviceType() {
     return global.deviceType;
 }

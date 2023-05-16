@@ -16,7 +16,6 @@ import ColorWheelPage from '/scripts/core/menu/pages/ColorWheelPage.js';
 import EditorSettingsPage from '/scripts/core/menu/pages/EditorSettingsPage.js';
 import HandsPage from '/scripts/core/menu/pages/HandsPage.js';
 import HostPartyPage from '/scripts/core/menu/pages/HostPartyPage.js';
-import InstancePage from '/scripts/core/menu/pages/InstancePage.js';
 import JoinPartyPage from '/scripts/core/menu/pages/JoinPartyPage.js';
 import LoadFromGDrivePage from '/scripts/core/menu/pages/LoadFromGDrivePage.js';
 import LibraryPage from '/scripts/core/menu/pages/LibraryPage.js';
@@ -48,7 +47,6 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.COLOR_WHEEL] = new ColorWheelPage(this);
         this._pages[MenuPages.EDITOR_SETTINGS] = new EditorSettingsPage(this);
         this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
-        this._pages[MenuPages.INSTANCE] = new InstancePage(this);
         this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
         this._pages[MenuPages.LIBRARY] = new LibraryPage(this);
         this._pages[MenuPages.LIBRARY_SEARCH] = new LibrarySearchPage(this);

@@ -61,7 +61,8 @@ class ListComponentsPage extends PaginatedListPage {
             let filteredComponents = {};
             for(let componentId in components) {
                 let component = components[componentId];
-                if(!assetComponents.has(component)) {
+                if(!assetComponents.has(component)
+                        && component.supports(this._asset)) {
                     filteredComponents[componentId] =
                         { Name: component.getName() };
                 }
@@ -73,7 +74,6 @@ class ListComponentsPage extends PaginatedListPage {
                 this._selectNewComponent();
             });
             this._controller.pushPage(MenuPages.ASSET_SELECT);
-
         });
         this._containerInteractable.addChild(this._addInteractable);
         this._object.add(this._addButtonParent);
@@ -87,10 +87,17 @@ class ListComponentsPage extends PaginatedListPage {
     _selectNewComponent() {
         let page = this._controller.getPage(MenuPages.NEW_COMPONENT);
         page.setContent((component) => {
+            if(!component.supports(this._asset)) {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'Component is not supported for this type of asset',
+                });
+                return;
+            }
             this._asset.editorHelper.addComponent(component.getId());
             this._controller.back();
+            if(!this._object.parent) this._controller.back();
             let componentPage = this._controller.getPage(MenuPages.COMPONENT);
-            componentPage.setComponent(component);
+            componentPage.setAsset(component);
             this._controller.pushPage(MenuPages.COMPONENT);
         });
         this._controller.pushPage(MenuPages.NEW_COMPONENT);
@@ -105,7 +112,7 @@ class ListComponentsPage extends PaginatedListPage {
 
     _handleEditItemInteraction(item) {
         let componentPage = this._controller.getPage(MenuPages.COMPONENT);
-        componentPage.setComponent(item);
+        componentPage.setAsset(item);
         this._controller.pushPage(MenuPages.COMPONENT);
     }
 

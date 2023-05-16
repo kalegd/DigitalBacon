@@ -149,3 +149,4 @@ function powerOf2(v) {
 }
 
 TexturesHandler.registerAsset(CubeTexture);
+LibraryHandler.loadBuiltIn(CubeTexture);

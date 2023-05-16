@@ -5,6 +5,7 @@
  */
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import AssetScriptTypes from '/scripts/core/enums/AssetScriptTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -75,21 +76,14 @@ class LibraryHandler {
             for(let assetId in library) {
                 let assetDetails = library[assetId];
                 let type = assetDetails['Type'];
-                if(type == AssetTypes.SHAPE) {
-                    this.loadShape(assetId, assetDetails['Name']);
-                    continue;
-                } else if(type == AssetTypes.LIGHT) {
-                    this.loadLight(assetId, assetDetails['Name']);
-                    continue;
-                }
+                //TODO: Remove below 1 line in July
+                if(!assetDetails['Filepath']) continue;//Built-in asset
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('arraybuffer')
                     .then((arraybuffer)=>{
                         let options;
-                        if(type != AssetTypes.MODEL
-                                && type != AssetTypes.IMAGE) {
+                        if(type in AssetScriptTypes)
                             options = { type: 'application/javascript' };
-                        }
                         let blob = new Blob([arraybuffer], options);
                         return this.loadLibraryAsset(assetId, assetDetails, blob);
                     });
@@ -158,19 +152,11 @@ class LibraryHandler {
         });
     }
 
-    loadShape(assetId, name) {
-        if(assetId in this.library) return;
-        this.library[assetId] = {
-            'Name': name,
-            'Type': AssetTypes.SHAPE,
-        }
-    }
-
-    loadLight(assetId, name) {
-        if(assetId in this.library) return;
-        this.library[assetId] = {
-            'Name': name,
-            'Type': AssetTypes.LIGHT,
+    loadBuiltIn(assetClass) {
+        if(assetClass.assetId in this.library) return;
+        this.library[assetClass.assetId] = {
+            'Name': assetClass.assetName,
+            'Type': assetClass.assetType,
         }
     }
 

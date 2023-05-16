@@ -10,7 +10,6 @@ import UserController from '/scripts/core/assets/UserController.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
@@ -53,8 +52,8 @@ const FIELDS = [
 ];
 
 export default class AssetEntityHelper extends EditorHelper {
-    constructor(asset) {
-        super(asset, PubSubTopics.INSTANCE_UPDATED);
+    constructor(asset, updatedTopic) {
+        super(asset, updatedTopic);
         this._object = asset.getObject();
         this._attachedPeers = new Set();
         this._gripInteractables = {};

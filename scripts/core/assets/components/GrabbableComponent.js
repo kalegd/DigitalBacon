@@ -32,7 +32,7 @@ export default class GrabbableComponent extends Component {
         return this._stealable;
     }
 
-    isSupported(asset) {
+    supports(asset) {
         return asset instanceof AssetEntity;
     }
 

@@ -5,6 +5,7 @@
  */
 
 import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
@@ -66,3 +67,4 @@ export default class PrimitivePointLight extends PrimitiveLight {
 }
 
 LightsHandler.registerAsset(PrimitivePointLight);
+LibraryHandler.loadBuiltIn(PrimitivePointLight);

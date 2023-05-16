@@ -5,6 +5,7 @@
  */
 
 import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
@@ -33,3 +34,4 @@ export default class PrimitiveAmbientLight extends PrimitiveLight {
 }
 
 LightsHandler.registerAsset(PrimitiveAmbientLight);
+LibraryHandler.loadBuiltIn(PrimitiveAmbientLight);

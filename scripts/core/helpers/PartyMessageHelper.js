@@ -188,7 +188,8 @@ class PartyMessageHelper {
         let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
         let asset = assetHandler.getSessionAsset(message.params.id);
         if(asset) {
-            this._handleAssetUpdate(asset, params,message.assetType+'_UPDATED');
+            this._handleAssetUpdate(asset, message.params,
+                message.assetType + '_UPDATED');
         }
     }
 
@@ -369,7 +370,7 @@ class PartyMessageHelper {
         }
         let peerMessage = {
             topic: "instance_updated",
-            asset: asset,
+            params: asset,
             assetType: assetType,
         };
         this._partyHandler.sendToAllPeers(

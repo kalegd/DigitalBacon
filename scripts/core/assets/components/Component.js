@@ -14,7 +14,7 @@ export default class Component extends Asset {
         super(params);
     }
 
-    isSupported(asset) {
+    supports(asset) {
         return true;
     }
 

@@ -5,6 +5,7 @@
  */
 
 import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
@@ -18,7 +19,7 @@ const FIELDS = [
 
 export default class GLTFAssetHelper extends AssetEntityHelper {
     constructor(asset) {
-        super(asset);
+        super(asset, PubSubTopics.MODEL_UPDATED);
     }
 
     getMenuFields() {

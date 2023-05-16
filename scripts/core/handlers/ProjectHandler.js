@@ -21,8 +21,6 @@ const orderedHandlerKeys = [AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMP
 class ProjectHandler {
     constructor() {
         this._assetHandlers = {};
-        this._lightClassMap = {};
-        this._shapeClassMap = {};
     }
 
     init(scene) {
@@ -147,16 +145,6 @@ class ProjectHandler {
         if(errorCallback) errorCallback();
     }
 
-    registerLight(lightClass) {
-        this._lightClassMap[lightClass.assetId] = lightClass;
-        LibraryHandler.loadLight(lightClass.assetId, lightClass.assetName);
-    }
-
-    registerShape(shapeClass) {
-        this._shapeClassMap[shapeClass.assetId] = shapeClass;
-        LibraryHandler.loadShape(shapeClass.assetId, shapeClass.assetName);
-    }
-
     getObjects() {
         return this._objects;
     }
@@ -197,7 +185,8 @@ class ProjectHandler {
     addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
         let assetType = LibraryHandler.getType(assetId);
         let handler = this._assetHandlers[assetType];
-        handler.addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish);
+        return handler.addNewAsset(assetId, params, ignoreUndoRedo,
+            ignorePublish);
     }
 
     addAsset(instance, ignorePublish) {
@@ -274,7 +263,7 @@ class ProjectHandler {
         }
         let assetIds = Object.keys(assets);
         let settings = SettingsHandler.getSettings();
-        let projectDetails = { settings: settings };
+        let projectDetails = { settings: settings, version: global.version };
         for(let type in this._assetHandlers) {
             let handler = this._assetHandlers[type];
             let details = handler.getAssetsDetails();

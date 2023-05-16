@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
@@ -22,7 +23,7 @@ const FIELDS = [
 
 export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
     constructor(asset) {
-        super(asset);
+        super(asset, PubSubTopics.IMAGE_UPDATED);
     }
 
     place(intersection) {
