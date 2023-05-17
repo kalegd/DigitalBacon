@@ -10,9 +10,9 @@ import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class Cone extends Shape {
+export default class ConeShape extends Shape {
     constructor(params = {}) {
-        params['assetId'] = Cone.assetId;
+        params['assetId'] = ConeShape.assetId;
         super(params);
         this._height = numberOr(params['height'], 0.2);
         this._radius = numberOr(params['radius'], 0.1);
@@ -33,7 +33,7 @@ export default class Cone extends Shape {
     }
 
     _getDefaultName() {
-        return Cone.assetName;
+        return ConeShape.assetName;
     }
 
     _updateGeometry() {
@@ -121,5 +121,5 @@ export default class Cone extends Shape {
     static assetName = 'Cone';
 }
 
-ShapesHandler.registerAsset(Cone);
-LibraryHandler.loadBuiltIn(Cone);
+ShapesHandler.registerAsset(ConeShape);
+LibraryHandler.loadBuiltIn(ConeShape);

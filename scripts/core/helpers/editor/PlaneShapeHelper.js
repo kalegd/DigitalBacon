@@ -5,7 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import Ring from '/scripts/core/assets/primitives/Ring.js';
+import PlaneShape from '/scripts/core/assets/primitives/PlaneShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
@@ -13,22 +13,18 @@ import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 const FIELDS = [
     { "parameter": "visualEdit" },
     { "parameter": "material" },
-    { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
+    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
+    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
+    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
         "type": NumberInput },
-    { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "thetaSegments", "name": "Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "phiSegments", "name": "Radius Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
         "type": NumberInput },
     { "parameter": "position" },
     { "parameter": "rotation" },
     { "parameter": "scale" },
 ];
 
-export default class RingHelper extends ShapeHelper {
+export default class PlaneShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
@@ -65,4 +61,4 @@ export default class RingHelper extends ShapeHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(RingHelper, Ring);
+EditorHelperFactory.registerEditorHelper(PlaneShapeHelper, PlaneShape);

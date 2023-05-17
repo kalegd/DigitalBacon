@@ -10,9 +10,9 @@ import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class Torus extends Shape {
+export default class TorusShape extends Shape {
     constructor(params = {}) {
-        params['assetId'] = Torus.assetId;
+        params['assetId'] = TorusShape.assetId;
         super(params);
         this._radius = numberOr(params['radius'], 0.1);
         this._tube = numberOr(params['tube'], 0.05);
@@ -31,7 +31,7 @@ export default class Torus extends Shape {
     }
 
     _getDefaultName() {
-        return Torus.assetName;
+        return TorusShape.assetName;
     }
 
     _updateGeometry() {
@@ -108,5 +108,5 @@ export default class Torus extends Shape {
     static assetName = 'Torus';
 }
 
-ShapesHandler.registerAsset(Torus);
-LibraryHandler.loadBuiltIn(Torus);
+ShapesHandler.registerAsset(TorusShape);
+LibraryHandler.loadBuiltIn(TorusShape);

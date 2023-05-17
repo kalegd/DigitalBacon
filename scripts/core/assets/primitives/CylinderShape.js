@@ -10,9 +10,9 @@ import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class Cylinder extends Shape {
+export default class CylinderShape extends Shape {
     constructor(params = {}) {
-        params['assetId'] = Cylinder.assetId;
+        params['assetId'] = CylinderShape.assetId;
         super(params);
         this._height = numberOr(params['height'], 0.2);
         this._radiusTop = numberOr(params['radiusTop'], 0.1);
@@ -34,7 +34,7 @@ export default class Cylinder extends Shape {
     }
 
     _getDefaultName() {
-        return Cylinder.assetName;
+        return CylinderShape.assetName;
     }
 
     _updateGeometry() {
@@ -134,5 +134,5 @@ export default class Cylinder extends Shape {
     static assetName = 'Cylinder';
 }
 
-ShapesHandler.registerAsset(Cylinder);
-LibraryHandler.loadBuiltIn(Cylinder);
+ShapesHandler.registerAsset(CylinderShape);
+LibraryHandler.loadBuiltIn(CylinderShape);

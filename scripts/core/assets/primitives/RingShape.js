@@ -10,9 +10,9 @@ import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class Ring extends Shape {
+export default class RingShape extends Shape {
     constructor(params = {}) {
-        params['assetId'] = Ring.assetId;
+        params['assetId'] = RingShape.assetId;
         super(params);
         this._innerRadius = numberOr(params['innerRadius'], 0.05);
         this._outerRadius = numberOr(params['outerRadius'], 0.1);
@@ -32,7 +32,7 @@ export default class Ring extends Shape {
     }
 
     _getDefaultName() {
-        return Ring.assetName;
+        return RingShape.assetName;
     }
 
     _updateGeometry() {
@@ -109,5 +109,5 @@ export default class Ring extends Shape {
     static assetName = 'Ring';
 }
 
-ShapesHandler.registerAsset(Ring);
-LibraryHandler.loadBuiltIn(Ring);
+ShapesHandler.registerAsset(RingShape);
+LibraryHandler.loadBuiltIn(RingShape);

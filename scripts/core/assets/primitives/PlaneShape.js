@@ -10,9 +10,9 @@ import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class Plane extends Shape {
+export default class PlaneShape extends Shape {
     constructor(params = {}) {
-        params['assetId'] = Plane.assetId;
+        params['assetId'] = PlaneShape.assetId;
         super(params);
         this._width = numberOr(params['width'], 0.1);
         this._height = numberOr(params['height'], 0.1);
@@ -29,7 +29,7 @@ export default class Plane extends Shape {
     }
 
     _getDefaultName() {
-        return Plane.assetName;
+        return PlaneShape.assetName;
     }
 
     _updateGeometry() {
@@ -93,5 +93,5 @@ export default class Plane extends Shape {
     static assetName = 'Plane';
 }
 
-ShapesHandler.registerAsset(Plane);
-LibraryHandler.loadBuiltIn(Plane);
+ShapesHandler.registerAsset(PlaneShape);
+LibraryHandler.loadBuiltIn(PlaneShape);

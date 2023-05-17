@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Sphere from '/scripts/core/assets/primitives/Sphere.js';
+import SphereShape from '/scripts/core/assets/primitives/SphereShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
@@ -27,7 +27,7 @@ const FIELDS = [
     { "parameter": "scale" },
 ];
 
-export default class SphereHelper extends ShapeHelper {
+export default class SphereShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
@@ -50,4 +50,4 @@ export default class SphereHelper extends ShapeHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(SphereHelper, Sphere);
+EditorHelperFactory.registerEditorHelper(SphereShapeHelper, SphereShape);

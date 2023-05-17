@@ -10,9 +10,9 @@ import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class Sphere extends Shape {
+export default class SphereShape extends Shape {
     constructor(params = {}) {
-        params['assetId'] = Sphere.assetId;
+        params['assetId'] = SphereShape.assetId;
         super(params);
         this._radius = numberOr(params['radius'], 0.1);
         this._widthSegments = params['widthSegments'] || 32;
@@ -33,7 +33,7 @@ export default class Sphere extends Shape {
     }
 
     _getDefaultName() {
-        return Sphere.assetName;
+        return SphereShape.assetName;
     }
 
     _updateGeometry() {
@@ -111,5 +111,5 @@ export default class Sphere extends Shape {
     static assetName = 'Sphere';
 }
 
-ShapesHandler.registerAsset(Sphere);
-LibraryHandler.loadBuiltIn(Sphere);
+ShapesHandler.registerAsset(SphereShape);
+LibraryHandler.loadBuiltIn(SphereShape);

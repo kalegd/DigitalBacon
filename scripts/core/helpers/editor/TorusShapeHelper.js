@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Box from '/scripts/core/assets/primitives/Box.js';
+import TorusShape from '/scripts/core/assets/primitives/TorusShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
@@ -12,21 +12,22 @@ import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 const FIELDS = [
     { "parameter": "visualEdit" },
     { "parameter": "material" },
-    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
-    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
-    { "parameter": "depth", "name": "Depth", "min": 0, "type": NumberInput },
-    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
+    { "parameter": "radius", "name": "Radius", "min": 0,
         "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
+    { "parameter": "tube", "name": "Tube Radius", "min": 0,
         "type": NumberInput },
-    { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
+    { "parameter": "radialSegments", "name": "Radial Sides", "min": 2,
+        "type": NumberInput },
+    { "parameter": "tubularSegments", "name": "Tubular Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
     { "parameter": "position" },
     { "parameter": "rotation" },
     { "parameter": "scale" },
 ];
 
-export default class BoxHelper extends ShapeHelper {
+export default class TorusShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
@@ -49,4 +50,4 @@ export default class BoxHelper extends ShapeHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(BoxHelper, Box);
+EditorHelperFactory.registerEditorHelper(TorusShapeHelper, TorusShape);
