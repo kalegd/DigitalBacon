@@ -181,6 +181,11 @@ export default class PeerController extends Entity {
 
     removeFromScene() {
         if(this._avatar) this._avatar.removeFromScene();
+        if(this.hands) {
+            for(let side in this.hands) {
+                this.hands[side].removeFromScene();
+            }
+        }
         super.removeFromScene();
     }
 }

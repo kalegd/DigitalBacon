@@ -80,6 +80,18 @@ export default class GrabbableSystem extends System {
                 this._onPartyJoined[key]();
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PARTY_ENDED, () => {
+            for(let id in this._notStealable) {
+                let interactable = this._notStealable[id];
+                this._interactables[id] = interactable;
+                if(interactable instanceof GripInteractable) {
+                    GripInteractableHandler.addInteractable(interactable);
+                } else {
+                    PointerInteractableHandler.addInteractable(interactable);
+                }
+                delete this._notStealable[id];
+            }
+        });
         PartyMessageHelper.registerBlockableHandler(GRABBED_TOPIC, (p, m) => {
             this._handlePeerGrabbed(p, m);
         });

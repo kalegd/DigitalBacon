@@ -101,10 +101,7 @@ class LibraryHandler {
 
     loadLibraryAsset(assetId, assetDetails, blob) {
         return blobToHash(blob).then((hash) => {
-            if(hash in this._blobHashMap) {
-                console.warn("Unreachable statement reached...");
-                return;
-            }
+            if(hash in this._blobHashMap) return;
             this._blobHashMap[hash] = assetId;
             this.library[assetId] = {
                 'Blob': blob,

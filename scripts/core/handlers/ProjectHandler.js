@@ -120,7 +120,7 @@ class ProjectHandler {
                     try {
                         for(let key of orderedHandlerKeys) {
                             this._assetHandlers[key].load(
-                                this._projectDetails[key], true);
+                                projectDetails[key.toLowerCase() + 's'], true);
                         }
                     } catch(error) {
                         console.error(error);

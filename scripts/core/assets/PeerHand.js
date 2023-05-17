@@ -68,4 +68,15 @@ export default class PeerHand extends Entity {
         }
         return false;
     }
+
+    removeFromScene() {
+        if(this._object.parent) {
+            for(let child of this._object.children) {
+                if(child != this._mesh) {
+                    global.scene.attach(child);
+                }
+            }
+        }
+        super.removeFromScene();
+    }
 }
