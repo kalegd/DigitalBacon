@@ -9,7 +9,7 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 
-export default class PrimitiveLight extends AssetEntity {
+export default class Light extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._color = numberOr(params['color'], 0xffffff);

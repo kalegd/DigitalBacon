@@ -4,15 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
+import Shape from '/scripts/core/assets/primitives/Shape.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class PrimitiveTorus extends PrimitiveMesh {
+export default class Torus extends Shape {
     constructor(params = {}) {
-        params['assetId'] = PrimitiveTorus.assetId;
+        params['assetId'] = Torus.assetId;
         super(params);
         this._radius = numberOr(params['radius'], 0.1);
         this._tube = numberOr(params['tube'], 0.05);
@@ -31,7 +31,7 @@ export default class PrimitiveTorus extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return PrimitiveTorus.assetName;
+        return Torus.assetName;
     }
 
     _updateGeometry() {
@@ -108,5 +108,5 @@ export default class PrimitiveTorus extends PrimitiveMesh {
     static assetName = 'Torus';
 }
 
-ShapesHandler.registerAsset(PrimitiveTorus);
-LibraryHandler.loadBuiltIn(PrimitiveTorus);
+ShapesHandler.registerAsset(Torus);
+LibraryHandler.loadBuiltIn(Torus);

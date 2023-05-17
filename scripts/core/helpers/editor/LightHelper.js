@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
+import Light from '/scripts/core/assets/primitives/Light.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
@@ -22,7 +22,7 @@ const FIELDS = [
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveLightHelper extends AssetEntityHelper {
+export default class LightHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.LIGHT_UPDATED);
         this._createMesh();
@@ -30,7 +30,7 @@ export default class PrimitiveLightHelper extends AssetEntityHelper {
 
     _createMesh() {
         console.error(
-            "PrimitiveLightHelper._createMesh() should be overridden");
+            "LightHelper._createMesh() should be overridden");
         return;
     }
 
@@ -58,4 +58,4 @@ export default class PrimitiveLightHelper extends AssetEntityHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveLightHelper, PrimitiveLight);
+EditorHelperFactory.registerEditorHelper(LightHelper, Light);

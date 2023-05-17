@@ -4,10 +4,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveAmbientLight from '/scripts/core/assets/primitives/PrimitiveAmbientLight.js';
+import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import { Colors } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import PrimitiveLightHelper from '/scripts/core/helpers/editor/PrimitiveLightHelper.js';
+import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import * as THREE from 'three';
 
 const FIELDS = [
@@ -19,7 +19,7 @@ const FIELDS = [
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveAmbientLightHelper extends PrimitiveLightHelper {
+export default class AmbientLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
     }
@@ -36,4 +36,4 @@ export default class PrimitiveAmbientLightHelper extends PrimitiveLightHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveAmbientLightHelper, PrimitiveAmbientLight);
+EditorHelperFactory.registerEditorHelper(AmbientLightHelper, AmbientLight);

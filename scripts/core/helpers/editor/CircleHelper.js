@@ -4,36 +4,42 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitivePointLight from '/scripts/core/assets/primitives/PrimitivePointLight.js';
-import { Colors } from '/scripts/core/helpers/constants.js';
+import global from '/scripts/core/global.js';
+import Circle from '/scripts/core/assets/primitives/Circle.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import PrimitiveLightHelper from '/scripts/core/helpers/editor/PrimitiveLightHelper.js';
+import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import * as THREE from 'three';
 
 const FIELDS = [
     { "parameter": "visualEdit" },
-    { "parameter": "color" },
-    { "parameter": "intensity" },
-    { "parameter": "distance", "name": "Distance", "min": 0,
+    { "parameter": "material" },
+    { "parameter": "radius", "name": "Radius", "min": 0, "type": NumberInput },
+    { "parameter": "segments", "name": "Sides", "min": 3,
         "type": NumberInput },
-    { "parameter": "decay", "name": "Decay", "min": 0,
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
     { "parameter": "position" },
     { "parameter": "rotation" },
     { "parameter": "scale" },
 ];
 
-export default class PrimitivePointLightHelper extends PrimitiveLightHelper {
+export default class CircleHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
 
-    _createMesh() {
-        let geometry = new THREE.SphereGeometry(0.07);
-        let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
-        this._mesh = new THREE.Mesh(geometry, material);
-        if(this._asset.visualEdit) this._object.add(this._mesh);
+    place(intersection) {
+        let object = intersection.object;
+        let point = intersection.point;
+        let face = intersection.face;
+        object.updateMatrixWorld();
+        let normal = intersection.face.normal.clone()
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(point);
+        this._object.lookAt(normal.add(this._object.position));
+        this.roundAttributes(true);
     }
 
     getMenuFields() {
@@ -54,4 +60,4 @@ export default class PrimitivePointLightHelper extends PrimitiveLightHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitivePointLightHelper, PrimitivePointLight);
+EditorHelperFactory.registerEditorHelper(CircleHelper, Circle);

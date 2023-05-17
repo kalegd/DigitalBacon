@@ -5,7 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import PrimitiveAmbientLight from '/scripts/core/assets/primitives/PrimitiveAmbientLight.js';
+import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
@@ -214,7 +214,7 @@ class ProjectPage extends PaginatedPage {
             return;
         }
         ProjectHandler.reset();
-        let ambientLight = new PrimitiveAmbientLight({
+        let ambientLight = new AmbientLight({
             'visualEdit': false,
         });
         LightsHandler.addAsset(ambientLight, true);

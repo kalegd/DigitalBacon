@@ -4,15 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
+import Shape from '/scripts/core/assets/primitives/Shape.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class PrimitiveCircle extends PrimitiveMesh {
+export default class Circle extends Shape {
     constructor(params = {}) {
-        params['assetId'] = PrimitiveCircle.assetId;
+        params['assetId'] = Circle.assetId;
         super(params);
         this._radius = numberOr(params['radius'], 0.1);
         this._segments = params['segments'] || 32;
@@ -29,7 +29,7 @@ export default class PrimitiveCircle extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return PrimitiveCircle.assetName;
+        return Circle.assetName;
     }
 
     _updateGeometry() {
@@ -83,5 +83,5 @@ export default class PrimitiveCircle extends PrimitiveMesh {
     static assetName = 'Circle';
 }
 
-ShapesHandler.registerAsset(PrimitiveCircle);
-LibraryHandler.loadBuiltIn(PrimitiveCircle);
+ShapesHandler.registerAsset(Circle);
+LibraryHandler.loadBuiltIn(Circle);

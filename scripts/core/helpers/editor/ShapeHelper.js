@@ -4,13 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
+import Shape from '/scripts/core/assets/primitives/Shape.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 
-export default class PrimitiveMeshHelper extends AssetEntityHelper {
+export default class ShapeHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.SHAPE_UPDATED);
         this._overwriteSetMaterial();
@@ -74,4 +74,4 @@ export default class PrimitiveMeshHelper extends AssetEntityHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveMeshHelper, PrimitiveMesh);
+EditorHelperFactory.registerEditorHelper(ShapeHelper, Shape);

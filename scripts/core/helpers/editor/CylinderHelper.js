@@ -4,29 +4,34 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveBox from '/scripts/core/assets/primitives/PrimitiveBox.js';
+import Cylinder from '/scripts/core/assets/primitives/Cylinder.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
+import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
+import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
 const FIELDS = [
     { "parameter": "visualEdit" },
     { "parameter": "material" },
-    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
-    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
-    { "parameter": "depth", "name": "Depth", "min": 0, "type": NumberInput },
-    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
+    { "parameter": "height", "name": "Height", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radiusTop", "name": "Top Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radiusBottom", "name": "Bottom Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "radialSegments", "name": "Sides", "min": 3,
         "type": NumberInput },
     { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
         "type": NumberInput },
-    { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
+    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
+    { "parameter": "openEnded", "name": "Open Ended", "type": CheckboxInput },
     { "parameter": "position" },
     { "parameter": "rotation" },
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveBoxHelper extends PrimitiveMeshHelper {
+export default class CylinderHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
@@ -49,4 +54,4 @@ export default class PrimitiveBoxHelper extends PrimitiveMeshHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveBoxHelper, PrimitiveBox);
+EditorHelperFactory.registerEditorHelper(CylinderHelper, Cylinder);

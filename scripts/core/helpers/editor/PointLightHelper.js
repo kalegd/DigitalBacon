@@ -4,32 +4,36 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveTorus from '/scripts/core/assets/primitives/PrimitiveTorus.js';
+import PointLight from '/scripts/core/assets/primitives/PointLight.js';
+import { Colors } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
+import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import * as THREE from 'three';
 
 const FIELDS = [
     { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "radius", "name": "Radius", "min": 0,
+    { "parameter": "color" },
+    { "parameter": "intensity" },
+    { "parameter": "distance", "name": "Distance", "min": 0,
         "type": NumberInput },
-    { "parameter": "tube", "name": "Tube Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "radialSegments", "name": "Radial Sides", "min": 2,
-        "type": NumberInput },
-    { "parameter": "tubularSegments", "name": "Tubular Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
+    { "parameter": "decay", "name": "Decay", "min": 0,
         "type": NumberInput },
     { "parameter": "position" },
     { "parameter": "rotation" },
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveTorusHelper extends PrimitiveMeshHelper {
+export default class PointLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
+    }
+
+    _createMesh() {
+        let geometry = new THREE.SphereGeometry(0.07);
+        let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
+        this._mesh = new THREE.Mesh(geometry, material);
+        if(this._asset.visualEdit) this._object.add(this._mesh);
     }
 
     getMenuFields() {
@@ -50,4 +54,4 @@ export default class PrimitiveTorusHelper extends PrimitiveMeshHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveTorusHelper, PrimitiveTorus);
+EditorHelperFactory.registerEditorHelper(PointLightHelper, PointLight);

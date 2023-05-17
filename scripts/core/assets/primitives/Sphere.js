@@ -4,43 +4,44 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
+import Shape from '/scripts/core/assets/primitives/Shape.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class PrimitiveCone extends PrimitiveMesh {
+export default class Sphere extends Shape {
     constructor(params = {}) {
-        params['assetId'] = PrimitiveCone.assetId;
+        params['assetId'] = Sphere.assetId;
         super(params);
-        this._height = numberOr(params['height'], 0.2);
         this._radius = numberOr(params['radius'], 0.1);
-        this._radialSegments = params['radialSegments'] || 32;
-        this._heightSegments = params['heightSegments'] || 1;
-        this._thetaLength = numberOr(params['thetaLength'], 360);
-        this._openEnded = params['openEnded'] || false;
+        this._widthSegments = params['widthSegments'] || 32;
+        this._heightSegments = params['heightSegments'] || 16;
+        this._phiLength = numberOr(params['phiLength'], 360);
+        this._thetaLength = numberOr(params['thetaLength'], 180);
         this._createMesh();
     }
 
     _createMesh() {
+        let phiLength = this._phiLength * Math.PI / 180;
         let thetaLength = this._thetaLength * Math.PI / 180;
-        let geometry = new THREE.ConeGeometry(this._radius, this._height,
-            this._radialSegments, this._heightSegments, this._openEnded, 0,
+        let geometry = new THREE.SphereGeometry(this._radius,
+            this._widthSegments, this._heightSegments, 0, phiLength, 0,
             thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
     }
 
     _getDefaultName() {
-        return PrimitiveCone.assetName;
+        return Sphere.assetName;
     }
 
     _updateGeometry() {
+        let phiLength = this._phiLength * Math.PI / 180;
         let thetaLength = this._thetaLength * Math.PI / 180;
         let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.ConeGeometry(this._radius, this._height,
-            this._radialSegments, this._heightSegments, this._openEnded, 0,
+        let geometry = new THREE.SphereGeometry(this._radius,
+            this._widthSegments, this._heightSegments, 0, phiLength, 0,
             thetaLength);
         this._mesh.geometry = geometry;
         oldGeometry.dispose();
@@ -48,43 +49,32 @@ export default class PrimitiveCone extends PrimitiveMesh {
 
     exportParams() {
         let params = super.exportParams();
-        params['height'] = this._height;
         params['radius'] = this._radius;
-        params['radialSegments'] = this._radialSegments;
+        params['widthSegments'] = this._widthSegments;
         params['heightSegments'] = this._heightSegments;
+        params['phiLength'] = this._phiLength;
         params['thetaLength'] = this._thetaLength;
-        params['openEnded'] = this._openEnded;
         return params;
-    }
-
-    getHeight() {
-        return this._height;
     }
 
     getRadius() {
         return this._radius;
     }
 
-    getRadialSegments() {
-        return this._radialSegments;
+    getWidthSegments() {
+        return this._widthSegments;
     }
 
     getHeightSegments() {
         return this._heightSegments;
     }
 
+    getPhiLength() {
+        return this._phiLength;
+    }
+
     getThetaLength() {
         return this._thetaLength;
-    }
-
-    getOpenEnded() {
-        return this._openEnded;
-    }
-
-    setHeight(height) {
-        if(this._height == height) return;
-        this._height = height;
-        this._updateGeometry();
     }
 
     setRadius(radius) {
@@ -93,9 +83,9 @@ export default class PrimitiveCone extends PrimitiveMesh {
         this._updateGeometry();
     }
 
-    setRadialSegments(radialSegments) {
-        if(this._radialSegments == radialSegments) return;
-        this._radialSegments = radialSegments;
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
         this._updateGeometry();
     }
 
@@ -105,21 +95,21 @@ export default class PrimitiveCone extends PrimitiveMesh {
         this._updateGeometry();
     }
 
+    setPhiLength(phiLength) {
+        if(this._phiLength == phiLength) return;
+        this._phiLength = phiLength;
+        this._updateGeometry();
+    }
+
     setThetaLength(thetaLength) {
         if(this._thetaLength == thetaLength) return;
         this._thetaLength = thetaLength;
         this._updateGeometry();
     }
 
-    setOpenEnded(openEnded) {
-        if(this._openEnded == openEnded) return;
-        this._openEnded = openEnded;
-        this._updateGeometry();
-    }
-
-    static assetId = '42779f01-e2cc-495a-a4b3-b286197fa762';
-    static assetName = 'Cone';
+    static assetId = '423c9506-52f4-4725-b848-69913cce2b00';
+    static assetName = 'Sphere';
 }
 
-ShapesHandler.registerAsset(PrimitiveCone);
-LibraryHandler.loadBuiltIn(PrimitiveCone);
+ShapesHandler.registerAsset(Sphere);
+LibraryHandler.loadBuiltIn(Sphere);

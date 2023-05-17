@@ -4,15 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveMesh from '/scripts/core/assets/primitives/PrimitiveMesh.js';
+import Shape from '/scripts/core/assets/primitives/Shape.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class PrimitiveCylinder extends PrimitiveMesh {
+export default class Cylinder extends Shape {
     constructor(params = {}) {
-        params['assetId'] = PrimitiveCylinder.assetId;
+        params['assetId'] = Cylinder.assetId;
         super(params);
         this._height = numberOr(params['height'], 0.2);
         this._radiusTop = numberOr(params['radiusTop'], 0.1);
@@ -34,7 +34,7 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
     }
 
     _getDefaultName() {
-        return PrimitiveCylinder.assetName;
+        return Cylinder.assetName;
     }
 
     _updateGeometry() {
@@ -134,5 +134,5 @@ export default class PrimitiveCylinder extends PrimitiveMesh {
     static assetName = 'Cylinder';
 }
 
-ShapesHandler.registerAsset(PrimitiveCylinder);
-LibraryHandler.loadBuiltIn(PrimitiveCylinder);
+ShapesHandler.registerAsset(Cylinder);
+LibraryHandler.loadBuiltIn(Cylinder);

@@ -10,14 +10,14 @@ import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
 import { Materials } from '/scripts/core/helpers/constants.js';
 
-export default class PrimitiveMesh extends AssetEntity {
+export default class Shape extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._material = params['material'];
     }
 
     _updateGeometry() {
-        console.error("PrimitiveMesh._updateGeometry() should be overridden");
+        console.error("Shape._updateGeometry() should be overridden");
     }
 
     _getMaterial() {

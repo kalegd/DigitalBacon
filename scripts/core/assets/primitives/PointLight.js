@@ -4,15 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
+import Light from '/scripts/core/assets/primitives/Light.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class PrimitivePointLight extends PrimitiveLight {
+export default class PointLight extends Light {
     constructor(params = {}) {
-        params['assetId'] = PrimitivePointLight.assetId;
+        params['assetId'] = PointLight.assetId;
         super(params);
         this._distance = numberOr(params['distance'], 0);
         this._decay = numberOr(params['decay'], 2);
@@ -26,7 +26,7 @@ export default class PrimitivePointLight extends PrimitiveLight {
     }
 
     _getDefaultName() {
-        return PrimitivePointLight.assetName;
+        return PointLight.assetName;
     }
 
     _updateLight() {
@@ -66,5 +66,5 @@ export default class PrimitivePointLight extends PrimitiveLight {
     static assetName = 'Basic Light';
 }
 
-LightsHandler.registerAsset(PrimitivePointLight);
-LibraryHandler.loadBuiltIn(PrimitivePointLight);
+LightsHandler.registerAsset(PointLight);
+LibraryHandler.loadBuiltIn(PointLight);

@@ -4,32 +4,30 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveCone from '/scripts/core/assets/primitives/PrimitiveCone.js';
+import Sphere from '/scripts/core/assets/primitives/Sphere.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
+import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
 const FIELDS = [
     { "parameter": "visualEdit" },
     { "parameter": "material" },
-    { "parameter": "height", "name": "Height", "min": 0,
-        "type": NumberInput },
     { "parameter": "radius", "name": "Radius", "min": 0,
         "type": NumberInput },
-    { "parameter": "radialSegments", "name": "Sides", "min": 3,
+    { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,
         "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
+    { "parameter": "heightSegments", "name": "Vertical Sides", "min": 2,
         "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "parameter": "openEnded", "name": "Open Ended", "type": CheckboxInput },
+    { "parameter": "phiLength", "name": "Horizontal Degrees", "min": 0,
+        "max": 360, "type": NumberInput },
+    { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
+        "max": 180, "type": NumberInput },
     { "parameter": "position" },
     { "parameter": "rotation" },
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveConeHelper extends PrimitiveMeshHelper {
+export default class SphereHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
@@ -52,4 +50,4 @@ export default class PrimitiveConeHelper extends PrimitiveMeshHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveConeHelper, PrimitiveCone);
+EditorHelperFactory.registerEditorHelper(SphereHelper, Sphere);

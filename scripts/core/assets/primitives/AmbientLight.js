@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveLight from '/scripts/core/assets/primitives/PrimitiveLight.js';
+import Light from '/scripts/core/assets/primitives/Light.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
@@ -13,9 +13,9 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class PrimitiveAmbientLight extends PrimitiveLight {
+export default class AmbientLight extends Light {
     constructor(params = {}) {
-        params['assetId'] = PrimitiveAmbientLight.assetId;
+        params['assetId'] = AmbientLight.assetId;
         super(params);
         this._createLight();
     }
@@ -26,12 +26,12 @@ export default class PrimitiveAmbientLight extends PrimitiveLight {
     }
 
     _getDefaultName() {
-        return PrimitiveAmbientLight.assetName;
+        return AmbientLight.assetName;
     }
 
     static assetId = '7605bff2-8ca3-4a47-b6f7-311d745507de';
     static assetName = 'Ambient Light';
 }
 
-LightsHandler.registerAsset(PrimitiveAmbientLight);
-LibraryHandler.loadBuiltIn(PrimitiveAmbientLight);
+LightsHandler.registerAsset(AmbientLight);
+LibraryHandler.loadBuiltIn(AmbientLight);

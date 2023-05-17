@@ -4,30 +4,29 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PrimitiveSphere from '/scripts/core/assets/primitives/PrimitiveSphere.js';
+import Box from '/scripts/core/assets/primitives/Box.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
+import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
 const FIELDS = [
     { "parameter": "visualEdit" },
     { "parameter": "material" },
-    { "parameter": "radius", "name": "Radius", "min": 0,
+    { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
+    { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
+    { "parameter": "depth", "name": "Depth", "min": 0, "type": NumberInput },
+    { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
         "type": NumberInput },
-    { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,
+    { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
         "type": NumberInput },
-    { "parameter": "heightSegments", "name": "Vertical Sides", "min": 2,
+    { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
         "type": NumberInput },
-    { "parameter": "phiLength", "name": "Horizontal Degrees", "min": 0,
-        "max": 360, "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
-        "max": 180, "type": NumberInput },
     { "parameter": "position" },
     { "parameter": "rotation" },
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveSphereHelper extends PrimitiveMeshHelper {
+export default class BoxHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
@@ -50,4 +49,4 @@ export default class PrimitiveSphereHelper extends PrimitiveMeshHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveSphereHelper, PrimitiveSphere);
+EditorHelperFactory.registerEditorHelper(BoxHelper, Box);

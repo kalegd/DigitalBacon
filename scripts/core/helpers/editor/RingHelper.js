@@ -5,16 +5,21 @@
  */
 
 import global from '/scripts/core/global.js';
-import PrimitiveCircle from '/scripts/core/assets/primitives/PrimitiveCircle.js';
+import Ring from '/scripts/core/assets/primitives/Ring.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import PrimitiveMeshHelper from '/scripts/core/helpers/editor/PrimitiveMeshHelper.js';
+import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
 const FIELDS = [
     { "parameter": "visualEdit" },
     { "parameter": "material" },
-    { "parameter": "radius", "name": "Radius", "min": 0, "type": NumberInput },
-    { "parameter": "segments", "name": "Sides", "min": 3,
+    { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,
+        "type": NumberInput },
+    { "parameter": "thetaSegments", "name": "Sides", "min": 3,
+        "type": NumberInput },
+    { "parameter": "phiSegments", "name": "Radius Segments", "min": 1,
         "type": NumberInput },
     { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
         "type": NumberInput },
@@ -23,7 +28,7 @@ const FIELDS = [
     { "parameter": "scale" },
 ];
 
-export default class PrimitiveCircleHelper extends PrimitiveMeshHelper {
+export default class RingHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
     }
@@ -60,4 +65,4 @@ export default class PrimitiveCircleHelper extends PrimitiveMeshHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(PrimitiveCircleHelper, PrimitiveCircle);
+EditorHelperFactory.registerEditorHelper(RingHelper, Ring);
