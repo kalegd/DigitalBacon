@@ -53,6 +53,34 @@
               </a>
             </li>
             <li>
+              <a href="#section/Assets">
+                <label type="section" role="menuitem">
+                  <span title="Assets">Assets</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/AssetHandlers">
+                <label type="section" role="menuitem">
+                  <span title="AssetHandlers">AssetHandlers</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/EditorHelpers">
+                <label type="section" role="menuitem">
+                  <span title="EditorHelpers">EditorHelpers</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Interactables">
+                <label type="section" role="menuitem">
+                  <span title="Interactables">Interactables</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/LibraryHandler">
                 <label type="section" role="menuitem">
                   <span title="Library Handler">Library Handler</span>
@@ -60,9 +88,37 @@
               </a>
             </li>
             <li>
+              <a href="#section/MenuInputs">
+                <label type="section" role="menuitem">
+                  <span title="MenuInputs">MenuInputs</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/PartyMessageHelper">
+                <label type="section" role="menuitem">
+                  <span title="PartyMessageHelper">PartyMessageHelper</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/ProjectHandler">
                 <label type="section" role="menuitem">
                   <span title="Project Handler">Project Handler</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/PubSub">
+                <label type="section" role="menuitem">
+                  <span title="PubSub">PubSub</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/UserController">
+                <label type="section" role="menuitem">
+                  <span title="UserController">UserController</span>
                 </label>
               </a>
             </li>
@@ -105,6 +161,47 @@
                 <p>The version of DigitalBacon this module is</p>
               </td>
             </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Assets</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/Assets">Assets</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">AssetHandlers</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/AssetHandlers">AssetHandlers</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">EditorHelpers</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/EditorHelpers">EditorHelpers</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Interactables</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/Interactables">Interactables</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
               <td>
                 <span></span>
                 <span class="property-name">LibraryHandler</span>
@@ -117,11 +214,51 @@
             <tr>
               <td>
                 <span></span>
+                <span class="property-name">MenuInputs</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>Object containing different Input Types. Particularly useful when defining new EditorHelpers for your custom assets</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">PartyMessageHelper</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/PartyMessageHelper">PartyMessageHelper</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
                 <span class="property-name">ProjectHandler</span>
               </td>
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/ProjectHandler">ProjectHandler</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">PubSub</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/PubSub">PubSub</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">UserController</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/UserController">UserController</a> for more info</p>
               </td>
             </tr>
           </tbody>
@@ -245,10 +382,16 @@
         <p class="return-data pb-40">Returns the Renderer <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer">(See Three.js WebGLRenderer Documentation for more details)</a></p>
         <p class="bold">getScene()</p>
         <p class="return-data pb-40">Returns the Scene <a href="https://threejs.org/docs/#api/en/scenes/Scene">(See Three.js Scene Documentation for more details)</a></p>
+        <h1 id="section/Assets">Assets</h1>
+        <h1 id="section/AssetHandlers">AssetHandlers</h1>
+        <h1 id="section/EditorHelpers">EditorHelpers</h1>
+        <p>Inherit from the provided EditorHelpers when creating your own assets to enable configuring your custom assets in the editor</p>
+        <h1 id="section/Interactables">Interactables</h1>
+        <p>Make assets interactive by creating Interactables for them and adding them to their corresponding InteractableHandler</p>
         <h1 id="section/LibraryHandler">LibraryHandler</h1>
         <p class="bold">loadAsset(filepath, callback)</p>
         <p>Adds image/model to library</p>
-        <p class="return-data">Returns Promise&lt;App&gt; that resolves after initial assets have loaded</p>
+        <p class="return-data">Returns Promise&lt;assetId&gt; that resolves after initial assets have loaded</p>
         <table class="attributes">
           <tbody>
             <tr>
@@ -269,13 +412,13 @@
               <td class="details">
                 <p class="datatype">function</p>
                 <p class="optional">Optional</p>
-                <p>Callback that when called, will pass in the library asset object</p>
+                <p>Callback that when called, will pass in the library asset id</p>
               </td>
             </tr>
           </tbody>
         </table>
         <p class="bold">getType(assetId)</p>
-        <p class="return-data">Returns the type of the corresponding asset. Will be one of "MODEL", "IMAGE", "LIGHT", or "SHAPE"</p>
+        <p class="return-data">Returns the type of the corresponding asset. Will be one of "MODEL", "IMAGE", "LIGHT", "SHAPE", "MATERIAL", "TEXTURE", "COMPONENT", or "SYSTEM"</p>
         <table class="attributes">
           <tbody>
             <tr>
@@ -290,6 +433,8 @@
             </tr>
           </tbody>
         </table>
+        <h1 id="section/MenuInputs">MenuInputs</h1>
+        <h1 id="section/PartyMessageHelper">PartyMessageHelper</h1>
         <h1 id="section/ProjectHandler">ProjectHandler</h1>
         <p class="bold">load(filepath, successCallback, errorCallback)</p>
         <p>Loads the provided Digital Bacon project</p>
@@ -329,77 +474,11 @@
             </tr>
           </tbody>
         </table>
-        <p class="bold">addImage(params, ignoreUndoRedo)</p>
-        <p>Adds an instance of ClampedTexturePlane to the project</p>
-        <p class="return-data">Returns the instance of ClampedTexturePlane that was created</p>
+        <p class="bold">addNewAsset(assetId, params, ignoreUndoRedo)</p>
+        <p>Adds a new instance to the project based on the assetId provided</p>
+        <p class="return-data">Returns the asset instance that was created</p>
         <table class="attributes">
           <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p>Parameters used for creating a ClampedTexturePlane</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">ignoreUndoRedo</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Boolean</p>
-                <p class="optional">Optional</p>
-                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">addGLTF(params, ignoreUndoRedo)</p>
-        <p>Adds an instance of GLTFAsset to the project</p>
-        <p class="return-data">Returns the instance of GLTFAsset that was created</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p>Parameters used for creating a GLTFAsset</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">ignoreUndoRedo</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Boolean</p>
-                <p class="optional">Optional</p>
-                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">addLight(params, assetId, ignoreUndoRedo)</p>
-        <p>Adds an instance of the specified Light to the project</p>
-        <p class="return-data">Returns the instance of the specified Light that was created</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p>Parameters used for creating the Light</p>
-              </td>
-            </tr>
             <tr>
               <td>
                 <span></span>
@@ -407,27 +486,9 @@
               </td>
               <td class="details">
                 <p class="datatype">String</p>
-                <p>AssetId for the type of Light you want to create</p>
+                <p>ID of the asset you want to create that corresponds to some existing asset in the Library</p>
               </td>
             </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">ignoreUndoRedo</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Boolean</p>
-                <p class="optional">Optional</p>
-                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">addShape(params, assetId, ignoreUndoRedo)</p>
-        <p>Adds an instance of the specified Shape to the project</p>
-        <p class="return-data">Returns the instance of the specified Shape that was created</p>
-        <table class="attributes">
-          <tbody>
             <tr>
               <td>
                 <span></span>
@@ -435,17 +496,8 @@
               </td>
               <td class="details">
                 <p class="datatype">object</p>
-                <p>Parameters used for creating the Shape</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">assetId</span>
-              </td>
-              <td class="details">
-                <p class="datatype">String</p>
-                <p>AssetId for the type of Shape you want to create</p>
+                <p class="optional">Optional</p>
+                <p>Parameters used for creating the Asset</p>
               </td>
             </tr>
             <tr>
@@ -461,6 +513,8 @@
             </tr>
           </tbody>
         </table>
+        <h1 id="section/PubSub">PubSub</h1>
+        <h1 id="section/UserController">UserController</h1>
       </div>
     </div>
   </body>
