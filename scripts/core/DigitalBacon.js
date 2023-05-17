@@ -6,16 +6,16 @@
 
 import global from '/scripts/core/global.js';
 import { setup, setupEditor } from '/scripts/core/setup.js';
-import AssetEntity from '/scripts/core/assets/AssetEntity.js';
-import Component from '/scripts/core/assets/components/Component.js';
-import Material from '/scripts/core/assets/materials/Material.js';
-import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
+import * as Assets from '/scripts/core/assets/Assets.js';
+import UserController from '/scripts/core/assets/UserController.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import ComponentHelper from '/scripts/core/helpers/editor/ComponentHelper.js';
-import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
+import * as AssetHandlers from '/scripts/core/handlers/AssetHandlers.js';
+import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import * as utils from '/scripts/core/helpers/utils.module.js';
+import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
+import * as Interactables from '/scripts/core/interactables/Interactables.js';
 import * as MenuInputs from '/scripts/core/menu/input/MenuInputs.js';
 
 const version = "0.1.2";
@@ -30,21 +30,25 @@ function disableImmersion() {
     global.disableImmersion = true;
 }
 
+function isEditor() {
+    return global.isEditor;
+}
 
 if(window != null) {
     window.DigitalBacon =  {
-        AssetEntity: AssetEntity,
-        Component: Component,
-        ComponentsHandler: ComponentsHandler,
-        ComponentHelper: ComponentHelper,
-        EditorHelperFactory: EditorHelperFactory,
+        Assets: Assets,
+        AssetHandlers: AssetHandlers,
+        EditorHelpers: EditorHelpers,
+        Interactables: Interactables,
         LibraryHandler: LibraryHandler,
-        Material: Material,
-        MaterialsHandler: MaterialsHandler,
         MenuInputs: MenuInputs,
+        PartyMessageHelper: PartyMessageHelper,
         ProjectHandler: ProjectHandler,
+        PubSub: PubSub,
+        UserController: UserController,
         disableImmersion: disableImmersion,
         getDeviceType: getDeviceType,
+        isEditor: isEditor,
         setup: setup,
         setupEditor: setupEditor,
         utils: utils,
@@ -52,16 +56,16 @@ if(window != null) {
     };
 }
 
-export { AssetEntity };
-export { Component };
-export { ComponentsHandler };
-export { ComponentHelper };
-export { EditorHelperFactory };
+export { Assets };
+export { AssetHandlers };
+export { EditorHelpers };
+export { Interactables };
 export { LibraryHandler };
-export { Material };
-export { MaterialsHandler };
 export { MenuInputs };
+export { PartyMessageHelper };
 export { ProjectHandler };
+export { PubSub };
+export { UserController };
 export { disableImmersion };
 export { getDeviceType };
 export { setup, setupEditor };

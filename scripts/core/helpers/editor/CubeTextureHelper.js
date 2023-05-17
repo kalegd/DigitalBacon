@@ -7,8 +7,8 @@
 import CubeTexture from '/scripts/core/assets/textures/CubeTexture.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { MAPPING_MAP, REVERSE_MAPPING_MAP } from '/scripts/core/helpers/constants.js';
-import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
 
@@ -19,9 +19,9 @@ const FIELDS = [
         "reverseMap": REVERSE_MAPPING_MAP },
 ];
 
-export default class CubeTextureHelper extends EditorHelper {
+export default class CubeTextureHelper extends TextureHelper {
     constructor(asset) {
-        super(asset, PubSubTopics.TEXTURE_UPDATED);
+        super(asset);
     }
 
     getMenuFields() {

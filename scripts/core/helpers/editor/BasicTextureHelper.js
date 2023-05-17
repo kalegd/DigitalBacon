@@ -7,8 +7,8 @@
 import BasicTexture from '/scripts/core/assets/textures/BasicTexture.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { WRAP_MAP, REVERSE_WRAP_MAP } from '/scripts/core/helpers/constants.js';
-import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import ImageInput from '/scripts/core/menu/input/ImageInput.js';
 import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
@@ -25,9 +25,9 @@ const FIELDS = [
     { "parameter": "offset", "name": "Offset", "type": Vector2Input },
 ];
 
-export default class BasicTextureHelper extends EditorHelper {
+export default class BasicTextureHelper extends TextureHelper {
     constructor(asset) {
-        super(asset, PubSubTopics.TEXTURE_UPDATED);
+        super(asset);
     }
 
     getMenuFields() {

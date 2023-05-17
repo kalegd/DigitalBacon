@@ -9,9 +9,9 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { AssetEntity, Component, ComponentsHandler, ComponentHelper, EditorHelperFactory, MenuInputs } = window.DigitalBacon;
+const { Assets, AssetHandlers, EditorHelpers, MenuInputs } =window.DigitalBacon;
 
-export default class GrabbableComponent extends Component {
+export default class GrabbableComponent extends Assets.Component {
     constructor(params = {}) {
         params['assetId'] = GrabbableComponent.assetId;
         super(params);
@@ -33,7 +33,7 @@ export default class GrabbableComponent extends Component {
     }
 
     supports(asset) {
-        return asset instanceof AssetEntity;
+        return asset instanceof Assets.AssetEntity;
     }
 
     setStealable(stealable) {
@@ -44,15 +44,15 @@ export default class GrabbableComponent extends Component {
     static assetName = 'Grabbable';
 }
 
-ComponentsHandler.registerAsset(GrabbableComponent);
+AssetHandlers.ComponentsHandler.registerAsset(GrabbableComponent);
 
-if(EditorHelperFactory && ComponentHelper && MenuInputs) {
+if(EditorHelpers) {
     const FIELDS = [
         { "parameter": "stealable", "name": "Stealable",
             "type": MenuInputs.CheckboxInput },
     ];
 
-    class GrabbableComponentHelper extends ComponentHelper {
+    class GrabbableComponentHelper extends EditorHelpers.ComponentHelper {
         constructor(asset) {
             super(asset);
         }
@@ -75,6 +75,6 @@ if(EditorHelperFactory && ComponentHelper && MenuInputs) {
         }
     }
 
-    EditorHelperFactory.registerEditorHelper(GrabbableComponentHelper,
-        GrabbableComponent);
+    EditorHelpers.EditorHelperFactory.registerEditorHelper(
+        GrabbableComponentHelper, GrabbableComponent);
 }

@@ -313,10 +313,8 @@ class LibraryHandler {
                 if(assetDetails[key])
                     libraryDetails[assetId][key] = assetDetails[key];
             }
-            if(assetType == AssetTypes.MODEL || assetType == AssetTypes.IMAGE || assetType == AssetTypes.COMPONENT) {
-                let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];
-                libraryDetails[assetId]['Filepath'] = filepath;
-            }
+            let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];
+            libraryDetails[assetId]['Filepath'] = filepath;
         }
         return libraryDetails;
     }

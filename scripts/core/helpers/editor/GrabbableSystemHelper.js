@@ -15,24 +15,11 @@ const FIELDS = [
 
 export default class GrabbableSystemHelper extends SystemHelper {
     constructor(asset) {
-        super(asset, PubSubTopics.SYSTEM_UPDATED);
+        super(asset);
     }
 
     getMenuFields() {
         return super.getMenuFields(FIELDS);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
     }
 }
 

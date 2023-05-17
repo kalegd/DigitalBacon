@@ -252,16 +252,7 @@ class ProjectHandler {
     }
 
     _getProjectDetails(skipLibrary) {
-        let assets = {};
-        for(let assetId in this.project) {
-            let instances = this.project[assetId];
-            let assetInstances = [];
-            for(let instanceId in instances) {
-                assetInstances.push(instances[instanceId].exportParams());
-            }
-            if(assetInstances.length > 0) assets[assetId] = assetInstances;
-        }
-        let assetIds = Object.keys(assets);
+        let assetIds = [];
         let settings = SettingsHandler.getSettings();
         let projectDetails = { settings: settings, version: global.version };
         for(let type in this._assetHandlers) {
@@ -271,13 +262,13 @@ class ProjectHandler {
             if(type == AssetTypes.TEXTURE) {
                 let texturesAssetIds = handler.getTexturesAssetIds();
                 for(let assetId of texturesAssetIds) assetIds.push(assetId);
-            } else if (type == AssetTypes.COMPONENT) {
+            } else {
                 for(let assetId in details) assetIds.push(assetId);
             }
         }
         for(let side in settings['Skybox']) {
             let assetId = settings['Skybox'][side];
-            if(assetId && !assets[assetId]) assetIds.push(assetId);
+            if(assetId) assetIds.push(assetId);
         }
 
         if(!skipLibrary) {

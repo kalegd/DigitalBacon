@@ -4,20 +4,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
-import UserController from '/scripts/core/assets/UserController.js';
-import System from '/scripts/core/assets/systems/System.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
-import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import SystemsHandler from '/scripts/core/handlers/SystemsHandler.js';
-import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
+if(!window.DigitalBacon) {
+    console.error('Missing global DigitalBacon reference');
+    throw new Error('Missing global DigitalBacon reference');
+}
+
+const { Assets, AssetHandlers, EditorHelpers, Interactables, PartyMessageHelper, ProjectHandler, UserController, getDeviceType, isEditor } = window.DigitalBacon;
+const { System } = Assets;
+const { ComponentsHandler, SystemsHandler } = AssetHandlers;
+const { EditorHelperFactory, SystemHelper } = EditorHelpers;
+const { GripInteractable, GripInteractableHandler, PointerInteractable, PointerInteractableHandler } = Interactables;
+const deviceType = getDeviceType();
 
 const AVATAR = 'AVATAR';
 const GRABBED_TOPIC = 'GrabbableSystem:Grabbed';
@@ -44,53 +41,28 @@ export default class GrabbableSystem extends System {
     }
 
     _addSubscriptions() {
-        if(global.isEditor || global.disableImmersion) return;
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
-                + COMPONENT_ASSET_ID, (message) => {
+        if(isEditor()) return;
+        this._listenForComponentAttached(COMPONENT_ASSET_ID, (message) => {
             let id = message.id;
             if(this._interactables[id] || this._notStealable[id]) return;
             let instance = ProjectHandler.getSessionInstance(id);
             let component = ComponentsHandler.getSessionAsset(
                 message.componentId);
-            if(global.deviceType == 'XR') {
+            if(deviceType == 'XR') {
                 this._addGripInteractable(instance, component.getStealable());
             } else {
                 this._addPointerInteractable(instance,component.getStealable());
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
-                + COMPONENT_ASSET_ID, (message) => {
+        this._listenForComponentDetached(COMPONENT_ASSET_ID, (message) => {
             let interactable = this._interactables[message.id];
             if(!interactable) return;
-            if(global.deviceType == 'XR') {
+            if(deviceType == 'XR') {
                 GripInteractableHandler.removeInteractable(interactable);
             } else {
                 PointerInteractableHandler.removeInteractable(interactable);
             }
             delete this._interactables[message.id];
-        });
-        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            for(let key in this._publishForNewPeers) {
-                this._publishForNewPeers[key]();
-            }
-        });
-        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
-            if(PartyHandler.isHost()) return;
-            for(let key in this._onPartyJoined) {
-                this._onPartyJoined[key]();
-            }
-        });
-        PubSub.subscribe(this._id, PubSubTopics.PARTY_ENDED, () => {
-            for(let id in this._notStealable) {
-                let interactable = this._notStealable[id];
-                this._interactables[id] = interactable;
-                if(interactable instanceof GripInteractable) {
-                    GripInteractableHandler.addInteractable(interactable);
-                } else {
-                    PointerInteractableHandler.addInteractable(interactable);
-                }
-                delete this._notStealable[id];
-            }
         });
         PartyMessageHelper.registerBlockableHandler(GRABBED_TOPIC, (p, m) => {
             this._handlePeerGrabbed(p, m);
@@ -100,22 +72,51 @@ export default class GrabbableSystem extends System {
         });
     }
 
+    _onPeerReady() {
+        for(let key in this._publishForNewPeers) {
+            this._publishForNewPeers[key]();
+        }
+    }
+
+    _onPartyStarted(isHost) {
+        if(isHost) return;
+        for(let key in this._onPartyJoined) {
+            this._onPartyJoined[key]();
+        }
+    }
+
+    _onPartyEnded() {
+        for(let id in this._notStealable) {
+            let interactable = this._notStealable[id];
+            this._interactables[id] = interactable;
+            if(interactable instanceof GripInteractable) {
+                GripInteractableHandler.addInteractable(interactable);
+            } else {
+                PointerInteractableHandler.addInteractable(interactable);
+            }
+            delete this._notStealable[id];
+        }
+    }
+
     _addGripInteractable(instance, stealable) {
         let object = instance.getObject();
         let interactable = new GripInteractable(object,
             (hand) => {
                 UserController.hands[hand].attach(object);
                 this._publish(GRABBED_TOPIC, instance, hand, stealable);
-                this._publishForNewPeers[hand] = () => {
+                this._publishForNewPeers[instance.getId()] = () => {
                     if(UserController.hands[hand].hasChild(object))
                         this._publish(GRABBED_TOPIC, instance, hand, stealable);
                 };
-                this._onPartyJoined[hand] = () => {
+                this._onPartyJoined[instance.getId()] = () => {
                     UserController.hands[hand].remove(object);
                 };
             }, (hand) => {
-                if(UserController.hands[hand].remove(object))
+                if(UserController.hands[hand].remove(object)) {
                     this._publish(RELEASED_TOPIC, instance, hand, stealable);
+                    delete this._onPartyJoined[instance.getId()];
+                    delete this._publishForNewPeers[instance.getId()];
+                }
             }
         );
         GripInteractableHandler.addInteractable(interactable);
@@ -129,18 +130,22 @@ export default class GrabbableSystem extends System {
                 let avatar = UserController.getAvatar();
                 if(avatar.hasChild(object)) {
                     if(avatar.remove(object)) {
+                        delete this._onPartyJoined[instance.getId()];
+                        delete this._publishForNewPeers[instance.getId()];
                         this._publish(RELEASED_TOPIC, instance, AVATAR,
                             stealable);
                     }
                 } else {
                     avatar.attach(object);
                     this._publish(GRABBED_TOPIC, instance, AVATAR, stealable);
-                    this._publishForNewPeers[AVATAR] = () => {
+                    this._publishForNewPeers[instance.getId()] = () => {
                         if(avatar.hasChild(object))
                             this._publish(GRABBED_TOPIC, instance, AVATAR,
                                 stealable);
                     };
-                    this._onPartyJoined[AVATAR] = () =>{avatar.remove(object);};
+                    this._onPartyJoined[instance.getId()] = () =>{
+                        avatar.remove(object);
+                    };
                 }
             }, false);
         interactable.setMaximumDistance(2);
@@ -211,3 +216,21 @@ export default class GrabbableSystem extends System {
 }
 
 SystemsHandler.registerAsset(GrabbableSystem);
+
+if(EditorHelpers) {
+    const FIELDS = [
+        { "parameter": "disabled" },
+    ];
+
+    class GrabbableSystemHelper extends SystemHelper {
+        constructor(asset) {
+            super(asset);
+        }
+
+        getMenuFields() {
+            return super.getMenuFields(FIELDS);
+        }
+    }
+
+    EditorHelperFactory.registerEditorHelper(GrabbableSystemHelper, GrabbableSystem);
+}
