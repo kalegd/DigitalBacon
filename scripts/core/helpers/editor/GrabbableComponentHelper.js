@@ -10,31 +10,14 @@ import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 
-const FIELDS = [
-    { "parameter": "stealable", "name": "Stealable", "type": CheckboxInput },
-];
-
 export default class GrabbableComponentHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.COMPONENT_UPDATED);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
-    }
+    static fields = [
+        { "parameter": "stealable", "name": "Stealable", "type": CheckboxInput},
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(GrabbableComponentHelper, GrabbableComponent);

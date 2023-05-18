@@ -95,7 +95,6 @@ class ListComponentsPage extends PaginatedListPage {
             }
             this._asset.editorHelper.addComponent(component.getId());
             this._controller.back();
-            if(!this._object.parent) this._controller.back();
             let componentPage = this._controller.getPage(MenuPages.COMPONENT);
             componentPage.setAsset(component);
             this._controller.pushPage(MenuPages.COMPONENT);

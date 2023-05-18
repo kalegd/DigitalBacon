@@ -10,21 +10,17 @@ import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
-
 export default class GLTFAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.MODEL_UPDATED);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(GLTFAssetHelper, GLTFAsset);

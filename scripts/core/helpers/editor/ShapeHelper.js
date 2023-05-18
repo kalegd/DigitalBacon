@@ -9,20 +9,12 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import MaterialInput from '/scripts/core/menu/input/MaterialInput.js';
 
 export default class ShapeHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.SHAPE_UPDATED);
         this._overwriteSetMaterial();
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        menuFieldsMap['material'] = this._createMaterialInput({
-            'parameter': 'material',
-            'name': 'Material',
-        });
-        return menuFieldsMap;
     }
 
     _overwriteSetMaterial() {
@@ -72,6 +64,10 @@ export default class ShapeHelper extends AssetEntityHelper {
         super.removeFromScene();
         this._removeSubscriptions();
     }
+
+    static fields = [
+        { 'parameter': 'material', 'name': 'Material', "type": MaterialInput }
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(ShapeHelper, Shape);

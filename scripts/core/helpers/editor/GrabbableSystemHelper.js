@@ -9,18 +9,14 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import SystemHelper from '/scripts/core/helpers/editor/SystemHelper.js';
 
-const FIELDS = [
-    { "parameter": "disabled" },
-];
-
 export default class GrabbableSystemHelper extends SystemHelper {
     constructor(asset) {
         super(asset);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
+    static fields = [
+        { "parameter": "disabled" },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(GrabbableSystemHelper, GrabbableSystem);

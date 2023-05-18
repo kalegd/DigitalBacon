@@ -80,10 +80,12 @@ class NewAssetPage extends PaginatedPage {
             let asset = (type in AssetEntityTypes)
                 ? ProjectHandler.addNewAsset(assetId, params)
                 : ProjectHandler.addNewAsset(assetId);
-            newAssets.push(asset);
+            if(type == this._assetType) newAssets.push(asset);
         }
-        if(newAssets.length == 1 && this._additionalAction)
+        if(newAssets.length > 0 && this._additionalAction) {
+            this.back();
             this._additionalAction(newAssets[0]);
+        }
     }
 
     _getNewEntityParams() {

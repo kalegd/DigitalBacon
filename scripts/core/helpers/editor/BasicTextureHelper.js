@@ -13,39 +13,22 @@ import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import ImageInput from '/scripts/core/menu/input/ImageInput.js';
 import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
 
-const FIELDS = [
-    { "parameter": "image", "name": "Image", "type": ImageInput },
-    { "parameter": "wrapS", "name": "Horizontal Wrapping", "type": EnumInput,
-        "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
-        "reverseMap": REVERSE_WRAP_MAP },
-    { "parameter": "wrapT", "name": "Vertical Wrapping", "type": EnumInput,
-        "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
-        "reverseMap": REVERSE_WRAP_MAP },
-    { "parameter": "repeat", "name": "Repeat", "type": Vector2Input },
-    { "parameter": "offset", "name": "Offset", "type": Vector2Input },
-];
-
 export default class BasicTextureHelper extends TextureHelper {
     constructor(asset) {
         super(asset);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
-    }
+    static fields = [
+        { "parameter": "image", "name": "Image", "type": ImageInput },
+        { "parameter": "wrapS", "name": "Horizontal Wrapping",
+            "type": EnumInput, "options": [ "Clamp", "Repeat", "Mirrored"],
+            "map": WRAP_MAP, "reverseMap": REVERSE_WRAP_MAP },
+        { "parameter": "wrapT", "name": "Vertical Wrapping", "type": EnumInput,
+            "options": [ "Clamp", "Repeat", "Mirrored"], "map": WRAP_MAP,
+            "reverseMap": REVERSE_WRAP_MAP },
+        { "parameter": "repeat", "name": "Repeat", "type": Vector2Input },
+        { "parameter": "offset", "name": "Offset", "type": Vector2Input },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(BasicTextureHelper, BasicTexture);

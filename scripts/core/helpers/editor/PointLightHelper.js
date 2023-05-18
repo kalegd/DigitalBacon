@@ -11,19 +11,6 @@ import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
 
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "color" },
-    { "parameter": "intensity" },
-    { "parameter": "distance", "name": "Distance", "min": 0,
-        "type": NumberInput },
-    { "parameter": "decay", "name": "Decay", "min": 0,
-        "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
-
 export default class PointLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
@@ -36,22 +23,18 @@ export default class PointLightHelper extends LightHelper {
         if(this._asset.visualEdit) this._object.add(this._mesh);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
-    }
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "color" },
+        { "parameter": "intensity" },
+        { "parameter": "distance", "name": "Distance", "min": 0,
+            "type": NumberInput },
+        { "parameter": "decay", "name": "Decay", "min": 0,
+            "type": NumberInput },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(PointLightHelper, PointLight);

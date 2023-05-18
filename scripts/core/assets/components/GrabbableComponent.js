@@ -10,8 +10,11 @@ if(!window.DigitalBacon) {
 }
 
 const { Assets, AssetHandlers, EditorHelpers, MenuInputs } =window.DigitalBacon;
+const { AssetEntity, Component } = Assets;
+const { ComponentsHandler } = AssetHandlers;
+const { ComponentHelper, EditorHelperFactory } = EditorHelpers;
 
-export default class GrabbableComponent extends Assets.Component {
+export default class GrabbableComponent extends Component {
     constructor(params = {}) {
         params['assetId'] = GrabbableComponent.assetId;
         super(params);
@@ -33,7 +36,7 @@ export default class GrabbableComponent extends Assets.Component {
     }
 
     supports(asset) {
-        return asset instanceof Assets.AssetEntity;
+        return asset instanceof AssetEntity;
     }
 
     setStealable(stealable) {
@@ -44,37 +47,20 @@ export default class GrabbableComponent extends Assets.Component {
     static assetName = 'Grabbable';
 }
 
-AssetHandlers.ComponentsHandler.registerAsset(GrabbableComponent);
+ComponentsHandler.registerAsset(GrabbableComponent);
 
 if(EditorHelpers) {
-    const FIELDS = [
-        { "parameter": "stealable", "name": "Stealable",
-            "type": MenuInputs.CheckboxInput },
-    ];
-
-    class GrabbableComponentHelper extends EditorHelpers.ComponentHelper {
+    class GrabbableComponentHelper extends ComponentHelper {
         constructor(asset) {
             super(asset);
         }
 
-        getMenuFields() {
-            return super.getMenuFields(FIELDS);
-        }
-
-        _getMenuFieldsMap() {
-            let menuFieldsMap = super._getMenuFieldsMap();
-            for(let field of FIELDS) {
-                if(field.parameter in menuFieldsMap) {
-                    continue;
-                } else {
-                    let input = this._createStandardInput(field);
-                    if(input) menuFieldsMap[field.parameter] = input;
-                }
-            }
-            return menuFieldsMap;
-        }
+        static fields = [
+            { "parameter": "stealable", "name": "Stealable",
+                "type": MenuInputs.CheckboxInput },
+        ];
     }
 
-    EditorHelpers.EditorHelperFactory.registerEditorHelper(
-        GrabbableComponentHelper, GrabbableComponent);
+    EditorHelperFactory.registerEditorHelper(GrabbableComponentHelper,
+        GrabbableComponent);
 }

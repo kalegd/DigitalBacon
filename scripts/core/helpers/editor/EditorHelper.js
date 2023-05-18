@@ -214,13 +214,14 @@ export default class EditorHelper {
         });
     }
 
-    getMenuFields(fields) {
-        if(!fields) return [];
+    getMenuFields() {
+        let thisClass = this.constructor;
+        if(!thisClass.fields) return [];
         if(this._menuFields) return this._menuFields;
 
-        this._menuFieldsMap = this._getMenuFieldsMap();
+        this._menuFieldsMap = this._getMenuFieldsMap(thisClass);
         let menuFields = [];
-        for(let field of fields) {
+        for(let field of thisClass.fields) {
             if(field.parameter in this._menuFieldsMap) {
                 menuFields.push(this._menuFieldsMap[field.parameter]);
             }
@@ -229,8 +230,20 @@ export default class EditorHelper {
         return menuFields;
     }
 
-    _getMenuFieldsMap() {
-        return {};
+    _getMenuFieldsMap(helperClass) {
+        if(!helperClass) return {};
+        let parentClass = Object.getPrototypeOf(helperClass);
+        let menuFieldsMap = this._getMenuFieldsMap(parentClass);
+        if(!helperClass.fields) return menuFieldsMap;
+        for(let field of helperClass.fields) {
+            if(field.parameter in menuFieldsMap) {
+                continue;
+            } else {
+                let input = this._createStandardInput(field);
+                if(input) menuFieldsMap[field.parameter] = input;
+            }
+        }
+        return menuFieldsMap;
     }
 
     _createStandardInput(field) {

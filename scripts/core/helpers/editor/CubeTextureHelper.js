@@ -12,34 +12,17 @@ import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
 
-const FIELDS = [
-    { "parameter": "images", "name": "Images", "type": CubeImageInput },
-    { "parameter": "mapping", "name": "Mapping", "type": EnumInput,
-        "options": [ "Reflection", "Refraction" ], "map": MAPPING_MAP,
-        "reverseMap": REVERSE_MAPPING_MAP },
-];
-
 export default class CubeTextureHelper extends TextureHelper {
     constructor(asset) {
         super(asset);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
-    }
+    static fields = [
+        { "parameter": "images", "name": "Images", "type": CubeImageInput },
+        { "parameter": "mapping", "name": "Mapping", "type": EnumInput,
+            "options": [ "Reflection", "Refraction" ], "map": MAPPING_MAP,
+            "reverseMap": REVERSE_MAPPING_MAP },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(CubeTextureHelper, CubeTexture);

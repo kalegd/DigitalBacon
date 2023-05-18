@@ -43,13 +43,6 @@ const INTERACTABLE_KEYS = [
     HandTools.SCALE,
 ];
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
-const FIELDS = [
-    { "parameter": "position", "name": "Position", "type": Vector3Input },
-    { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
-    { "parameter": "scale", "name": "Scale", "type": Vector3Input },
-    { "parameter": "visualEdit", "name": "Visually Edit",
-        "type": CheckboxInput },
-];
 
 export default class AssetEntityHelper extends EditorHelper {
     constructor(asset, updatedTopic) {
@@ -189,7 +182,7 @@ export default class AssetEntityHelper extends EditorHelper {
         }
     }
 
-    updateVisualEdit(isVisualEdit, ignoreUndoRedo, ignorePublish) {
+    updateVisualEdit(isVisualEdit) {
         if(isVisualEdit == this._asset.visualEdit) return;
         this._asset.visualEdit = isVisualEdit;
         if(isVisualEdit) {
@@ -198,17 +191,6 @@ export default class AssetEntityHelper extends EditorHelper {
             }
         } else {
             this._removeInteractables();
-        }
-        if(!ignorePublish)
-            this._publish(['visualEdit']);
-        if(!ignoreUndoRedo) {
-            UndoRedoHandler.addAction(() => {
-                this.updateVisualEdit(!isVisualEdit, true, ignorePublish);
-                this.updateMenuField('visualEdit');
-            }, () => {
-                this.updateVisualEdit(isVisualEdit, true, ignorePublish);
-                this.updateMenuField('visualEdit');
-            });
         }
     }
 
@@ -386,25 +368,6 @@ export default class AssetEntityHelper extends EditorHelper {
         return instance;
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) continue;
-            if(field.type == CheckboxInput) {
-                menuFieldsMap[field.parameter] = new CheckboxInput({
-                    title: field.name,
-                    initialValue: this._asset.visualEdit,
-                    getFromSource: () => { return this._asset.visualEdit; },
-                    onUpdate: (v) => { this.updateVisualEdit(v); },
-                });
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
-    }
-
     _overwriteAssetFunctions() {
         this._asset._addToScene = this._asset.addToScene;
         this._asset._removeFromScene = this._asset.removeFromScene;
@@ -417,7 +380,7 @@ export default class AssetEntityHelper extends EditorHelper {
             this.removeFromScene();
         };
         this._asset.setVisualEdit = (visualEdit) => {
-            this.updateVisualEdit(visualEdit, true, true);
+            this.updateVisualEdit(visualEdit);
         }
     }
 
@@ -432,6 +395,14 @@ export default class AssetEntityHelper extends EditorHelper {
         fullDispose(this._boundingBoxObj);
         this._removeInteractables();
     }
+
+    static fields = [
+        { "parameter": "position", "name": "Position", "type": Vector3Input },
+        { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
+        { "parameter": "scale", "name": "Scale", "type": Vector3Input },
+        { "parameter": "visualEdit", "name": "Visually Edit",
+            "type": CheckboxInput },
+    ];
 }
 
 function makeMaterialTranslucent(material) {

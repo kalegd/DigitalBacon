@@ -16,31 +16,9 @@ import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
-const FIELDS = [
-    { "parameter": "transparent", "name": "Transparent", "type": CheckboxInput},
-    { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
-        "type": NumberInput },
-    { "parameter": "side", "name": "Display", "type": EnumInput,
-        "options": [ "Front Side", "Back Side", "Both Sides" ],
-        "map": SIDE_MAP, "reverseMap": REVERSE_SIDE_MAP },
-];
-
 export default class MaterialHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.MATERIAL_UPDATED);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
     }
 
     _addSubscriptions() {
@@ -98,6 +76,16 @@ export default class MaterialHelper extends EditorHelper {
     undoDispose() {
         this._addSubscriptions();
     }
+
+    static fields = [
+        { "parameter": "transparent", "name": "Transparent",
+            "type": CheckboxInput },
+        { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
+            "type": NumberInput },
+        { "parameter": "side", "name": "Display", "type": EnumInput,
+            "options": [ "Front Side", "Back Side", "Both Sides" ],
+            "map": SIDE_MAP, "reverseMap": REVERSE_SIDE_MAP },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(MaterialHelper, Material);

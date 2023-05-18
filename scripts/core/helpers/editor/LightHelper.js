@@ -12,16 +12,6 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "intensity", "name": "Intensity", "min": 0,
-        "type": NumberInput },
-    { "parameter": "color", "name": "Color", "type": ColorInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
-
 export default class LightHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.LIGHT_UPDATED);
@@ -44,18 +34,15 @@ export default class LightHelper extends AssetEntityHelper {
         super.updateVisualEdit(isVisualEdit);
     }
 
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
-    }
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "intensity", "name": "Intensity", "min": 0,
+            "type": NumberInput },
+        { "parameter": "color", "name": "Color", "type": ColorInput },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(LightHelper, Light);

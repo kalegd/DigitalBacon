@@ -10,15 +10,6 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import * as THREE from 'three';
 
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "intensity" },
-    { "parameter": "color" },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
-
 export default class AmbientLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
@@ -31,9 +22,14 @@ export default class AmbientLightHelper extends LightHelper {
         if(this._asset.visualEdit) this._object.add(this._mesh);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "intensity" },
+        { "parameter": "color" },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(AmbientLightHelper, AmbientLight);

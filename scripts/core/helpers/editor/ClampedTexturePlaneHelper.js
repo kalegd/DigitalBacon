@@ -12,15 +12,6 @@ import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "doubleSided", "name": "Double Sided",
-        "suppressMenuFocusEvent": true, "type": CheckboxInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
-
 export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.IMAGE_UPDATED);
@@ -40,19 +31,14 @@ export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
         this.roundAttributes(true);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        menuFieldsMap['doubleSided'] = this._createCheckboxInput({
-            name: 'Double Sided',
-            parameter: 'doubleSided',
-            suppressMenuFocusEvent: true
-        });
-        return menuFieldsMap;
-    }
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "doubleSided", "name": "Double Sided",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(ClampedTexturePlaneHelper, ClampedTexturePlane);

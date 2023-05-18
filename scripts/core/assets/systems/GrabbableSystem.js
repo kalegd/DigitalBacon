@@ -218,19 +218,16 @@ export default class GrabbableSystem extends System {
 SystemsHandler.registerAsset(GrabbableSystem);
 
 if(EditorHelpers) {
-    const FIELDS = [
-        { "parameter": "disabled" },
-    ];
-
     class GrabbableSystemHelper extends SystemHelper {
         constructor(asset) {
             super(asset);
         }
 
-        getMenuFields() {
-            return super.getMenuFields(FIELDS);
-        }
+        static fields = [
+            { "parameter": "disabled" },
+        ];
     }
 
-    EditorHelperFactory.registerEditorHelper(GrabbableSystemHelper, GrabbableSystem);
+    EditorHelperFactory.registerEditorHelper(GrabbableSystemHelper,
+        GrabbableSystem);
 }

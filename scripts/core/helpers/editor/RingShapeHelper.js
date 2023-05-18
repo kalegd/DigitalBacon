@@ -10,24 +10,6 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 
-const FIELDS = [
-    { "parameter": "visualEdit" },
-    { "parameter": "material" },
-    { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,
-        "type": NumberInput },
-    { "parameter": "thetaSegments", "name": "Sides", "min": 3,
-        "type": NumberInput },
-    { "parameter": "phiSegments", "name": "Radius Segments", "min": 1,
-        "type": NumberInput },
-    { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-        "type": NumberInput },
-    { "parameter": "position" },
-    { "parameter": "rotation" },
-    { "parameter": "scale" },
-];
-
 export default class RingShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
@@ -47,22 +29,23 @@ export default class RingShapeHelper extends ShapeHelper {
         this.roundAttributes(true);
     }
 
-    getMenuFields() {
-        return super.getMenuFields(FIELDS);
-    }
-
-    _getMenuFieldsMap() {
-        let menuFieldsMap = super._getMenuFieldsMap();
-        for(let field of FIELDS) {
-            if(field.parameter in menuFieldsMap) {
-                continue;
-            } else {
-                let input = this._createStandardInput(field);
-                if(input) menuFieldsMap[field.parameter] = input;
-            }
-        }
-        return menuFieldsMap;
-    }
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "material" },
+        { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
+            "type": NumberInput },
+        { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,
+            "type": NumberInput },
+        { "parameter": "thetaSegments", "name": "Sides", "min": 3,
+            "type": NumberInput },
+        { "parameter": "phiSegments", "name": "Radius Segments", "min": 1,
+            "type": NumberInput },
+        { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
+            "type": NumberInput },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
 }
 
 EditorHelperFactory.registerEditorHelper(RingShapeHelper, RingShape);
