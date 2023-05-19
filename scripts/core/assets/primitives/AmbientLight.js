@@ -6,7 +6,7 @@
 
 import Light from '/scripts/core/assets/primitives/Light.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import { Colors } from '/scripts/core/helpers/constants.js';
@@ -33,5 +33,5 @@ export default class AmbientLight extends Light {
     static assetName = 'Ambient Light';
 }
 
-LightsHandler.registerAsset(AmbientLight);
+ProjectHandler.registerAsset(AmbientLight);
 LibraryHandler.loadBuiltIn(AmbientLight);

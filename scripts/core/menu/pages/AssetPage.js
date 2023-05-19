@@ -18,7 +18,6 @@ import ThreeMeshUI from 'three-mesh-ui';
 class AssetPage extends DynamicFieldsPage {
     constructor(controller, assetType) {
         super(controller, true);
-        this._assetHandler = ProjectHandler.getAssetHandler(assetType);
         this._assetType = assetType;
     }
 
@@ -66,7 +65,7 @@ class AssetPage extends DynamicFieldsPage {
         });
         this._containerInteractable.addChild(interactable);
         interactable = new PointerInteractable(deleteButton, () => {
-            this._assetHandler.deleteAsset(this._asset);
+            ProjectHandler.deleteAsset(this._asset);
         });
         this._containerInteractable.addChild(interactable);
     }

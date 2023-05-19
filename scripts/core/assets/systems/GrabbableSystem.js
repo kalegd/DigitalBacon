@@ -9,9 +9,8 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { Assets, AssetHandlers, EditorHelpers, Interactables, PartyMessageHelper, ProjectHandler, UserController, getDeviceType, isEditor } = window.DigitalBacon;
+const { Assets, EditorHelpers, Interactables, PartyMessageHelper, ProjectHandler, UserController, getDeviceType, isEditor } = window.DigitalBacon;
 const { System } = Assets;
-const { ComponentsHandler, SystemsHandler } = AssetHandlers;
 const { EditorHelperFactory, SystemHelper } = EditorHelpers;
 const { GripInteractable, GripInteractableHandler, PointerInteractable, PointerInteractableHandler } = Interactables;
 const deviceType = getDeviceType();
@@ -45,8 +44,8 @@ export default class GrabbableSystem extends System {
         this._listenForComponentAttached(COMPONENT_ASSET_ID, (message) => {
             let id = message.id;
             if(this._interactables[id] || this._notStealable[id]) return;
-            let instance = ProjectHandler.getSessionInstance(id);
-            let component = ComponentsHandler.getSessionAsset(
+            let instance = ProjectHandler.getSessionAsset(id);
+            let component = ProjectHandler.getSessionAsset(
                 message.componentId);
             if(deviceType == 'XR') {
                 this._addGripInteractable(instance, component.getStealable());
@@ -154,7 +153,7 @@ export default class GrabbableSystem extends System {
     }
 
     _handlePeerGrabbed(peer, message) {
-        let instance = ProjectHandler.getSessionInstance(message.id);
+        let instance = ProjectHandler.getSessionAsset(message.id);
         if(message.attachTo == AVATAR) {
             let avatar = peer.controller.getAvatar();
             avatar.attach(instance.getObject());
@@ -177,7 +176,7 @@ export default class GrabbableSystem extends System {
     }
 
     _handlePeerReleased(peer, message) {
-        let instance = ProjectHandler.getSessionInstance(message.id);
+        let instance = ProjectHandler.getSessionAsset(message.id);
         if(message.attachTo == AVATAR) {
             let avatar = peer.controller.getAvatar();
             avatar.remove(instance.getObject());
@@ -215,7 +214,7 @@ export default class GrabbableSystem extends System {
     static assetName = 'Grabbable System';
 }
 
-SystemsHandler.registerAsset(GrabbableSystem);
+ProjectHandler.registerAsset(GrabbableSystem);
 
 if(EditorHelpers) {
     class GrabbableSystemHelper extends SystemHelper {

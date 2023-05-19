@@ -9,8 +9,8 @@ import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
 import * as THREE from 'three';
 
@@ -148,5 +148,5 @@ function powerOf2(v) {
     return v && !(v & (v - 1));
 }
 
-TexturesHandler.registerAsset(CubeTexture);
+ProjectHandler.registerAsset(CubeTexture);
 LibraryHandler.loadBuiltIn(CubeTexture);

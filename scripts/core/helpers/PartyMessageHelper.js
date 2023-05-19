@@ -7,14 +7,10 @@
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import SystemsHandler from '/scripts/core/handlers/SystemsHandler.js';
-import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
 import { uuidv4, capitalizeFirstLetter, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
@@ -127,7 +123,7 @@ class PartyMessageHelper {
     }
 
     _handleComponentAttached(peer, message) {
-        let asset = this._getComponentAsset(message);
+        let asset = ProjectHandler.getSessionAsset(message.id);
         if(asset) {
             if(asset.editorHelper) {
                 asset.editorHelper.addComponent(message.componentId, true,true);
@@ -141,7 +137,7 @@ class PartyMessageHelper {
     }
 
     _handleComponentDetached(peer, message) {
-        let asset = this._getComponentAsset(message);
+        let asset = ProjectHandler.getSessionAsset(message.id);
         if(asset) {
             if(asset.editorHelper) {
                 asset.editorHelper.removeComponent(message.componentId, true,
@@ -155,28 +151,21 @@ class PartyMessageHelper {
         }
     }
 
-    _getComponentAsset(message) {
-        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
-        return assetHandler.getSessionAsset(message.id);
-    }
-
     _handleInstanceAdded(peer, message) {
-        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
-        let asset = assetHandler.getSessionAsset(message.asset.id);
+        let asset = ProjectHandler.getSessionAsset(message.asset.id);
         if(asset) {
-            assetHandler.addAsset(asset, true, true);
+            ProjectHandler.addAsset(asset, true, true);
         } else {
-            asset = assetHandler.addNewAsset(message.asset.assetId,
+            asset = ProjectHandler.addNewAsset(message.asset.assetId,
                 message.asset, true, true);
         }
         PubSub.publish(this._id, message.assetType + '_ADDED', asset);
     }
 
     _handleInstanceDeleted(peer, message) {
-        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
-        let asset = assetHandler.getAsset(message.id);
+        let asset = ProjectHandler.getAsset(message.id);
         if(asset) {
-            assetHandler.deleteAsset(asset, true, true);
+            ProjectHandler.deleteAsset(asset, true, true);
             let topic = message.assetType + '_DELETED:' + message.id;
             PubSub.publish(this._id, topic, { asset: asset });
         } else {
@@ -185,8 +174,7 @@ class PartyMessageHelper {
     }
 
     _handleInstanceUpdated(peer, message) {
-        let assetHandler = ProjectHandler.getAssetHandler(message.assetType);
-        let asset = assetHandler.getSessionAsset(message.params.id);
+        let asset = ProjectHandler.getSessionAsset(message.params.id);
         if(asset) {
             this._handleAssetUpdate(asset, message.params,
                 message.assetType + '_UPDATED');
@@ -194,7 +182,7 @@ class PartyMessageHelper {
     }
 
     _handleInstanceAttached(peer, message) {
-        let instance = ProjectHandler.getSessionInstance(message.id);
+        let instance = ProjectHandler.getSessionAsset(message.id);
         if(instance) {
             let editorHelper = instance.editorHelper;
             if(editorHelper) editorHelper.attachToPeer(peer, message);
@@ -202,7 +190,7 @@ class PartyMessageHelper {
     }
 
     _handleInstanceDetached(peer, message) {
-        let instance = ProjectHandler.getSessionInstance(message.id);
+        let instance = ProjectHandler.getSessionAsset(message.id);
         if(instance) {
             let editorHelper = instance.editorHelper;
             if(editorHelper) editorHelper.detachFromPeer(peer, message);

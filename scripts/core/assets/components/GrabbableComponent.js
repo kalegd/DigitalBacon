@@ -9,9 +9,8 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { Assets, AssetHandlers, EditorHelpers, MenuInputs } =window.DigitalBacon;
+const { Assets, EditorHelpers, ProjectHandler, MenuInputs }=window.DigitalBacon;
 const { AssetEntity, Component } = Assets;
-const { ComponentsHandler } = AssetHandlers;
 const { ComponentHelper, EditorHelperFactory } = EditorHelpers;
 
 export default class GrabbableComponent extends Component {
@@ -47,7 +46,7 @@ export default class GrabbableComponent extends Component {
     static assetName = 'Grabbable';
 }
 
-ComponentsHandler.registerAsset(GrabbableComponent);
+ProjectHandler.registerAsset(GrabbableComponent);
 
 if(EditorHelpers) {
     class GrabbableComponentHelper extends ComponentHelper {

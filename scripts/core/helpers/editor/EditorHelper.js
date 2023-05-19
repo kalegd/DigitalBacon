@@ -6,7 +6,7 @@
 
 import Asset from '/scripts/core/assets/Asset.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
@@ -149,7 +149,7 @@ export default class EditorHelper {
     addComponent(componentId, ignorePublish, ignoreUndoRedo) {
         let component = this._asset.addComponent(componentId, ignorePublish);
         if(!component) {
-            component = ComponentsHandler.getSessionAsset(componentId);
+            component = ProjectHandler.getSessionAsset(componentId);
             if(!component) return;
             this._deletedAttachedComponents.add(component);
             if(!ignorePublish) {
@@ -169,7 +169,7 @@ export default class EditorHelper {
     removeComponent(componentId, ignorePublish, ignoreUndoRedo) {
         let component = this._asset.removeComponent(componentId, ignorePublish);
         if(!component) {
-            component = ComponentsHandler.getSessionAsset(componentId);
+            component = ProjectHandler.getSessionAsset(componentId);
             if(!component) return;
             this._deletedAttachedComponents.delete(component);
             if(!ignorePublish) {

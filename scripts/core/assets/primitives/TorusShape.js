@@ -6,7 +6,7 @@
 
 import Shape from '/scripts/core/assets/primitives/Shape.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -108,5 +108,5 @@ export default class TorusShape extends Shape {
     static assetName = 'Torus';
 }
 
-ShapesHandler.registerAsset(TorusShape);
+ProjectHandler.registerAsset(TorusShape);
 LibraryHandler.loadBuiltIn(TorusShape);

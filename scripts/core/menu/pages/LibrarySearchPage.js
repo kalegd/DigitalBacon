@@ -19,7 +19,7 @@ const FIELD_MAX_LENGTH = 25;
 class LibrarySearchPage extends PaginatedPage {
     constructor(controller) {
         super(controller, true);
-        this._assets = LibraryHandler.getLibrary();
+        this._assets = ProjectHandler.getAssets();
         this._items = Object.keys(this._assets);
         this._addPageContent();
     }
@@ -43,38 +43,35 @@ class LibrarySearchPage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        let name = this._assets[item]['Name'];
+        let name = this._assets[item].getName();
         if(name.length > FIELD_MAX_LENGTH)
             name = "..." + name.substring(name.length - FIELD_MAX_LENGTH);
         return name;
     }
 
     _handleItemInteraction(item) {
-        let assetPage = this._controller.getPage(MenuPages.ASSET);
-        assetPage.setAsset(item);
-        this._controller.pushPage(MenuPages.ASSET);
+        let asset = this._assets[item];
+        let assetType = LibraryHandler.getType(asset.getAssetId());
+        let assetPage = this._controller.getPage(assetType);
+        assetPage.setAsset(asset);
+        this._controller.pushPage(assetType);
     }
 
     _refreshItems() {
-        this._assets = LibraryHandler.getLibrary();
+        this._assets = ProjectHandler.getAssets();
         this._items = this._getFilteredItems();
     }
 
     _getFilteredItems() {
         let items = [];
         let content = this._textField.content.toLowerCase();
-        for(let assetId in this._assets) {
-            if(this._assets[assetId]['Name'].toLowerCase().includes(content)) {
-                items.push(assetId);
+        for(let id in this._assets) {
+            if(this._assets[id].getName().toLowerCase().includes(content)) {
+                items.push(id);
             } else {
-                let instances = ProjectHandler.getInstancesForAssetId(assetId);
-                for(let instanceId in instances) {
-                    if(instances[instanceId].getName().toLowerCase()
-                            .includes(content)) {
-                        items.push(assetId);
-                        break;
-                    }
-                }
+                let assetId = this._assets[id].getAssetId();
+                let assetName = LibraryHandler.getAssetName(assetId);
+                if(assetName.toLowerCase().includes(content)) items.push(id);
             }
         }
         return items;

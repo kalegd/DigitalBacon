@@ -30,7 +30,6 @@ const SPECIAL_OPTIONS = {
 class NewAssetPage extends PaginatedPage {
     constructor(controller, assetType) {
         super(controller, true);
-        this._assetHandler = ProjectHandler.getAssetHandler(assetType);
         this._assetType = assetType;
         this._items = [];
         this._addPageContent();
@@ -62,7 +61,7 @@ class NewAssetPage extends PaginatedPage {
             params = this._getNewEntityParams()
             params['assetId'] = item.assetId;
         }
-        let asset = this._assetHandler.addNewAsset(item.assetId, params);
+        let asset = ProjectHandler.addNewAsset(item.assetId, params);
         this.back();
         if(this._additionalAction) this._additionalAction(asset);
     }
@@ -129,7 +128,7 @@ class NewAssetPage extends PaginatedPage {
                 }
             }
         } else {
-            this._items = this._assetHandler.getAssetClasses();
+            this._items =ProjectHandler.getAssetClassesForType(this._assetType);
             this._items.unshift(SPECIAL_OPTIONS.DEVICE);
         }
     }

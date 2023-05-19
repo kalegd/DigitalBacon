@@ -6,7 +6,7 @@
 
 import Light from '/scripts/core/assets/primitives/Light.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -66,5 +66,5 @@ export default class PointLight extends Light {
     static assetName = 'Basic Light';
 }
 
-LightsHandler.registerAsset(PointLight);
+ProjectHandler.registerAsset(PointLight);
 LibraryHandler.loadBuiltIn(PointLight);

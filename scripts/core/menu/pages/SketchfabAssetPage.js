@@ -9,7 +9,7 @@ import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import ModelsHandler from '/scripts/core/handlers/ModelsHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { euler, quaternion, vector3s, FontSizes } from '/scripts/core/helpers/constants.js';
@@ -112,7 +112,7 @@ class SketchfabLoginPage extends MenuPage {
         quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
         euler.setFromQuaternion(quaternion);
         let rotation = euler.toArray();
-        ModelsHandler.addNewAsset(assetId, {
+        ProjectHandler.addNewAsset(assetId, {
             "assetId": assetId,
             "position": position,
             "rotation": rotation,

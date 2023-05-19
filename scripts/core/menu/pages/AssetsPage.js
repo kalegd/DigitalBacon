@@ -18,7 +18,6 @@ const FIELD_MAX_LENGTH = 25;
 class AssetsPage extends PaginatedPage {
     constructor(controller, assetType) {
         super(controller, true);
-        this._assetHandler = ProjectHandler.getAssetHandler(assetType);
         this._assetType = assetType;
         this._assets = {};
         this._items = Object.keys(this._assets);
@@ -80,7 +79,7 @@ class AssetsPage extends PaginatedPage {
     }
 
     _refreshItems() {
-        this._assets = this._assetHandler.getAssets();
+        this._assets = ProjectHandler.getAssetsForType(this._assetType);
         this._items = Object.keys(this._assets);
     }
 

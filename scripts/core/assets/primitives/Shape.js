@@ -6,8 +6,7 @@
 
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
-import ShapesHandler from '/scripts/core/handlers/ShapesHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Materials } from '/scripts/core/helpers/constants.js';
 
 export default class Shape extends AssetEntity {
@@ -21,7 +20,7 @@ export default class Shape extends AssetEntity {
     }
 
     _getMaterial() {
-        let material = MaterialsHandler.getAsset(this._material);
+        let material = ProjectHandler.getAsset(this._material);
         if(material) {
             return material.getMaterial();
         } else {
@@ -31,7 +30,7 @@ export default class Shape extends AssetEntity {
 
     clone(visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return ShapesHandler.addNewAsset(this._assetId, params);
+        return ProjectHandler.addNewAsset(this._assetId, params);
     }
 
     exportParams() {

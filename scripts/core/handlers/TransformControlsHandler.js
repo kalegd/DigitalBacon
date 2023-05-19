@@ -169,13 +169,12 @@ class TransformControlsHandler {
         let data = e.clipboardData.getData('text/digitalbacon');
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
         let [ , assetId, , instanceId] = data.split(":");
-        let instances = ProjectHandler.getInstancesForAssetId(assetId);
-        let instance = instances[instanceId];
-        //Maybe we should store parameters in case object has been deleted so we
-        //can still paste it back? Definitily! But later...
-        if(instance) {
-            let clone = instance.clone();
-            if(!this._isDragging(instance)) this._offsetClone(clone);
+        let instance = ProjectHandler.getAsset(instanceId);
+        let sessionInstance = ProjectHandler.getSessionAsset(instanceId);
+        if(sessionInstance) {
+            let clone = sessionInstance.clone();
+            if(instance && !this._isDragging(instance))
+                this._offsetClone(clone);
             e.preventDefault();
         }
     }

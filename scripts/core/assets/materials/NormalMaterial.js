@@ -6,7 +6,7 @@
 
 import Material from '/scripts/core/assets/materials/Material.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -178,5 +178,5 @@ export default class NormalMaterial extends Material {
     static assetName = 'Normal Material';
 }
 
-MaterialsHandler.registerAsset(NormalMaterial);
+ProjectHandler.registerAsset(NormalMaterial);
 LibraryHandler.loadBuiltIn(NormalMaterial);

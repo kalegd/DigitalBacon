@@ -7,7 +7,7 @@
 import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Textures, SIDE_MAP, REVERSE_SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import { uuidv4, numberOr, disposeMaterial } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
@@ -31,7 +31,7 @@ export default class Material extends Asset {
 
     _setTexture(param, newValue) {
         this['_' + param] = newValue;
-        let texture = TexturesHandler.getAsset(newValue);
+        let texture = ProjectHandler.getAsset(newValue);
         this._material[param] = (texture)
             ? texture.getTexture()
             : null;
@@ -49,7 +49,7 @@ export default class Material extends Asset {
     _updateMaterialParamsWithMaps(params, maps) {
         for(let map of maps) {
             if(this['_' + map]) {
-                let texture = TexturesHandler.getAsset(this['_' + map]);
+                let texture = ProjectHandler.getAsset(this['_' + map]);
                 if(texture) params[map] = texture.getTexture();
             }
         }

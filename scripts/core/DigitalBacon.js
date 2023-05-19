@@ -11,7 +11,6 @@ import UserController from '/scripts/core/assets/UserController.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import * as AssetHandlers from '/scripts/core/handlers/AssetHandlers.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import * as utils from '/scripts/core/helpers/utils.module.js';
 import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
@@ -37,7 +36,6 @@ function isEditor() {
 if(window != null) {
     window.DigitalBacon =  {
         Assets: Assets,
-        AssetHandlers: AssetHandlers,
         EditorHelpers: EditorHelpers,
         Interactables: Interactables,
         LibraryHandler: LibraryHandler,
@@ -57,7 +55,6 @@ if(window != null) {
 }
 
 export { Assets };
-export { AssetHandlers };
 export { EditorHelpers };
 export { Interactables };
 export { LibraryHandler };

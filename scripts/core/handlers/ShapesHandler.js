@@ -7,22 +7,11 @@
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 
 class ShapesHandler extends AssetsHandler {
     constructor() {
         super(PubSubTopics.SHAPE_ADDED, PubSubTopics.SHAPE_DELETED,
             AssetTypes.SHAPE);
-    }
-
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
-        ProjectHandler.addAsset(asset, ignorePublish);
-    }
-
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
-        ProjectHandler.deleteAssetInstance(asset, ignorePublish);
     }
 }
 

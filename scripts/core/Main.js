@@ -15,7 +15,6 @@ import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
-import LightsHandler from '/scripts/core/handlers/LightsHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
@@ -131,7 +130,7 @@ export default class Main {
             let ambientLight = new AmbientLight({
                 'visualEdit': false,
             });
-            LightsHandler.addAsset(ambientLight, true, true);
+            ProjectHandler.addAsset(ambientLight, true, true);
             if(!global.disableImmersion) {
                 this._setupForImmersion();
             }

@@ -6,7 +6,7 @@
 
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import ComponentsHandler from '/scripts/core/handlers/ComponentsHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 export default class Asset {
@@ -75,7 +75,7 @@ export default class Asset {
                 this.removeComponent(componentId);
         }
         for(let componentId of componentIds) {
-            let component = ComponentsHandler.getAsset(componentId);
+            let component = ProjectHandler.getAsset(componentId);
             if(!this._components.has(component))
                 this.addComponent(componentId);
         }
@@ -87,7 +87,7 @@ export default class Asset {
     }
 
     addComponent(componentId, ignorePublish) {
-        let component = ComponentsHandler.getAsset(componentId);
+        let component = ProjectHandler.getAsset(componentId);
         if(!component) return;
 
         this._components.add(component);
@@ -105,7 +105,7 @@ export default class Asset {
     }
 
     removeComponent(componentId, ignorePublish) {
-        let component = ComponentsHandler.getAsset(componentId);
+        let component = ProjectHandler.getAsset(componentId);
         if(!component) return;
 
         this._components.delete(component);

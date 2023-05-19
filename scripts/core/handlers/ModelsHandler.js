@@ -9,7 +9,6 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 
 class ModelsHandler extends AssetsHandler {
     constructor() {
@@ -21,16 +20,6 @@ class ModelsHandler extends AssetsHandler {
         let asset = new GLTFAsset(params || { assetId: assetId });
         this.addAsset(asset, ignoreUndoRedo, ignorePublish);
         return asset;
-    }
-
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
-        ProjectHandler.addAsset(asset, ignorePublish);
-    }
-
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
-        ProjectHandler.deleteAssetInstance(asset, ignorePublish);
     }
 
     load(assets, isDiff) {

@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -27,8 +28,8 @@ class ProjectHandler {
         this._scene = scene;
         this._id = uuidv4();
         this._objects = [];
-        this._sessionInstances = {};
-        this.project = {};
+        this._assets = {};
+        this._sessionAssets = {};
         SettingsHandler.init(scene);
     }
 
@@ -136,6 +137,10 @@ class ProjectHandler {
         return this._assetHandlers[assetType];
     }
 
+    registerAsset(assetClass) {
+        this._assetHandlers[assetClass.assetType].registerAsset(assetClass);
+    }
+
     registerAssetHandler(assetHandler, assetType) {
         this._assetHandlers[assetType] = assetHandler;
     }
@@ -149,12 +154,24 @@ class ProjectHandler {
         return this._objects;
     }
 
-    getInstancesForAssetId(assetId) {
-        return this.project[assetId] || {};
+    getAsset(id) {
+        return this._assets[id];
     }
 
-    getSessionInstance(id) {
-        return this._sessionInstances[id];
+    getAssets() {
+        return this._assets;
+    }
+
+    getAssetsForType(assetType) {
+        return this._assetHandlers[assetType].getAssets();
+    }
+
+    getAssetClassesForType(assetType) {
+        return this._assetHandlers[assetType].getAssetClasses();
+    }
+
+    getSessionAsset(id) {
+        return this._sessionAssets[id];
     }
 
     deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
@@ -163,22 +180,24 @@ class ProjectHandler {
         handler.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
     }
 
-    deleteAssetInstance(instance, ignorePublish) {
-        let assetId = instance.getAssetId();
-        let id = instance.getId();
-        if(assetId in this.project && id in this.project[assetId]) {
-            for(let i = 0; i < this._objects.length; i++) {
-                if(instance.getObject() == this._objects[i]) {
-                    this._objects.splice(i,1);
-                    break;
+    deleteAssetFromHandler(asset) {
+        let id = asset.getId();
+        let assetId = asset.getAssetId();
+        let assetType = LibraryHandler.getType(asset.getAssetId());
+        if(this._assets[id]) {
+            if(assetType in AssetEntityTypes) {
+                for(let i = 0; i < this._objects.length; i++) {
+                    if(asset.getObject() == this._objects[i]) {
+                        this._objects.splice(i,1);
+                        break;
+                    }
                 }
+                if(asset.getObject().parent != this._scene) {
+                    this._scene.attach(asset.getObject());
+                }
+                asset.removeFromScene();
             }
-            if(instance.getObject().parent != this._scene) {
-                this._scene.attach(instance.getObject());
-            }
-            delete this.project[assetId][id];
-            instance.removeFromScene();
-            if(ignorePublish) return;
+            delete this._assets[id];
         }
     }
 
@@ -189,26 +208,28 @@ class ProjectHandler {
             ignorePublish);
     }
 
-    addAsset(instance, ignorePublish) {
-        instance.addToScene(this._scene);
-        let assetId = instance.getAssetId();
-        let id = instance.getId();
-        if(!(assetId in this.project)) this.project[assetId] = {};
-        if(this.project[assetId][id]) return; //Prevent multi-user collisions
+    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+        let assetType = LibraryHandler.getType(asset.getAssetId());
+        let handler = this._assetHandlers[assetType];
+        handler.addAsset(asset, ignoreUndoRedo, ignorePublish);
+    }
+
+    addAssetFromHandler(asset) {
+        let id = asset.getId();
+        let assetId = asset.getAssetId();
+        let assetType = LibraryHandler.getType(asset.getAssetId());
+        if(assetType in AssetEntityTypes) {
+            asset.addToScene(this._scene);
+            this._objects.push(asset.getObject());
+        }
+        if(this._assets[id]) return; //Prevent multi-user collisions
                                               //caused by undo/redo
-        this.project[assetId][id] = instance;
-        this._objects.push(instance.getObject());
-        this._sessionInstances[id] = instance;
+        this._assets[id] = asset;
+        this._sessionAssets[id] = asset;
     }
 
     reset() {
-        this._sessionInstances = {};
-        //for(let assetId in this.project) {
-        //    let instances = this.project[assetId];
-        //    for(let instanceId in instances) {
-        //        this.deleteAssetInstance(instances[instanceId], true, true);
-        //    }
-        //}
+        this._sessionAssets = {};
         if(!global.disableImmersion) UndoRedoHandler.reset();
         for(let type in this._assetHandlers) {
             this._assetHandlers[type].reset();

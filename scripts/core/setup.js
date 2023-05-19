@@ -4,8 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import Main from '/scripts/core/Main.js';
 import global from '/scripts/core/global.js';
+import '/scripts/core/handlers/ComponentsHandler.js';
+import '/scripts/core/handlers/ImagesHandler.js';
+import '/scripts/core/handlers/LightsHandler.js';
+import '/scripts/core/handlers/MaterialsHandler.js';
+import '/scripts/core/handlers/ModelsHandler.js';
+import '/scripts/core/handlers/ShapesHandler.js';
+import '/scripts/core/handlers/SystemsHandler.js';
+import '/scripts/core/handlers/TexturesHandler.js';
 import '/scripts/core/assets/primitives/AmbientLight.js';
 import '/scripts/core/assets/primitives/BoxShape.js';
 import '/scripts/core/assets/primitives/CircleShape.js';
@@ -17,9 +24,6 @@ import '/scripts/core/assets/primitives/RingShape.js';
 import '/scripts/core/assets/primitives/SphereShape.js';
 import '/scripts/core/assets/primitives/TorusShape.js';
 import '/scripts/core/assets/materials/BasicMaterial.js';
-//import '/scripts/core/assets/materials/LambertMaterial.js';
-//import '/scripts/core/assets/materials/NormalMaterial.js';
-//import '/scripts/core/assets/materials/PhongMaterial.js';
 import '/scripts/core/assets/materials/StandardMaterial.js';
 import '/scripts/core/assets/materials/ToonMaterial.js';
 import '/scripts/core/assets/textures/BasicTexture.js';
@@ -31,10 +35,7 @@ import '/scripts/core/helpers/editor/ComponentHelper.js';
 import '/scripts/core/helpers/editor/ClampedTexturePlaneHelper.js';
 import '/scripts/core/helpers/editor/CubeTextureHelper.js';
 import '/scripts/core/helpers/editor/GLTFAssetHelper.js';
-//import '/scripts/core/helpers/editor/LambertMaterialHelper.js';
 import '/scripts/core/helpers/editor/MaterialHelper.js';
-//import '/scripts/core/helpers/editor/NormalMaterialHelper.js';
-//import '/scripts/core/helpers/editor/PhongMaterialHelper.js';
 import '/scripts/core/helpers/editor/AmbientLightHelper.js';
 import '/scripts/core/helpers/editor/BoxShapeHelper.js';
 import '/scripts/core/helpers/editor/CircleShapeHelper.js';
@@ -54,6 +55,7 @@ import '/node_modules/file-saver/src/FileSaver.js';
 import '/node_modules/jszip/dist/jszip.js';
 import '/node_modules/jszip-utils/dist/jszip-utils.js';
 import '/node_modules/nipplejs/dist/nipplejs.js';
+import Main from '/scripts/core/Main.js';
 
 global.deviceType = "MOBILE";
 global.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
