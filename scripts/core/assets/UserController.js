@@ -86,6 +86,10 @@ class UserController {
         PubSub.publish(this._id, PubSubTopics.AVATAR_UPDATED, this._avatarUrl);
     }
 
+    getHand(hand) {
+        return this.hands[hand];
+    }
+
     getDistanceBetweenHands() {
         if(global.deviceType != 'XR') return;
         let leftPosition = this.hands[Hands.LEFT].getWorldPosition();

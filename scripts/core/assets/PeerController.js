@@ -96,6 +96,10 @@ export default class PeerController extends Entity {
         this._avatar.updateSourceUrl(url);
     }
 
+    getHand(hand) {
+        return this.hands[hand];
+    }
+
     setDisplayingUsername(displayingUsername) {
         if(this._displayingUsername == displayingUsername) return;
         this._displayingUsername = !this._displayingUsername;

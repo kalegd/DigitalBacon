@@ -100,19 +100,21 @@ export default class GrabbableSystem extends System {
     _addGripInteractable(instance, stealable) {
         let object = instance.getObject();
         let interactable = new GripInteractable(object,
-            (hand) => {
-                UserController.hands[hand].attach(object);
-                this._publish(GRABBED_TOPIC, instance, hand, stealable);
+            (side) => {
+                let hand = UserController.getHand(side);
+                hand.attach(object);
+                this._publish(GRABBED_TOPIC, instance, side, stealable);
                 this._publishForNewPeers[instance.getId()] = () => {
-                    if(UserController.hands[hand].hasChild(object))
-                        this._publish(GRABBED_TOPIC, instance, hand, stealable);
+                    if(hand.hasChild(object))
+                        this._publish(GRABBED_TOPIC, instance, side, stealable);
                 };
                 this._onPartyJoined[instance.getId()] = () => {
-                    UserController.hands[hand].remove(object);
+                    hand.remove(object);
                 };
-            }, (hand) => {
-                if(UserController.hands[hand].remove(object)) {
-                    this._publish(RELEASED_TOPIC, instance, hand, stealable);
+            }, (side) => {
+                let hand = UserController.getHand(side);
+                if(hand.remove(object)) {
+                    this._publish(RELEASED_TOPIC, instance, side, stealable);
                     delete this._onPartyJoined[instance.getId()];
                     delete this._publishForNewPeers[instance.getId()];
                 }
@@ -158,7 +160,7 @@ export default class GrabbableSystem extends System {
             let avatar = peer.controller.getAvatar();
             avatar.attach(instance.getObject());
         } else {
-            let hand = peer.controller.hands[message.attachTo];
+            let hand = peer.controller.getHand(message.attachTo);
             hand.attach(instance.getObject());
         }
         instance.setPosition(message.position);
@@ -181,7 +183,7 @@ export default class GrabbableSystem extends System {
             let avatar = peer.controller.getAvatar();
             avatar.remove(instance.getObject());
         } else {
-            let hand = peer.controller.hands[message.attachTo];
+            let hand = peer.controller.getHand(message.attachTo);
             hand.remove(instance.getObject());
         }
         instance.setPosition(message.position);
