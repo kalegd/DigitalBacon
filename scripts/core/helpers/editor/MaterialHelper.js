@@ -8,7 +8,7 @@ import Material from '/scripts/core/assets/materials/Material.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import { SIDE_MAP, REVERSE_SIDE_MAP } from '/scripts/core/helpers/constants.js';
+import { SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
@@ -82,9 +82,8 @@ export default class MaterialHelper extends EditorHelper {
             "type": CheckboxInput },
         { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
             "type": NumberInput },
-        { "parameter": "side", "name": "Display", "type": EnumInput,
-            "options": [ "Front Side", "Back Side", "Both Sides" ],
-            "map": SIDE_MAP, "reverseMap": REVERSE_SIDE_MAP },
+        { "parameter": "side", "name": "Display", "map": SIDE_MAP,
+            "type": EnumInput },
     ];
 }
 

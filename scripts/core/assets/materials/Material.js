@@ -4,12 +4,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { Textures, SIDE_MAP, REVERSE_SIDE_MAP } from '/scripts/core/helpers/constants.js';
-import { uuidv4, numberOr, disposeMaterial } from '/scripts/core/helpers/utils.module.js';
+import { numberOr, disposeMaterial } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 export default class Material extends Asset {

@@ -297,10 +297,12 @@ export default class EditorHelper {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new EnumInput({
             'title': field.name,
-            'initialValue': field.reverseMap[this._asset[getFunction]()],
-            'options': field.options,
+            'initialValue': this._getKeyFromValue(field.map,
+                this._asset[getFunction]()),
+            'options': Object.keys(field.map),
             'getFromSource': () => {
-                return field.reverseMap[this._asset[getFunction]()];
+                return this._getKeyFromValue(field.map,
+                    this._asset[getFunction]());
             },
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, field.map[newValue]);
@@ -409,6 +411,12 @@ export default class EditorHelper {
                 this._updateVector3(field.parameter, newValue, true);
             },
         });
+    }
+
+    _getKeyFromValue(map, value) {
+        for(let key in map) {
+            if(map[key] == value) return key;
+        }
     }
 }
 

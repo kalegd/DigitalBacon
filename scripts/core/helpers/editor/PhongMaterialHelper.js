@@ -6,7 +6,7 @@
 
 import PhongMaterial from '/scripts/core/assets/materials/PhongMaterial.js';
 import TextureTypes from '/scripts/core/enums/TextureTypes.js';
-import { COMBINE_MAP, REVERSE_COMBINE_MAP, NORMAL_TYPE_MAP, REVERSE_NORMAL_TYPE_MAP } from '/scripts/core/helpers/constants.js';
+import { COMBINE_MAP, NORMAL_TYPE_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
@@ -51,8 +51,7 @@ export default class PhongMaterialHelper extends MaterialHelper {
         { "parameter": "envMap","name": "Environment Map",
             "filter": TextureTypes.CUBE, "type": TextureInput },
         { "parameter": "combine","name": "Environment-Color Blend",
-            "options": [ "Multiply", "Mix", "Add" ], "map": COMBINE_MAP,
-            "reverseMap": REVERSE_COMBINE_MAP, "type": EnumInput },
+            "map": COMBINE_MAP, "type": EnumInput },
         { "parameter": "reflectivity","name": "Reflectivity",
             "min": 0, "max": 1, "type": NumberInput },
         { "parameter": "refractionRatio","name": "Refraction Ratio",
@@ -60,8 +59,7 @@ export default class PhongMaterialHelper extends MaterialHelper {
         { "parameter": "normalMap","name": "Normal Map",
             "filter": TextureTypes.BASIC, "type": TextureInput },
         { "parameter": "normalMapType","name": "Normal Type",
-            "options": [ "Tangent", "Object" ], "map": NORMAL_TYPE_MAP,
-            "reverseMap": REVERSE_NORMAL_TYPE_MAP, "type": EnumInput },
+            "map": NORMAL_TYPE_MAP, "type": EnumInput },
         { "parameter": "normalScale","name": "Normal Scale",
             "min": 0, "max": 1, "type": Vector2Input },
         { "parameter": "shininess", "name": "Shininess", "min": 0,

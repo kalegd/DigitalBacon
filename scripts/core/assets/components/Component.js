@@ -4,10 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 export default class Component extends Asset {
     constructor(params = {}) {

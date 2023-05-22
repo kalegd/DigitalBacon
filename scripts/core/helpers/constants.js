@@ -173,13 +173,6 @@ for(let character of validKeysString) {
     ValidKeys.add(character);
 }
 
-//For user friendly names of Three.js enums
-function fillReverseMap(map, reverseMap) {
-    for(let option in map) {
-        reverseMap[map[option]] = option;
-    }
-}
-
 export const COMBINE_MAP = {
     "Multiply": THREE.MultiplyOperation,
     "Mix": THREE.MixOperation,
@@ -203,13 +196,3 @@ export const WRAP_MAP = {
     "Repeat": THREE.RepeatWrapping,
     "Mirrored": THREE.MirroredRepeatWrapping
 };
-export const REVERSE_COMBINE_MAP = {};
-export const REVERSE_MAPPING_MAP = {};
-export const REVERSE_NORMAL_TYPE_MAP = {};
-export const REVERSE_SIDE_MAP = {};
-export const REVERSE_WRAP_MAP = {};
-fillReverseMap(COMBINE_MAP, REVERSE_COMBINE_MAP);
-fillReverseMap(MAPPING_MAP, REVERSE_MAPPING_MAP);
-fillReverseMap(NORMAL_TYPE_MAP, REVERSE_NORMAL_TYPE_MAP);
-fillReverseMap(SIDE_MAP, REVERSE_SIDE_MAP);
-fillReverseMap(WRAP_MAP, REVERSE_WRAP_MAP);

@@ -6,7 +6,7 @@
 
 import CubeTexture from '/scripts/core/assets/textures/CubeTexture.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import { MAPPING_MAP, REVERSE_MAPPING_MAP } from '/scripts/core/helpers/constants.js';
+import { MAPPING_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
@@ -19,9 +19,8 @@ export default class CubeTextureHelper extends TextureHelper {
 
     static fields = [
         { "parameter": "images", "name": "Images", "type": CubeImageInput },
-        { "parameter": "mapping", "name": "Mapping", "type": EnumInput,
-            "options": [ "Reflection", "Refraction" ], "map": MAPPING_MAP,
-            "reverseMap": REVERSE_MAPPING_MAP },
+        { "parameter": "mapping", "name": "Mapping", "map": MAPPING_MAP,
+            "type": EnumInput },
     ];
 }
 
