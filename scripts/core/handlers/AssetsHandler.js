@@ -33,6 +33,7 @@ export default class AssetsHandler {
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
         if(global.isEditor) EditorHelperFactory.addEditorHelperTo(asset);
+        if(asset.update) global.dynamicAssets.add(asset);
         ProjectHandler.addAssetFromHandler(asset);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
@@ -57,6 +58,7 @@ export default class AssetsHandler {
         }
         delete this._assets[asset.getId()];
         ProjectHandler.deleteAssetFromHandler(asset);
+        if(asset.update) global.dynamicAssets.delete(asset);
         if(ignorePublish) return;
         PubSub.publish(this._id, this._deletedTopic, {
             asset: asset,

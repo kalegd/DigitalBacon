@@ -6,6 +6,7 @@
 
 let global = {};
 
+global.dynamicAssets = new Set();
 global.loadingLocks = new Set();
   
 export default global;

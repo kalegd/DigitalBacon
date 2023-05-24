@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import UserController from '/scripts/core/assets/UserController.js';
 import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
@@ -214,6 +215,7 @@ class ProjectPage extends PaginatedPage {
             return;
         }
         ProjectHandler.reset();
+        UserController.setPosition([0, 0, 0]);
         let ambientLight = new AmbientLight({
             'visualEdit': false,
         });

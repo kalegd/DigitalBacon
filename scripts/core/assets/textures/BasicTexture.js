@@ -56,7 +56,7 @@ export default class BasicTexture extends Texture {
         params['wrapS'] = this._texture.wrapS;
         params['wrapT'] = this._texture.wrapT;
         params['repeat'] = this._texture.repeat.toArray();
-        params['offset'] = this._texture.offset.toArray();
+        params['offset'] = this._offset;
         return params;
     }
 
@@ -65,19 +65,19 @@ export default class BasicTexture extends Texture {
     }
 
     getOffset() {
-        return this._offset
+        return this._offset;
     }
 
     getRepeat() {
-        return this._repeat
+        return this._repeat;
     }
 
     getWrapS() {
-        return this._wrapS
+        return this._wrapS;
     }
 
     getWrapT() {
-        return this._wrapT
+        return this._wrapT;
     }
 
     setImage(image) {
@@ -87,15 +87,13 @@ export default class BasicTexture extends Texture {
     }
 
     setOffset(offset) {
-        if(compareLists(this._offset, offset)) return;
         this._offset = offset;
-        this._updateTexture();
+        this._texture.offset.fromArray(offset);
     }
 
     setRepeat(repeat) {
-        if(compareLists(this._repeat, repeat)) return;
         this._repeat = repeat;
-        this._updateTexture();
+        this._texture.repeat.fromArray(repeat);
     }
 
     setWrapS(wrapS) {

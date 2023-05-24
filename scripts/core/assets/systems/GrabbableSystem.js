@@ -45,8 +45,7 @@ export default class GrabbableSystem extends System {
             let id = message.id;
             if(this._interactables[id] || this._notStealable[id]) return;
             let instance = ProjectHandler.getSessionAsset(id);
-            let component = ProjectHandler.getSessionAsset(
-                message.componentId);
+            let component = ProjectHandler.getSessionAsset(message.componentId);
             if(deviceType == 'XR') {
                 this._addGripInteractable(instance, component.getStealable());
             } else {

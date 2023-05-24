@@ -37,7 +37,6 @@ export default class Main {
         this._container = document.getElementById(containerId);
         this._loadingMessage = document.querySelector('#digital-bacon-loading');
         this._errorMessage = document.querySelector('#digital-bacon-error');
-        this._dynamicAssets = [];
         this._callback = callback;
 
         this._createRenderer();
@@ -197,7 +196,7 @@ export default class Main {
                 if(this._callback) this._callback(this);
                 return;
             } else if(global.deviceType == "XR") {
-                this._dynamicAssets.push(GripInteractableHandler);
+                global.dynamicAssets.add(GripInteractableHandler);
                 this._renderer.setAnimationLoop((time, frame) => {
                     InputHandler.update(frame);
                     this._update();
@@ -211,16 +210,16 @@ export default class Main {
                     this._update();
                 });
             }
-            this._dynamicAssets.push(this._menuController);
-            this._dynamicAssets.push(UserController);
-            this._dynamicAssets.push(PointerInteractableHandler);
-            this._dynamicAssets.push(PubSub);
-            this._dynamicAssets.push(ThreeMeshUI);
-            this._dynamicAssets.push(PartyHandler);
+            global.dynamicAssets.add(this._menuController);
+            global.dynamicAssets.add(UserController);
+            global.dynamicAssets.add(PointerInteractableHandler);
+            global.dynamicAssets.add(PubSub);
+            global.dynamicAssets.add(ThreeMeshUI);
+            global.dynamicAssets.add(PartyHandler);
             if(global.isEditor) {
-                this._dynamicAssets.push(TranslateHandler);
-                this._dynamicAssets.push(RotateHandler);
-                this._dynamicAssets.push(ScaleHandler);
+                global.dynamicAssets.add(TranslateHandler);
+                global.dynamicAssets.add(RotateHandler);
+                global.dynamicAssets.add(ScaleHandler);
             }
             if(this._callback) this._callback(this);
         } else {
@@ -232,7 +231,7 @@ export default class Main {
     _update() {
         this._stats.begin();
         let timeDelta = this._clock.getDelta();
-        for(let asset of this._dynamicAssets) {
+        for(let asset of global.dynamicAssets) {
             asset.update(timeDelta);
         }
         this._renderer.render(this._scene, this._camera);

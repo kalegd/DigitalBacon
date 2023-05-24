@@ -173,6 +173,10 @@ class UserController {
         return object.parent == this._userObj;
     }
 
+    setPosition(position) {
+        this._userObj.position.fromArray(position);
+    }
+
     addToScene(scene) {
         if(global.deviceType != "XR") {
             this._avatar.addToScene(global.cameraFocus);
