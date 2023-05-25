@@ -197,7 +197,7 @@ class GoogleDrive {
             }),
         }).then((res) => {
             if(res.status != 200) {
-                console.error('Error:', error);
+                console.error('Error:', res.statusText);
                 errorCallback();
             } else {
                 let url = res.headers.get("location");

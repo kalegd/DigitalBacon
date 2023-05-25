@@ -11,7 +11,7 @@ import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import TexturesHandler from '/scripts/core/handlers/TexturesHandler.js';
+import TexturesHandler from '/scripts/core/handlers/assetTypes/TexturesHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';

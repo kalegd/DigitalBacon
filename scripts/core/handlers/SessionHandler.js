@@ -19,6 +19,7 @@ class SessionHandler {
         this._orbitControlsTarget = new Vector3(0,0,0);
         this._onStart = onStart;
         global.sessionActive = false;
+        AudioHandler.init();
         if(global.deviceType == "XR") {
             this._configureForXR();
         } else if(global.deviceType == "POINTER") {
@@ -38,7 +39,7 @@ class SessionHandler {
         this._div.appendChild(this._createMobileOverrideLink());
         global.renderer.xr.addEventListener("sessionstart", () => {
             global.sessionActive = true;
-            AudioHandler.init();
+            AudioHandler.resume();
             global.renderer.xr.setFoveation(0);
             if(this._onStart) {
                 this._onStart();
@@ -47,6 +48,7 @@ class SessionHandler {
         });
         global.renderer.xr.addEventListener("sessionend", () => {
             global.sessionActive = false;
+            AudioHandler.suspend();
         });
     }
 
@@ -75,7 +77,7 @@ class SessionHandler {
             this._div.style.display = "none";
             this._controls.enabled = true;
             global.sessionActive = true;
-            AudioHandler.init();
+            AudioHandler.resume();
             InputHandler.createPointerControls();
             if(this._onStart) {
                 this._onStart();
@@ -110,7 +112,7 @@ class SessionHandler {
             this._div.style.display = "none";
             this._controls.enabled = true;
             global.sessionActive = true;
-            AudioHandler.init();
+            AudioHandler.resume();
             InputHandler.createMobileControls();
             if(this._onStart) {
                 this._onStart();

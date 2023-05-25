@@ -1,3 +1,4 @@
+import AudioInput from '/scripts/core/menu/input/AudioInput.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
@@ -11,6 +12,7 @@ import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 
+export { AudioInput };
 export { CheckboxInput };
 export { ColorInput };
 export { CubeImageInput };

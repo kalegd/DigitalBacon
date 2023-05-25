@@ -7,6 +7,7 @@
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import FileTypes from '/scripts/core/enums/FileTypes.js';
+import AudioFileTypes from '/scripts/core/enums/AudioFileTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import ModelFileTypes from '/scripts/core/enums/ModelFileTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
@@ -65,19 +66,7 @@ class UploadHandler {
             let extension = file.name.split('.').pop().toLowerCase();
             if(extension in FileTypes) {
                 let lock = uuidv4();
-                if(extension in ImageFileTypes) {
-                    this._locks.add(lock);
-                    LibraryHandler.addNewAsset(file, file.name,
-                        AssetTypes.IMAGE, (assetId) => {
-                            this._libraryCallback(assetId, lock, callback);
-                        });
-                } else if(extension in ModelFileTypes) {
-                    this._locks.add(lock);
-                    LibraryHandler.addNewAsset(file, file.name,AssetTypes.MODEL,
-                        (assetId) => {
-                            this._libraryCallback(assetId, lock, callback);
-                        });
-                } else if(extension == 'js') {
+                if(extension == 'js') {
                     this._locks.add(lock);
                     LibraryHandler.addNewScript(file, (assetId) => {
                         this._libraryCallback(assetId, lock, callback);
@@ -85,7 +74,19 @@ class UploadHandler {
                         console.log("TODO: Tell user an error occurred");
                     });
                 } else {
-                    console.log("TODO: Support other file types");
+                    let assetType;
+                    if(extension in ImageFileTypes) {
+                        assetType = AssetTypes.IMAGE;
+                    } else if(extension in ModelFileTypes) {
+                        assetType = AssetTypes.IMAGE;
+                    } else if(extension in AudioFileTypes) {
+                        assetType = AssetTypes.AUDIO;
+                    }
+                    this._locks.add(lock);
+                    LibraryHandler.addNewAsset(file, file.name, assetType,
+                        (assetId) => {
+                            this._libraryCallback(assetId, lock, callback);
+                        });
                 }
             } else {
                 console.log("TODO: Tell user invalid filetype, and list valid ones");
@@ -119,6 +120,8 @@ class UploadHandler {
             this._input.accept = "image/*";
         } else if(type == AssetTypes.MODEL) {
             this._input.accept = ".glb";
+        } else if(type == AssetTypes.AUDIO) {
+            this._input.accept = ".mp3,.wav";
         } else {
             this._input.accept = '';
         }

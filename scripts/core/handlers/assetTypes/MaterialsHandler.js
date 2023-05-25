@@ -6,23 +6,33 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
+import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 
 const SHOULD_HAVE_REFACTORED_SOONER = {
-    BASIC: '95f63d4b-06d1-4211-912b-556b6ce7bf5f',
-    CUBE: '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2',
+    BASIC: '943b7a57-7e8f-4717-9bc6-0ba2637d9e3b',
+    LAMBERT: '5169a83b-1e75-4cb1-8c33-c049726d97e4',
+    NORMAL: '61262e1f-5495-4280-badc-b9e4599026f7',
+    PHONG: 'c9cfa45a-99b4-4166-b252-1c68b52773b0',
+    STANDARD: 'a6a1aa81-50a6-4773-aaf5-446d418c9817',
+    TOON: 'be461019-0fc2-4c88-bee4-290ee3a585eb',
 };
 
-class TexturesHandler extends AssetsHandler {
+class MaterialsHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.TEXTURE_ADDED, PubSubTopics.TEXTURE_DELETED,
-            AssetTypes.TEXTURE);
+        super(PubSubTopics.MATERIAL_ADDED, PubSubTopics.MATERIAL_DELETED,
+            AssetTypes.MATERIAL);
+    }
+
+    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        if(asset.editorHelper) asset.editorHelper.undoDispose();
     }
 
     deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
         super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
         asset.dispose();
+        if(asset.editorHelper) asset.editorHelper.dispose();
     }
 
     load(assets, isDiff) {
@@ -39,23 +49,7 @@ class TexturesHandler extends AssetsHandler {
             }
         }
     }
-
-    getTextureType(id) {
-        return this._assets[id].getTextureType();
-    }
-
-    getTexturesAssetIds() {
-        let assetIds = new Set();
-        for(let id in this._assets) {
-            let texture = this._assets[id];
-            let textureAssetIds = texture.getAssetIds();
-            for(let assetId of textureAssetIds) {
-                assetIds.add(assetId);
-            }
-        }
-        return assetIds;
-    }
 }
 
-let texturesHandler = new TexturesHandler();
-export default texturesHandler;
+let materialsHandler = new MaterialsHandler();
+export default materialsHandler;

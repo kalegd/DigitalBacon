@@ -10,7 +10,7 @@ import InteractableStates from '/scripts/core/enums/InteractableStates.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import MaterialsHandler from '/scripts/core/handlers/MaterialsHandler.js';
+import MaterialsHandler from '/scripts/core/handlers/assetTypes/MaterialsHandler.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 

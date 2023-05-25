@@ -4,20 +4,20 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
+import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
+import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 
-class ImagesHandler extends AssetsHandler {
+class ModelsHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.IMAGE_ADDED, PubSubTopics.IMAGE_DELETED,
-            AssetTypes.IMAGE);
+        super(PubSubTopics.MODEL_ADDED, PubSubTopics.MODEL_DELETED,
+            AssetTypes.MODEL);
     }
 
     addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
-        let asset = new ClampedTexturePlane(params || { assetId: assetId });
+        let asset = new GLTFAsset(params || { assetId: assetId });
         this.addAsset(asset, ignoreUndoRedo, ignorePublish);
         return asset;
     }
@@ -52,5 +52,5 @@ class ImagesHandler extends AssetsHandler {
     }
 }
 
-let imagesHandler = new ImagesHandler();
-export default imagesHandler;
+let modelsHandler = new ModelsHandler();
+export default modelsHandler;

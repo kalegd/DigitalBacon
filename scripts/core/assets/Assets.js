@@ -1,6 +1,7 @@
 import Asset from '/scripts/core/assets/Asset.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
+import CustomAsset from '/scripts/core/assets/CustomAsset.js';
 import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
 import Component from '/scripts/core/assets/components/Component.js';
 import Material from '/scripts/core/assets/materials/Material.js';
@@ -27,6 +28,7 @@ import System from '/scripts/core/assets/systems/System.js';
 export { Asset };
 export { AssetEntity };
 export { ClampedTexturePlane };
+export { CustomAsset };
 export { GLTFAsset };
 export { Component };
 export { Material };

@@ -6,14 +6,14 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
+import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
 
-class ShapesHandler extends AssetsHandler {
+class LightsHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.SHAPE_ADDED, PubSubTopics.SHAPE_DELETED,
-            AssetTypes.SHAPE);
+        super(PubSubTopics.LIGHT_ADDED, PubSubTopics.LIGHT_DELETED,
+            AssetTypes.LIGHT);
     }
 }
 
-let shapesHandler = new ShapesHandler();
-export default shapesHandler;
+let lightsHandler = new LightsHandler();
+export default lightsHandler;

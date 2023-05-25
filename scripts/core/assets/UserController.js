@@ -11,6 +11,7 @@ import UserHand from '/scripts/core/assets/UserHand.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
+import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
@@ -47,6 +48,7 @@ class UserController {
                 'Focus Camera': true,
                 'URL': this._avatarUrl,
             });
+            AudioHandler.setListenerParent(this._avatar.getObject());
         } else {
             this.hands = {};
             for(let hand of [Hands.RIGHT, Hands.LEFT]) {

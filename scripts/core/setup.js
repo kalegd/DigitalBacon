@@ -5,14 +5,16 @@
  */
 
 import global from '/scripts/core/global.js';
-import '/scripts/core/handlers/ComponentsHandler.js';
-import '/scripts/core/handlers/ImagesHandler.js';
-import '/scripts/core/handlers/LightsHandler.js';
-import '/scripts/core/handlers/MaterialsHandler.js';
-import '/scripts/core/handlers/ModelsHandler.js';
-import '/scripts/core/handlers/ShapesHandler.js';
-import '/scripts/core/handlers/SystemsHandler.js';
-import '/scripts/core/handlers/TexturesHandler.js';
+import '/scripts/core/handlers/assetTypes/ComponentsHandler.js';
+import '/scripts/core/handlers/assetTypes/CustomAssetsHandler.js';
+import '/scripts/core/handlers/assetTypes/AudiosHandler.js';
+import '/scripts/core/handlers/assetTypes/ImagesHandler.js';
+import '/scripts/core/handlers/assetTypes/LightsHandler.js';
+import '/scripts/core/handlers/assetTypes/MaterialsHandler.js';
+import '/scripts/core/handlers/assetTypes/ModelsHandler.js';
+import '/scripts/core/handlers/assetTypes/ShapesHandler.js';
+import '/scripts/core/handlers/assetTypes/SystemsHandler.js';
+import '/scripts/core/handlers/assetTypes/TexturesHandler.js';
 import '/scripts/core/assets/primitives/AmbientLight.js';
 import '/scripts/core/assets/primitives/BoxShape.js';
 import '/scripts/core/assets/primitives/CircleShape.js';
@@ -29,11 +31,13 @@ import '/scripts/core/assets/materials/ToonMaterial.js';
 import '/scripts/core/assets/textures/BasicTexture.js';
 import '/scripts/core/assets/textures/CubeTexture.js';
 import '/scripts/core/helpers/editor/AssetEntityHelper.js';
+import '/scripts/core/helpers/editor/AudioHelper.js';
 import '/scripts/core/helpers/editor/BasicMaterialHelper.js';
 import '/scripts/core/helpers/editor/BasicTextureHelper.js';
 import '/scripts/core/helpers/editor/ComponentHelper.js';
 import '/scripts/core/helpers/editor/ClampedTexturePlaneHelper.js';
 import '/scripts/core/helpers/editor/CubeTextureHelper.js';
+import '/scripts/core/helpers/editor/CustomAssetHelper.js';
 import '/scripts/core/helpers/editor/GLTFAssetHelper.js';
 import '/scripts/core/helpers/editor/MaterialHelper.js';
 import '/scripts/core/helpers/editor/AmbientLightHelper.js';

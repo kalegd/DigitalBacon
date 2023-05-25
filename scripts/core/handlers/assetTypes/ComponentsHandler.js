@@ -6,7 +6,7 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
+import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
 
 class ComponentsHandler extends AssetsHandler {
     constructor() {

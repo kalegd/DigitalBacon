@@ -162,6 +162,8 @@ class LibraryHandler {
             return this._loadGLB(assetId, blob, ignorePublish);
         } else if(this.library[assetId]['Type'] == AssetTypes.IMAGE) {
             return this._loadImage(assetId, blob, ignorePublish);
+        } else if(this.library[assetId]['Type'] == AssetTypes.AUDIO) {
+            return this._loadAudio(assetId, blob, ignorePublish);
         } else {
             return this._loadScript(assetId, blob, ignorePublish);
         }
@@ -212,6 +214,22 @@ class LibraryHandler {
         });
     }
 
+    _loadAudio(assetId, blob, ignorePublish) {
+        return new Promise((resolve, reject) => {
+            let objectURL = URL.createObjectURL(blob);
+            new THREE.AudioLoader().load(objectURL,
+                (buffer) => {
+                    this.library[assetId]['Buffer'] = buffer;
+                    if(!ignorePublish) {
+                        PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                            assetId);
+                    }
+                    resolve();
+                }
+            );
+        });
+    }
+
     _loadScript(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
@@ -229,6 +247,14 @@ class LibraryHandler {
             return assetDetails['Mesh'].clone();
         } else if(assetDetails['Type'] == AssetTypes.MODEL) {
             return clone(assetDetails['Mesh']);
+        }
+    }
+
+    getBuffer(assetId) {
+        if(!assetId) return;
+        let assetDetails = this.library[assetId];
+        if(assetDetails['Type'] == AssetTypes.AUDIO) {
+            return assetDetails['Buffer'];
         }
     }
 

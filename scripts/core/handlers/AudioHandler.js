@@ -10,22 +10,25 @@ import * as THREE from 'three';
 class AudioHandler {
     init() {
         if(this._audioListener) return;
-
         this._audioListener = new THREE.AudioListener();
-        this._addEventListeners();
         global.camera.add(this._audioListener);
     }
 
-    _addEventListeners() {
-        //XR Event Listeners
-        global.renderer.xr.addEventListener("sessionstart", () => {
-            this._audioListener.context.resume();
-        });
-        global.renderer.xr.addEventListener("sessionend", () => {
-            this._audioListener.context.suspend();
-        });
+    getListener() {
+        return this._audioListener;
     }
 
+    setListenerParent(listenerParent) {
+        listenerParent.add(this._audioListener);
+    }
+
+    resume() {
+        this._audioListener.context.resume();
+    }
+
+    suspend() {
+        this._audioListener.context.suspend();
+    }
 }
 
 let audioHandler = new AudioHandler();

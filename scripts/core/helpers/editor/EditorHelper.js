@@ -11,6 +11,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import AudioInput from '/scripts/core/menu/input/AudioInput.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
@@ -24,6 +25,7 @@ import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 
 const INPUT_TYPE_TO_CREATE_FUNCTION = {
+    AudioInput: "_createAudioInput",
     CheckboxInput: "_createCheckboxInput",
     ColorInput: "_createColorInput",
     CubeImageInput: "_createCubeImageInput",
@@ -250,6 +252,18 @@ export default class EditorHelper {
         if(field.type.name in INPUT_TYPE_TO_CREATE_FUNCTION) {
             return this[INPUT_TYPE_TO_CREATE_FUNCTION[field.type.name]](field);
         }
+    }
+
+    _createAudioInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new AudioInput({
+            'title': field.name,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
+            },
+        });
     }
 
     _createCheckboxInput(field) {

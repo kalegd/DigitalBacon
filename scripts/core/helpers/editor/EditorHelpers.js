@@ -1,6 +1,7 @@
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import ClampedTexturePlaneHelper from '/scripts/core/helpers/editor/ClampedTexturePlaneHelper.js';
 import ComponentHelper from '/scripts/core/helpers/editor/ComponentHelper.js';
+import CustomAssetHelper from '/scripts/core/helpers/editor/CustomAssetHelper.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import GLTFAssetHelper from '/scripts/core/helpers/editor/GLTFAssetHelper.js';
@@ -13,6 +14,7 @@ import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
 export { AssetEntityHelper };
 export { ClampedTexturePlaneHelper };
 export { ComponentHelper };
+export { CustomAssetHelper };
 export { EditorHelper };
 export { EditorHelperFactory };
 export { GLTFAssetHelper };

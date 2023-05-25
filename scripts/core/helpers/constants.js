@@ -118,6 +118,7 @@ export const Materials = {
 
 export const Colors = {
     "black": new THREE.Color(0x000000),
+    "blue": new THREE.Color(0x0000ff),
     "green": new THREE.Color(0x00ff00),
     "red": new THREE.Color(0xff0000),
     "white": new THREE.Color(0xffffff),
@@ -177,6 +178,11 @@ export const COMBINE_MAP = {
     "Multiply": THREE.MultiplyOperation,
     "Mix": THREE.MixOperation,
     "Add": THREE.AddOperation
+};
+export const DISTANCE_MODEL_MAP = {
+    "Linear": "linear",
+    "Inverse": "inverse",
+    "Exponential": "exponential"
 };
 export const MAPPING_MAP = {
     "Reflection": THREE.CubeReflectionMapping,

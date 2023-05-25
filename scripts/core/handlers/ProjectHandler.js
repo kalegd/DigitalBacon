@@ -6,7 +6,6 @@
 
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -17,7 +16,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //TODO: Delete this when we handle the debacle TODO in loadZip() + loadDiffZip()
-const orderedHandlerKeys = [AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.MODEL, AssetTypes.SHAPE];
+const orderedHandlerKeys = [AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.AUDIO, AssetTypes.MODEL, AssetTypes.SHAPE, AssetTypes.CUSTOM_ASSET];
   
 class ProjectHandler {
     constructor() {
@@ -185,7 +184,7 @@ class ProjectHandler {
         let assetId = asset.getAssetId();
         let assetType = LibraryHandler.getType(asset.getAssetId());
         if(this._assets[id]) {
-            if(assetType in AssetEntityTypes) {
+            if(asset.removeFromScene && asset.getObject) {
                 for(let i = 0; i < this._objects.length; i++) {
                     if(asset.getObject() == this._objects[i]) {
                         this._objects.splice(i,1);
@@ -218,7 +217,7 @@ class ProjectHandler {
         let id = asset.getId();
         let assetId = asset.getAssetId();
         let assetType = LibraryHandler.getType(asset.getAssetId());
-        if(assetType in AssetEntityTypes) {
+        if(asset.addToScene && asset.getObject) {
             asset.addToScene(this._scene);
             this._objects.push(asset.getObject());
         }

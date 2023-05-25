@@ -68,10 +68,7 @@ class SketchfabLoginPage extends MenuPage {
         this._downloadInteractable = new PointerInteractable(
             this._downloadButton, () => {
                 if(this._assetId) {
-                    this._controller.popPagesPast(MenuPages.UPLOAD);
-                    let assetPage = this._controller.getPage(MenuPages.ASSET);
-                    assetPage.setAsset(this._assetId);
-                    this._controller.pushPage(MenuPages.ASSET);
+                    this._handleDownloadSuccess(this._assetId);
                     return;
                 }
                 this._downloadButton.visible = false;
@@ -123,7 +120,7 @@ class SketchfabLoginPage extends MenuPage {
         this._assetId = LibraryHandler.getAssetIdFromSketchfabId(
             this._sketchfabAsset.uid);
         if(assetId == this._assetId)
-            this._downloadButton.children[1].set({ content: 'View in Library'});
+            this._downloadButton.children[1].set({ content: 'Add'});
     }
 
     _handleDownloadError() {
@@ -150,7 +147,7 @@ class SketchfabLoginPage extends MenuPage {
         this._assetId = LibraryHandler.getAssetIdFromSketchfabId(
             sketchfabAsset.uid);
         this._downloadButton.children[1].set({
-            content: (this._assetId) ? 'View in Library' : 'Download'
+            content: (this._assetId) ? 'Add' : 'Download'
         });
         this._sketchfabAsset = sketchfabAsset;
     }

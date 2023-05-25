@@ -36,6 +36,7 @@ class AssetPage extends DynamicFieldsPage {
             'width': 0.30,
             'fontSize': FontSizes.header,
             'margin': 0,
+            'maxLength': 14,
             'onBlur': () => {
                 this._asset.editorHelper.updateName(
                     this._titleField.content);

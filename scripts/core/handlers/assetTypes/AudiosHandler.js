@@ -4,20 +4,20 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
+import AudioAsset from '/scripts/core/assets/AudioAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import AssetsHandler from '/scripts/core/handlers/AssetsHandler.js';
+import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 
-class ModelsHandler extends AssetsHandler {
+class AudioHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.MODEL_ADDED, PubSubTopics.MODEL_DELETED,
-            AssetTypes.MODEL);
+        super(PubSubTopics.AUDIO_ADDED, PubSubTopics.AUDIO_DELETED,
+            AssetTypes.AUDIO);
     }
 
     addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
-        let asset = new GLTFAsset(params || { assetId: assetId });
+        let asset = new AudioAsset(params || { assetId: assetId });
         this.addAsset(asset, ignoreUndoRedo, ignorePublish);
         return asset;
     }
@@ -52,5 +52,5 @@ class ModelsHandler extends AssetsHandler {
     }
 }
 
-let modelsHandler = new ModelsHandler();
-export default modelsHandler;
+let audioHandler = new AudioHandler();
+export default audioHandler;

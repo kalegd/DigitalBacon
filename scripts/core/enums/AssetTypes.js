@@ -1,5 +1,7 @@
 const AssetTypes = {
+    AUDIO: "AUDIO",
     COMPONENT: "COMPONENT",
+    CUSTOM_ASSET: "CUSTOM_ASSET",
     IMAGE: "IMAGE",
     LIGHT: "LIGHT",
     MATERIAL: "MATERIAL",

@@ -29,14 +29,6 @@ const ASSETS = [{
         'icon': Textures.lightbulbIcon,
         'assetType': AssetTypes.LIGHT,
     }, {
-//        'text': 'Audio',
-//        'icon': Textures.audioIcon,
-//        'assetType': AssetTypes.MODEL,
-//    }, {
-//        'text': 'Video',
-//        'icon': Textures.videoIcon,
-//        'assetType': AssetTypes.MODEL,
-//    }, {
         'text': 'Materials',
         'icon': Textures.materialIcon,
         'assetType': AssetTypes.MATERIAL,
@@ -45,6 +37,14 @@ const ASSETS = [{
         'icon': Textures.textureIcon,
         'assetType': AssetTypes.TEXTURE,
     }, {
+        'text': 'Audio',
+        'icon': Textures.audioIcon,
+        'assetType': AssetTypes.AUDIO,
+    }, {
+//        'text': 'Video',
+//        'icon': Textures.videoIcon,
+//        'assetType': AssetTypes.VIDEO,
+//    }, {
         'text': 'Components',
         'icon': Textures.componentIcon,
         'assetType': AssetTypes.COMPONENT,
@@ -52,6 +52,10 @@ const ASSETS = [{
         'text': 'Systems',
         'icon': Textures.systemIcon,
         'assetType': AssetTypes.SYSTEM,
+    }, {
+        'text': 'Other Assets',
+        'icon': Textures.ellipsisIcon,
+        'assetType': AssetTypes.CUSTOM_ASSET,
     }
 ];
 

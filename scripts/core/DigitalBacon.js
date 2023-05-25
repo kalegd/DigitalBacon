@@ -8,6 +8,7 @@ import global from '/scripts/core/global.js';
 import { setup, setupEditor } from '/scripts/core/setup.js';
 import * as Assets from '/scripts/core/assets/Assets.js';
 import UserController from '/scripts/core/assets/UserController.js';
+import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -36,6 +37,7 @@ function isEditor() {
 if(window != null) {
     window.DigitalBacon =  {
         Assets: Assets,
+        AudioHandler: AudioHandler,
         EditorHelpers: EditorHelpers,
         Interactables: Interactables,
         LibraryHandler: LibraryHandler,
@@ -55,6 +57,7 @@ if(window != null) {
 }
 
 export { Assets };
+export { AudioHandler };
 export { EditorHelpers };
 export { Interactables };
 export { LibraryHandler };

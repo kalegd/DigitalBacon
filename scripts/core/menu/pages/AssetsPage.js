@@ -26,7 +26,9 @@ class AssetsPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        let title = this._assetType[0] + this._assetType.slice(1).toLowerCase();
+        let title = (this._assetType == "CUSTOM_ASSET")
+            ? "Other Assets"
+            : this._assetType[0] + this._assetType.slice(1).toLowerCase();
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.header,
