@@ -60,6 +60,13 @@
               </a>
             </li>
             <li>
+              <a href="#section/AudioHandler">
+                <label type="section" role="menuitem">
+                  <span title="AudioHandler">AudioHandler</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/EditorHelpers">
                 <label type="section" role="menuitem">
                   <span title="EditorHelpers">EditorHelpers</span>
@@ -162,6 +169,16 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/Assets">Assets</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">AudioHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/AudioHandler">AudioHandler</a> for more info</p>
               </td>
             </tr>
             <tr>
@@ -371,7 +388,9 @@
         <ul>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/Asset.js">Asset</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/AssetEntity.js">AssetEntity</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/AudioAsset.js">AudioAsset</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/ClampedTexturePlane.js">ClampedTexturePlane</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/CustomAsset.js">CustomAsset</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/GLTFAsset.js">GLTFAsset</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/components/Component.js">Component</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/materials/Material.js">Material</a></li>
@@ -395,12 +414,34 @@
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/textures/CubeTexture.js">CubeTexture</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/systems/System.js">System</a></li>
         </ul>
+        <h1 id="section/AudioHandler">AudioHandler</h1>
+        <p class="bold">getListener()</p>
+        <p>Useful when needing to create a Custom Asset that uses audio</a></p>
+        <p class="return-data">Returns the <a href="https://threejs.org/docs/#api/en/audio/AudioListener">AudioListener</a> that represents the virtual listener of all audio</p>
+        <p class="bold">setListenerParent(listenerParent)</p>
+        <p>Makes the AudioListener a child of the parent</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">listenerParent</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object3D</p>
+                <p>The three.js Object3D you want to set as the parent of the AudioListener</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <h1 id="section/EditorHelpers">EditorHelpers</h1>
         <p>Inherit from the provided EditorHelpers when creating your own assets to enable configuring your custom assets in the editor</p>
         <h5>Attributes</h5>
         <ul>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/AssetEntityHelper.js">AssetEntityHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/AudioHelper.js">AudioHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/ComponentHelper.js">ComponentHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/CustomAssetHelper.js">CustomAssetHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/EditorHelper.js">EditorHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/EditorHelperFactory.js">EditorHelperFactory</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/MaterialHelper.js">MaterialHelper</a></li>
@@ -492,6 +533,8 @@
             </tr>
           </tbody>
         </table>
+        <p class="bold">AudioInput</p>
+        <p>No additional fields</p>
         <p class="bold">CheckboxInput</p>
         <table class="attributes">
           <tbody>
