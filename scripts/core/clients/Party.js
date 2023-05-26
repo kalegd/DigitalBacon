@@ -40,7 +40,7 @@ class Party {
     connect(isHost, roomId, successCallback, errorCallback) {
         if(this._socket) this.disconnect();
         this._isHost = isHost;
-        this._roomId = roomId;
+        this._roomId = window.location.pathname + '_' + roomId;
         this._successCallback = successCallback;
         this._errorCallback = errorCallback;
         if(this._userAudio.srcObject) {
