@@ -22,6 +22,10 @@ const version = "0.1.2";
 
 global.version = version;
 
+function getCamera() {
+    return global.camera;
+}
+
 function getDeviceType() {
     return global.deviceType;
 }
@@ -47,6 +51,7 @@ if(window != null) {
         PubSub: PubSub,
         UserController: UserController,
         disableImmersion: disableImmersion,
+        getCamera: getCamera,
         getDeviceType: getDeviceType,
         isEditor: isEditor,
         setup: setup,
@@ -67,6 +72,7 @@ export { ProjectHandler };
 export { PubSub };
 export { UserController };
 export { disableImmersion };
+export { getCamera };
 export { getDeviceType };
 export { setup, setupEditor };
 export { utils };

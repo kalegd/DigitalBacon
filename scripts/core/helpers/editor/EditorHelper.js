@@ -20,6 +20,7 @@ import EulerInput from '/scripts/core/menu/input/EulerInput.js';
 import ImageInput from '/scripts/core/menu/input/ImageInput.js';
 import MaterialInput from '/scripts/core/menu/input/MaterialInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import TextInput from '/scripts/core/menu/input/TextInput.js';
 import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
@@ -34,6 +35,7 @@ const INPUT_TYPE_TO_CREATE_FUNCTION = {
     ImageInput: "_createImageInput",
     MaterialInput: "_createMaterialInput",
     NumberInput: "_createNumberInput",
+    TextInput: "_createTextInput",
     TextureInput: "_createTextureInput",
     Vector2Input: "_createVector2Input",
     Vector3Input: "_createVector3Input",
@@ -370,6 +372,22 @@ export default class EditorHelper {
             'title': field.name,
             'minValue': field.min,
             'maxValue': field.max,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onBlur': (oldValue, newValue) => {
+                this._updateParameter(field.parameter, newValue, false, false,
+                                      oldValue);
+            },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue, true);
+            },
+        });
+    }
+
+    _createTextInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new TextInput({
+            'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => { return this._asset[getFunction](); },
             'onBlur': (oldValue, newValue) => {

@@ -186,7 +186,7 @@ class TransformControlsHandler {
             vector3s[1].normalize().multiplyScalar(11/12);
             vector3s[0].add(vector3s[1]);
             let position = vector3s[0].toArray();
-            vector3s[0].set(0, 0, 1);
+            vector3s[0].set(0, 0, -1);
             vector3s[1].setY(0).normalize();
             quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
             euler.setFromQuaternion(quaternion);

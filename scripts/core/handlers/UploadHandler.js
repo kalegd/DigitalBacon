@@ -78,7 +78,7 @@ class UploadHandler {
                     if(extension in ImageFileTypes) {
                         assetType = AssetTypes.IMAGE;
                     } else if(extension in ModelFileTypes) {
-                        assetType = AssetTypes.IMAGE;
+                        assetType = AssetTypes.MODEL;
                     } else if(extension in AudioFileTypes) {
                         assetType = AssetTypes.AUDIO;
                     }

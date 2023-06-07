@@ -71,21 +71,21 @@ class AcknowledgementsPage extends MenuPage {
         });
         columnBlock.add(this._authorBlock);
 
-        this._sketchfabButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "View on Sketchfab",
+        this._sourceButton = ThreeMeshUIHelper.createButtonBlock({
+            'text': "View Source",
             'fontSize': FontSizes.body,
             'height': 0.035,
             'width': 0.3,
             'margin': 0.006,
         });
-        columnBlock.add(this._sketchfabButton);
-        this._sketchfabInteractable = new PointerInteractable(
-            this._sketchfabButton, () => {
+        columnBlock.add(this._sourceButton);
+        this._sourceInteractable = new PointerInteractable(
+            this._sourceButton, () => {
                 if(global.deviceType == 'XR') SessionHandler.exitXRSession();
-                window.open(this._sketchfabAssets[this._page]['Sketchfab Link'],
+                window.open(this._sketchfabAssets[this._page]['Source'],
                     '_blank');
             });
-        this._containerInteractable.addChild(this._sketchfabInteractable);
+        this._containerInteractable.addChild(this._sourceInteractable);
         this._container.add(this._acknowledgementsContainer);
         this._acknowledgementsContainer.add(this._previousButton);
         this._acknowledgementsContainer.add(columnBlock);
@@ -178,13 +178,13 @@ class AcknowledgementsPage extends MenuPage {
         } else {
             this._textureBlock.visible = false;
         }
-        if(sketchfabAsset['Sketchfab Link']) {
-            this._sketchfabButton.visible = true;
-            this._containerInteractable.addChild(this._sketchfabInteractable);
+        if(sketchfabAsset['Source']) {
+            this._sourceButton.visible = true;
+            this._containerInteractable.addChild(this._sourceInteractable);
         } else {
-            this._sketchfabButton.visible = false;
+            this._sourceButton.visible = false;
             this._containerInteractable.removeChild(
-                this._sketchfabInteractable);
+                this._sourceInteractable);
         }
     }
 }

@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
@@ -121,6 +122,12 @@ export default class AssetsHandler {
         }
         this._assets = {};
         this._sessionAssets = {};
+        let library = LibraryHandler.library;
+        for(let assetId in this._assetClassMap) {
+            if(!library[assetId] || library[assetId]['Blob']) {
+                delete this._assetClassMap[assetId];
+            }
+        }
     }
 
     getAssetsDetails() {

@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import RingShape from '/scripts/core/assets/primitives/RingShape.js';
+import { vector3s } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';

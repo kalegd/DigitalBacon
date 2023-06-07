@@ -15,8 +15,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 
-const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL',
-    'Sketchfab Link', 'Sketchfab ID'];
+const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL', 'Source',
+    'Sketchfab ID'];
 
 class LibraryHandler {
     constructor() {
@@ -304,7 +304,7 @@ class LibraryHandler {
         if(sketchfabAsset.user && sketchfabAsset.user.username)
             asset['Author'] = 'Sketchfab User ' + sketchfabAsset.user.username;
         if(sketchfabAsset.viewerUrl)
-            asset['Sketchfab Link'] = sketchfabAsset.viewerUrl;
+            asset['Source'] = sketchfabAsset.viewerUrl;
         if(sketchfabAsset.uid) {
             asset['Sketchfab ID'] = sketchfabAsset.uid;
             this._sketchfabIdMap[sketchfabAsset.uid] = assetId;
