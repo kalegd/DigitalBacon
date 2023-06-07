@@ -13,6 +13,7 @@ import AssetPage from '/scripts/core/menu/pages/AssetPage.js';
 import AssetsPage from '/scripts/core/menu/pages/AssetsPage.js';
 import AssetSelectPage from '/scripts/core/menu/pages/AssetSelectPage.js';
 import ColorWheelPage from '/scripts/core/menu/pages/ColorWheelPage.js';
+import EditAcknowledgementsPage from '/scripts/core/menu/pages/EditAcknowledgementsPage.js';
 import EditorSettingsPage from '/scripts/core/menu/pages/EditorSettingsPage.js';
 import HandsPage from '/scripts/core/menu/pages/HandsPage.js';
 import HostPartyPage from '/scripts/core/menu/pages/HostPartyPage.js';
@@ -45,6 +46,7 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
         this._pages[MenuPages.COLOR_WHEEL] = new ColorWheelPage(this);
+        this._pages[MenuPages.EDIT_ACKNOWLEDGEMENTS] =new EditAcknowledgementsPage(this);
         this._pages[MenuPages.EDITOR_SETTINGS] = new EditorSettingsPage(this);
         this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);

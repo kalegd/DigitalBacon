@@ -9,6 +9,7 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 
 const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken'
 const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry'
@@ -87,7 +88,18 @@ class Sketchfab {
         fetch(url).then(response => response.blob()).then((blob) => {
             LibraryHandler.addNewAsset(blob, sketchfabAsset.name,
                 AssetTypes.MODEL, (assetId) => {
-                    LibraryHandler.setSketchfabDetails(assetId, sketchfabAsset);
+                    let author = sketchfabAsset.user?.username
+                        ? 'Sketchfab User ' + sketchfabAsset.user.username
+                        : null;
+                    SettingsHandler.addAcknowledgement({
+                        'Asset': sketchfabAsset.name,
+                        'Author': author,
+                        'License': sketchfabAsset.license?.label,
+                        'Source URL': sketchfabAsset.viewerUrl,
+                        'Preview Image URL': sketchfabAsset.previewUrl,
+                    });
+                    LibraryHandler.registerSketchfabAsset(assetId,
+                        sketchfabAsset);
                     if(successCallback) successCallback(assetId);
                 });
         }).catch((error) => {

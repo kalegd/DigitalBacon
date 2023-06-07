@@ -19,6 +19,8 @@ const pages = [
     { "title": "Editor Settings", "menuPage": MenuPages.EDITOR_SETTINGS,
         isEditorOnly: true },
     { "title": "Update Avatar" },
+    { "title": "Acknowledgements", "menuPage": MenuPages.EDIT_ACKNOWLEDGEMENTS,
+        isEditorOnly: true },
 ];
 
 class SettingsPage extends MenuPage {

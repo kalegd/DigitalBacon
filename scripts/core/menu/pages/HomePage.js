@@ -8,6 +8,7 @@ import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -43,11 +44,11 @@ class HomePage extends MenuPage {
             'backgroundOpacity': 0,
         });
         let supportsParty = global.authUrl && global.socketUrl;
-        let authoredAssets = this._getAuthoredAssets();
+        let acknowledgements = SettingsHandler.getAcknowledgements();
         for(let page of pages) {
             if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
             if(page['menuPage'] == MenuPages.ACKNOWLEDGEMENTS
-                && authoredAssets.length == 0) continue;
+                && acknowledgements.length == 0) continue;
             let button = ThreeMeshUIHelper.createButtonBlock({
                 'text': page.title,
                 'fontSize': FontSizes.body,
@@ -57,27 +58,11 @@ class HomePage extends MenuPage {
             });
             columnBlock.add(button);
             let interactable = new PointerInteractable(button, () => {
-                if(page.menuPage == MenuPages.ACKNOWLEDGEMENTS) {
-                    let page = this._controller.getPage(
-                        MenuPages.ACKNOWLEDGEMENTS);
-                    page.setAssets(authoredAssets);
-                }
                 this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);
         }
         this._container.add(columnBlock);
-    }
-
-    _getAuthoredAssets() {
-        let authoredAssets = [];
-        for(let assetId in LibraryHandler.library) {
-            let asset = LibraryHandler.library[assetId];
-            if(asset['Type'] == AssetTypes.MODEL && asset['Author']) {
-                authoredAssets.push(asset);
-            }
-        }
-        return authoredAssets;
     }
 }
 

@@ -97,6 +97,9 @@ export default class AssetsHandler {
     }
 
     registerAsset(assetClass) {
+        if(this._assetClassMap[assetClass.assetId]) {
+            //Hot swapping of existing assets. Probably won't do it. Too hard...
+        }
         this._assetClassMap[assetClass.assetId] = assetClass;
     }
 
@@ -106,6 +109,10 @@ export default class AssetsHandler {
 
     getAsset(id) {
         return this._assets[id];
+    }
+
+    getAssetClass(assetId) {
+        return this._assetClassMap[assetId];
     }
 
     getAssetClasses() {

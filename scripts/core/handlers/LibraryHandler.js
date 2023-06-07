@@ -15,8 +15,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 
-const OPTIONAL_PARAMS = ['License', 'Author', 'Preview Image URL', 'Source',
-    'Sketchfab ID'];
+const OPTIONAL_PARAMS = ['Sketchfab ID'];
 
 class LibraryHandler {
     constructor() {
@@ -291,26 +290,16 @@ class LibraryHandler {
         return this._sketchfabIdMap[sketchfabId];
     }
 
-    setSketchfabDetails(assetId, sketchfabAsset) {
+    registerSketchfabAsset(assetId, sketchfabAsset) {
         let asset = this.library[assetId];
         if(!asset) {
-            console.error('Asset ID not found when setting Sketchfab Details');
+            console.error('Asset ID not found for Sketchfab asset');
             return;
         }
-        if(sketchfabAsset.previewUrl)
-            asset['Preview Image URL'] = sketchfabAsset.previewUrl;
-        if(sketchfabAsset.license)
-            asset['License'] = sketchfabAsset.license.label;
-        if(sketchfabAsset.user && sketchfabAsset.user.username)
-            asset['Author'] = 'Sketchfab User ' + sketchfabAsset.user.username;
-        if(sketchfabAsset.viewerUrl)
-            asset['Source'] = sketchfabAsset.viewerUrl;
         if(sketchfabAsset.uid) {
             asset['Sketchfab ID'] = sketchfabAsset.uid;
             this._sketchfabIdMap[sketchfabAsset.uid] = assetId;
         }
-        if(sketchfabAsset.previewTexture)
-            asset.previewTexture = sketchfabAsset.previewTexture;
     }
 
     reset() {

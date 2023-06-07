@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -16,7 +17,8 @@ import { TextureLoader } from 'three';
 class AcknowledgementsPage extends MenuPage {
     constructor(controller) {
         super(controller, true);
-        this._sketchfabAssets = [];
+        this._page = 0;
+        this._acknowledgements = [];
         this._addPageContent();
     }
 
@@ -71,6 +73,14 @@ class AcknowledgementsPage extends MenuPage {
         });
         columnBlock.add(this._authorBlock);
 
+        this._licenseBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'License: ',
+            'fontSize': FontSizes.body,
+            'height': 0.025,
+            'width': 0.3,
+        });
+        columnBlock.add(this._licenseBlock);
+
         this._sourceButton = ThreeMeshUIHelper.createButtonBlock({
             'text': "View Source",
             'fontSize': FontSizes.body,
@@ -82,7 +92,7 @@ class AcknowledgementsPage extends MenuPage {
         this._sourceInteractable = new PointerInteractable(
             this._sourceButton, () => {
                 if(global.deviceType == 'XR') SessionHandler.exitXRSession();
-                window.open(this._sketchfabAssets[this._page]['Source'],
+                window.open(this._acknowledgements[this._page]['Source URL'],
                     '_blank');
             });
         this._containerInteractable.addChild(this._sourceInteractable);
@@ -112,22 +122,22 @@ class AcknowledgementsPage extends MenuPage {
         this._previousInteractable = new PointerInteractable(
             this._previousButton,
             () => {
-                this._page += this._sketchfabAssets.length - 1;
-                this._page %= this._sketchfabAssets.length;
+                this._page += this._acknowledgements.length - 1;
+                this._page %= this._acknowledgements.length;
                 this._setAsset();
             });
         this._nextInteractable = new PointerInteractable(this._nextButton,
             () => {
                 this._page += 1;
-                this._page %= this._sketchfabAssets.length;
+                this._page %= this._acknowledgements.length;
                 this._setAsset();
             });
     }
 
-    setAssets(sketchfabAssets) {
-        this._sketchfabAssets = sketchfabAssets;
-        this._page = 0;
-        if(sketchfabAssets.length > 1) {
+    _refreshAssets() {
+        this._acknowledgements = SettingsHandler.getAcknowledgements();
+        if(this._acknowledgements.length > 1) {
+            if(this._page >= this._acknowledgements.length) this._page = 0;
             this._previousButton.visible = true;
             this._nextButton.visible = true;
             this._containerInteractable.addChild(this._previousInteractable);
@@ -137,7 +147,7 @@ class AcknowledgementsPage extends MenuPage {
             this._nextButton.visible = false;
             this._containerInteractable.removeChild(this._previousInteractable);
             this._containerInteractable.removeChild(this._nextInteractable);
-            if(sketchfabAssets.length == 0) {
+            if(this._acknowledgements.length == 0) {
                 this._container.remove(this._acknowledgementsContainer);
                 this._container.add(this._noAcknowledgements);
                 return;
@@ -148,37 +158,45 @@ class AcknowledgementsPage extends MenuPage {
 
     _setAsset() {
         let page = this._page;
-        let sketchfabAsset = this._sketchfabAssets[page];
-        this._titleBlock.children[1].set({ content: sketchfabAsset['Name'] });
-        if(sketchfabAsset['Author']) {
+        let acknowledgement = this._acknowledgements[page];
+        this._titleBlock.children[1].set({ content: acknowledgement['Asset'] });
+        if(acknowledgement['Author']) {
             this._authorBlock.children[1].set({
-                content: 'Author: ' + sketchfabAsset['Author'],
+                content: 'Author: ' + acknowledgement['Author'],
             });
             this._authorBlock.visible = true;
         } else {
             this._authorBlock.visible = false;
         }
-        if(sketchfabAsset.previewTexture) {
+        if(acknowledgement['License']) {
+            this._licenseBlock.children[1].set({
+                content: 'License: ' + acknowledgement['License'],
+            });
+            this._licenseBlock.visible = true;
+        } else {
+            this._licenseBlock.visible = false;
+        }
+        if(acknowledgement.previewTexture) {
             this._textureBlock.set({
-                backgroundTexture: sketchfabAsset.previewTexture
+                backgroundTexture: acknowledgement.previewTexture
             });
             this._textureBlock.visible = true;
-        } else if(sketchfabAsset['Preview Image URL']
-            && !sketchfabAsset.isLoadingTexture)
+        } else if(acknowledgement['Preview Image URL']
+            && !acknowledgement.isLoadingTexture)
         {
             this._textureBlock.visible = false;
-            sketchfabAsset.isLoadingTexture = true;
-            new TextureLoader().load(sketchfabAsset['Preview Image URL'],
+            acknowledgement.isLoadingTexture = true;
+            new TextureLoader().load(acknowledgement['Preview Image URL'],
                 (texture) => {
                     if(this._page == page) {
-                        sketchfabAsset.previewTexture = texture;
+                        acknowledgement.previewTexture = texture;
                         this._setAsset();
                     }
                 });
         } else {
             this._textureBlock.visible = false;
         }
-        if(sketchfabAsset['Source']) {
+        if(acknowledgement['Source URL']) {
             this._sourceButton.visible = true;
             this._containerInteractable.addChild(this._sourceInteractable);
         } else {
@@ -186,6 +204,11 @@ class AcknowledgementsPage extends MenuPage {
             this._containerInteractable.removeChild(
                 this._sourceInteractable);
         }
+    }
+
+    addToScene(scene, parentInteractable) {
+        this._refreshAssets();
+        super.addToScene(scene, parentInteractable);
     }
 }
 

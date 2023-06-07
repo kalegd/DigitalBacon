@@ -11,7 +11,9 @@ import AudioFileTypes from '/scripts/core/enums/AudioFileTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import ModelFileTypes from '/scripts/core/enums/ModelFileTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 class UploadHandler {
@@ -69,6 +71,7 @@ class UploadHandler {
                 if(extension == 'js') {
                     this._locks.add(lock);
                     LibraryHandler.addNewScript(file, (assetId) => {
+                        this._addAcknowledgement(assetId);
                         this._libraryCallback(assetId, lock, callback);
                     }, () => {
                         console.log("TODO: Tell user an error occurred");
@@ -97,6 +100,31 @@ class UploadHandler {
         if(this._locks.size == 0) {
             if(callback) callback(this._assetIds);
             this._assetIds = [];
+        }
+    }
+
+    _addAcknowledgement(assetId) {
+        let type = LibraryHandler.getType(assetId);
+        let assetHandler = ProjectHandler.getAssetHandler(type);
+        let c = assetHandler.getAssetClass(assetId);
+        if(c.author || c.license || c.sourceUrl) {
+            let acknowledgement = {};
+            acknowledgement['Asset'] = c.assetName;
+            acknowledgement['Asset ID'] = c.assetId;
+            if(c.author) acknowledgement['Author'] = c.author;
+            if(c.license) acknowledgement['License'] = c.license;
+            if(c.sourceUrl) acknowledgement['Source URL'] = c.sourceUrl;
+            let acknowledgements = SettingsHandler.getAcknowledgements();
+            for(let a of acknowledgements) {
+                if(a['Asset ID'] == assetId) {
+                    a['Asset'] = acknowledgement['Asset'];
+                    a['Author'] = acknowledgement['Author'];
+                    a['License'] = acknowledgement['License'];
+                    a['Source URL'] = acknowledgement['Source URL'];
+                    return;
+                }
+            }
+            SettingsHandler.addAcknowledgement(acknowledgement, true);
         }
     }
 

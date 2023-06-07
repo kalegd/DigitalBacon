@@ -15,6 +15,7 @@ import { Textures } from '/scripts/core/helpers/constants.js';
 class SettingsHandler {
     constructor() {
         this.settings = {
+            "Acknowledgements": [],
             "Skybox": {},
             "User Settings": {
                 "Movement Speed": 3,
@@ -53,6 +54,9 @@ class SettingsHandler {
             this.settings['User Settings']['Swap Joysticks'] = false;
         } else {
             this.settings = settings;
+            if(!this.settings['Acknowledgements']) {
+                this.settings['Acknowledgements'] = [];
+            }
             if(!this.settings['User Settings']) {
                 this.settings['User Settings'] = {
                     "Movement Speed": 3,
@@ -80,6 +84,14 @@ class SettingsHandler {
 
     reset() {
         this.load();
+    }
+
+    getAcknowledgements() {
+        return this.settings['Acknowledgements'];
+    }
+
+    addAcknowledgement(acknowledgement) {
+        this.settings['Acknowledgements'].push(acknowledgement);
     }
 
     getSkyboxTextures() {
