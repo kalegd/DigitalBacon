@@ -369,6 +369,9 @@
             </tr>
           </tbody>
         </table>
+        <p class="bold">getCamera()</p>
+        <p>Should only be run after Promise from setup() or setupEditor() resolves</p>
+        <p class="return-data pb-40">Returns the Camera used for viewing the scene <a href="https://threejs.org/docs/#api/en/cameras/Camera">(See Three.js Camera Documentation for more details)</a></p>
         <p class="bold">getDeviceType()</p>
         <p>Should only be run after Promise from setup() or setupEditor() resolves</p>
         <p class="return-data pb-40">Returns one of "XR", "MOBILE", or "POINTER"</p>
@@ -376,8 +379,6 @@
         <p>Disables immersive capabilities such as the UserController and Menu. Must be run before calling either setup() or setupEditor()</p>
         <h1 id="section/App">App</h1>
         <h5>Functions</h5>
-        <p class="bold">getCamera()</p>
-        <p class="return-data pb-40">Returns the Camera used for viewing the scene <a href="https://threejs.org/docs/#api/en/cameras/Camera">(See Three.js Camera Documentation for more details)</a></p>
         <p class="bold">getRenderer()</p>
         <p class="return-data pb-40">Returns the Renderer <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer">(See Three.js WebGLRenderer Documentation for more details)</a></p>
         <p class="bold">getScene()</p>
@@ -391,6 +392,7 @@
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/AudioAsset.js">AudioAsset</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/ClampedTexturePlane.js">ClampedTexturePlane</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/CustomAsset.js">CustomAsset</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/CustomAssetEntity.js">CustomAssetEntity</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/GLTFAsset.js">GLTFAsset</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/components/Component.js">Component</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/materials/Material.js">Material</a></li>
@@ -442,6 +444,7 @@
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/AudioHelper.js">AudioHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/ComponentHelper.js">ComponentHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/CustomAssetHelper.js">CustomAssetHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/CustomAssetEntityHelper.js">CustomAssetEntityHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/EditorHelper.js">EditorHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/EditorHelperFactory.js">EditorHelperFactory</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/MaterialHelper.js">MaterialHelper</a></li>
@@ -616,6 +619,7 @@
             </tr>
           </tbody>
         </table>
+        <p class="bold">TextInput</p>
         <p class="bold">Vector2Input</p>
         <p class="bold">Vector3Input</p>
         <p>No additional fields</p>

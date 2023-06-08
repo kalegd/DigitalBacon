@@ -144,6 +144,7 @@
     <script type="module">
       import {
           setup,
+          getCamera,
           getDeviceType,
           disableImmersion,
           LibraryHandler,
@@ -187,7 +188,7 @@
           .then((App) => {
               addControlsPanel();
               app = App;
-              camera = App.getCamera();
+              camera = getCamera();
               cameraFocus = new Object3D();
               scene = App.getScene();
               scene.add(cameraFocus);

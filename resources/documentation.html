@@ -101,6 +101,34 @@
                 </label>
               </a>
             </li>
+            <li>
+              <a href="#section/Audio">
+                <label type="section" role="menuitem">
+                  <span title="Audio">Audio</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Components">
+                <label type="section" role="menuitem">
+                  <span title="Components">Components</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Systems">
+                <label type="section" role="menuitem">
+                  <span title="Systems">Systems</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Other Assets">
+                <label type="section" role="menuitem">
+                  <span title="Other Assets">Other Assets</span>
+                </label>
+              </a>
+            </li>
           </ul>
         </div>
       </div>
@@ -245,7 +273,7 @@
         <h5>Hand Tools</h5>
         <p>Specific for VR Headset Users. Please see section above for what each tool does</p>
         <h5>Library</h5>
-        <p>Where you can edit all of the assets in your website. For more information on how you can configure different asset types through the menu, see the relevant sections for <a href="#section/Models">Models</a>, <a href="#section/Images">Images</a>, <a href="#section/Shapes">Shapes</a>, <a href="#section/Lights">Lights</a>, <a href="#section/Materials">Materials</a>, and <a href="#section/Textures">Textures</a></p>
+        <p>Where you can edit all of the assets in your website. For more information on how you can configure different asset types through the menu, see the relevant sections for <a href="#section/Models">Models</a>, <a href="#section/Images">Images</a>, <a href="#section/Shapes">Shapes</a>, <a href="#section/Lights">Lights</a>, <a href="#section/Materials">Materials</a>, <a href="#section/Textures">Textures</a>, <a href="#section/Audio">Audio</a>, <a href="#section/Components">Components</a>, <a href="#section/Systems">Systems</a>, and <a href="#section/Other Assets">Other Assets</a></p>
         <h5>Settings</h5>
         <p>In this section you can change the background (skybox) of your website, the settings your website's users will have, your own settings while editing your website, and update your avatar</p>
         <h5>Project File</h5>
@@ -2047,6 +2075,170 @@ he bottom</p>
             </tr>
           </tbody>
         </table>
+        <h1 id="section/Audio">Audio</h1>
+        <p>All audio have the following parameters that can be edited in the menu</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Visually Edit</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>Enables visual editing for the asset</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Preview Audio</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>Allows you to play the audio while in the Editor</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Auto Play</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>If checked, the audio will start playing automatically when the user clicks starts in the Digital Bacon website</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Cone Inner Angle</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p>The angle (0-360 degrees) of a cone in which the audio does not reduce. 360 degrees would make this a non-directional audio source as audio would travel in all directions equally</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Cone Outer Angle</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p>The angle of a cone inside of which the audio reduces by a constant value, defined by Cone Outer Angle. Audio will not reduce within the Cone Inner Angle</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Cone Outer Gain</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p>The factor by which volume gets reduced outside of the Cone Outer Angle. 0 means nothing can be heard outside of the cone while 1 means there is no reduction</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Distance Model</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Distance Models</p>
+                <p>The method in which volume decreases as a user gets farther from the audio source. Options are linear, inverse, and eponential</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Loop</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>Whether the audio should play on repeat or not</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Max Rolloff Distance</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p>The maximum distance from the audio source in which the volume gets reduced by distance. A user farther than this distance will not experience any volume reduction</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Min Rolloff Distance</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p>The distance in which volume reduction starts taking place using the Distance Model and Rolloff Factor. A user closer than this distance will not experience any volume reduction</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Rolloff Factor</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p>How quickly the volume is reduced as the user moves farther away from the audio source. Typical range for linear distance is 0-1 and 0-&#8734; for the other distance models</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Volume</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p>How loud the audio source is</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Position</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Numbers</p>
+                <p>Location of the asset along the x, y, and z axes</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Rotation</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Numbers</p>
+                <p>Orientation of the asset represented as Euler Angles</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Scale</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Numbers</p>
+                <p>How much the asset is stretched along the x, y , and z axes</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="section/Components">Components</h1>
+        <p>Components are essentially labels that can be attached to other instances to let Systems know to alter their behavior. For example, attaching a Grabbable Component to an asset will notify the Grabbable System to add functionality to the asset so that users may pick it up and down in the live site</p>
+        <p>There are no built in components in Digital Bacon, but you can find them available online. In the coming months we hope to provide a platform for users to be able to find and use additional assets easily</p>
+        <h1 id="section/Systems">Systems</h1>
+        <p>Systems can alter the behavior of Assets with components that pertain to that System. Going off the previous example, if you were to omit the Grabbable System then users would not be able to pick up objects in your live website</p>
+        <p>There are no built in systems in Digital Bacon, but you can find them available online. In the coming months we hope to provide a platform for users to be able to find and use additional assets easily</p>
+        <h1 id="section/Other Assets">Other Assets</h1>
+        <p>Digital Bacon allows other custom assets to be included in the project that don't fit in the other categories. These are plugins that can be included just like Components and Systems that can be found online. In the coming months we hope to provide a platform for users to be able to find and use additional assets easily</p>
       </div>
     </div>
   </body>

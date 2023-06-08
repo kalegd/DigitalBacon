@@ -19,6 +19,7 @@ export default class AudioHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.AUDIO_UPDATED);
         this._createMesh();
+        this._createPreviewFunctions();
     }
 
     _createMesh() {
@@ -26,6 +27,19 @@ export default class AudioHelper extends AssetEntityHelper {
         let material = new THREE.MeshLambertMaterial({ color: Colors.blue });
         this._mesh = new THREE.Mesh(geometry, material);
         if(this._asset.visualEdit) this._object.add(this._mesh);
+    }
+
+    _createPreviewFunctions() {
+        this._previewAudio = false;
+        this._asset.getPreviewAudio = () => { return this._previewAudio; };
+        this._asset.setPreviewAudio = (previewAudio) => {
+            this._previewAudio = previewAudio;
+            if(previewAudio) {
+                this._asset.getAudio().play();
+            } else {
+                this._asset.getAudio().stop();
+            }
+        }
     }
 
     updateVisualEdit(isVisualEdit) {
@@ -40,6 +54,8 @@ export default class AudioHelper extends AssetEntityHelper {
 
     static fields = [
         { "parameter": "visualEdit" },
+        { "parameter": "previewAudio", "name": "Preview Audio",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput},
         { "parameter": "autoplay", "name": "Auto Play",
             "suppressMenuFocusEvent": true, "type": CheckboxInput },
         { "parameter": "coneInnerAngle", "name": "Cone Inner Angle", "min": 0,

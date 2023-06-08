@@ -22,7 +22,7 @@ export default class AudioAsset extends AssetEntity {
         this._coneOuterGain = params['coneOuterGain'] || 0;
         this._distanceModel = params['distanceModel'] || 'inverse';
         this._loop = params['loop'] || false;
-        this._maxDistance = numberOr(params['maxDistance'], 10000);
+        this._maxDistance = numberOr(params['maxDistance'], 100);
         this._refDistance = numberOr(params['refDistance'], 1);
         this._rolloffFactor = numberOr(params['rolloffFactor'], 1);
         this._volume = numberOr(params['volume'], 1);
@@ -69,6 +69,10 @@ export default class AudioAsset extends AssetEntity {
         params['rolloffFactor'] = this._rolloffFactor;
         params['volume'] = this._volume;
         return params;
+    }
+
+    getAudio() {
+        return this._audio;
     }
 
     getAutoplay(autoplay) {

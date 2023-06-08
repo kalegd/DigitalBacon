@@ -238,10 +238,6 @@ export default class Main {
         this._stats.end();
     }
 
-    getCamera() {
-        return this._camera;
-    }
-
     getRenderer() {
         return this._renderer;
     }
