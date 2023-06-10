@@ -190,6 +190,8 @@ export default class Main {
                 }, 1000);
             }, 50);
             if(global.disableImmersion) {
+                global.dynamicAssets.add(PubSub);
+                global.dynamicAssets.add(ThreeMeshUI);
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });
