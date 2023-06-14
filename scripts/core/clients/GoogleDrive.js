@@ -18,6 +18,7 @@ class GoogleDrive {
         this._folderId;
         this._gapiInitialized = false;
         this._gisInitialized = false;
+        if(!window.gapi) return;
         gapi.load('client', () => { this._initClient() });
     }
 
@@ -100,7 +101,7 @@ class GoogleDrive {
     }
 
     isSignedIn() {
-        return gapi.client && gapi.client.getToken() != null;
+        return window.gapi?.client?.getToken() != null;
     }
 
     hasActiveFile() {
@@ -142,6 +143,7 @@ class GoogleDrive {
         }
         zip.generateAsync({type:"blob"})
             .then((blob) => {
+                this._retried = false;
                 this._update(blob, successCallback, errorCallback);
             });
     }
@@ -153,6 +155,7 @@ class GoogleDrive {
         }
         zip.generateAsync({type:"blob"})
             .then((blob) => {
+                this._retried = false;
                 this._upload(projectName, blob, successCallback, errorCallback);
             });
     }
@@ -175,8 +178,14 @@ class GoogleDrive {
             }),
             body: body,
         }).then((res) => {
-            if(res.status != 200) {
-                console.error('Error:', error);
+            if(res.status == 401) {
+                this._retried = true;
+                this.handleAuthButton(() => {
+                    this._upload(projectName, data, successCallback,
+                        errorCallback);
+                });
+            } else if(res.status != 200) {
+                console.error(res);
                 errorCallback();
             } else {
                 let url = res.headers.get("location");
@@ -196,8 +205,13 @@ class GoogleDrive {
                 'X-HTTP-Method-Override' : 'PATCH',
             }),
         }).then((res) => {
-            if(res.status != 200) {
-                console.error('Error:', res.statusText);
+            if(res.status == 401) {
+                this._retried = true;
+                this.handleAuthButton(() => {
+                    this._update(data, successCallback, errorCallback);
+                });
+            } else if(res.status != 200) {
+                console.error(res);
                 errorCallback();
             } else {
                 let url = res.headers.get("location");
@@ -224,7 +238,8 @@ class GoogleDrive {
                 //TODO: Resume upload up to a certain number of times and
                 //      then if it still fails cancel and tell user there
                 //      is an error or to check their internet connectivity
-                console.error('Error:', error);
+                console.error('Error during _resumableUpload');
+                console.error(res);
                 //Only call this when we give up and stop retrying (TBD)
                 errorCallback();
             }

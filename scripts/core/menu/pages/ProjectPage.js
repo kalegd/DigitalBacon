@@ -276,16 +276,24 @@ class ProjectPage extends PaginatedPage {
             this._container.remove(this._loadingSavingBlock);
             this._container.add(this._optionsContainer);
             this._container.update(false, false, true);
+            this._containerInteractable.addChild(this._optionsInteractable);
         } else {
             this._container.remove(this._optionsContainer);
             this._container.add(this._loadingSavingBlock);
+            this._containerInteractable.removeChild(this._optionsInteractable);
         }
     }
 
     addToScene(scene, parentInteractable) {
         DelayedClickEventHandler.listenForClick(() => {
-            GoogleDrive.handleAuthButton(
-                () => { this._handleGoogleAuthResponse(); });
+            try {
+                GoogleDrive.handleAuthButton(
+                    () => { this._handleGoogleAuthResponse(); });
+            } catch(error) {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'Google could not be reached. Please check your internet connection and then try refreshing the page',
+                });
+            }
         });
         UploadHandler.listenForProjectFile((file) => {
             this._handleLocalFile(file);
