@@ -10,6 +10,7 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -27,6 +28,9 @@ export default class AudioAsset extends AssetEntity {
         this._rolloffFactor = numberOr(params['rolloffFactor'], 1);
         this._volume = numberOr(params['volume'], 1);
         this._createMesh(params['assetId']);
+        this.setPlayTopic(params['playTopic'] || '');
+        this.setPauseTopic(params['pauseTopic'] || '');
+        this.setStopTopic(params['stopTopic'] || '');
     }
 
     _createMesh(assetId) {
@@ -65,8 +69,11 @@ export default class AudioAsset extends AssetEntity {
         params['distanceModel'] = this._distanceModel;
         params['loop'] = this._loop;
         params['maxDistance'] = this._maxDistance;
+        params['pauseTopic'] = this._pauseTopic;
+        params['playTopic'] = this._playTopic;
         params['refDistance'] = this._refDistance;
         params['rolloffFactor'] = this._rolloffFactor;
+        params['stopTopic'] = this._stopTopic;
         params['volume'] = this._volume;
         return params;
     }
@@ -103,12 +110,24 @@ export default class AudioAsset extends AssetEntity {
         return this._maxDistance;
     }
 
+    getPlayTopic(playTopic) {
+        return this._playTopic;
+    }
+
+    getPauseTopic(pauseTopic) {
+        return this._pauseTopic;
+    }
+
     getRefDistance(refDistance) {
         return this._refDistance;
     }
 
     getRolloffFactor(rolloffFactor) {
         return this._rolloffFactor;
+    }
+
+    getStopTopic(stopTopic) {
+        return this._stopTopic;
     }
 
     getVolume(volume) {
@@ -153,6 +172,30 @@ export default class AudioAsset extends AssetEntity {
         this._audio.setMaxDistance(maxDistance);
     }
 
+    setPlayTopic(playTopic) {
+        if(this._playTopic) {
+            PubSub.unsubscribe(this._id, this._playTopic);
+        }
+        this._playTopic = playTopic;
+        if(this._playTopic) {
+            PubSub.subscribe(this._id, this._playTopic, (message) => {
+                if(!global.isEditor) this._audio.play();
+            });
+        }
+    }
+
+    setPauseTopic(pauseTopic) {
+        if(this._pauseTopic) {
+            PubSub.unsubscribe(this._id, this._pauseTopic);
+        }
+        this._pauseTopic = pauseTopic;
+        if(this._pauseTopic) {
+            PubSub.subscribe(this._id, this._pauseTopic, (message) => {
+                if(!global.isEditor) this._audio.pause();
+            });
+        }
+    }
+
     setRefDistance(refDistance) {
         this._refDistance = refDistance;
         this._audio.setRefDistance(refDistance);
@@ -161,6 +204,18 @@ export default class AudioAsset extends AssetEntity {
     setRolloffFactor(rolloffFactor) {
         this._rolloffFactor = rolloffFactor;
         this._audio.setRolloffFactor(rolloffFactor);
+    }
+
+    setStopTopic(stopTopic) {
+        if(this._stopTopic) {
+            PubSub.unsubscribe(this._id, this._stopTopic);
+        }
+        this._stopTopic = stopTopic;
+        if(this._stopTopic) {
+            PubSub.subscribe(this._id, this._stopTopic, (message) => {
+                if(!global.isEditor) this._audio.stop();
+            });
+        }
     }
 
     setVolume(volume) {

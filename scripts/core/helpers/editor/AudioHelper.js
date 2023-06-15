@@ -13,6 +13,7 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import TextInput from '/scripts/core/menu/input/TextInput.js';
 import * as THREE from 'three';
 
 export default class AudioHelper extends AssetEntityHelper {
@@ -76,6 +77,9 @@ export default class AudioHelper extends AssetEntityHelper {
             "type": NumberInput },
         { "parameter": "volume", "name": "Volume", "min": 0,
             "type": NumberInput },
+        { "parameter": "playTopic", "name": "Play Event", "type": TextInput },
+        { "parameter": "pauseTopic", "name": "Pause Event", "type": TextInput },
+        { "parameter": "stopTopic", "name": "Stop Event", "type": TextInput },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
