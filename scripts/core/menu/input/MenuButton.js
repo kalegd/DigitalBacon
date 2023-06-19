@@ -48,8 +48,8 @@ class ButtonInput extends PointerInteractableEntity {
             'margin': FIELD_MARGIN,
         });
         this._object.add(button);
-        let interactable = new PointerInteractable(button,
-            () => { if(this._onClick) this._onClick(); });
+        let interactable = new PointerInteractable(button, true);
+        interactable.addAction(() => { if(this._onClick) this._onClick(); });
         this._pointerInteractable.addChild(interactable);
     }
 

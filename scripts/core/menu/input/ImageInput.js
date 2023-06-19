@@ -75,7 +75,8 @@ class ImageInput extends PointerInteractableEntity {
         this._updateImage();
         this._object.add(titleBlock);
         this._object.add(this._imageSelection);
-        let interactable = new PointerInteractable(this._imageSelection, () => {
+        let interactable = new PointerInteractable(this._imageSelection, true);
+        interactable.addAction(() => {
             let library = LibraryHandler.getLibrary();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };

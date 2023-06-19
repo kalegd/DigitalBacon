@@ -53,7 +53,8 @@ class AssetSelectPage extends PaginatedPage {
         addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(this._addButton);
-        this._addInteractable = new PointerInteractable(this._addButton, () => {
+        this._addInteractable = new PointerInteractable(this._addButton, true);
+        this._addInteractable.addAction(() => {
             if(this._addAction) this._addAction();
         });
         this._containerInteractable.addChild(this._addInteractable);

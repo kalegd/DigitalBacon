@@ -7,24 +7,60 @@
 import global from '/scripts/core/global.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import Interactable from '/scripts/core/interactables/Interactable.js';
 
 class PointerInteractable extends Interactable {
-    constructor(threeObj, actionFunc, canDisableOrbit, canDisplayPointer, specificOption, draggableActionFunc) {
+    constructor(threeObj, canDisableOrbit, specificOption) {
         super(threeObj);
-        this._actionFunc = actionFunc;
-        this._canDisableOrbit = global.deviceType != "XR" && canDisableOrbit != false;
-        this.canDisplayPointer = global.deviceType == "XR" && canDisplayPointer != false;
+        this._draggableActions = [];
+        this._canDisableOrbit = global.deviceType != "XR" && canDisableOrbit;
         this.specificOption = specificOption;
-        this._draggableActionFunc = draggableActionFunc;
+    }
+
+    addAction(action, draggableAction, maxDistance, tool, option) {
+        if(action && typeof action == 'object') {
+            this._actions.push(action);
+            return action;
+        }
+        if(!maxDistance) maxDistance = Infinity;
+        let id = uuidv4();
+        action = {
+            id: id,
+            action: action,
+            draggableAction: draggableAction,
+            draggingOwners: new Set(),
+            maxDistance: maxDistance,
+            tool: tool,
+            specificOption: option,
+            type: 'POINTER',
+        };
+        this._actions.push(action);
+        return action;
     }
 
     isOnlyGroup() {
-        return this._actionFunc == null && !this.canDisplayPointer && !this._canDisableOrbit;
+        return this._threeObj && this._actions.length == 0
+            && !this._canDisableOrbit;
     }
 
-    isDraggable() {
-        return this._draggableActionFunc != null;
+    isWithinReach(distance) {
+        for(let action of this._actions) {
+            if(action.maxDistance < distance) return false;
+        }
+        return true;
+    }
+
+    supportsOwner(owner) {
+        //TODO: Should have a map that tracks how many actions for each tool as
+        //      we add + remove actions so we can respond to this function call
+        //      faster
+        for(let action of this._actions) {
+            if((!action.tool || action.tool == global.tool)
+                && (!action.specificOption || action.specificOption == owner))
+                return true;
+        }
+        return this._actions.length == 0;
     }
 
     _determineAndSetState() {
@@ -37,11 +73,11 @@ class PointerInteractable extends Interactable {
         }
     }
 
-    addHoveredBy(owner, closestPoint) {
+    addHoveredBy(owner, closestPoint, distance) {
         if(this._hoveredOwners.has(owner)) {
             return;
         } else if(this._selectedOwners.has(owner)) {
-            this.triggerAction(closestPoint);
+            this.triggerActions(owner, closestPoint, distance);
         }
         this._hoveredOwners.add(owner);
         if(this._selectedOwners.size == 0) {
@@ -54,45 +90,69 @@ class PointerInteractable extends Interactable {
         this._determineAndSetState();
     }
 
-    addSelectedBy(owner, closestPoint) {
+    addSelectedBy(owner, closestPoint, distance) {
         this._selectedOwners.add(owner);
         this.setState(States.SELECTED);
         if(this._canDisableOrbit) SessionHandler.disableOrbit();
-        if(this._draggableActionFunc) this._draggableActionFunc(closestPoint);
+        this.triggerDraggableActions(owner, closestPoint, distance);
     }
 
     removeSelectedBy(owner) {
+        if(!this._hoveredOwners.has(owner)) {
+            this.releaseDraggedActions(owner);
+        }
         this._selectedOwners.delete(owner);
         this._determineAndSetState();
         if(this._canDisableOrbit) SessionHandler.enableOrbit();
     }
 
-    triggerAction(closestPoint) {
-        if(this._actionFunc != null) {
-            this._actionFunc(closestPoint);
+    triggerActions(owner, closestPoint, distance) {
+        for(let action of this._actions) {
+            if(action.action && (!action.tool || action.tool == global.tool)
+                && (!action.specificOption || action.specificOption == owner)
+                && (action.maxDistance >= distance
+                    || action.draggingOwners.has(owner)))
+            {
+                action.action(closestPoint);
+            }
+            if(action.draggingOwners.has(owner))
+                action.draggingOwners.delete(owner);
         }
     }
 
-    triggerDraggableAction(closestPoint) {
-        if(this._draggableActionFunc != null) {
-            this._draggableActionFunc(closestPoint);
+    triggerDraggableActions(owner, closestPoint, distance) {
+        for(let action of this._actions) {
+            if(action.draggableAction
+                && (!action.tool || action.tool == global.tool)
+                && (!action.specificOption || action.specificOption == owner)
+                && (action.draggingOwners.has(owner)
+                    || action.maxDistance >= distance))
+            {
+                action.draggableAction(closestPoint);
+                action.isDragging = true;
+                if(!action.draggingOwners.has(owner))
+                    action.draggingOwners.add(owner);
+            }
         }
     }
 
-    updateAction(newActionFunc) {
-        this._actionFunc = newActionFunc;
-    }
-
-    setMaximumDistance(maximumDistance) {
-        this.maximumDistance = maximumDistance;
+    releaseDraggedActions(owner) {
+        for(let action of this._actions) {
+            if(action.draggingOwners.has(owner)) {
+                if(action.action) action.action();
+                action.draggingOwners.delete(owner);
+            }
+        }
     }
 
     static emptyGroup() {
-        return new PointerInteractable(null, null, false, false);
+        return new PointerInteractable();
     }
 
     static createDraggable(threeObj, actionFunc, draggableActionFunc) {
-        return new PointerInteractable(threeObj, actionFunc, true, true, null, draggableActionFunc);
+        let interactable = new PointerInteractable(threeObj, true, null);
+        interactable.addAction(actionFunc, draggableActionFunc);
+        return interactable;
     }
 }
 

@@ -43,7 +43,8 @@ class EditAcknowledgementsPage extends MenuPage {
             'margin': 0,
         });
         this._addFirstInteractable = new PointerInteractable(
-            this._addFirstAcknowledgement, () => this._addAcknowledgement() );
+            this._addFirstAcknowledgement, true);
+        this._addFirstInteractable.addAction(() => this._addAcknowledgement());
 
         this._noAcknowledgements.add(this._addFirstAcknowledgement);
 
@@ -107,18 +108,18 @@ class EditAcknowledgementsPage extends MenuPage {
             'fontTexture': Fonts.defaultTexture,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton,
-            () => {
-                this._page += this._acknowledgements.length - 1;
-                this._page %= this._acknowledgements.length;
-                this._setAsset();
-            });
-        this._nextInteractable = new PointerInteractable(this._nextButton,
-            () => {
-                this._page += 1;
-                this._page %= this._acknowledgements.length;
-                this._setAsset();
-            });
+            this._previousButton, true);
+        this._previousInteractable.addAction(() => {
+            this._page += this._acknowledgements.length - 1;
+            this._page %= this._acknowledgements.length;
+            this._setAsset();
+        });
+        this._nextInteractable = new PointerInteractable(this._nextButton,true);
+        this._nextInteractable.addAction(() => {
+            this._page += 1;
+            this._page %= this._acknowledgements.length;
+            this._setAsset();
+        });
     }
 
     _createAddAndDeleteButtons(columnBlock) {
@@ -149,10 +150,11 @@ class EditAcknowledgementsPage extends MenuPage {
         addDeleteRow.add(this._deleteButton);
         columnBlock.add(addDeleteRow);
 
-        this._addInteractable = new PointerInteractable(
-            this._addButton, () => this._addAcknowledgement() );
+        this._addInteractable = new PointerInteractable(this._addButton, true);
+        this._addInteractable.addAction(() => this._addAcknowledgement() );
         this._deleteInteractable = new PointerInteractable(this._deleteButton,
-            () => { this._deleteAcknowledgement(); });
+            true);
+        this._deleteInteractable.addAction(() => this._deleteAcknowledgement());
         this._acknowledgementsInteractable.addChild(this._addInteractable);
         this._acknowledgementsInteractable.addChild(this._deleteInteractable);
     }

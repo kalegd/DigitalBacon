@@ -97,7 +97,8 @@ class LibraryPage extends PaginatedIconsPage {
         searchButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
         searchButtonParent.position.fromArray([-0.175, 0.12, -0.001]);
         searchButtonParent.add(searchButton);
-        let interactable = new PointerInteractable(searchButton, () => {
+        let interactable = new PointerInteractable(searchButton, true);
+        interactable.addAction(() => {
             this._controller.pushPage(MenuPages.LIBRARY_SEARCH);
         });
         this._containerInteractable.addChild(interactable);

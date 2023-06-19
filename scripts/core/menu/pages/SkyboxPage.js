@@ -66,7 +66,8 @@ class SkyboxPage extends MenuPage {
                 'margin': 0.002,
                 'borderRadius': 0.00001,
             });
-            let interactable = new PointerInteractable(button, () => {
+            let interactable = new PointerInteractable(button, true);
+            interactable.addAction(() => {
                 let library = LibraryHandler.getLibrary();
                 let filteredAssets = {};
                 filteredAssets["null\n"] = { Name: "Blank" };

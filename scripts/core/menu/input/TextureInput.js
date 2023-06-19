@@ -81,7 +81,8 @@ class TextureInput extends PointerInteractableEntity {
         this._object.add(titleBlock);
         this._object.add(this._textureSelection);
         this._object.add(this._editButton);
-        let interactable = new PointerInteractable(this._textureSelection, () => {
+        let interactable = new PointerInteractable(this._textureSelection,true);
+        interactable.addAction(() => {
             let textures = TexturesHandler.getAssets();
             let filteredTextures = {};
             filteredTextures["null\n"] = { Name: "Blank" };
@@ -102,7 +103,8 @@ class TextureInput extends PointerInteractableEntity {
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
         });
-        this._editInteractable = new PointerInteractable(this._editButton, () => {
+        this._editInteractable = new PointerInteractable(this._editButton,true);
+        this._editInteractable.addAction(() => {
             if(!this._lastValue) return;
             let texture = TexturesHandler.getAsset(this._lastValue);
             let texturePage = global.menuController.getPage(

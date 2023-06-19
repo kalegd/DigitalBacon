@@ -55,7 +55,8 @@ class ListComponentsPage extends PaginatedListPage {
         this._addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
         this._addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         this._addButtonParent.add(addButton);
-        this._addInteractable = new PointerInteractable(addButton, () => {
+        this._addInteractable = new PointerInteractable(addButton, true);
+        this._addInteractable.addAction(() => {
             let assetComponents = this._asset.getComponents(true);
             let components = ComponentsHandler.getAssets();
             let filteredComponents = {};

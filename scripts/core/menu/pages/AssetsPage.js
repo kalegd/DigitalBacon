@@ -56,7 +56,8 @@ class AssetsPage extends PaginatedPage {
         addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(addButton);
-        let interactable = new PointerInteractable(addButton, () => {
+        let interactable = new PointerInteractable(addButton, true);
+        interactable.addAction(() => {
             let page = this._controller.getPage('NEW_' + this._assetType);
             page.setContent((asset) => {
                 this._handleItemInteraction(asset.getId());

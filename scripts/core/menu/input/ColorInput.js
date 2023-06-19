@@ -61,7 +61,8 @@ class ColorInput extends PointerInteractableEntity {
         });
         this._object.add(titleBlock);
         this._object.add(this._colorBlock);
-        let interactable = new PointerInteractable(this._colorBlock, () => {
+        let interactable = new PointerInteractable(this._colorBlock, true);
+        interactable.addAction(() => {
             let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);
             colorPage.setContent(this._id, this._color,
                 (color) => {

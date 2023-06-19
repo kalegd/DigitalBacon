@@ -14,13 +14,6 @@ export default class InteractableHandler {
         this._interactables = new Set();
         this._hoveredInteractables = {};
         this._selectedInteractables = {};
-        this._toolInteractables = {};
-        this._toolInteractables[HandTools.EDIT] = new Set();
-        this._toolInteractables[HandTools.COPY_PASTE] = new Set();
-        this._toolInteractables[HandTools.DELETE] = new Set();
-        this._toolInteractables[HandTools.TRANSLATE] = new Set();
-        this._toolInteractables[HandTools.ROTATE] = new Set();
-        this._toolInteractables[HandTools.SCALE] = new Set();
         this._handTool = HandTools.EDIT;
         this._addInteractable = this.addInteractable;
         this._addInteractables = this.addInteractables;
@@ -34,6 +27,7 @@ export default class InteractableHandler {
 
     init() {
         if(global.deviceType == "XR") {
+            global.tool = HandTools.EDIT;
             this.update = this._updateForXREdit;
             this._setupXRSubscription();
         } else if(global.deviceType == "POINTER") {
@@ -47,48 +41,26 @@ export default class InteractableHandler {
         this.removeInteractables = this._removeInteractables;
     }
 
-    addInteractable(interactable, tool) {
-        if(!tool) {
+    addInteractable(interactable) {
+        this._interactables.add(interactable);
+    }
+
+    addInteractables(interactables) {
+        interactables.forEach((interactable) => {
             this._interactables.add(interactable);
-        } else {
-            this._toolInteractables[tool].add(interactable);
-        }
+        });
     }
 
-    addInteractables(interactables, tool) {
-        if(!tool) {
-            interactables.forEach((interactable) => {
-                this._interactables.add(interactable);
-            });
-        } else {
-            interactables.forEach((interactable) => {
-                this._toolInteractables[tool].add(interactable);
-            });
-        }
+    removeInteractable(interactable) {
+        this._interactables.delete(interactable);
+        interactable.reset();
     }
 
-    removeInteractable(interactable, tool) {
-        if(!tool) {
+    removeInteractables(interactables) {
+        interactables.forEach((interactable) => {
             this._interactables.delete(interactable);
             interactable.reset();
-        } else {
-            this._toolInteractables[tool].delete(interactable);
-            interactable.reset();
-        }
-    }
-
-    removeInteractables(interactables, tool) {
-        if(!tool) {
-            interactables.forEach((interactable) => {
-                this._interactables.delete(interactable);
-                interactable.reset();
-            });
-        } else {
-            interactables.forEach((interactable) => {
-                this._toolInteractables[tool].delete(interactable);
-                interactable.reset();
-            });
-        }
+        });
     }
 
     reset() {

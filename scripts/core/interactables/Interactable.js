@@ -13,6 +13,19 @@ class Interactable {
         this.children = new Set();
         this._hoveredOwners = new Set();
         this._selectedOwners = new Set();
+        this._actions = [];
+    }
+
+    removeAction(id) {
+        for(let i = this._actions.length - 1; i >= 0; i--) {
+            if(this._actions[i].id == id) {
+                this._actions.splice(i, 1);
+            }
+        }
+    }
+
+    getActionsLength() {
+        return this._actions.length;
     }
 
     isOnlyGroup() {

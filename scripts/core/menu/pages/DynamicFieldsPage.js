@@ -74,14 +74,10 @@ class DynamicFieldsPage extends MenuPage {
             'width': 0.04,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton,
-            () => {
-                this._loadPrevPage();
-            });
-        this._nextInteractable = new PointerInteractable(this._nextButton,
-            () => {
-                this._loadNextPage();
-            });
+            this._previousButton, true);
+        this._previousInteractable.addAction(() => this._loadPrevPage());
+        this._nextInteractable = new PointerInteractable(this._nextButton,true);
+        this._nextInteractable.addAction(() => this._loadNextPage());
     }
 
     _setFields(fields) {

@@ -122,9 +122,8 @@ class Keyboard {
         // becomes empty
         if(key.info.command == 'switch') {
             // switch between panels
-            interactable = new PointerInteractable(key, () => {
-                this._switchPanel();
-            });
+            interactable = new PointerInteractable(key);
+            interactable.addAction(() => { this._switchPanel(); });
         } else {
             interactable = new PointerInteractable(key);
         }

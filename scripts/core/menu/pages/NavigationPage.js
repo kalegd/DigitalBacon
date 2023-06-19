@@ -55,7 +55,8 @@ class NavigationPage extends MenuPage {
                 'margin': 0.002,
             });
             columnBlock.add(button);
-            let interactable = new PointerInteractable(button, () => {
+            let interactable = new PointerInteractable(button, true);
+            interactable.addAction(() => {
                 this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);

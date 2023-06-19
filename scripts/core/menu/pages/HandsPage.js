@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
@@ -49,6 +50,7 @@ class HandsPage extends PaginatedPage {
     _handleItemInteraction(item) {
         if(HandTools.ACTIVE == item.type) return;
         HandTools.ACTIVE = item.type;
+        global.tool = item.type;
         PubSub.publish(this._id, PubSubTopics.HAND_TOOLS_SWITCH, item.type);
     }
 

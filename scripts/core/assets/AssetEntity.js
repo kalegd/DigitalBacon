@@ -6,8 +6,12 @@
 
 import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
+import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
+import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
+import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import * as THREE from 'three';
 
 export default class AssetEntity extends Asset {
@@ -21,6 +25,8 @@ export default class AssetEntity extends Asset {
         this._object.position.fromArray(position);
         this._object.rotation.fromArray(rotation);
         this._object.scale.fromArray(scale);
+        this._gripInteractable = new GripInteractable(this._object);
+        this._pointerInteractable = new PointerInteractable(this._object);
     }
 
     _getDefaultName() {
@@ -57,6 +63,43 @@ export default class AssetEntity extends Asset {
         params['scale'] = this.getScale();
         params['visualEdit'] = this.getVisualEdit();
         return params;
+    }
+
+    addGripAction(selectedFunc, releasedFunc, tool, option){
+        let action = this._gripInteractable.addAction(selectedFunc,
+            releasedFunc, tool, option);
+        if(this._gripInteractable.getActionsLength()==1 && this._object.parent){
+            GripInteractableHandler.addInteractable(this._gripInteractable);
+        }
+        return action;
+    }
+
+    addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
+        let action = this._pointerInteractable.addAction(actionFunc,
+            draggableActionFunc, maxDistance, tool, option);
+        if(this._pointerInteractable.getActionsLength() == 1
+                && this._object.parent)
+        {
+            PointerInteractableHandler.addInteractable(
+                this._pointerInteractable);
+        }
+        return action;
+    }
+
+    removeGripAction(id) {
+        this._gripInteractable.removeAction(id);
+        if(this._gripInteractable.getActionsLength() == 0) {
+            GripInteractableHandler.removeInteractable(
+                this._gripInteractable);
+        }
+    }
+
+    removePointerAction(id) {
+        this._pointerInteractable.removeAction(id);
+        if(this._pointerInteractable.getActionsLength() == 0) {
+            PointerInteractableHandler.removeInteractable(
+                this._pointerInteractable);
+        }
     }
 
     getObject() {
@@ -120,10 +163,22 @@ export default class AssetEntity extends Asset {
 
     addToScene(scene) {
         if(scene) scene.add(this._object);
+        if(this._gripInteractable.getActionsLength() > 0) {
+            GripInteractableHandler.addInteractable(
+                this._gripInteractable);
+        }
+        if(this._pointerInteractable.getActionsLength() > 0) {
+            PointerInteractableHandler.addInteractable(
+                this._pointerInteractable);
+        }
     }
 
     removeFromScene() {
         if(this._object.parent) {
+            GripInteractableHandler.removeInteractable(
+                this._gripInteractable);
+            PointerInteractableHandler.removeInteractable(
+                this._pointerInteractable);
             this._object.parent.remove(this._object);
             fullDispose(this._object);
         }

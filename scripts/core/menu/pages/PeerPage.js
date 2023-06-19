@@ -50,8 +50,8 @@ class PeerPage extends MenuPage {
                 'width': 0.3,
                 'margin': 0.002,
             });
-            let buttonInteractable = new PointerInteractable(button,
-                () => this[option.handler]() );
+            let buttonInteractable = new PointerInteractable(button, true);
+            buttonInteractable.addAction(() => this[option.handler]());
             columnBlock.add(button);
             this._containerInteractable.addChild(buttonInteractable);
         }

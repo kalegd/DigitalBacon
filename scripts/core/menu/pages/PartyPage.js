@@ -284,8 +284,8 @@ class ButtonEntity extends MenuEntity {
             'width': 0.3,
             'margin': 0.002,
         });
-        this._pointerInteractable = new PointerInteractable(this._object,
-            action);
+        this._pointerInteractable = new PointerInteractable(this._object, true);
+        this._pointerInteractable.addAction(action);
     }
 }
 
@@ -366,15 +366,18 @@ class PeerEntity extends MenuEntity {
 
     _addInteractables() {
         this._usernameInteractable = new PointerInteractable(
-            this._usernameBlock, () => {
-                let peerPage = this._controller.getPage(MenuPages.PEER);
-                peerPage.setContent(this._peer, this._designateHostCallback);
-                this._controller.pushPage(MenuPages.PEER);
-            });
+            this._usernameBlock, true);
+        this._usernameInteractable.addAction(() => {
+            let peerPage = this._controller.getPage(MenuPages.PEER);
+            peerPage.setContent(this._peer, this._designateHostCallback);
+            this._controller.pushPage(MenuPages.PEER);
+        });
         this._muteMyselfInteractable = new PointerInteractable(
-            this._muteMyselfButton, () => { this.toggleMyselfMuted(); });
+            this._muteMyselfButton, true);
+        this._muteMyselfInteractable.addAction(() => this.toggleMyselfMuted());
         this._mutePeerInteractable = new PointerInteractable(
-            this._mutePeerButton, () => { this.togglePeerMuted(); });
+            this._mutePeerButton, true);
+        this._mutePeerInteractable.addAction(() => this.togglePeerMuted());
         if(PartyHandler.isHost()) {
             this._pointerInteractable.addChild(this._usernameInteractable);
         }

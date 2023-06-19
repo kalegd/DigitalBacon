@@ -59,7 +59,8 @@ class CheckboxInput extends PointerInteractableEntity {
         });
         this._object.add(titleBlock);
         this._object.add(this._selectBox);
-        let interactable = new PointerInteractable(this._selectBox, () => {
+        let interactable = new PointerInteractable(this._selectBox, true);
+        interactable.addAction(() => {
             let value = this._selectBox.toggle();
             if(this._onUpdate) this._onUpdate(Boolean(value));
             PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {

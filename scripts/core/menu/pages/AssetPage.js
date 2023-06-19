@@ -59,15 +59,15 @@ class AssetPage extends DynamicFieldsPage {
         this._titleBlock.add(deleteButton);
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
-        let interactable = new PointerInteractable(componentsButton, () => {
+        let interactable = new PointerInteractable(componentsButton, true);
+        interactable.addAction(() => {
             let page = this._controller.getPage(MenuPages.LIST_COMPONENTS);
             page.setContent(this._asset);
             this._controller.pushPage(MenuPages.LIST_COMPONENTS);
         });
         this._containerInteractable.addChild(interactable);
-        interactable = new PointerInteractable(deleteButton, () => {
-            ProjectHandler.deleteAsset(this._asset);
-        });
+        interactable = new PointerInteractable(deleteButton, true);
+        interactable.addAction(() => ProjectHandler.deleteAsset(this._asset));
         this._containerInteractable.addChild(interactable);
     }
 

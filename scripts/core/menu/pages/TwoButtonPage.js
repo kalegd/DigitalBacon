@@ -46,10 +46,12 @@ class TwoButtonPage extends MenuPage {
             'width': 0.25,
             'margin': 0.002,
         });
-        let interactable1 = new PointerInteractable(this._button1, () => {
+        let interactable1 = new PointerInteractable(this._button1, true);
+        interactable1.addAction(() => {
             if(this._action1) this._action1();
         });
-        let interactable2 = new PointerInteractable(this._button2, () => {
+        let interactable2 = new PointerInteractable(this._button2, true);
+        interactable2.addAction(() => {
             if(this._action2) this._action2();
         });
         columnBlock.add(this._button1);

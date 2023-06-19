@@ -32,110 +32,58 @@ import EulerInput from '/scripts/core/menu/input/EulerInput.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 import * as THREE from 'three';
 
-const TOOL_AGNOSTIC = "TOOL_AGNOSTIC";
-const INTERACTABLE_KEYS = [
-    TOOL_AGNOSTIC,
-    HandTools.EDIT,
-    HandTools.COPY_PASTE,
-    HandTools.DELETE,
-    HandTools.TRANSLATE,
-    HandTools.ROTATE,
-    HandTools.SCALE,
-];
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
+const TRS_HANDLERS = [{ handler: TranslateHandler, tool: HandTools.TRANSLATE },
+    { handler: RotateHandler, tool: HandTools.ROTATE },
+    { handler: ScaleHandler, tool: HandTools.SCALE },
+];
 
 export default class AssetEntityHelper extends EditorHelper {
     constructor(asset, updatedTopic) {
         super(asset, updatedTopic);
         this._object = asset.getObject();
         this._attachedPeers = new Set();
-        this._gripInteractables = {};
-        this._pointerInteractables = {};
-        for(let key of INTERACTABLE_KEYS) {
-            this._pointerInteractables[key] = [];
-            this._gripInteractables[key] = [];
-        }
+        this._gripActions = [];
+        this._pointerActions = [];
         this._boundingBox = new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
-        this._createInteractables();
         this._overwriteAssetFunctions();
     }
 
-    _createInteractables() {
+    _addActions() {
         if(global.deviceType == "XR") {
-            let interactable = new GripInteractable(this._object,
-                (hand) => {
+            this._gripActions.push(
+                this._asset.addGripAction((hand) => {
                     TransformControlsHandler.attach(this._asset, hand);
                 }, (hand) => {
                     TransformControlsHandler.detach(hand);
-                }
-            );
-            this._gripInteractables[HandTools.EDIT].push(interactable);
-            let deleteInteractable = new GripInteractable(this._object,
-                (hand) => {
+                }, HandTools.EDIT));
+            this._gripActions.push(
+                this._asset.addGripAction((hand) => {
                     ProjectHandler.deleteAsset(this._asset);
-                }
-            );
-            this._gripInteractables[HandTools.DELETE].push(deleteInteractable);
-            deleteInteractable = new PointerInteractable(this._object,
-                (hand) => {
+                }, null, HandTools.DELETE));
+            this._pointerActions.push(
+                this._asset.addPointerAction(() => {
                     ProjectHandler.deleteAsset(this._asset);
-                },
-                true,
-                true
-            );
-            this._pointerInteractables[HandTools.DELETE]
-                .push(deleteInteractable);
-            let copyInteractable = new GripInteractable(this._object,
-                (hand) => {
+                }, null, null, HandTools.DELETE));
+            this._gripActions.push(
+                this._asset.addGripAction((hand) => {
                     CopyPasteControlsHandler.copy(this._asset);
-                },
-                null,
-                null,
-                Hands.LEFT
-            );
-            this._gripInteractables[HandTools.COPY_PASTE]
-                .push(copyInteractable);
-            copyInteractable = new PointerInteractable(this._object,
-                (hand) => {
+                }, null, HandTools.COPY_PASTE, Hands.LEFT));
+            this._pointerActions.push(
+                this._asset.addPointerAction(() => {
                     CopyPasteControlsHandler.copy(this._asset);
-                },
-                true,
-                true,
-                Hands.LEFT
-            );
-            this._pointerInteractables[HandTools.COPY_PASTE]
-                .push(copyInteractable);
-            let translateInteractable = new GripInteractable(this._object,
-                (hand) => {
-                    TranslateHandler.attach(UserController, hand, this._asset);
-                },
-                (hand) => {
-                    TranslateHandler.detach(UserController, hand);
-                },
-            );
-            this._gripInteractables[HandTools.TRANSLATE]
-                .push(translateInteractable);
-            let rotateInteractable = new GripInteractable(this._object,
-                (hand) => {
-                    RotateHandler.attach(UserController, hand, this._asset);
-                },
-                (hand) => {
-                    RotateHandler.detach(UserController, hand);
-                },
-            );
-            this._gripInteractables[HandTools.ROTATE]
-                .push(rotateInteractable);
-            let scaleInteractable = new GripInteractable(this._object,
-                (hand) => {
-                    ScaleHandler.attach(UserController, hand, this._asset);
-                },
-                (hand) => {
-                    ScaleHandler.detach(UserController, hand);
-                },
-            );
-            this._gripInteractables[HandTools.SCALE]
-                .push(scaleInteractable);
+                }, null, null, HandTools.COPY_PASTE, Hands.LEFT));
+            for(let handlerDetails of TRS_HANDLERS) {
+                let handler = handlerDetails.handler;
+                let tool = handlerDetails.tool;
+                this._gripActions.push(
+                    this._asset.addGripAction((hand) => {
+                        handler.attach(UserController, hand, this._asset);
+                    }, (hand) => {
+                        handler.detach(UserController, hand);
+                    }, tool));
+            }
         } else {
             this._object.states = States;
             this._object.setState = (state) => {
@@ -152,34 +100,22 @@ export default class AssetEntityHelper extends EditorHelper {
                     global.scene.remove(this._boundingBoxObj);
                 }
             };
-            let interactable = new PointerInteractable(this._object,
-                () => {
+            this._pointerActions.push(
+                this._asset.addPointerAction(() => {
                     TransformControlsHandler.attach(this._asset);
-                },
-                false,
-            );
-            this._pointerInteractables[TOOL_AGNOSTIC].push(interactable);
+                }));
         }
     }
 
-    _addInteractables() {
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            GripInteractableHandler.addInteractables(
-                this._gripInteractables[key], tool);
-            PointerInteractableHandler.addInteractables(
-                this._pointerInteractables[key], tool);
+    _removeActions() {
+        for(let action of this._gripActions) {
+            this._asset.removeGripAction(action.id);
         }
-    }
-
-    _removeInteractables() {
-        for(let key of INTERACTABLE_KEYS) {
-            let tool = (key != TOOL_AGNOSTIC) ? key : null;
-            GripInteractableHandler.removeInteractables(
-                this._gripInteractables[key], tool);
-            PointerInteractableHandler.removeInteractables(
-                this._pointerInteractables[key], tool);
+        this._gripActionsIds = [];
+        for(let action of this._pointerActions) {
+            this._asset.removePointerAction(action.id);
         }
+        this._pointerActionsIds = [];
     }
 
     updateVisualEdit(isVisualEdit) {
@@ -187,10 +123,10 @@ export default class AssetEntityHelper extends EditorHelper {
         this._asset.visualEdit = isVisualEdit;
         if(isVisualEdit) {
             if(this._object.parent && this._attachedPeers.size == 0) {
-                this._addInteractables();
+                this._addActions();
             }
         } else {
-            this._removeInteractables();
+            this._removeActions();
         }
     }
 
@@ -224,7 +160,7 @@ export default class AssetEntityHelper extends EditorHelper {
         }
         if(!this._asset.visualEdit) return;
 
-        this._removeInteractables();
+        this._removeActions();
     }
 
     detachFromPeer(peer, message) {
@@ -255,7 +191,7 @@ export default class AssetEntityHelper extends EditorHelper {
         }
         if(!this._asset.visualEdit) return;
 
-        this._addInteractables();
+        this._addActions();
     }
 
     makeTranslucent() {
@@ -386,14 +322,14 @@ export default class AssetEntityHelper extends EditorHelper {
 
     addToScene(scene) {
         if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
-        this._addInteractables();
+        this._addActions();
     }
 
     removeFromScene() {
         this._attachedPeers.clear();
         global.scene.remove(this._boundingBoxObj);
         fullDispose(this._boundingBoxObj);
-        this._removeInteractables();
+        this._removeActions();
     }
 
     static fields = [

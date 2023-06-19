@@ -70,7 +70,8 @@ class AudioInput extends PointerInteractableEntity {
         this._updateAudio();
         this._object.add(titleBlock);
         this._object.add(this._audioSelection);
-        let interactable = new PointerInteractable(this._audioSelection, () => {
+        let interactable = new PointerInteractable(this._audioSelection, true);
+        interactable.addAction(() => {
             let library = LibraryHandler.getLibrary();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };

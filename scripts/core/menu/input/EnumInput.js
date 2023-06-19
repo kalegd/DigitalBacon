@@ -69,7 +69,7 @@ class EnumInput extends PointerInteractableEntity {
             //'offset': 0,
         });
         this._optionsInteractable = new PointerInteractable(
-            this._optionsContainer);
+            this._optionsContainer, true);
         for(let option of options) {
             let optionButton = ThreeMeshUIHelper.createButtonBlock({
                 'text': option,
@@ -79,19 +79,19 @@ class EnumInput extends PointerInteractableEntity {
                 'margin': 0,
             });
             this._optionsContainer.add(optionButton);
-            let interactable = new PointerInteractable(optionButton, () => {
-                this._handleSelection(option);
-            });
+            let interactable = new PointerInteractable(optionButton, true);
+            interactable.addAction(() => { this._handleSelection(option); });
             this._optionsInteractable.addChild(interactable);
         }
         this._object.add(titleBlock);
         this._object.add(this._optionSelection);
         this._selectionInteractable = new PointerInteractable(
-            this._optionSelection, () => {
-                if(options.length == 0) return;
-                this._optionSelection.add(this._optionsContainer);
-                this._selectionInteractable.addChild(this._optionsInteractable);
-            });
+            this._optionSelection, true);
+        this._selectionInteractable.addAction(() => {
+            if(options.length == 0) return;
+            this._optionSelection.add(this._optionsContainer);
+            this._selectionInteractable.addChild(this._optionsInteractable);
+        });
         this._pointerInteractable.addChild(this._selectionInteractable);
     }
 

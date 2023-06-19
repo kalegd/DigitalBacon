@@ -52,7 +52,8 @@ class PaginatedPage extends MenuPage {
             });
             this._optionsBlock.add(button);
             this._paginatedListButtons.push(button);
-            let interactable = new PointerInteractable(button, () => {
+            let interactable = new PointerInteractable(button, true);
+            interactable.addAction(() => {
                 let index = this._page * OPTIONS + i;
                 if(this._items.length > index) {
                     this._handleItemInteraction(this._items[index]);
@@ -89,16 +90,16 @@ class PaginatedPage extends MenuPage {
             'fontTexture': Fonts.defaultTexture,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton,
-            () => {
-                this._page -= 1;
-                this._updateItemsGUI();
-            });
-        this._nextInteractable = new PointerInteractable(this._nextButton,
-            () => {
-                this._page += 1;
-                this._updateItemsGUI();
-            });
+            this._previousButton, true);
+        this._previousInteractable.addAction(() => {
+            this._page -= 1;
+            this._updateItemsGUI();
+        });
+        this._nextInteractable = new PointerInteractable(this._nextButton,true);
+        this._nextInteractable.addAction(() => {
+            this._page += 1;
+            this._updateItemsGUI();
+        });
     }
 
     _updateItemsGUI() {

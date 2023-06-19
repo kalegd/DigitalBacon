@@ -84,7 +84,8 @@ class MaterialInput extends PointerInteractableEntity {
         this._object.add(titleBlock);
         this._object.add(this._materialBlock);
         this._object.add(this._editButton);
-        let interactable = new PointerInteractable(this._materialBlock, () => {
+        let interactable = new PointerInteractable(this._materialBlock, true);
+        interactable.addAction(() => {
             let materials = MaterialsHandler.getAssets();
             let filteredMaterials = {};
             filteredMaterials["null\n"] = { Name: "Blank" };
@@ -101,7 +102,8 @@ class MaterialInput extends PointerInteractableEntity {
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
         });
-        this._editInteractable = new PointerInteractable(this._editButton, () => {
+        this._editInteractable = new PointerInteractable(this._editButton,true);
+        this._editInteractable.addAction(() => {
             if(!this._lastValue) return;
             let material = MaterialsHandler.getAsset(this._lastValue);
             let materialPage = global.menuController.getPage(

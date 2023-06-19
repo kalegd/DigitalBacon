@@ -89,12 +89,13 @@ class AcknowledgementsPage extends MenuPage {
             'margin': 0.006,
         });
         columnBlock.add(this._sourceButton);
-        this._sourceInteractable = new PointerInteractable(
-            this._sourceButton, () => {
-                if(global.deviceType == 'XR') SessionHandler.exitXRSession();
-                window.open(this._acknowledgements[this._page]['Source URL'],
-                    '_blank');
-            });
+        this._sourceInteractable = new PointerInteractable(this._sourceButton,
+            true);
+        this._sourceInteractable.addAction(() => {
+            if(global.deviceType == 'XR') SessionHandler.exitXRSession();
+            window.open(this._acknowledgements[this._page]['Source URL'],
+                '_blank');
+        });
         this._containerInteractable.addChild(this._sourceInteractable);
         this._container.add(this._acknowledgementsContainer);
         this._acknowledgementsContainer.add(this._previousButton);
@@ -120,18 +121,18 @@ class AcknowledgementsPage extends MenuPage {
             'fontTexture': Fonts.defaultTexture,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton,
-            () => {
-                this._page += this._acknowledgements.length - 1;
-                this._page %= this._acknowledgements.length;
-                this._setAsset();
-            });
-        this._nextInteractable = new PointerInteractable(this._nextButton,
-            () => {
-                this._page += 1;
-                this._page %= this._acknowledgements.length;
-                this._setAsset();
-            });
+            this._previousButton, true);
+        this._previousInteractable.addAction(() => {
+            this._page += this._acknowledgements.length - 1;
+            this._page %= this._acknowledgements.length;
+            this._setAsset();
+        });
+        this._nextInteractable = new PointerInteractable(this._nextButton,true);
+        this._nextInteractable.addAction(() => {
+            this._page += 1;
+            this._page %= this._acknowledgements.length;
+            this._setAsset();
+        });
     }
 
     _refreshAssets() {

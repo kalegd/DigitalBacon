@@ -63,9 +63,8 @@ class SketchfabLoginPage extends MenuPage {
             'width': 0.3,
         });
         columnBlock.add(loginButton);
-        let interactable = new PointerInteractable(loginButton, () => {
-            this._clickAction.triggerAction();
-        });
+        let interactable = new PointerInteractable(loginButton, true);
+        interactable.addAction(() => this._clickAction.triggerAction());
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
     }

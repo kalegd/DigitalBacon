@@ -29,8 +29,8 @@ class TextField extends PointerInteractableEntity {
         this.content = "";
         if(global.deviceType == "POINTER") this._setupEventListeners();
         this._object = ThreeMeshUIHelper.createInputBlock(params);
-        this._pointerInteractable = new PointerInteractable(this._object,
-            () => { this._activate(); });
+        this._pointerInteractable = new PointerInteractable(this._object, true);
+        this._pointerInteractable.addAction(() => { this._activate(); });
         this._active = false;
 
         if(this._initialContent) this.setContent(this._initialContent);

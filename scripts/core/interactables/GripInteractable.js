@@ -8,26 +8,50 @@ import global from '/scripts/core/global.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import Interactable from '/scripts/core/interactables/Interactable.js';
 import * as THREE from 'three';
 
 class GripInteractable extends Interactable {
-    constructor(threeObj, selectedFunc, releasedFunc, draggedFunc, specificOption) {
+    constructor(threeObj, specificOption) {
         super(threeObj);
-        this._selectedFunc = selectedFunc;
-        this._releasedFunc = releasedFunc;
-        this._draggedFunc = draggedFunc;
         this.specificOption = specificOption;
         this._createBoundingObject();
     }
 
-    isOnlyGroup() {
-        return this._selectedFunc == null && this._releasedFunc == null
-            && this._draggedFunc == null;
+    addAction(selectedAction, releasedAction, tool, option) {
+        if(selectedAction && typeof selectedAction == 'object') {
+            this._actions.push(selectedAction);
+            return selectedAction;
+        }
+        let id = uuidv4();
+        let action = {
+            id: id,
+            selectedAction: selectedAction,
+            releasedAction: releasedAction,
+            selectedBy: new Set(),
+            tool: tool,
+            specificOption: option,
+            type: 'GRIP',
+        };
+        this._actions.push(action);
+        return action;
     }
 
-    isDraggable() {
-        return this._draggedFunc != null;
+    isOnlyGroup() {
+        return this._actions.length == 0;
+    }
+
+    supportsOwner(owner) {
+        //TODO: Should have a map that tracks how many actions for each tool as
+        //      we add + remove actions so we can respond to this function call
+        //      faster
+        for(let action of this._actions) {
+            if((!action.tool || action.tool == global.tool)
+                && (!action.specificOption || action.specificOption == owner))
+                return true;
+        }
+        return this._actions.length == 0;
     }
 
     _createBoundingObject() {
@@ -99,29 +123,35 @@ class GripInteractable extends Interactable {
     }
 
     addSelectedBy(owner) {
-        if(this._selectedFunc != null) {
-            this._selectedFunc(owner);
-        }
+        this._triggerSelected(owner);
         this._selectedOwners.add(owner);
         this.setState(States.SELECTED);
     }
 
     removeSelectedBy(owner) {
-        if(this._releasedFunc != null) {
-            this._releasedFunc(owner);
-        }
+        this._triggerReleased(owner);
         this._selectedOwners.delete(owner);
         this._determineAndSetState();
     }
-
-    triggerDragged(owner) {
-        if(this._draggedFunc != null) {
-            this._draggedFunc(owner);
+    
+    _triggerSelected(owner) {
+        for(let action of this._actions) {
+            if((!action.specificOption || action.specificOption == owner)
+                    && (!action.tool || action.tool == global.tool))
+            {
+                if(action.selectedAction) action.selectedAction(owner);
+                action.selectedBy.add(owner);
+            }
         }
     }
 
-    updateAction(newActionFunc) {
-        this._selectedFunc = newActionFunc;
+    _triggerReleased(owner) {
+        for(let action of this._actions) {
+            if(action.selectedBy.has(owner)) {
+                if(action.releasedAction) action.releasedAction(owner);
+                action.selectedBy.delete(owner);
+            }
+        }
     }
 
     static emptyGroup() {

@@ -51,7 +51,6 @@ class GripInteractableHandler extends InteractableHandler {
             } else {
                 this.update = this._updateForXREdit;
             }
-            this._handTool = tool;
         });
     }
 
@@ -85,6 +84,7 @@ class GripInteractableHandler extends InteractableHandler {
                     this._scopeInteractables(controller, interactable.children);
                 continue;
             }
+            if(!interactable.supportsOwner(controller.owner)) continue;
             let intersects = interactable.intersectsSphere(boundingSphere);
             if(intersects) {
                 if(interactable.children.size != 0) {
@@ -104,20 +104,14 @@ class GripInteractableHandler extends InteractableHandler {
             let controller = controllers[option];
             let isPressed = controller['isPressed'];
             this._scopeInteractables(controller, this._interactables);
-            this._scopeInteractables(controller,
-                this._toolInteractables[this._handTool]);
             let hoveredInteractable = this._hoveredInteractables[option];
             let selectedInteractable = this._selectedInteractables[option];
             let closestInteractable = controller['closestInteractable'];
             if(closestInteractable) {
                 if(isPressed) {
-                    if(selectedInteractable) {
-                        if(selectedInteractable == closestInteractable
-                            && selectedInteractable.isDraggable())
-                        {
-                            selectedInteractable.triggerDraggableAction(option);
-                        }
-                    } else if(hoveredInteractable == closestInteractable) {
+                    if(!selectedInteractable 
+                            && hoveredInteractable == closestInteractable)
+                    {
                         closestInteractable.addSelectedBy(option);
                         this._selectedInteractables[option] = closestInteractable;
                         closestInteractable.removeHoveredBy(option);

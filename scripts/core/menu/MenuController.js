@@ -116,16 +116,14 @@ export default class MenuController extends PointerInteractableEntity {
     _createInteractables() {
         if(global.deviceType != 'XR') return;
         let border = this._createBorder();
-        let interactable = new MenuGripInteractable(this._object,
-            border,
-            (hand) => {
+        let interactable = new MenuGripInteractable(this._object, border);
+        interactable.addAction((hand) => {
                 UserController.hands[hand].attach(this._object);
                 this._gripOwners.add(hand);
             }, (hand) => {
                 UserController.hands[hand].remove(this._object);
                 this._gripOwners.delete(hand);
-            }
-        );
+            });
         this._gripInteractable.addChild(interactable);
         Keyboard.init(this._object);
     }

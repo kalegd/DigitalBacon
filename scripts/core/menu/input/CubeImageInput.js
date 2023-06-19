@@ -96,9 +96,8 @@ class CubeImageInput extends PointerInteractableEntity {
                 'margin': 0.002,
                 'borderRadius': 0.00001,
             });
-            let interactable = new PointerInteractable(button, () => {
-                this._handleInteractable(SIDES[i]);
-            });
+            let interactable = new PointerInteractable(button, true);
+            interactable.addAction(() => this._handleInteractable(SIDES[i]));
             this._pointerInteractable.addChild(interactable);
             if(i == 0) {
                 let topRowBlock = new ThreeMeshUI.Block({

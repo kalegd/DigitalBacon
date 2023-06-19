@@ -9,9 +9,8 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { Assets, Interactables, PartyMessageHelper, ProjectHandler, PubSub, UserController, getDeviceType, isEditor } = window.DigitalBacon;
+const { Assets, PartyMessageHelper, ProjectHandler, PubSub, UserController, getDeviceType, isEditor } = window.DigitalBacon;
 const { System } = Assets;
-const { PointerInteractable, PointerInteractableHandler } = Interactables;
 
 const PUBLISH_TOPIC = 'PublishSystem:published';
 const COMPONENT_ASSET_ID = '2a310a93-3f00-465a-862f-2bf8de118984';
@@ -20,7 +19,7 @@ export default class PublishSystem extends System {
     constructor(params = {}) {
         params['assetId'] = PublishSystem.assetId;
         super(params);
-        this._interactables = {};
+        this._actions = {};
         this._notStealable = {};
         this._onPartyJoined = {};
         this._addSubscriptions();
@@ -37,34 +36,33 @@ export default class PublishSystem extends System {
     _addSubscriptions() {
         if(isEditor()) return;
         this._listenForComponentAttached(COMPONENT_ASSET_ID, (message) => {
-            let id = message.id;
-            if(this._interactables[id]) return;
-            let instance = ProjectHandler.getSessionAsset(id);
+            let id = message.id + ':' + message.componentId;
+            if(this._actions[id]) return;
+            let instance = ProjectHandler.getSessionAsset(message.id);
             let component = ProjectHandler.getSessionAsset(message.componentId);
-            this._addPointerInteractable(instance, component.getTopic());
+            this._addPointerAction(id, instance, component.getTopic());
         });
         this._listenForComponentDetached(COMPONENT_ASSET_ID, (message) => {
-            let interactable = this._interactables[message.id];
-            if(!interactable) return;
-            PointerInteractableHandler.removeInteractable(interactable);
-            delete this._interactables[message.id];
+            let id = message.id + ':' + message.componentId;
+            let action = this._actions[id];
+            if(!action) return;
+            let instance = ProjectHandler.getSessionAsset(message.id);
+            instance.removePointerAction(action.id);
+            delete this._actions[id];
         });
         PartyMessageHelper.registerBlockableHandler(PUBLISH_TOPIC, (p, m) => {
             this._handlePeerPublished(p, m);
         });
     }
 
-    _addPointerInteractable(instance, topic) {
-        let object = instance.getObject();
-        let interactable = new PointerInteractable(object,
-            () => {
-                PubSub.publish(this._id, topic, {
-                    asset: instance, userController: UserController,
-                });
-                this._publish(topic, instance.getId());
-            }, false);
-        PointerInteractableHandler.addInteractable(interactable);
-        this._interactables[instance.getId()] = interactable;
+    _addPointerAction(id, instance, topic) {
+        let action = instance.addPointerAction(() => {
+            PubSub.publish(this._id, topic, {
+                asset: instance, userController: UserController,
+            });
+            this._publish(topic, instance.getId());
+        });
+        this._actions[id] = action;
     }
 
     _handlePeerPublished(peer, message) {

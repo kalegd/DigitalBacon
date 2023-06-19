@@ -56,9 +56,8 @@ class HostPartyPage extends MenuPage {
             'margin': 0.002,
         });
         this._contentBlock.add(button);
-        let interactable = new PointerInteractable(button, () => {
-            this._hostParty();
-        });
+        let interactable = new PointerInteractable(button, true)
+        interactable.addAction(() => this._hostParty());
         this._containerInteractable.addChild(interactable);
         this._container.add(this._contentBlock);
 

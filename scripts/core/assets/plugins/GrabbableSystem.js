@@ -9,10 +9,9 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { Assets, EditorHelpers, Interactables, PartyMessageHelper, ProjectHandler, UserController, getDeviceType, isEditor } = window.DigitalBacon;
+const { Assets, EditorHelpers, PartyMessageHelper, ProjectHandler, UserController, getDeviceType, isEditor } = window.DigitalBacon;
 const { System } = Assets;
 const { EditorHelperFactory, SystemHelper } = EditorHelpers;
-const { GripInteractable, GripInteractableHandler, PointerInteractable, PointerInteractableHandler } = Interactables;
 const deviceType = getDeviceType();
 
 const AVATAR = 'AVATAR';
@@ -24,7 +23,7 @@ export default class GrabbableSystem extends System {
     constructor(params = {}) {
         params['assetId'] = GrabbableSystem.assetId;
         super(params);
-        this._interactables = {};
+        this._actions = {};
         this._notStealable = {};
         this._publishForNewPeers = {};
         this._onPartyJoined = {};
@@ -43,24 +42,25 @@ export default class GrabbableSystem extends System {
         if(isEditor()) return;
         this._listenForComponentAttached(COMPONENT_ASSET_ID, (message) => {
             let id = message.id;
-            if(this._interactables[id] || this._notStealable[id]) return;
+            if(this._actions[id] || this._notStealable[id]) return;
             let instance = ProjectHandler.getSessionAsset(id);
             let component = ProjectHandler.getSessionAsset(message.componentId);
             if(deviceType == 'XR') {
-                this._addGripInteractable(instance, component.getStealable());
+                this._addGripAction(instance, component.getStealable());
             } else {
-                this._addPointerInteractable(instance,component.getStealable());
+                this._addPointerAction(instance,component.getStealable());
             }
         });
         this._listenForComponentDetached(COMPONENT_ASSET_ID, (message) => {
-            let interactable = this._interactables[message.id];
-            if(!interactable) return;
+            let instance = ProjectHandler.getSessionAsset(message.id);
+            let action = this._actions[message.id];
+            if(!action) return;
             if(deviceType == 'XR') {
-                GripInteractableHandler.removeInteractable(interactable);
+                instance.removeGripAction(action.id);
             } else {
-                PointerInteractableHandler.removeInteractable(interactable);
+                instance.removePointerAction(action.id);
             }
-            delete this._interactables[message.id];
+            delete this._actions[message.id];
         });
         PartyMessageHelper.registerBlockableHandler(GRABBED_TOPIC, (p, m) => {
             this._handlePeerGrabbed(p, m);
@@ -85,21 +85,21 @@ export default class GrabbableSystem extends System {
 
     _onPartyEnded() {
         for(let id in this._notStealable) {
-            let interactable = this._notStealable[id];
-            this._interactables[id] = interactable;
-            if(interactable instanceof GripInteractable) {
-                GripInteractableHandler.addInteractable(interactable);
+            let instance = ProjectHandler.getSessionAsset(message.id);
+            let action = this._notStealable[id];
+            this._actions[id] = action;
+            if(deviceType == 'XR') {
+                instance.addGripAction(action);
             } else {
-                PointerInteractableHandler.addInteractable(interactable);
+                instance.addPointerAction(action);
             }
             delete this._notStealable[id];
         }
     }
 
-    _addGripInteractable(instance, stealable) {
+    _addGripAction(instance, stealable) {
         let object = instance.getObject();
-        let interactable = new GripInteractable(object,
-            (side) => {
+        let action = instance.addGripAction((side) => {
                 let hand = UserController.getHand(side);
                 hand.attach(object);
                 this._publish(GRABBED_TOPIC, instance, side, stealable);
@@ -119,38 +119,34 @@ export default class GrabbableSystem extends System {
                 }
             }
         );
-        GripInteractableHandler.addInteractable(interactable);
-        this._interactables[instance.getId()] = interactable;
+        this._actions[instance.getId()] = action;
     }
 
-    _addPointerInteractable(instance, stealable) {
+    _addPointerAction(instance, stealable) {
         let object = instance.getObject();
-        let interactable = new PointerInteractable(object,
-            () => {
-                let avatar = UserController.getAvatar();
-                if(avatar.hasChild(object)) {
-                    if(avatar.remove(object)) {
-                        delete this._onPartyJoined[instance.getId()];
-                        delete this._publishForNewPeers[instance.getId()];
-                        this._publish(RELEASED_TOPIC, instance, AVATAR,
-                            stealable);
-                    }
-                } else {
-                    avatar.attach(object);
-                    this._publish(GRABBED_TOPIC, instance, AVATAR, stealable);
-                    this._publishForNewPeers[instance.getId()] = () => {
-                        if(avatar.hasChild(object))
-                            this._publish(GRABBED_TOPIC, instance, AVATAR,
-                                stealable);
-                    };
-                    this._onPartyJoined[instance.getId()] = () =>{
-                        avatar.remove(object);
-                    };
+        let action = instance.addPointerAction(() => {
+            let avatar = UserController.getAvatar();
+            if(avatar.hasChild(object)) {
+                if(avatar.remove(object)) {
+                    delete this._onPartyJoined[instance.getId()];
+                    delete this._publishForNewPeers[instance.getId()];
+                    this._publish(RELEASED_TOPIC, instance, AVATAR,
+                        stealable);
                 }
-            }, false);
-        interactable.setMaximumDistance(2);
-        PointerInteractableHandler.addInteractable(interactable);
-        this._interactables[instance.getId()] = interactable;
+            } else {
+                avatar.attach(object);
+                this._publish(GRABBED_TOPIC, instance, AVATAR, stealable);
+                this._publishForNewPeers[instance.getId()] = () => {
+                    if(avatar.hasChild(object))
+                        this._publish(GRABBED_TOPIC, instance, AVATAR,
+                            stealable);
+                };
+                this._onPartyJoined[instance.getId()] = () =>{
+                    avatar.remove(object);
+                };
+            }
+        }, null, 2);
+        this._actions[instance.getId()] = action;
     }
 
     _handlePeerGrabbed(peer, message) {
@@ -164,15 +160,15 @@ export default class GrabbableSystem extends System {
         }
         instance.setPosition(message.position);
         instance.setRotation(message.rotation);
-        if(!message.stealable && this._interactables[message.id]) {
-            let interactable = this._interactables[message.id];
-            this._notStealable[message.id] = interactable;
-            if(interactable instanceof GripInteractable) {
-                GripInteractableHandler.removeInteractable(interactable);
+        if(!message.stealable && this._actions[message.id]) {
+            let action = this._actions[message.id];
+            this._notStealable[message.id] = action;
+            if(deviceType == 'XR') {
+                instance.removeGripAction(action.id);
             } else {
-                PointerInteractableHandler.removeInteractable(interactable);
+                instance.removePointerAction(action.id);
             }
-            delete this._interactables[message.id];
+            delete this._actions[message.id];
         }
     }
 
@@ -188,12 +184,12 @@ export default class GrabbableSystem extends System {
         instance.setPosition(message.position);
         instance.setRotation(message.rotation);
         if(!message.stealable && this._notStealable[message.id]) {
-            let interactable = this._notStealable[message.id];
-            this._interactables[message.id] = interactable;
-            if(interactable instanceof GripInteractable) {
-                GripInteractableHandler.addInteractable(interactable);
+            let action = this._notStealable[message.id];
+            this._actions[message.id] = action;
+            if(deviceType == 'XR') {
+                instance.addGripAction(action);
             } else {
-                PointerInteractableHandler.addInteractable(interactable);
+                instance.addPointerAction(action);
             }
             delete this._notStealable[message.id];
         }

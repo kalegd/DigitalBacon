@@ -46,12 +46,11 @@ class UndoRedoHandler {
         this._undoRedoParent.position.fromArray([0.245, 0, -0.001]);
         this._undoRedoParent.add(this._undoButton);
         this._undoRedoParent.add(this._redoButton);
-        this._containerInteractable = new PointerInteractable(
-            null, null, false);
-        this._undoInteractable = new PointerInteractable(this._undoButton,
-            () => { this._undo(); });
-        this._redoInteractable = new PointerInteractable(this._redoButton,
-            () => { this._redo(); });
+        this._containerInteractable = new PointerInteractable();
+        this._undoInteractable = new PointerInteractable(this._undoButton);
+        this._undoInteractable.addAction(() => { this._undo(); });
+        this._redoInteractable = new PointerInteractable(this._redoButton);
+        this._redoInteractable.addAction(() => { this._redo(); });
     }
 
     addButtons(menu, interactable) {

@@ -66,18 +66,19 @@ class SketchfabLoginPage extends MenuPage {
         });
         columnBlock.add(this._downloadButton);
         this._downloadInteractable = new PointerInteractable(
-            this._downloadButton, () => {
-                if(this._assetId) {
-                    this._handleDownloadSuccess(this._assetId);
-                    return;
-                }
-                this._downloadButton.visible = false;
-                this._containerInteractable.removeChild(
-                    this._downloadInteractable);
-                Sketchfab.download(this._sketchfabAsset,
-                    (assetId) => { this._handleDownloadSuccess(assetId); },
-                    () => { this._handleDownloadError(); });
-            });
+            this._downloadButton, true);
+        this._downloadInteractable.addAction(() => {
+            if(this._assetId) {
+                this._handleDownloadSuccess(this._assetId);
+                return;
+            }
+            this._downloadButton.visible = false;
+            this._containerInteractable.removeChild(
+                this._downloadInteractable);
+            Sketchfab.download(this._sketchfabAsset,
+                (assetId) => { this._handleDownloadSuccess(assetId); },
+                () => { this._handleDownloadError(); });
+        });
         this._containerInteractable.addChild(this._downloadInteractable);
 
         let button = ThreeMeshUIHelper.createButtonBlock({
@@ -88,7 +89,8 @@ class SketchfabLoginPage extends MenuPage {
             'margin': 0.006,
         });
         columnBlock.add(button);
-        let interactable = new PointerInteractable(button, () => {
+        let interactable = new PointerInteractable(button, true);
+        interactable.addAction(() => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._sketchfabAsset.viewerUrl, '_blank');
         });

@@ -43,9 +43,8 @@ class MenuPage extends PointerInteractableEntity {
         backButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
         backButtonParent.position.fromArray([-.225, 0.15, -0.001]);
         backButtonParent.add(backButton);
-        let interactable = new PointerInteractable(backButton, () => {
-            this.back();
-        });
+        let interactable = new PointerInteractable(backButton, true);
+        interactable.addAction(() => this.back());
         this._pointerInteractable.addChild(interactable);
         this._object.add(backButtonParent);
         this._createHomeButton();
@@ -66,9 +65,8 @@ class MenuPage extends PointerInteractableEntity {
         homeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
         homeButtonParent.position.fromArray([-.225, 0.1, -0.001]);
         homeButtonParent.add(homeButton);
-        let interactable = new PointerInteractable(homeButton, () => {
-            this._controller.popAllPages();
-        });
+        let interactable = new PointerInteractable(homeButton, true);
+        interactable.addAction(() => this._controller.popAllPages());
         this._pointerInteractable.addChild(interactable);
         this._object.add(homeButtonParent);
     }
@@ -89,9 +87,8 @@ class MenuPage extends PointerInteractableEntity {
         closeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
         closeButtonParent.position.fromArray([.225, 0.15, -0.001]);
         closeButtonParent.add(closeButton);
-        let interactable = new PointerInteractable(closeButton, () => {
-            this._controller.closeMenu();
-        });
+        let interactable = new PointerInteractable(closeButton, true);
+        interactable.addAction(() => this._controller.closeMenu());
         this._pointerInteractable.addChild(interactable);
         this._object.add(closeButtonParent);
     }
@@ -115,7 +112,7 @@ class MenuPage extends PointerInteractableEntity {
         });
         this._container.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
         this._containerInteractable = new PointerInteractable(
-            this._container.children[0], null, false);
+            this._container.children[0]);
         this._pointerInteractable.addChild(this._containerInteractable);
         borderedBlock.add(this._container);
         this._object.add(borderedBlock);

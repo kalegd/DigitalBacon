@@ -45,9 +45,8 @@ class TextInputPage extends MenuPage {
             'width': 0.25,
             'margin': 0.002,
         });
-        let buttonInteractable = new PointerInteractable(this._button, () => {
-            this._inputConfirmed();
-        });
+        let buttonInteractable = new PointerInteractable(this._button, true);
+        buttonInteractable.addAction(() => this._inputConfirmed());
         this._textField.addToScene(columnBlock, this._containerInteractable);
         columnBlock.add(this._button);
         this._container.add(columnBlock);
