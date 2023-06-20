@@ -9,9 +9,8 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { Assets, EditorHelpers, ProjectHandler } = window.DigitalBacon;
+const { Assets, ProjectHandler } = window.DigitalBacon;
 const { System } = Assets;
-const { EditorHelperFactory, SystemHelper } = EditorHelpers;
 
 const COMPONENT_ASSET_ID = 'a9d2e22f-ddf6-49fe-a420-5fffd5ee69a3';
 
@@ -59,7 +58,6 @@ export default class TextureScrollSystem extends System {
     }
 
     update(timeDelta) {
-        if(this._disabled) return;
         for(let componentId in this._scrollDetails) {
             let component = this._scrollDetails[componentId].component;
             let textures = this._scrollDetails[componentId].textures;
@@ -83,18 +81,3 @@ export default class TextureScrollSystem extends System {
 }
 
 ProjectHandler.registerAsset(TextureScrollSystem);
-
-if(EditorHelpers) {
-    class TextureScrollSystemHelper extends SystemHelper {
-        constructor(asset) {
-            super(asset);
-        }
-
-        static fields = [
-            { "parameter": "disabled" },
-        ];
-    }
-
-    EditorHelperFactory.registerEditorHelper(TextureScrollSystemHelper,
-        TextureScrollSystem);
-}

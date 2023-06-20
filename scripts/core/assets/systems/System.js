@@ -13,7 +13,6 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 export default class System extends Asset {
     constructor(params = {}) {
         super(params);
-        this._disabled = params['disabled'] || false;
         this._addSystemSubscriptions();
     }
 
@@ -52,14 +51,6 @@ export default class System extends Asset {
     getDescription() {
         console.error("System.getDescription() should be overridden");
         return '';
-    }
-
-    getDisabled() {
-        return this._disabled;
-    }
-
-    setDisabled(disabled) {
-        this._disabled = disabled;
     }
 
     needsUpdates() {

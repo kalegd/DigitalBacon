@@ -9,9 +9,8 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { Assets, EditorHelpers, PartyMessageHelper, ProjectHandler, UserController, getDeviceType, isEditor } = window.DigitalBacon;
+const { Assets, PartyMessageHelper, ProjectHandler, UserController, getDeviceType, isEditor } = window.DigitalBacon;
 const { System } = Assets;
-const { EditorHelperFactory, SystemHelper } = EditorHelpers;
 const deviceType = getDeviceType();
 
 const AVATAR = 'AVATAR';
@@ -212,18 +211,3 @@ export default class GrabbableSystem extends System {
 }
 
 ProjectHandler.registerAsset(GrabbableSystem);
-
-if(EditorHelpers) {
-    class GrabbableSystemHelper extends SystemHelper {
-        constructor(asset) {
-            super(asset);
-        }
-
-        static fields = [
-            { "parameter": "disabled" },
-        ];
-    }
-
-    EditorHelperFactory.registerEditorHelper(GrabbableSystemHelper,
-        GrabbableSystem);
-}
