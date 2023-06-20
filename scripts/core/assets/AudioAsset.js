@@ -6,13 +6,19 @@
 
 import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import UserController from '/scripts/core/assets/UserController.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
+
+const PLAY_TOPIC_PREFIX = 'PLAY_AUDIO_ASSET:';
 
 export default class AudioAsset extends AssetEntity {
     constructor(params = {}) {
@@ -31,6 +37,7 @@ export default class AudioAsset extends AssetEntity {
         this.setPlayTopic(params['playTopic'] || '');
         this.setPauseTopic(params['pauseTopic'] || '');
         this.setStopTopic(params['stopTopic'] || '');
+        if(!global.isEditor) this._addPartySubscriptions();
     }
 
     _createMesh(assetId) {
@@ -179,7 +186,8 @@ export default class AudioAsset extends AssetEntity {
         this._playTopic = playTopic;
         if(this._playTopic) {
             PubSub.subscribe(this._id, this._playTopic, (message) => {
-                if(!global.isEditor) this._audio.play();
+                if(!global.isEditor)
+                    this.play(null, message.userController == UserController);
             });
         }
     }
@@ -221,6 +229,50 @@ export default class AudioAsset extends AssetEntity {
     setVolume(volume) {
         this._volume = volume;
         this._audio.setVolume(volume);
+    }
+
+    play(position, ignorePublish) {
+        this._audio.pause();//pause() update audio._progress
+        if(position != null) {
+            this._audio._progress = position || 0;
+        }
+        this._audio.play();
+        if(ignorePublish) return;
+        let message = {
+            topic: PLAY_TOPIC_PREFIX + this._id,
+            position: this._audio._progress,
+        };
+        PartyMessageHelper.queuePublish(JSON.stringify(message));
+    }
+
+    _addPartySubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            this._onPeerReady(message.peer);
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
+            this._onPartyStarted(PartyHandler.isHost());
+        });
+        let playTopic = PLAY_TOPIC_PREFIX + this._id;
+        PartyMessageHelper.registerBlockableHandler(playTopic, (p, m) => {
+            this.play(m.position, true);
+        });
+    }
+
+    _onPeerReady() {
+        if(!PartyHandler.isHost()) return;
+        if(!this._audio.isPlaying) return;
+        this._audio.pause();//pause() update audio._progress
+        this._audio.play();
+        let message = {
+            topic: PLAY_TOPIC_PREFIX + this._id,
+            position: this._audio._progress,
+        };
+        PartyMessageHelper.queuePublish(JSON.stringify(message));
+    }
+
+    _onPartyStarted(isHost) {
+        if(isHost) return;
+        this._audio.stop();
     }
 
     static assetType = AssetTypes.AUDIO;
