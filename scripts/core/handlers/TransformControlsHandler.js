@@ -43,7 +43,7 @@ class TransformControlsHandler {
             scene.add(this._transformControls);
             this._addEventListeners();
         }
-        PubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (handTool)=>{
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
             if(handTool == HandTools.EDIT) return;
             for(let option in this._attachedAssets) {
                 this.detach(option);

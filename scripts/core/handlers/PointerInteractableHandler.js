@@ -29,8 +29,7 @@ class PointerInteractableHandler extends InteractableHandler {
     }
 
     _setupXRSubscription() {
-        PubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (tool) => {
-            global.tool = tool;
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
             if(tool == HandTools.EDIT) {
                 this.update = this._updateForXREdit;
             } else if(tool == HandTools.COPY_PASTE) {
@@ -106,8 +105,6 @@ class PointerInteractableHandler extends InteractableHandler {
     _raycastInteractables(controller, interactables) {
         let raycaster = controller['raycaster'];
         for(let interactable of interactables) {
-            if(interactable.specificOption && 
-                interactable.specificOption != controller.option) continue;
             let threeObj = interactable.getThreeObj();
             if(threeObj == null) {
                 if(interactable.children.size != 0)

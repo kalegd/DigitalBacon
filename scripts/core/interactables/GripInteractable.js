@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import States from '/scripts/core/enums/InteractableStates.js';
+import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
@@ -13,9 +14,8 @@ import Interactable from '/scripts/core/interactables/Interactable.js';
 import * as THREE from 'three';
 
 class GripInteractable extends Interactable {
-    constructor(threeObj, specificOption) {
+    constructor(threeObj) {
         super(threeObj);
-        this.specificOption = specificOption;
         this._createBoundingObject();
     }
 
@@ -47,7 +47,7 @@ class GripInteractable extends Interactable {
         //      we add + remove actions so we can respond to this function call
         //      faster
         for(let action of this._actions) {
-            if((!action.tool || action.tool == global.tool)
+            if((!action.tool || action.tool == ToolHandler.getTool())
                 && (!action.specificOption || action.specificOption == owner))
                 return true;
         }
@@ -137,7 +137,7 @@ class GripInteractable extends Interactable {
     _triggerSelected(owner) {
         for(let action of this._actions) {
             if((!action.specificOption || action.specificOption == owner)
-                    && (!action.tool || action.tool == global.tool))
+                    && (!action.tool || action.tool == ToolHandler.getTool()))
             {
                 if(action.selectedAction) action.selectedAction(owner);
                 action.selectedBy.add(owner);

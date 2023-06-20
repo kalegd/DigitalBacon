@@ -10,13 +10,15 @@ import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
+import HandTools from '/scripts/core/enums/HandTools.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
-import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
@@ -100,7 +102,10 @@ export default class Main {
         InputHandler.init(this._container, this._renderer, this._userObj);
         PointerInteractableHandler.init();
         UndoRedoHandler.init();
-        if(global.deviceType == "XR") GripInteractableHandler.init();
+        if(global.deviceType == "XR") {
+            GripInteractableHandler.init();
+            ToolHandler.setTool(HandTools.EDIT);
+        }
         TransformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);
     }

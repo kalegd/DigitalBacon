@@ -17,7 +17,7 @@ class CopyPasteControlsHandler {
         this._assetAlreadyPastedByTrigger = false;
         this._assetAlreadyPastedByGrip = false;
         this._copiedAsset;
-        PubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (handTool)=>{
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
             if(this._copiedAsset) this._clear();
             this._assetAlreadyPastedByTrigger = false;
             this._assetAlreadyPastedByGrip = false;

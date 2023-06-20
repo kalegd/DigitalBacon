@@ -27,7 +27,6 @@ export default class InteractableHandler {
 
     init() {
         if(global.deviceType == "XR") {
-            global.tool = HandTools.EDIT;
             this.update = this._updateForXREdit;
             this._setupXRSubscription();
         } else if(global.deviceType == "POINTER") {

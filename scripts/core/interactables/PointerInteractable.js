@@ -7,15 +7,15 @@
 import global from '/scripts/core/global.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import Interactable from '/scripts/core/interactables/Interactable.js';
 
 class PointerInteractable extends Interactable {
-    constructor(threeObj, canDisableOrbit, specificOption) {
+    constructor(threeObj, canDisableOrbit) {
         super(threeObj);
         this._draggableActions = [];
         this._canDisableOrbit = global.deviceType != "XR" && canDisableOrbit;
-        this.specificOption = specificOption;
     }
 
     addAction(action, draggableAction, maxDistance, tool, option) {
@@ -56,7 +56,7 @@ class PointerInteractable extends Interactable {
         //      we add + remove actions so we can respond to this function call
         //      faster
         for(let action of this._actions) {
-            if((!action.tool || action.tool == global.tool)
+            if((!action.tool || action.tool == ToolHandler.getTool())
                 && (!action.specificOption || action.specificOption == owner))
                 return true;
         }
@@ -108,7 +108,8 @@ class PointerInteractable extends Interactable {
 
     triggerActions(owner, closestPoint, distance) {
         for(let action of this._actions) {
-            if(action.action && (!action.tool || action.tool == global.tool)
+            if(action.action
+                && (!action.tool || action.tool == ToolHandler.getTool())
                 && (!action.specificOption || action.specificOption == owner)
                 && (action.maxDistance >= distance
                     || action.draggingOwners.has(owner)))
@@ -123,7 +124,7 @@ class PointerInteractable extends Interactable {
     triggerDraggableActions(owner, closestPoint, distance) {
         for(let action of this._actions) {
             if(action.draggableAction
-                && (!action.tool || action.tool == global.tool)
+                && (!action.tool || action.tool == ToolHandler.getTool())
                 && (!action.specificOption || action.specificOption == owner)
                 && (action.draggingOwners.has(owner)
                     || action.maxDistance >= distance))

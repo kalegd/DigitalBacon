@@ -5,13 +5,14 @@
  */
 
 import global from '/scripts/core/global.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
+import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
+import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -50,8 +51,7 @@ class HandsPage extends PaginatedPage {
     _handleItemInteraction(item) {
         if(HandTools.ACTIVE == item.type) return;
         HandTools.ACTIVE = item.type;
-        global.tool = item.type;
-        PubSub.publish(this._id, PubSubTopics.HAND_TOOLS_SWITCH, item.type);
+        ToolHandler.setTool(item.type);
     }
 
     _refreshItems() {

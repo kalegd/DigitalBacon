@@ -19,7 +19,7 @@ class RotateHandler {
         this._quaternion = new Quaternion();
         this._euler1 = new Euler();
         this._euler2 = new Euler();
-        PubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (handTool)=>{
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)

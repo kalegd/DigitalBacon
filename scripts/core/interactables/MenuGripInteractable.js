@@ -10,8 +10,8 @@ import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import * as THREE from 'three';
 
 class MenuGripInteractable extends GripInteractable {
-    constructor(threeObj, border, specificOption) {
-        super(threeObj, specificOption);
+    constructor(threeObj, border) {
+        super(threeObj);
         this._border = border;
     }
 

@@ -15,7 +15,7 @@ class ScaleHandler {
     constructor() {
         this._id = uuidv4();
         this._heldAssets = {};
-        PubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (handTool)=>{
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)

@@ -29,7 +29,7 @@ class GripInteractableHandler extends InteractableHandler {
     }
 
     _setupXRSubscription() {
-        PubSub.subscribe(this._id, PubSubTopics.HAND_TOOLS_SWITCH, (tool) => {
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
             let options = [Hands.LEFT, Hands.RIGHT];
             for(let option of options) {
                 let hoveredInteractable = this._hoveredInteractables[option];
@@ -76,15 +76,13 @@ class GripInteractableHandler extends InteractableHandler {
         let boundingSphere = controller['boundingSphere'];
         if(boundingSphere == null) return;
         for(let interactable of interactables) {
-            if(interactable.specificOption &&
-                interactable.specificOption != controller.option) continue;
             let threeObj = interactable.getThreeObj();
             if(threeObj == null) {
                 if(interactable.children.size != 0)
                     this._scopeInteractables(controller, interactable.children);
                 continue;
             }
-            if(!interactable.supportsOwner(controller.owner)) continue;
+            if(!interactable.supportsOwner(controller.option)) continue;
             let intersects = interactable.intersectsSphere(boundingSphere);
             if(intersects) {
                 if(interactable.children.size != 0) {
