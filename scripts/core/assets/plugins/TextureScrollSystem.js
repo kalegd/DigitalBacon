@@ -9,10 +9,11 @@ if(!window.DigitalBacon) {
     throw new Error('Missing global DigitalBacon reference');
 }
 
-const { Assets, ProjectHandler } = window.DigitalBacon;
+const { Assets, PartyHandler, PartyMessageHelper, ProjectHandler } = window.DigitalBacon;
 const { System } = Assets;
 
 const COMPONENT_ASSET_ID = 'a9d2e22f-ddf6-49fe-a420-5fffd5ee69a3';
+const PEER_TOPIC = 'TextureScrollSystem:offsets';
 
 export default class TextureScrollSystem extends System {
     constructor(params = {}) {
@@ -55,6 +56,50 @@ export default class TextureScrollSystem extends System {
             if(Object.keys(textures).length == 1)
                 delete this._scrollDetails[message.componentId];
         });
+        PartyMessageHelper.registerBlockableHandler(PEER_TOPIC, (p, m) => {
+            this._handleOffsets(p, m);
+        });
+    }
+
+    _onPeerReady() {
+        if(!PartyHandler.isHost()) return;
+        let offsets = {};
+        for(let componentId in this._scrollDetails) {
+            let component = this._scrollDetails[componentId].component;
+            let textures = this._scrollDetails[componentId].textures;
+            offsets[componentId] = {};
+            for(let textureId in textures) {
+                let texture = textures[textureId].getTexture();
+                offsets[componentId][textureId]
+                    = [texture.offset.x, texture.offset.y];
+            }
+        }
+        this._publish(offsets);
+    }
+
+    _handleOffsets(p, m) {
+        let offsets = m.offsets;
+        for(let componentId in offsets) {
+            let component = this._scrollDetails[componentId].component;
+            let textures = this._scrollDetails[componentId].textures;
+            for(let textureId in textures) {
+                if(!(textureId in offsets[componentId])) continue;
+                let peerOffset = offsets[componentId][textureId];
+                let texture = textures[textureId];
+                texture = texture.getTexture();
+                let offset = texture.offset;
+                offset.setX(peerOffset[0]);
+                offset.setY(peerOffset[1]);
+            }
+        }
+    }
+
+    _publish(offsets) {
+        let message = {
+            topic: PEER_TOPIC,
+            offsets: offsets,
+        };
+        PartyMessageHelper.queuePublish(JSON.stringify(message));
     }
 
     update(timeDelta) {

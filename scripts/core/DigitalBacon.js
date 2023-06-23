@@ -10,6 +10,7 @@ import * as Assets from '/scripts/core/assets/Assets.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
@@ -46,6 +47,7 @@ if(window != null) {
         Interactables: Interactables,
         LibraryHandler: LibraryHandler,
         MenuInputs: MenuInputs,
+        PartyHandler: PartyHandler,
         PartyMessageHelper: PartyMessageHelper,
         ProjectHandler: ProjectHandler,
         PubSub: PubSub,
@@ -67,6 +69,7 @@ export { EditorHelpers };
 export { Interactables };
 export { LibraryHandler };
 export { MenuInputs };
+export { PartyHandler };
 export { PartyMessageHelper };
 export { ProjectHandler };
 export { PubSub };
