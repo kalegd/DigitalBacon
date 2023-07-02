@@ -30,12 +30,7 @@
     <div id="container"></div>
     <script type="module">
       import Stats from '/scripts/stats.js';
-      import {
-          setupEditor,
-          getDeviceType,
-          LibraryHandler,
-          ProjectHandler
-      } from 'DigitalBacon';
+      import { setupEditor } from 'DigitalBacon';
 
       let params = {
           projectFilePath: '/projects/default-project.zip',
@@ -46,24 +41,7 @@
           },
       };
 
-      setupEditor("container", params).then(() => {
-          let imagePath;
-          let deviceType = getDeviceType();
-          if(deviceType == "XR") {
-              imagePath = "images/vr_controls.png";
-          } else if(deviceType == "MOBILE") {
-              imagePath = "images/mobile_controls.png";
-          } else if(deviceType == "POINTER") {
-              imagePath = "images/computer_controls.png";
-          }
-          LibraryHandler.loadAsset(imagePath, (assetId) => {
-              ProjectHandler.addImage({
-                  "assetId": assetId,
-                  "position": [0, 1.35, -4.72],
-                  "scale": [3.77, 3.77, 3.77],
-              }, true);
-          });
-      });
+      setupEditor("container", params);
     </script>
     <!--<script>
         //For setting up ServiceWorker
