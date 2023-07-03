@@ -120,12 +120,14 @@ class Keyboard {
         let interactable;
         // Need to make switch run on release otherwise _keysPressed prematurely
         // becomes empty
+        let emptyFunction = () => {};
         if(key.info.command == 'switch') {
             // switch between panels
             interactable = new PointerInteractable(key);
             interactable.addAction(() => { this._switchPanel(); });
         } else {
             interactable = new PointerInteractable(key);
+            interactable.addAction(emptyFunction);
         }
         if(index <= 32) {
             this._pageInteractables[0].push(interactable);
