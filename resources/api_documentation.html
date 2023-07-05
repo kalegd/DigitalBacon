@@ -83,7 +83,7 @@
             <li>
               <a href="#section/LibraryHandler">
                 <label type="section" role="menuitem">
-                  <span title="Library Handler">Library Handler</span>
+                  <span title="LibraryHandler">LibraryHandler</span>
                 </label>
               </a>
             </li>
@@ -91,6 +91,13 @@
               <a href="#section/MenuInputs">
                 <label type="section" role="menuitem">
                   <span title="MenuInputs">MenuInputs</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/PartyHandler">
+                <label type="section" role="menuitem">
+                  <span title="PartyHandler">PartyHandler</span>
                 </label>
               </a>
             </li>
@@ -104,7 +111,7 @@
             <li>
               <a href="#section/ProjectHandler">
                 <label type="section" role="menuitem">
-                  <span title="Project Handler">Project Handler</span>
+                  <span title="ProjectHandler">ProjectHandler</span>
                 </label>
               </a>
             </li>
@@ -135,13 +142,14 @@
         <h1 id="section/Introduction">Introduction</h1>
         <p>DigitalBacon is a library to create and deploy three.js scenes that support PC, Mobile, and VR sessions without all the boilerplate required to do it yourself. Additionally this library hopes to enable developers to create more complex scenes faster by exposing the renderer, scene, camera, helper functions, and more</p>
         <h1 id="section/HowToUse">How to Use</h1>
-        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a>. When importing it into your project, Digital Bacon requires three.js and three-mesh-ui to be included in the import map. Please see below for an example</p>
+        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a>. When importing it into your project, Digital Bacon requires three.js, three-mesh-ui, and three-mesh-bvh to be included in the import map. Please see below for an example that has the dependencies installed locally via npm</p>
         <pre class="codeblock"><code>&lt;script type="importmap"&gt;
   {
     "imports": {
       "DigitalBacon": "/scripts/core/DigitalBacon.js",
       "three": "/node_modules/three/build/three.module.js",
-      "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js"
+      "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js",
+      "three-mesh-bvh": "/node_modules/three-mesh-bvh/build/index.module.js"
     }
   }
 &lt;/script&gt;</code></pre>
@@ -219,6 +227,16 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/MenuInputs">MenuInputs</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">PartyHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/PartyHandler">PartyHandler</a> for more info</p>
               </td>
             </tr>
             <tr>
@@ -623,8 +641,11 @@
         <p class="bold">Vector2Input</p>
         <p class="bold">Vector3Input</p>
         <p>No additional fields</p>
+        <h1 id="section/PartyHandler">PartyHandler</h1>
+        <h5>Functions</h5>
+        <p class="bold">isHost()</p>
+        <p class="return-data">Returns whether or not the user is the Party Host</p>
         <h1 id="section/PartyMessageHelper">PartyMessageHelper</h1>
-        <p>Provides functions to help pass and listen to messages with connected peers</p>
         <h5>Functions</h5>
         <p class="bold">registerHandler(topic, handler)</p>
         <p>Registers a callback function that triggers when messages to the provided topic are received from peers</p>
