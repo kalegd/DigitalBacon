@@ -131,27 +131,20 @@ class PointerInteractableHandler extends InteractableHandler {
         //console.log(intersections);
         for(let intersection of intersections) {
             let interactable = this._getObjectInteractable(intersection.object);
-            if(!interactable) return;
+            if(!interactable) continue;
             let distance = intersection.distance;
             let userDistance = distance;
-            if(distance < controller['closestPointDistance']) {
-                //TODO: interactables that aren't within reach probably
-                //      don't need to be checked again for a while. We
-                //      should add a number attribute like skipFrames that
-                //      lets us know how many frames to skip checking for
-                if(global.deviceType != 'XR') {
-                    global.cameraFocus.getWorldPosition(vector3s[0]);
-                    userDistance = intersection.point
-                        .distanceTo(vector3s[0]);
-                }   
-                if(!interactable.isWithinReach(userDistance)) continue;
-                controller['closestPointDistance'] = distance;
-                controller['closestPoint'] = intersection.point;
-                controller['closestInteractable'] = interactable;
-                controller['userDistance'] = userDistance;
-            }
+            if(global.deviceType != 'XR') {
+                global.cameraFocus.getWorldPosition(vector3s[0]);
+                userDistance = intersection.point
+                    .distanceTo(vector3s[0]);
+            }   
+            if(!interactable.isWithinReach(userDistance)) continue;
+            controller['closestPointDistance'] = distance;
+            controller['closestPoint'] = intersection.point;
+            controller['closestInteractable'] = interactable;
+            controller['userDistance'] = userDistance;
         }
-        return;
     }
 
     _updateInteractables(controllers) {
