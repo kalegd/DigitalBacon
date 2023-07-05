@@ -128,7 +128,6 @@ class PointerInteractableHandler extends InteractableHandler {
         let objects = [];
         this._squashInteractables(controller.option, interactables, objects);
         let intersections = raycaster.intersectObjects(objects);
-        //console.log(intersections);
         for(let intersection of intersections) {
             let interactable = this._getObjectInteractable(intersection.object);
             if(!interactable) continue;
@@ -144,6 +143,7 @@ class PointerInteractableHandler extends InteractableHandler {
             controller['closestPoint'] = intersection.point;
             controller['closestInteractable'] = interactable;
             controller['userDistance'] = userDistance;
+            return;
         }
     }
 
