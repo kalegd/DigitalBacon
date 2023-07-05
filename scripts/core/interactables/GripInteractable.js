@@ -16,6 +16,7 @@ import * as THREE from 'three';
 class GripInteractable extends Interactable {
     constructor(threeObj) {
         super(threeObj);
+        if(threeObj) threeObj.gripInteractable = this;
         this._createBoundingObject();
     }
 

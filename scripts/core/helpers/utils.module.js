@@ -73,6 +73,16 @@ export const disposeMaterial = (material, textures) => {
     material.dispose();    // disposes any programs associated with the material
 };
 
+export const buildBVH = (object3d) => {
+    object3d.traverse((node) => {
+        if (node instanceof THREE.Mesh || node instanceof THREE.Line) {
+            if (node.geometry) {
+                node.geometry.computeBoundsTree();
+            }
+        }
+    });
+}
+
 //https://stackoverflow.com/questions/21711600/javascript-number-precision-without-converting-to-string
 export const roundWithPrecision = (num, p) => {
     let precision = p || 9;

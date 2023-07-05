@@ -102,48 +102,56 @@ class PointerInteractableHandler extends InteractableHandler {
         }
     }
 
-    _raycastInteractables(controller, interactables) {
-        let raycaster = controller['raycaster'];
+    _squashInteractables(option, interactables, objects) {
         for(let interactable of interactables) {
-            let threeObj = interactable.getThreeObj();
-            if(threeObj == null) {
-                if(interactable.children.size != 0)
-                    this._raycastInteractables(controller,
-                        interactable.children);
-                continue;
-            }
-            if(!interactable.supportsOwner(controller.option)) continue;
-            let intersections;
-            if(raycaster == null) {
-                intersections = [];
-            } else {
-                intersections = raycaster.intersectObject(threeObj, true);
-            }
-            if(intersections.length != 0) {
-                if(interactable.children.size != 0) {
-                    this._raycastInteractables(controller,
-                        interactable.children);
-                }
-                let distance = intersections[0].distance;
-                let userDistance = distance;
-                if(distance < controller['closestPointDistance']) {
-                    //TODO: interactables that aren't within reach probably
-                    //      don't need to be checked again for a while. We
-                    //      should add a number attribute like skipFrames that
-                    //      lets us know how many frames to skip checking for
-                    if(global.deviceType != 'XR') {
-                        global.cameraFocus.getWorldPosition(vector3s[0]);
-                        userDistance = intersections[0].point
-                            .distanceTo(vector3s[0]);
-                    }
-                    if(!interactable.isWithinReach(userDistance)) continue;
-                    controller['closestPointDistance'] = distance;
-                    controller['closestPoint'] = intersections[0].point;
-                    controller['closestInteractable'] = interactable;
-                    controller['userDistance'] = userDistance;
-                }
+            if(!interactable.supportsOwner(option)) continue;
+            let object = interactable.getThreeObj();
+            if(object) objects.push(object);
+            if(interactable.children.size != 0) {
+                this._squashInteractables(option, interactable.children,
+                    objects);
             }
         }
+    }
+
+    _getObjectInteractable(object) {
+        while(object != null) {
+            if(object.pointerInteractable) return object.pointerInteractable;
+            object = object.parent;
+        }
+    }
+
+    _raycastInteractables(controller, interactables) {
+        let raycaster = controller['raycaster'];
+        if(!raycaster) return;
+        raycaster.firstHitOnly = true;
+        let objects = [];
+        this._squashInteractables(controller.option, interactables, objects);
+        let intersections = raycaster.intersectObjects(objects);
+        //console.log(intersections);
+        for(let intersection of intersections) {
+            let interactable = this._getObjectInteractable(intersection.object);
+            if(!interactable) return;
+            let distance = intersection.distance;
+            let userDistance = distance;
+            if(distance < controller['closestPointDistance']) {
+                //TODO: interactables that aren't within reach probably
+                //      don't need to be checked again for a while. We
+                //      should add a number attribute like skipFrames that
+                //      lets us know how many frames to skip checking for
+                if(global.deviceType != 'XR') {
+                    global.cameraFocus.getWorldPosition(vector3s[0]);
+                    userDistance = intersection.point
+                        .distanceTo(vector3s[0]);
+                }   
+                if(!interactable.isWithinReach(userDistance)) continue;
+                controller['closestPointDistance'] = distance;
+                controller['closestPoint'] = intersection.point;
+                controller['closestInteractable'] = interactable;
+                controller['userDistance'] = userDistance;
+            }
+        }
+        return;
     }
 
     _updateInteractables(controllers) {

@@ -14,6 +14,7 @@ import Interactable from '/scripts/core/interactables/Interactable.js';
 class PointerInteractable extends Interactable {
     constructor(threeObj, canDisableOrbit) {
         super(threeObj);
+        if(threeObj) threeObj.pointerInteractable = this;
         this._draggableActions = [];
         this._canDisableOrbit = global.deviceType != "XR" && canDisableOrbit;
     }

@@ -10,7 +10,7 @@ import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { defaultImageSize } from '/scripts/core/helpers/constants.js';
-import { blobToHash, uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { blobToHash, buildBVH, uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
@@ -174,6 +174,7 @@ class LibraryHandler {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
+                buildBVH(gltf.scene);
                 if(!ignorePublish)
                     PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                 resolve();

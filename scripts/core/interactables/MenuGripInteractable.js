@@ -12,6 +12,7 @@ import * as THREE from 'three';
 class MenuGripInteractable extends GripInteractable {
     constructor(threeObj, border) {
         super(threeObj);
+        if(threeObj) threeObj.gripInteractable = this;
         this._border = border;
     }
 

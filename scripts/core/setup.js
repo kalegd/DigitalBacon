@@ -60,9 +60,15 @@ import '/node_modules/jszip/dist/jszip.js';
 import '/node_modules/jszip-utils/dist/jszip-utils.js';
 import '/node_modules/nipplejs/dist/nipplejs.js';
 import Main from '/scripts/core/Main.js';
+import * as THREE from 'three';
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
 global.deviceType = "MOBILE";
 global.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
+
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 function start(callback, containerId, params) {
     setupContainer(containerId);

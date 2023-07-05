@@ -237,6 +237,7 @@ class TransformControlsHandler {
         for(let option in controllers) {
             let controller = controllers[option];
             let raycaster = controller['raycaster'];
+            raycaster.firstHitOnly = true;
             raycaster.far = Infinity;
             let isPressed = controller['isPressed'];
             let intersections = (global.deviceType == 'XR')
