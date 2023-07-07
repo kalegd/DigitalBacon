@@ -187,6 +187,7 @@ class LibraryHandler {
             let objectURL = URL.createObjectURL(blob);
             new THREE.TextureLoader().load(objectURL,
                 (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
                     let width = texture.image.width;
                     let height = texture.image.height;
                     if(width > height) {

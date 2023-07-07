@@ -39,6 +39,7 @@ export default class BasicTexture extends Texture {
         this._texture.repeat.fromArray(this._repeat);
         this._texture.offset.fromArray(this._offset);
         this._texture.needsUpdate = true;
+        this._texture.colorSpace = this._colorSpace;
     }
 
     getAssetIds() {

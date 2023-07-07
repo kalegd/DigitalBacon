@@ -8,7 +8,7 @@ import global from '/scripts/core/global.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { CubeTexture } from 'three';
+import { CubeTexture, SRGBColorSpace } from 'three';
 
 const RESOLUTION = 1024;
 const SIDES = {};
@@ -33,6 +33,7 @@ class Skybox {
             SIDES[CubeSides.FRONT].canvas,
             SIDES[CubeSides.BACK].canvas,
         ]);
+        this._scene.background.colorSpace = SRGBColorSpace;
     }
 
     setSides(assetIds) {

@@ -42,6 +42,7 @@ export default class CubeTexture extends Texture {
             images = Array(6).fill(Textures.blackPixel.image);
         this._texture = new THREE.CubeTexture(images, this._mapping);
         this._texture.needsUpdate = true;
+        this._texture.colorSpace = this._colorSpace;
     }
 
     _getImageFromSide(side) {

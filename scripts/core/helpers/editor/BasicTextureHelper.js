@@ -26,6 +26,7 @@ export default class BasicTextureHelper extends TextureHelper {
             "type": EnumInput },
         { "parameter": "repeat", "name": "Repeat", "type": Vector2Input },
         { "parameter": "offset", "name": "Offset", "type": Vector2Input },
+        { "parameter": "colorSpace" },
     ];
 }
 

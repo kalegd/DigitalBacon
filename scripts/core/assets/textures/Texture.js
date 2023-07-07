@@ -6,10 +6,13 @@
 
 import Asset from '/scripts/core/assets/Asset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import { stringOr } from '/scripts/core/helpers/utils.module.js';
+import * as THREE from 'three';
 
 export default class Texture extends Asset {
     constructor(params = {}) {
         super(params);
+        this._colorSpace = stringOr(params['colorSpace'], THREE.SRGBColorSpace);
     }
 
     _getDefaultName() {
@@ -22,7 +25,9 @@ export default class Texture extends Asset {
     }
 
     exportParams() {
-        return super.exportParams();
+        let params = super.exportParams();
+        params['colorSpace'] = this._colorSpace;
+        return params;
     }
 
     _updateTexture() {
@@ -37,6 +42,10 @@ export default class Texture extends Asset {
         setTimeout(() => {
             this._texture.dispose();
         }, 20);
+    }
+
+    getColorSpace() {
+        return this._colorSpace;
     }
 
     getTexture() {
@@ -55,6 +64,12 @@ export default class Texture extends Asset {
     getTextureType() {
         console.error("Texture.getTextureType() should be overridden");
         return;
+    }
+
+    setColorSpace(colorSpace) {
+        this._colorSpace = colorSpace;
+        this._texture.colorSpace = colorSpace;
+        this._updateTexture();
     }
 
     static assetType = AssetTypes.TEXTURE;

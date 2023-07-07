@@ -17,6 +17,12 @@ export const numberOr = (number, defaultValue) => {
         : defaultValue;
 }
 
+export const stringOr = (string, defaultValue) => {
+    return (typeof string == 'string')
+        ? string
+        : defaultValue;
+}
+
 export const compareLists = (list1, list2) => {
     return list1.length == list2.length
         && list1.reduce((a, v, i) => a && list2[i] == v, true);

@@ -174,6 +174,11 @@ for(let character of validKeysString) {
     ValidKeys.add(character);
 }
 
+export const COLOR_SPACE_MAP = {
+    "None": THREE.NoColorSpace,
+    "sRGB": THREE.SRGBColorSpace,
+    "Linear sRGB": THREE.LinearSRGBColorSpace
+};
 export const COMBINE_MAP = {
     "Multiply": THREE.MultiplyOperation,
     "Mix": THREE.MixOperation,

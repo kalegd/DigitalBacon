@@ -21,6 +21,7 @@ export default class CubeTextureHelper extends TextureHelper {
         { "parameter": "images", "name": "Images", "type": CubeImageInput },
         { "parameter": "mapping", "name": "Mapping", "map": MAPPING_MAP,
             "type": EnumInput },
+        { "parameter": "colorSpace" },
     ];
 }
 

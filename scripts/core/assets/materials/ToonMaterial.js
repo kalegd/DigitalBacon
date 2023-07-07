@@ -48,7 +48,6 @@ export default class ToonMaterial extends Material {
             "emissive": this._emissive,
             "emissiveIntensity": this._emissiveIntensity,
             "normalMapType": this._normalMapType,
-            "normalScale": this._normalScale,
             "opacity": this._opacity,
             "side": this._side,
             "transparent": this._transparent,
@@ -56,6 +55,7 @@ export default class ToonMaterial extends Material {
         };
         this._updateMaterialParamsWithMaps(materialParams, MAPS);
         this._material = new THREE.MeshToonMaterial(materialParams);
+        this._material.normalScale.fromArray(this._normalScale);
     }
 
     getMaps() {
@@ -220,9 +220,8 @@ export default class ToonMaterial extends Material {
     }
 
     setNormalScale(normalScale) {
-        if(this._normalScale == normalScale) return;
         this._normalScale = normalScale;
-        this._material.normalScale = normalScale;
+        this._material.normalScale.fromArray(normalScale);
     }
 
     setWireframe(wireframe) {
