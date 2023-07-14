@@ -19,7 +19,7 @@ import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
 import * as Interactables from '/scripts/core/interactables/Interactables.js';
 import * as MenuInputs from '/scripts/core/menu/input/MenuInputs.js';
 
-const version = "0.1.2";
+const version = "0.1.3";
 
 global.version = version;
 
