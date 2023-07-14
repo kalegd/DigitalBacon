@@ -7,12 +7,6 @@
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-
-const SHOULD_HAVE_REFACTORED_SOONER = {
-    BASIC: '95f63d4b-06d1-4211-912b-556b6ce7bf5f',
-    CUBE: '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2',
-};
 
 class TexturesHandler extends AssetsHandler {
     constructor() {
@@ -23,21 +17,6 @@ class TexturesHandler extends AssetsHandler {
     deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
         super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
         asset.dispose();
-    }
-
-    load(assets, isDiff) {
-        if(assets) this._handleOldVersion(assets);
-        super.load(assets, isDiff);
-    }
-
-    _handleOldVersion(assets) {
-        for(let type in SHOULD_HAVE_REFACTORED_SOONER) {
-            if(type in assets) {
-                let id = SHOULD_HAVE_REFACTORED_SOONER[type];
-                assets[id] = assets[type];
-                delete assets[type];
-            }
-        }
     }
 
     getTextureType(id) {

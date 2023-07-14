@@ -53,7 +53,7 @@ export default class TextureScrollSystem extends System {
                 texture.setOffset(texture.getOffset());
                 delete textures[message.id];
             }
-            if(Object.keys(textures).length == 1)
+            if(Object.keys(textures).length == 0)
                 delete this._scrollDetails[message.componentId];
         });
         PartyMessageHelper.registerBlockableHandler(PEER_TOPIC, (p, m) => {

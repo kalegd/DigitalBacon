@@ -75,8 +75,6 @@ class LibraryHandler {
             for(let assetId in library) {
                 let assetDetails = library[assetId];
                 let type = assetDetails['Type'];
-                //TODO: Remove below 1 line in July
-                if(!assetDetails['Filepath']) continue;//Built-in asset
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('arraybuffer')
                     .then((arraybuffer)=>{

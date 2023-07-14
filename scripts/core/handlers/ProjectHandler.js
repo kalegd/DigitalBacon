@@ -64,21 +64,6 @@ class ProjectHandler {
                 LibraryHandler.load(this._projectDetails['library'], jsZip,()=>{
                     global.loadingLocks.delete(lock);
                     SettingsHandler.load(this._projectDetails['settings']);
-                    //TODO: Delete in July
-                    let assets = this._projectDetails['assets'];
-                    if(assets) {
-                        for(let assetId in assets) {
-                            let assetType = LibraryHandler.getType(assetId);
-                            assetType = assetType.toLowerCase() + 's';
-                            if(!(assetType in this._projectDetails))
-                                this._projectDetails[assetType] = {};
-                            this._projectDetails[assetType][assetId]
-                                = assets[assetId];
-                        }
-                        PubSub.publish(this._id,PubSubTopics.MENU_NOTIFICATION,{
-                            text: "The project's version is outdated and won't be supported starting in July. Please save a new copy of it",
-                        });
-                    }
                     //TODO: Loop through this._assetHandlers. Not doing it now
                     //      because order is semi-important. Eventually it
                     //      shouldn't matter as there's the potential for
