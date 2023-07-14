@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight as PointLight$1, DirectionalLight, MeshBasicMaterial, sRGBEncoding, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, InterpolateLinear, AnimationClip, Bone, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Sphere, Interpolant, CubeTexture as CubeTexture$1, SphereGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
+import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight as PointLight$1, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, NumberKeyframeTrack, QuaternionKeyframeTrack, Box3, Sphere, Interpolant, CubeTexture as CubeTexture$1, SphereGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -198,6 +199,12 @@ const numberOr = (number, defaultValue) => {
         : defaultValue;
 };
 
+const stringOr = (string, defaultValue) => {
+    return (typeof string == 'string')
+        ? string
+        : defaultValue;
+};
+
 const compareLists = (list1, list2) => {
     return list1.length == list2.length
         && list1.reduce((a, v, i) => a && list2[i] == v, true);
@@ -252,6 +259,16 @@ const disposeMaterial = (material, textures) => {
     }
 
     material.dispose();    // disposes any programs associated with the material
+};
+
+const buildBVH = (object3d) => {
+    object3d.traverse((node) => {
+        if (node instanceof THREE.Mesh || node instanceof THREE.Line) {
+            if (node.geometry) {
+                node.geometry.computeBoundsTree();
+            }
+        }
+    });
 };
 
 //https://stackoverflow.com/questions/21711600/javascript-number-precision-without-converting-to-string
@@ -394,6 +411,7 @@ var utils = /*#__PURE__*/Object.freeze({
   __proto__: null,
   Queue: Queue,
   blobToHash: blobToHash,
+  buildBVH: buildBVH,
   capitalizeFirstLetter: capitalizeFirstLetter,
   cartesianToPolar: cartesianToPolar,
   compareLists: compareLists,
@@ -407,6 +425,7 @@ var utils = /*#__PURE__*/Object.freeze({
   rgbToHex: rgbToHex,
   rgbToHexColorString: rgbToHexColorString,
   roundWithPrecision: roundWithPrecision,
+  stringOr: stringOr,
   stringWithMaxLength: stringWithMaxLength,
   uuidv4: uuidv4
 });
@@ -582,6 +601,11 @@ for(let character of validKeysString) {
     ValidKeys.add(character);
 }
 
+const COLOR_SPACE_MAP = {
+    "None": THREE.NoColorSpace,
+    "sRGB": THREE.SRGBColorSpace,
+    "Linear sRGB": THREE.LinearSRGBColorSpace
+};
 const COMBINE_MAP = {
     "Multiply": THREE.MultiplyOperation,
     "Mix": THREE.MixOperation,
@@ -796,6 +820,12 @@ class GLTFLoader extends Loader {
 		this.register( function ( parser ) {
 
 			return new GLTFMaterialsIridescenceExtension( parser );
+
+		} );
+
+		this.register( function ( parser ) {
+
+			return new GLTFMaterialsAnisotropyExtension( parser );
 
 		} );
 
@@ -1129,6 +1159,7 @@ const EXTENSIONS = {
 	KHR_MATERIALS_SPECULAR: 'KHR_materials_specular',
 	KHR_MATERIALS_TRANSMISSION: 'KHR_materials_transmission',
 	KHR_MATERIALS_IRIDESCENCE: 'KHR_materials_iridescence',
+	KHR_MATERIALS_ANISOTROPY: 'KHR_materials_anisotropy',
 	KHR_MATERIALS_UNLIT: 'KHR_materials_unlit',
 	KHR_MATERIALS_VOLUME: 'KHR_materials_volume',
 	KHR_TEXTURE_BASISU: 'KHR_texture_basisu',
@@ -1320,7 +1351,7 @@ class GLTFMaterialsUnlitExtension {
 
 			if ( metallicRoughness.baseColorTexture !== undefined ) {
 
-				pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture, sRGBEncoding ) );
+				pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture, SRGBColorSpace ) );
 
 			}
 
@@ -1601,7 +1632,7 @@ class GLTFMaterialsSheenExtension {
 
 		if ( extension.sheenColorTexture !== undefined ) {
 
-			pending.push( parser.assignTexture( materialParams, 'sheenColorMap', extension.sheenColorTexture, sRGBEncoding ) );
+			pending.push( parser.assignTexture( materialParams, 'sheenColorMap', extension.sheenColorTexture, SRGBColorSpace ) );
 
 		}
 
@@ -1834,7 +1865,71 @@ class GLTFMaterialsSpecularExtension {
 
 		if ( extension.specularColorTexture !== undefined ) {
 
-			pending.push( parser.assignTexture( materialParams, 'specularColorMap', extension.specularColorTexture, sRGBEncoding ) );
+			pending.push( parser.assignTexture( materialParams, 'specularColorMap', extension.specularColorTexture, SRGBColorSpace ) );
+
+		}
+
+		return Promise.all( pending );
+
+	}
+
+}
+
+/**
+ * Materials anisotropy Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_anisotropy
+ */
+class GLTFMaterialsAnisotropyExtension {
+
+	constructor( parser ) {
+
+		this.parser = parser;
+		this.name = EXTENSIONS.KHR_MATERIALS_ANISOTROPY;
+
+	}
+
+	getMaterialType( materialIndex ) {
+
+		const parser = this.parser;
+		const materialDef = parser.json.materials[ materialIndex ];
+
+		if ( ! materialDef.extensions || ! materialDef.extensions[ this.name ] ) return null;
+
+		return MeshPhysicalMaterial;
+
+	}
+
+	extendMaterialParams( materialIndex, materialParams ) {
+
+		const parser = this.parser;
+		const materialDef = parser.json.materials[ materialIndex ];
+
+		if ( ! materialDef.extensions || ! materialDef.extensions[ this.name ] ) {
+
+			return Promise.resolve();
+
+		}
+
+		const pending = [];
+
+		const extension = materialDef.extensions[ this.name ];
+
+		if ( extension.anisotropyStrength !== undefined ) {
+
+			materialParams.anisotropy = extension.anisotropyStrength;
+
+		}
+
+		if ( extension.anisotropyRotation !== undefined ) {
+
+			materialParams.anisotropyRotation = extension.anisotropyRotation;
+
+		}
+
+		if ( extension.anisotropyTexture !== undefined ) {
+
+			pending.push( parser.assignTexture( materialParams, 'anisotropyMap', extension.anisotropyTexture ) );
 
 		}
 
@@ -2688,7 +2783,9 @@ const ATTRIBUTES = {
 	NORMAL: 'normal',
 	TANGENT: 'tangent',
 	TEXCOORD_0: 'uv',
-	TEXCOORD_1: 'uv2',
+	TEXCOORD_1: 'uv1',
+	TEXCOORD_2: 'uv2',
+	TEXCOORD_3: 'uv3',
 	COLOR_0: 'color',
 	WEIGHTS_0: 'skinWeight',
 	JOINTS_0: 'skinIndex',
@@ -2910,8 +3007,9 @@ function updateMorphTargets( mesh, meshDef ) {
 
 function createPrimitiveKey( primitiveDef ) {
 
-	const dracoExtension = primitiveDef.extensions && primitiveDef.extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ];
 	let geometryKey;
+
+	const dracoExtension = primitiveDef.extensions && primitiveDef.extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ];
 
 	if ( dracoExtension ) {
 
@@ -2922,6 +3020,16 @@ function createPrimitiveKey( primitiveDef ) {
 	} else {
 
 		geometryKey = primitiveDef.indices + ':' + createAttributesKey( primitiveDef.attributes ) + ':' + primitiveDef.mode;
+
+	}
+
+	if ( primitiveDef.targets !== undefined ) {
+
+		for ( let i = 0, il = primitiveDef.targets.length; i < il; i ++ ) {
+
+			geometryKey += ':' + createAttributesKey( primitiveDef.targets[ i ] );
+
+		}
 
 	}
 
@@ -3774,7 +3882,7 @@ class GLTFParser {
 	 * @param {Object} mapDef
 	 * @return {Promise<Texture>}
 	 */
-	assignTexture( materialParams, mapName, mapDef, encoding ) {
+	assignTexture( materialParams, mapName, mapDef, colorSpace ) {
 
 		const parser = this;
 
@@ -3803,9 +3911,9 @@ class GLTFParser {
 
 			}
 
-			if ( encoding !== undefined ) {
+			if ( colorSpace !== undefined ) {
 
-				texture.encoding = encoding;
+				texture.colorSpace = colorSpace;
 
 			}
 
@@ -3966,7 +4074,7 @@ class GLTFParser {
 
 			if ( metallicRoughness.baseColorTexture !== undefined ) {
 
-				pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture, sRGBEncoding ) );
+				pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture, SRGBColorSpace ) );
 
 			}
 
@@ -4057,7 +4165,7 @@ class GLTFParser {
 
 		if ( materialDef.emissiveTexture !== undefined && materialType !== MeshBasicMaterial ) {
 
-			pending.push( parser.assignTexture( materialParams, 'emissiveMap', materialDef.emissiveTexture, sRGBEncoding ) );
+			pending.push( parser.assignTexture( materialParams, 'emissiveMap', materialDef.emissiveTexture, SRGBColorSpace ) );
 
 		}
 
@@ -4084,17 +4192,17 @@ class GLTFParser {
 
 		const sanitizedName = PropertyBinding.sanitizeNodeName( originalName || '' );
 
-		let name = sanitizedName;
+		if ( sanitizedName in this.nodeNamesUsed ) {
 
-		for ( let i = 1; this.nodeNamesUsed[ name ]; ++ i ) {
+			return sanitizedName + '_' + ( ++ this.nodeNamesUsed[ sanitizedName ] );
 
-			name = sanitizedName + '_' + i;
+		} else {
+
+			this.nodeNamesUsed[ sanitizedName ] = 0;
+
+			return sanitizedName;
 
 		}
-
-		this.nodeNamesUsed[ name ] = true;
-
-		return name;
 
 	}
 
@@ -4292,11 +4400,15 @@ class GLTFParser {
 
 			if ( meshes.length === 1 ) {
 
+				if ( meshDef.extensions ) addUnknownExtensionsToUserData( extensions, meshes[ 0 ], meshDef );
+
 				return meshes[ 0 ];
 
 			}
 
 			const group = new Group();
+
+			if ( meshDef.extensions ) addUnknownExtensionsToUserData( extensions, group, meshDef );
 
 			parser.associations.set( group, { meshes: meshIndex } );
 
@@ -4426,6 +4538,7 @@ class GLTFParser {
 	loadAnimation( animationIndex ) {
 
 		const json = this.json;
+		const parser = this;
 
 		const animationDef = json.animations[ animationIndex ];
 		const animationName = animationDef.name ? animationDef.name : 'animation_' + animationIndex;
@@ -4483,102 +4596,22 @@ class GLTFParser {
 
 				if ( node === undefined ) continue;
 
-				node.updateMatrix();
+				if ( node.updateMatrix ) {
 
-				let TypedKeyframeTrack;
-
-				switch ( PATH_PROPERTIES[ target.path ] ) {
-
-					case PATH_PROPERTIES.weights:
-
-						TypedKeyframeTrack = NumberKeyframeTrack;
-						break;
-
-					case PATH_PROPERTIES.rotation:
-
-						TypedKeyframeTrack = QuaternionKeyframeTrack;
-						break;
-
-					case PATH_PROPERTIES.position:
-					case PATH_PROPERTIES.scale:
-					default:
-
-						TypedKeyframeTrack = VectorKeyframeTrack;
-						break;
+					node.updateMatrix();
+					node.matrixAutoUpdate = true;
 
 				}
 
-				const targetName = node.name ? node.name : node.uuid;
+				const createdTracks = parser._createAnimationTracks( node, inputAccessor, outputAccessor, sampler, target );
 
-				const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[ sampler.interpolation ] : InterpolateLinear;
+				if ( createdTracks ) {
 
-				const targetNames = [];
+					for ( let k = 0; k < createdTracks.length; k ++ ) {
 
-				if ( PATH_PROPERTIES[ target.path ] === PATH_PROPERTIES.weights ) {
-
-					node.traverse( function ( object ) {
-
-						if ( object.morphTargetInfluences ) {
-
-							targetNames.push( object.name ? object.name : object.uuid );
-
-						}
-
-					} );
-
-				} else {
-
-					targetNames.push( targetName );
-
-				}
-
-				let outputArray = outputAccessor.array;
-
-				if ( outputAccessor.normalized ) {
-
-					const scale = getNormalizedComponentScale( outputArray.constructor );
-					const scaled = new Float32Array( outputArray.length );
-
-					for ( let j = 0, jl = outputArray.length; j < jl; j ++ ) {
-
-						scaled[ j ] = outputArray[ j ] * scale;
+						tracks.push( createdTracks[ k ] );
 
 					}
-
-					outputArray = scaled;
-
-				}
-
-				for ( let j = 0, jl = targetNames.length; j < jl; j ++ ) {
-
-					const track = new TypedKeyframeTrack(
-						targetNames[ j ] + '.' + PATH_PROPERTIES[ target.path ],
-						inputAccessor.array,
-						outputArray,
-						interpolation
-					);
-
-					// Override interpolation with custom factory method.
-					if ( sampler.interpolation === 'CUBICSPLINE' ) {
-
-						track.createInterpolant = function InterpolantFactoryMethodGLTFCubicSpline( result ) {
-
-							// A CUBICSPLINE keyframe in glTF has three output values for each input value,
-							// representing inTangent, splineVertex, and outTangent. As a result, track.getValueSize()
-							// must be divided by three to get the interpolant's sampleSize argument.
-
-							const interpolantType = ( this instanceof QuaternionKeyframeTrack ) ? GLTFCubicSplineQuaternionInterpolant : GLTFCubicSplineInterpolant;
-
-							return new interpolantType( this.times, this.values, this.getValueSize() / 3, result );
-
-						};
-
-						// Mark as CUBICSPLINE. `track.getInterpolation()` doesn't support custom interpolants.
-						track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true;
-
-					}
-
-					tracks.push( track );
 
 				}
 
@@ -4910,6 +4943,135 @@ class GLTFParser {
 
 	}
 
+	_createAnimationTracks( node, inputAccessor, outputAccessor, sampler, target ) {
+
+		const tracks = [];
+
+		const targetName = node.name ? node.name : node.uuid;
+
+		const targetNames = [];
+
+		if ( PATH_PROPERTIES[ target.path ] === PATH_PROPERTIES.weights ) {
+
+			node.traverse( function ( object ) {
+
+				if ( object.morphTargetInfluences ) {
+
+					targetNames.push( object.name ? object.name : object.uuid );
+
+				}
+
+			} );
+
+		} else {
+
+			targetNames.push( targetName );
+
+		}
+
+		let TypedKeyframeTrack;
+
+		switch ( PATH_PROPERTIES[ target.path ] ) {
+
+			case PATH_PROPERTIES.weights:
+
+				TypedKeyframeTrack = NumberKeyframeTrack;
+				break;
+
+			case PATH_PROPERTIES.rotation:
+
+				TypedKeyframeTrack = QuaternionKeyframeTrack;
+				break;
+
+			case PATH_PROPERTIES.position:
+			case PATH_PROPERTIES.scale:
+			default:
+				switch ( outputAccessor.itemSize ) {
+
+					case 1:
+						TypedKeyframeTrack = NumberKeyframeTrack;
+						break;
+					case 2:
+					case 3:
+						TypedKeyframeTrack = VectorKeyframeTrack;
+						break;
+
+				}
+
+				break;
+
+		}
+
+		const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[ sampler.interpolation ] : InterpolateLinear;
+
+		const outputArray = this._getArrayFromAccessor( outputAccessor );
+
+		for ( let j = 0, jl = targetNames.length; j < jl; j ++ ) {
+
+			const track = new TypedKeyframeTrack(
+				targetNames[ j ] + '.' + PATH_PROPERTIES[ target.path ],
+				inputAccessor.array,
+				outputArray,
+				interpolation
+			);
+
+			// Override interpolation with custom factory method.
+			if ( interpolation === 'CUBICSPLINE' ) {
+
+				this._createCubicSplineTrackInterpolant( track );
+
+			}
+
+			tracks.push( track );
+
+		}
+
+		return tracks;
+
+	}
+
+	_getArrayFromAccessor( accessor ) {
+
+		let outputArray = accessor.array;
+
+		if ( accessor.normalized ) {
+
+			const scale = getNormalizedComponentScale( outputArray.constructor );
+			const scaled = new Float32Array( outputArray.length );
+
+			for ( let j = 0, jl = outputArray.length; j < jl; j ++ ) {
+
+				scaled[ j ] = outputArray[ j ] * scale;
+
+			}
+
+			outputArray = scaled;
+
+		}
+
+		return outputArray;
+
+	}
+
+	_createCubicSplineTrackInterpolant( track ) {
+
+		track.createInterpolant = function InterpolantFactoryMethodGLTFCubicSpline( result ) {
+
+			// A CUBICSPLINE keyframe in glTF has three output values for each input value,
+			// representing inTangent, splineVertex, and outTangent. As a result, track.getValueSize()
+			// must be divided by three to get the interpolant's sampleSize argument.
+
+			const interpolantType = ( this instanceof QuaternionKeyframeTrack ) ? GLTFCubicSplineQuaternionInterpolant : GLTFCubicSplineInterpolant;
+
+			return new interpolantType( this.times, this.values, this.getValueSize() / 3, result );
+
+		};
+
+		// Mark as CUBICSPLINE. `track.getInterpolation()` doesn't support custom interpolants.
+		track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true;
+
+	}
+
 }
 
 /**
@@ -5126,9 +5288,6 @@ function clone( source ) {
 
 }
 
-
-
-
 function parallelTraverse( a, b, callback ) {
 
 	callback( a, b );
@@ -5207,8 +5366,6 @@ class LibraryHandler {
             for(let assetId in library) {
                 let assetDetails = library[assetId];
                 let type = assetDetails['Type'];
-                //TODO: Remove below 1 line in July
-                if(!assetDetails['Filepath']) continue;//Built-in asset
                 let assetPath = assetDetails['Filepath'];
                 let promise = jsZip.file(assetPath).async('arraybuffer')
                     .then((arraybuffer)=>{
@@ -5306,6 +5463,7 @@ class LibraryHandler {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
+                buildBVH(gltf.scene);
                 if(!ignorePublish)
                     pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
                 resolve();
@@ -5318,6 +5476,7 @@ class LibraryHandler {
             let objectURL = URL.createObjectURL(blob);
             new THREE.TextureLoader().load(objectURL,
                 (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
                     let width = texture.image.width;
                     let height = texture.image.height;
                     if(width > height) {
@@ -5507,6 +5666,7 @@ class Skybox {
             SIDES$1[CubeSides.FRONT].canvas,
             SIDES$1[CubeSides.BACK].canvas,
         ]);
+        this._scene.background.colorSpace = SRGBColorSpace;
     }
 
     setSides(assetIds) {
@@ -8514,6 +8674,7 @@ class Interactable {
 class PointerInteractable extends Interactable {
     constructor(threeObj, canDisableOrbit) {
         super(threeObj);
+        if(threeObj) threeObj.pointerInteractable = this;
         this._draggableActions = [];
         this._canDisableOrbit = global$1.deviceType != "XR" && canDisableOrbit;
     }
@@ -9208,21 +9369,6 @@ class ProjectHandler {
                 libraryHandler.load(this._projectDetails['library'], jsZip,()=>{
                     global$1.loadingLocks.delete(lock);
                     settingsHandler.load(this._projectDetails['settings']);
-                    //TODO: Delete in July
-                    let assets = this._projectDetails['assets'];
-                    if(assets) {
-                        for(let assetId in assets) {
-                            let assetType = libraryHandler.getType(assetId);
-                            assetType = assetType.toLowerCase() + 's';
-                            if(!(assetType in this._projectDetails))
-                                this._projectDetails[assetType] = {};
-                            this._projectDetails[assetType][assetId]
-                                = assets[assetId];
-                        }
-                        pubSub.publish(this._id,PubSubTopics.MENU_NOTIFICATION,{
-                            text: "The project's version is outdated and won't be supported starting in July. Please save a new copy of it",
-                        });
-                    }
                     //TODO: Loop through this._assetHandlers. Not doing it now
                     //      because order is semi-important. Eventually it
                     //      shouldn't matter as there's the potential for
@@ -12268,6 +12414,7 @@ class TransformControlsHandler {
         for(let option in controllers) {
             let controller = controllers[option];
             let raycaster = controller['raycaster'];
+            raycaster.firstHitOnly = true;
             raycaster.far = Infinity;
             let isPressed = controller['isPressed'];
             let intersections = (global$1.deviceType == 'XR')
@@ -12584,47 +12731,48 @@ class PointerInteractableHandler extends InteractableHandler {
         }
     }
 
+    _squashInteractables(option, interactables, objects) {
+        for(let interactable of interactables) {
+            if(!interactable.supportsOwner(option)) continue;
+            let object = interactable.getThreeObj();
+            if(object) objects.push(object);
+            if(interactable.children.size != 0) {
+                this._squashInteractables(option, interactable.children,
+                    objects);
+            }
+        }
+    }
+
+    _getObjectInteractable(object) {
+        while(object != null) {
+            if(object.pointerInteractable) return object.pointerInteractable;
+            object = object.parent;
+        }
+    }
+
     _raycastInteractables(controller, interactables) {
         let raycaster = controller['raycaster'];
-        for(let interactable of interactables) {
-            let threeObj = interactable.getThreeObj();
-            if(threeObj == null) {
-                if(interactable.children.size != 0)
-                    this._raycastInteractables(controller,
-                        interactable.children);
-                continue;
-            }
-            if(!interactable.supportsOwner(controller.option)) continue;
-            let intersections;
-            if(raycaster == null) {
-                intersections = [];
-            } else {
-                intersections = raycaster.intersectObject(threeObj, true);
-            }
-            if(intersections.length != 0) {
-                if(interactable.children.size != 0) {
-                    this._raycastInteractables(controller,
-                        interactable.children);
-                }
-                let distance = intersections[0].distance;
-                let userDistance = distance;
-                if(distance < controller['closestPointDistance']) {
-                    //TODO: interactables that aren't within reach probably
-                    //      don't need to be checked again for a while. We
-                    //      should add a number attribute like skipFrames that
-                    //      lets us know how many frames to skip checking for
-                    if(global$1.deviceType != 'XR') {
-                        global$1.cameraFocus.getWorldPosition(vector3s[0]);
-                        userDistance = intersections[0].point
-                            .distanceTo(vector3s[0]);
-                    }
-                    if(!interactable.isWithinReach(userDistance)) continue;
-                    controller['closestPointDistance'] = distance;
-                    controller['closestPoint'] = intersections[0].point;
-                    controller['closestInteractable'] = interactable;
-                    controller['userDistance'] = userDistance;
-                }
-            }
+        if(!raycaster) return;
+        raycaster.firstHitOnly = true;
+        let objects = [];
+        this._squashInteractables(controller.option, interactables, objects);
+        let intersections = raycaster.intersectObjects(objects);
+        for(let intersection of intersections) {
+            let interactable = this._getObjectInteractable(intersection.object);
+            if(!interactable) continue;
+            let distance = intersection.distance;
+            let userDistance = distance;
+            if(global$1.deviceType != 'XR') {
+                global$1.cameraFocus.getWorldPosition(vector3s[0]);
+                userDistance = intersection.point
+                    .distanceTo(vector3s[0]);
+            }   
+            if(!interactable.isWithinReach(userDistance)) continue;
+            controller['closestPointDistance'] = distance;
+            controller['closestPoint'] = intersection.point;
+            controller['closestInteractable'] = interactable;
+            controller['userDistance'] = userDistance;
+            return;
         }
     }
 
@@ -13542,6 +13690,7 @@ class Box3Helper extends LineSegments {
 class GripInteractable extends Interactable {
     constructor(threeObj) {
         super(threeObj);
+        if(threeObj) threeObj.gripInteractable = this;
         this._createBoundingObject();
     }
 
@@ -15977,15 +16126,6 @@ new LightsHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const SHOULD_HAVE_REFACTORED_SOONER$1 = {
-    BASIC: '943b7a57-7e8f-4717-9bc6-0ba2637d9e3b',
-    LAMBERT: '5169a83b-1e75-4cb1-8c33-c049726d97e4',
-    NORMAL: '61262e1f-5495-4280-badc-b9e4599026f7',
-    PHONG: 'c9cfa45a-99b4-4166-b252-1c68b52773b0',
-    STANDARD: 'a6a1aa81-50a6-4773-aaf5-446d418c9817',
-    TOON: 'be461019-0fc2-4c88-bee4-290ee3a585eb',
-};
-
 class MaterialsHandler extends AssetsHandler {
     constructor() {
         super(PubSubTopics.MATERIAL_ADDED, PubSubTopics.MATERIAL_DELETED,
@@ -16001,21 +16141,6 @@ class MaterialsHandler extends AssetsHandler {
         super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
         asset.dispose();
         if(asset.editorHelper) asset.editorHelper.dispose();
-    }
-
-    load(assets, isDiff) {
-        if(assets) this._handleOldVersion(assets);
-        super.load(assets, isDiff);
-    }
-
-    _handleOldVersion(assets) {
-        for(let type in SHOULD_HAVE_REFACTORED_SOONER$1) {
-            if(type in assets) {
-                let id = SHOULD_HAVE_REFACTORED_SOONER$1[type];
-                assets[id] = assets[type];
-                delete assets[type];
-            }
-        }
     }
 }
 
@@ -16137,11 +16262,6 @@ new SystemsHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const SHOULD_HAVE_REFACTORED_SOONER = {
-    BASIC: '95f63d4b-06d1-4211-912b-556b6ce7bf5f',
-    CUBE: '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2',
-};
-
 class TexturesHandler extends AssetsHandler {
     constructor() {
         super(PubSubTopics.TEXTURE_ADDED, PubSubTopics.TEXTURE_DELETED,
@@ -16151,21 +16271,6 @@ class TexturesHandler extends AssetsHandler {
     deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
         super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
         asset.dispose();
-    }
-
-    load(assets, isDiff) {
-        if(assets) this._handleOldVersion(assets);
-        super.load(assets, isDiff);
-    }
-
-    _handleOldVersion(assets) {
-        for(let type in SHOULD_HAVE_REFACTORED_SOONER) {
-            if(type in assets) {
-                let id = SHOULD_HAVE_REFACTORED_SOONER[type];
-                assets[id] = assets[type];
-                delete assets[type];
-            }
-        }
     }
 
     getTextureType(id) {
@@ -16523,12 +16628,14 @@ class Keyboard {
         let interactable;
         // Need to make switch run on release otherwise _keysPressed prematurely
         // becomes empty
+        let emptyFunction = () => {};
         if(key.info.command == 'switch') {
             // switch between panels
             interactable = new PointerInteractable(key);
             interactable.addAction(() => { this._switchPanel(); });
         } else {
             interactable = new PointerInteractable(key);
+            interactable.addAction(emptyFunction);
         }
         if(index <= 32) {
             this._pageInteractables[0].push(interactable);
@@ -18258,7 +18365,6 @@ class StandardMaterial extends Material {
             "flatShading": this._flatShading,
             "metalness": this._metalness,
             "normalMapType": this._normalMapType,
-            "normalScale": this._normalScale,
             "opacity": this._opacity,
             "side": this._side,
             "transparent": this._transparent,
@@ -18267,6 +18373,7 @@ class StandardMaterial extends Material {
         };
         this._updateMaterialParamsWithMaps(materialParams, MAPS$1);
         this._material = new THREE.MeshStandardMaterial(materialParams);
+        this._material.normalScale.fromArray(this._normalScale);
     }
 
     getMaps() {
@@ -18495,9 +18602,8 @@ class StandardMaterial extends Material {
     }
 
     setNormalScale(normalScale) {
-        if(this._normalScale == normalScale) return;
         this._normalScale = normalScale;
-        this._material.normalScale = normalScale;
+        this._material.normalScale.fromArray(normalScale);
     }
 
     setRoughness(roughness) {
@@ -18569,7 +18675,6 @@ class ToonMaterial extends Material {
             "emissive": this._emissive,
             "emissiveIntensity": this._emissiveIntensity,
             "normalMapType": this._normalMapType,
-            "normalScale": this._normalScale,
             "opacity": this._opacity,
             "side": this._side,
             "transparent": this._transparent,
@@ -18577,6 +18682,7 @@ class ToonMaterial extends Material {
         };
         this._updateMaterialParamsWithMaps(materialParams, MAPS);
         this._material = new THREE.MeshToonMaterial(materialParams);
+        this._material.normalScale.fromArray(this._normalScale);
     }
 
     getMaps() {
@@ -18741,9 +18847,8 @@ class ToonMaterial extends Material {
     }
 
     setNormalScale(normalScale) {
-        if(this._normalScale == normalScale) return;
         this._normalScale = normalScale;
-        this._material.normalScale = normalScale;
+        this._material.normalScale.fromArray(normalScale);
     }
 
     setWireframe(wireframe) {
@@ -18769,6 +18874,7 @@ libraryHandler.loadBuiltIn(ToonMaterial);
 class Texture extends Asset {
     constructor(params = {}) {
         super(params);
+        this._colorSpace = stringOr(params['colorSpace'], THREE.SRGBColorSpace);
     }
 
     _getDefaultName() {
@@ -18781,7 +18887,9 @@ class Texture extends Asset {
     }
 
     exportParams() {
-        return super.exportParams();
+        let params = super.exportParams();
+        params['colorSpace'] = this._colorSpace;
+        return params;
     }
 
     _updateTexture() {
@@ -18796,6 +18904,10 @@ class Texture extends Asset {
         setTimeout(() => {
             this._texture.dispose();
         }, 20);
+    }
+
+    getColorSpace() {
+        return this._colorSpace;
     }
 
     getTexture() {
@@ -18814,6 +18926,12 @@ class Texture extends Asset {
     getTextureType() {
         console.error("Texture.getTextureType() should be overridden");
         return;
+    }
+
+    setColorSpace(colorSpace) {
+        this._colorSpace = colorSpace;
+        this._texture.colorSpace = colorSpace;
+        this._updateTexture();
     }
 
     static assetType = AssetTypes.TEXTURE;
@@ -18857,6 +18975,7 @@ class BasicTexture extends Texture {
         this._texture.repeat.fromArray(this._repeat);
         this._texture.offset.fromArray(this._offset);
         this._texture.needsUpdate = true;
+        this._texture.colorSpace = this._colorSpace;
     }
 
     getAssetIds() {
@@ -18968,6 +19087,7 @@ class CubeTexture extends Texture {
             images = Array(6).fill(Textures.blackPixel.image);
         this._texture = new THREE.CubeTexture(images, this._mapping);
         this._texture.needsUpdate = true;
+        this._texture.colorSpace = this._colorSpace;
     }
 
     _getImageFromSide(side) {
@@ -22187,6 +22307,11 @@ class TextureHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.TEXTURE_UPDATED);
     }
+
+    static fields = [
+        { "parameter": "colorSpace", "name": "Color Space",
+            "map": COLOR_SPACE_MAP, "type": EnumInput },
+    ];
 }
 
 editorHelperFactory.registerEditorHelper(TextureHelper, Texture);
@@ -22210,6 +22335,7 @@ class BasicTextureHelper extends TextureHelper {
             "type": EnumInput },
         { "parameter": "repeat", "name": "Repeat", "type": Vector2Input },
         { "parameter": "offset", "name": "Offset", "type": Vector2Input },
+        { "parameter": "colorSpace" },
     ];
 }
 
@@ -22299,6 +22425,7 @@ class CubeTextureHelper extends TextureHelper {
         { "parameter": "images", "name": "Images", "type": CubeImageInput },
         { "parameter": "mapping", "name": "Mapping", "map": MAPPING_MAP,
             "type": EnumInput },
+        { "parameter": "colorSpace" },
     ];
 }
 
@@ -34968,6 +35095,7 @@ class NotificationHub extends Entity {
 class MenuGripInteractable extends GripInteractable {
     constructor(threeObj, border) {
         super(threeObj);
+        if(threeObj) threeObj.gripInteractable = this;
         this._border = border;
     }
 
@@ -41155,6 +41283,7 @@ class Main {
 
     _createRenderer() {
         this._renderer = new THREE.WebGLRenderer({ antialias : true });
+        this._renderer.useLegacyLights = false;
         this._container.appendChild(this._renderer.domElement);
         if(global$1.deviceType == "XR") {
             this._renderer.xr.enabled = true;
@@ -41360,6 +41489,10 @@ class Main {
 
 global$1.deviceType = "MOBILE";
 global$1.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
+
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 function start(callback, containerId, params) {
     setupContainer(containerId);

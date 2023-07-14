@@ -16,8 +16,9 @@
       {
         "imports": {
           "DigitalBacon": "/build/DigitalBacon.min.js",
-          "three": "https://cdn.jsdelivr.net/npm/three@0.151.3/build/three.module.js",
-          "three-mesh-ui": "https://cdn.jsdelivr.net/npm/three-mesh-ui@6.5.4/build/three-mesh-ui.module.js"
+          "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
+          "three-mesh-ui": "https://cdn.jsdelivr.net/npm/three-mesh-ui@6.5.4/build/three-mesh-ui.module.js",
+          "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.6.1/src/index.min.js"
         }
       }
     </script>
@@ -30,7 +31,7 @@
     <div id="container"></div>
     <script type="module">
       import Stats from '/scripts/stats.js';
-      import { setupEditor } from 'DigitalBacon';
+      import { setupEditor, getDeviceType } from 'DigitalBacon';
 
       let params = {
           projectFilePath: '/projects/default-project.zip',

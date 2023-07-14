@@ -54,16 +54,79 @@
               </a>
             </li>
             <li>
+              <a href="#section/Assets">
+                <label type="section" role="menuitem">
+                  <span title="Assets">Assets</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/AudioHandler">
+                <label type="section" role="menuitem">
+                  <span title="AudioHandler">AudioHandler</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/EditorHelpers">
+                <label type="section" role="menuitem">
+                  <span title="EditorHelpers">EditorHelpers</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Interactables">
+                <label type="section" role="menuitem">
+                  <span title="Interactables">Interactables</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/LibraryHandler">
                 <label type="section" role="menuitem">
-                  <span title="Library Handler">Library Handler</span>
+                  <span title="LibraryHandler">LibraryHandler</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/MenuInputs">
+                <label type="section" role="menuitem">
+                  <span title="MenuInputs">MenuInputs</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/PartyHandler">
+                <label type="section" role="menuitem">
+                  <span title="PartyHandler">PartyHandler</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/PartyMessageHelper">
+                <label type="section" role="menuitem">
+                  <span title="PartyMessageHelper">PartyMessageHelper</span>
                 </label>
               </a>
             </li>
             <li>
               <a href="#section/ProjectHandler">
                 <label type="section" role="menuitem">
-                  <span title="Project Handler">Project Handler</span>
+                  <span title="ProjectHandler">ProjectHandler</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/PubSub">
+                <label type="section" role="menuitem">
+                  <span title="PubSub">PubSub</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/UserController">
+                <label type="section" role="menuitem">
+                  <span title="UserController">UserController</span>
                 </label>
               </a>
             </li>
@@ -74,19 +137,20 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.1.1)</h1>
+        <h1>DigitalBacon (0.1.3)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
         <p>DigitalBacon is a library to create and deploy three.js scenes that support PC, Mobile, and VR sessions without all the boilerplate required to do it yourself. Additionally this library hopes to enable developers to create more complex scenes faster by exposing the renderer, scene, camera, helper functions, and more</p>
         <h1 id="section/HowToUse">How to Use</h1>
-        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a>. When importing it into your project, Digital Bacon requires three.js and three-mesh-ui to be included in the import map. Please see below for an example</p>
+        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a> or using a package manager like npm. When importing it into your project, Digital Bacon requires three.js, three-mesh-ui, and three-mesh-bvh to be included in the import map. Please see below for an example that has the dependencies installed locally via npm</p>
         <pre class="codeblock"><code>&lt;script type="importmap"&gt;
   {
     "imports": {
-      "DigitalBacon": "/scripts/core/DigitalBacon.js",
+      "DigitalBacon": "/node_modules/digitalbacon/build/DigitalBacon.js",
       "three": "/node_modules/three/build/three.module.js",
-      "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js"
+      "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js",
+      "three-mesh-bvh": "/node_modules/three-mesh-bvh/build/index.module.js"
     }
   }
 &lt;/script&gt;</code></pre>
@@ -106,6 +170,47 @@
                 <p>The version of DigitalBacon this module is</p>
               </td>
             </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Assets</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/Assets">Assets</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">AudioHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/AudioHandler">AudioHandler</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">EditorHelpers</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/EditorHelpers">EditorHelpers</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Interactables</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/Interactables">Interactables</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
               <td>
                 <span></span>
                 <span class="property-name">LibraryHandler</span>
@@ -118,11 +223,61 @@
             <tr>
               <td>
                 <span></span>
+                <span class="property-name">MenuInputs</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/MenuInputs">MenuInputs</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">PartyHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/PartyHandler">PartyHandler</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">PartyMessageHelper</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/PartyMessageHelper">PartyMessageHelper</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
                 <span class="property-name">ProjectHandler</span>
               </td>
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/ProjectHandler">ProjectHandler</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">PubSub</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/PubSub">PubSub</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">UserController</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/UserController">UserController</a> for more info</p>
               </td>
             </tr>
           </tbody>
@@ -233,6 +388,9 @@
             </tr>
           </tbody>
         </table>
+        <p class="bold">getCamera()</p>
+        <p>Should only be run after Promise from setup() or setupEditor() resolves</p>
+        <p class="return-data pb-40">Returns the Camera used for viewing the scene <a href="https://threejs.org/docs/#api/en/cameras/Camera">(See Three.js Camera Documentation for more details)</a></p>
         <p class="bold">getDeviceType()</p>
         <p>Should only be run after Promise from setup() or setupEditor() resolves</p>
         <p class="return-data pb-40">Returns one of "XR", "MOBILE", or "POINTER"</p>
@@ -240,16 +398,94 @@
         <p>Disables immersive capabilities such as the UserController and Menu. Must be run before calling either setup() or setupEditor()</p>
         <h1 id="section/App">App</h1>
         <h5>Functions</h5>
-        <p class="bold">getCamera()</p>
-        <p class="return-data pb-40">Returns the Camera used for viewing the scene <a href="https://threejs.org/docs/#api/en/cameras/Camera">(See Three.js Camera Documentation for more details)</a></p>
         <p class="bold">getRenderer()</p>
         <p class="return-data pb-40">Returns the Renderer <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer">(See Three.js WebGLRenderer Documentation for more details)</a></p>
         <p class="bold">getScene()</p>
         <p class="return-data pb-40">Returns the Scene <a href="https://threejs.org/docs/#api/en/scenes/Scene">(See Three.js Scene Documentation for more details)</a></p>
+        <h1 id="section/Assets">Assets</h1>
+        <p>Click on the below links to see the source code for that asset</p>
+        <h5>Attributes</h5>
+        <ul>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/Asset.js">Asset</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/AssetEntity.js">AssetEntity</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/AudioAsset.js">AudioAsset</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/ClampedTexturePlane.js">ClampedTexturePlane</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/CustomAsset.js">CustomAsset</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/CustomAssetEntity.js">CustomAssetEntity</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/GLTFAsset.js">GLTFAsset</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/components/Component.js">Component</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/materials/Material.js">Material</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/materials/BasicMaterial.js">BasicMaterial</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/materials/StandardMaterial.js">StandardMaterial</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/materials/ToonMaterial.js">ToonMaterial</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/AmbientLight.js">AmbientLight</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/BoxShape.js">BoxShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/CircleShape.js">CircleShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/ConeShape.js">ConeShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/CylinderShape.js">CylinderShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/Light.js">Light</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/Shape.js">Shape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/PlaneShape.js">PlaneShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/PointLight.js">PointLight</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/RingShape.js">RingShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/SphereShape.js">SphereShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/primitives/TorusShape.js">TorusShape</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/textures/Texture.js">Texture</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/textures/BasicTexture.js">BasicTexture</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/textures/CubeTexture.js">CubeTexture</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/systems/System.js">System</a></li>
+        </ul>
+        <h1 id="section/AudioHandler">AudioHandler</h1>
+        <p class="bold">getListener()</p>
+        <p>Useful when needing to create a Custom Asset that uses audio</a></p>
+        <p class="return-data">Returns the <a href="https://threejs.org/docs/#api/en/audio/AudioListener">AudioListener</a> that represents the virtual listener of all audio</p>
+        <p class="bold">setListenerParent(listenerParent)</p>
+        <p>Makes the AudioListener a child of the parent</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">listenerParent</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object3D</p>
+                <p>The three.js Object3D you want to set as the parent of the AudioListener</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="section/EditorHelpers">EditorHelpers</h1>
+        <p>Inherit from the provided EditorHelpers when creating your own assets to enable configuring your custom assets in the editor</p>
+        <h5>Attributes</h5>
+        <ul>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/AssetEntityHelper.js">AssetEntityHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/AudioHelper.js">AudioHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/ComponentHelper.js">ComponentHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/CustomAssetHelper.js">CustomAssetHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/CustomAssetEntityHelper.js">CustomAssetEntityHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/EditorHelper.js">EditorHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/EditorHelperFactory.js">EditorHelperFactory</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/MaterialHelper.js">MaterialHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/LightHelper.js">LightHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/ShapeHelper.js">ShapeHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/SystemHelper.js">SystemHelper</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/TextureHelper.js">TextureHelper</a></li>
+        </ul>
+        <h1 id="section/Interactables">Interactables</h1>
+        <p>Make assets interactive by creating Interactables for them and adding them to their corresponding InteractableHandler</p>
+        <h5>Attributes</h5>
+        <ul>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/interactables/Interactable.js">Interactable</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/interactables/GripInteractable.js">GripInteractable</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/interactables/PointerInteractable.js">PointerInteractable</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/handlers/GripInteractableHandler.js">GripInteractableHandler</a></li>
+          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/handlers/PointerInteractableHandler.js">PointerInteractableHandler</a></li>
+        </ul>
         <h1 id="section/LibraryHandler">LibraryHandler</h1>
         <p class="bold">loadAsset(filepath, callback)</p>
         <p>Adds image/model to library</p>
-        <p class="return-data">Returns Promise&lt;App&gt; that resolves after initial assets have loaded</p>
+        <p class="return-data">Returns Promise&lt;assetId&gt; that resolves after initial assets have loaded</p>
         <table class="attributes">
           <tbody>
             <tr>
@@ -270,13 +506,13 @@
               <td class="details">
                 <p class="datatype">function</p>
                 <p class="optional">Optional</p>
-                <p>Callback that when called, will pass in the library asset object</p>
+                <p>Callback that when called, will pass in the library asset id</p>
               </td>
             </tr>
           </tbody>
         </table>
         <p class="bold">getType(assetId)</p>
-        <p class="return-data">Returns the type of the corresponding asset. Will be one of "MODEL", "IMAGE", "LIGHT", or "SHAPE"</p>
+        <p class="return-data">Returns the type of the corresponding asset. Will be one of "MODEL", "IMAGE", "LIGHT", "SHAPE", "MATERIAL", "TEXTURE", "COMPONENT", or "SYSTEM"</p>
         <table class="attributes">
           <tbody>
             <tr>
@@ -287,6 +523,173 @@
               <td class="details">
                 <p class="datatype">String</p>
                 <p>id of the asset in question</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="section/MenuInputs">MenuInputs</h1>
+        <p>Object containing different Input Types. Particularly useful when defining new EditorHelpers for your custom assets. The tables below list the parameters you can provide for each type when defined for an EditorHelper. To see the actual parameters these Classes accept, please see the <a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/menu/input">source code here</a></p>
+        <h5>Attributes for use with EditorHelper</h5>
+        <p class="bold">Required with MenuInputs for newly defined parameters</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">parameter</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>parameter name of the asset that this Checkbox affects</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">name</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>User friendly name for this parameter. Optional when listing an inherited parameter</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">AudioInput</p>
+        <p>No additional fields</p>
+        <p class="bold">CheckboxInput</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">suppressMenuFocusEvent</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Suppresses the Menu Focus Event from being published</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">ColorInput</p>
+        <p class="bold">CubeImageInput</p>
+        <p>No additional fields</p>
+        <p class="bold">EnumInput</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">map</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object&lt;String, Any&gt;</p>
+                <p>Map of user friendly names to their corresponding value to be used when setting the Asset's parameter</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">EulerInput</p>
+        <p class="bold">ImageInput</p>
+        <p class="bold">MaterialInput</p>
+        <p>No additional fields</p>
+        <p class="bold">NumberInput</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">min</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p class="optional">Optional</p>
+                <p>Maximum value this field can be set to</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">max</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p class="optional">Optional</p>
+                <p>Minimum value this field can be set to</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">TextureInput</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">filter</span>
+              </td>
+              <td class="details">
+                <p class="datatype">TextureType</p>
+                <p class="optional">Optional</p>
+                <p>Only allow user to select from textures of this type</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">TextInput</p>
+        <p class="bold">Vector2Input</p>
+        <p class="bold">Vector3Input</p>
+        <p>No additional fields</p>
+        <h1 id="section/PartyHandler">PartyHandler</h1>
+        <h5>Functions</h5>
+        <p class="bold">isHost()</p>
+        <p class="return-data">Returns whether or not the user is the Party Host</p>
+        <h1 id="section/PartyMessageHelper">PartyMessageHelper</h1>
+        <h5>Functions</h5>
+        <p class="bold">registerHandler(topic, handler)</p>
+        <p>Registers a callback function that triggers when messages to the provided topic are received from peers</p>
+        <p class="bold">registerBlockableHandler(topic, handler)</p>
+        <p>Same as registerHandler, but will ensure that the callback is triggered after the callbacks for other messages that are received as blockable before this message finish processing first</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">topic</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>Topic that is listened to</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">handler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function(peer, message)</p>
+                <p>Callback function triggered when messages with the provided topic are found</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">publish(message)</p>
+        <p>Publishes a message to all other peers</p>
+        <p class="bold">publishQueue(message)</p>
+        <p>Same as publish, but will ensure that the message is sent after other messages published to the queue before this are sent</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">message</span>
+              </td>
+              <td class="details">
+                <p class="datatype">JSON-String</p>
+                <p>JSON formatted string that must include a top level parameter named "topic" that is used to forward received messages to the correct handler</p>
               </td>
             </tr>
           </tbody>
@@ -330,77 +733,11 @@
             </tr>
           </tbody>
         </table>
-        <p class="bold">addImage(params, ignoreUndoRedo)</p>
-        <p>Adds an instance of ClampedTexturePlane to the project</p>
-        <p class="return-data">Returns the instance of ClampedTexturePlane that was created</p>
+        <p class="bold">addNewAsset(assetId, params, ignoreUndoRedo)</p>
+        <p>Adds a new instance to the project based on the assetId provided</p>
+        <p class="return-data">Returns the asset instance that was created</p>
         <table class="attributes">
           <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p>Parameters used for creating a ClampedTexturePlane</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">ignoreUndoRedo</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Boolean</p>
-                <p class="optional">Optional</p>
-                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">addGLTF(params, ignoreUndoRedo)</p>
-        <p>Adds an instance of GLTFAsset to the project</p>
-        <p class="return-data">Returns the instance of GLTFAsset that was created</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p>Parameters used for creating a GLTFAsset</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">ignoreUndoRedo</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Boolean</p>
-                <p class="optional">Optional</p>
-                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">addLight(params, assetId, ignoreUndoRedo)</p>
-        <p>Adds an instance of the specified Light to the project</p>
-        <p class="return-data">Returns the instance of the specified Light that was created</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p>Parameters used for creating the Light</p>
-              </td>
-            </tr>
             <tr>
               <td>
                 <span></span>
@@ -408,7 +745,18 @@
               </td>
               <td class="details">
                 <p class="datatype">String</p>
-                <p>AssetId for the type of Light you want to create</p>
+                <p>ID of the asset you want to create that corresponds to some existing asset in the Library</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">params</span>
+              </td>
+              <td class="details">
+                <p class="datatype">object</p>
+                <p class="optional">Optional</p>
+                <p>Parameters used for creating the Asset</p>
               </td>
             </tr>
             <tr>
@@ -424,40 +772,133 @@
             </tr>
           </tbody>
         </table>
-        <p class="bold">addShape(params, assetId, ignoreUndoRedo)</p>
-        <p>Adds an instance of the specified Shape to the project</p>
-        <p class="return-data">Returns the instance of the specified Shape that was created</p>
+        <h1 id="section/PubSub">PubSub</h1>
+        <h5>Functions</h5>
+        <p class="bold">subscribe(ownerId, topic, callback)</p>
+        <p>Registers a callback function that triggers when internal messages to the provided topic are received. A given owner can only have 1 subscription per topic</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p>Parameters used for creating the Shape</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">assetId</span>
+                <span class="property-name">ownerId</span>
               </td>
               <td class="details">
                 <p class="datatype">String</p>
-                <p>AssetId for the type of Shape you want to create</p>
+                <p>An id used to identify the publisher/subscriber. If the same ownerId was used to publish to this topic, then this callback function won't be triggered</p>
               </td>
             </tr>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">ignoreUndoRedo</span>
+                <span class="property-name">topic</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>Topic that is listened to</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">handler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function(peer, message)</p>
+                <p>Callback function triggered when messages with the provided topic are found</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">unsubscribe(ownerId, topic)</p>
+        <p>Unregisters the callback function that was provided when subscribing with this same ownerId and topic</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ownerId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The id that was used when subscribing to this same topic before</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">topic</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>Topic that is listened to</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">publish(ownerId, topic, message, urgent)</p>
+        <p>Publishes a message to the given topic</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ownerId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>An id used to identify the publisher/subscriber. If the same ownerId is subscribed to this topic, then that callback function won't be triggered</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">topic</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>Topic that is published to</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">message</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Any</p>
+                <p>Data that you want to publish</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">urgent</span>
               </td>
               <td class="details">
                 <p class="datatype">Boolean</p>
                 <p class="optional">Optional</p>
-                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+                <p>If you want the message to be published immediately, instead of during the publishing period that occurs once per frame</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="section/UserController">UserController</h1>
+        <h5>Functions</h5>
+        <p class="bold">getAvatar()</p>
+        <p>Gets the Avatar of the user</p>
+        <p class="bold">getHand(side)</p>
+        <p>Gets the hand of user for the corresponding side. Returns null if the user is not on an XR device</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">side</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String (RIGHT or LEFT)</p>
+                <p>Which hand you want</p>
               </td>
             </tr>
           </tbody>
