@@ -12,7 +12,6 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
@@ -60,11 +59,6 @@ export default class AudioAsset extends AssetEntity {
     _getDefaultName() {
         return LibraryHandler.getAssetName(this._assetId)
             || 'Audio';
-    }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addNewAsset(this._assetId, params);
     }
 
     exportParams() {

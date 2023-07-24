@@ -28,11 +28,6 @@ export default class Shape extends AssetEntity {
         }
     }
 
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addNewAsset(this._assetId, params);
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['material'] = this._material;

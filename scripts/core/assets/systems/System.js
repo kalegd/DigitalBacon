@@ -32,16 +32,34 @@ export default class System extends Asset {
         });
     }
 
+    _listenForComponentAdded(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED + ':'
+            + componentAssetId, (message) => { handler(message); });
+    }
+
     _listenForComponentAttached(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
-                + componentAssetId, (message) => { handler(message); });
+            + componentAssetId, (message) => { handler(message); });
+    }
+
+    _listenForComponentDeleted(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED + ':'
+            + componentAssetId, (message) => { handler(message); });
     }
 
     _listenForComponentDetached(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
-                + componentAssetId, (message) => { handler(message); });
+            + componentAssetId, (message) => { handler(message); });
+    }
+
+    _listenForComponentUpdated(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_UPDATED + ':'
+            + componentAssetId, (message) => { handler(message); });
     }
 
     _onPeerReady() {}

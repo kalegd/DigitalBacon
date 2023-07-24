@@ -7,7 +7,6 @@
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 
 export default class GLTFAsset extends AssetEntity {
     constructor(params = {}) {
@@ -23,11 +22,6 @@ export default class GLTFAsset extends AssetEntity {
     _getDefaultName() {
         return LibraryHandler.getAssetName(this._assetId)
             || super._getDefaultName();
-    }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addNewAsset(this._assetId, params);
     }
 
     static assetType = AssetTypes.MODEL;

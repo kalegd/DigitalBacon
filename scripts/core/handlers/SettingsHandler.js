@@ -52,6 +52,7 @@ class SettingsHandler {
             this.settings['User Settings']['User Scale'] = 1;
             this.settings['User Settings']['Enable Flying'] = true;
             this.settings['User Settings']['Swap Joysticks'] = false;
+            this.settings['Acknowledgements'] = [];
         } else {
             this.settings = settings;
             if(!this.settings['Acknowledgements']) {

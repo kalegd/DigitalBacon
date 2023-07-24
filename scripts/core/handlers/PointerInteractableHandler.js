@@ -125,6 +125,7 @@ class PointerInteractableHandler extends InteractableHandler {
         let raycaster = controller['raycaster'];
         if(!raycaster) return;
         raycaster.firstHitOnly = true;
+        raycaster.params.Line.threshold = 0.01;
         let objects = [];
         this._squashInteractables(controller.option, interactables, objects);
         let intersections = raycaster.intersectObjects(objects);

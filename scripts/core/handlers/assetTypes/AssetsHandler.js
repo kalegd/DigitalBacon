@@ -43,8 +43,9 @@ export default class AssetsHandler {
                 this.addAsset(asset, true, ignorePublish);
             });
         }
-        if(!ignorePublish)
-            PubSub.publish(this._id, this._addedTopic, asset);
+        if(ignorePublish) return;
+        let topic = this._addedTopic + ':' + asset.getAssetId();
+        PubSub.publish(this._id, topic, asset);
     }
 
     deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
@@ -61,7 +62,8 @@ export default class AssetsHandler {
         ProjectHandler.deleteAssetFromHandler(asset);
         if(asset.update) global.dynamicAssets.delete(asset);
         if(ignorePublish) return;
-        PubSub.publish(this._id, this._deletedTopic, {
+        let topic = this._deletedTopic + ':' + asset.getAssetId();
+        PubSub.publish(this._id, topic, {
             asset: asset,
             undoRedoAction: undoRedoAction,
         });

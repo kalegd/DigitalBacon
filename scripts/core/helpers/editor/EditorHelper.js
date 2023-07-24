@@ -45,7 +45,8 @@ export default class EditorHelper {
     constructor(asset, updatedTopic) {
         this._asset = asset;
         this._id = asset.getId();
-        this._updatedTopic = updatedTopic;
+        this._updatedTopic = updatedTopic + ':' + asset.getAssetId() + ':'
+            + this._id;
         this._deletedAttachedComponents = new Set();
         this._addComponentSubscriptions();
     }

@@ -12,7 +12,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import { euler, quaternion, vector3s, FontSizes } from '/scripts/core/helpers/constants.js';
+import { euler, quaternion, vector3s, FontSizes, ValidKeys } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -134,6 +134,13 @@ class SketchfabLoginPage extends MenuPage {
     }
 
     setContent(sketchfabAsset) {
+        let validCharacters = [];
+        for(let c of sketchfabAsset['name']) {
+            if(ValidKeys.has(c)) {
+                validCharacters.push(c);
+            }
+        }
+        sketchfabAsset['name'] = validCharacters.join('');
         this._titleBlock.children[1].set({ content: sketchfabAsset['name'] });
         this._authorBlock.children[1].set({
             content: 'Author: ' + sketchfabAsset.user.username,

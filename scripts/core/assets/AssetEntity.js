@@ -8,6 +8,7 @@ import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
@@ -46,6 +47,11 @@ export default class AssetEntity extends Asset {
         params['rotation'] = rotation;
         delete params['id'];
         return params;
+    }
+
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
+        return ProjectHandler.addNewAsset(this._assetId, params);
     }
 
     preview() {

@@ -7,7 +7,6 @@
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import * as THREE from 'three';
 
 export default class ClampedTexturePlane extends AssetEntity {
@@ -38,11 +37,6 @@ export default class ClampedTexturePlane extends AssetEntity {
         this._mesh.material.transparent = isTransparent;
         this._transparent = isTransparent;
      }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addNewAsset(this._assetId, params);
-    }
 
     exportParams() {
         let params = super.exportParams();

@@ -177,10 +177,14 @@ class PartyHandler {
                 let zip = new JSZip();
                 zip.loadAsync(buffer).then((zip) => {
                     if(global.isEditor) {
-                        ProjectHandler.loadZip(zip);
-                        this.sendToAllPeers(JSON.stringify({
-                            topic: 'loaded_diff',
-                        }));
+                        ProjectHandler.loadZip(zip, () => {
+                            this.sendToAllPeers(JSON.stringify({
+                                topic: 'loaded_diff',
+                            }));
+                        }, () => {
+                            Party.disconnect();
+                            PartyMessageHelper.notifyDiffError();
+                        });
                     } else {
                         ProjectHandler.loadDiffZip(zip, () => {
                             this.sendToAllPeers(JSON.stringify({
