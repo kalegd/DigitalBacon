@@ -73,6 +73,10 @@ class UserController {
         return this._id;
     }
 
+    getObject() {
+        return this._userObj;
+    }
+
     getAvatar() {
         return this._avatar;
     }

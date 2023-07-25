@@ -323,6 +323,7 @@ class PartyMessageHelper {
             assetId: message.assetId,
             assetType: message.assetType,
             componentId: message.componentId,
+            componentAssetId: message.componentAssetId,
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
         return Promise.resolve();

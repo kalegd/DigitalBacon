@@ -45,7 +45,7 @@ export default class AssetsHandler {
         }
         if(ignorePublish) return;
         let topic = this._addedTopic + ':' + asset.getAssetId();
-        PubSub.publish(this._id, topic, asset);
+        PubSub.publish(this._id, topic, asset, true);
     }
 
     deleteAsset(asset, ignoreUndoRedo, ignorePublish) {

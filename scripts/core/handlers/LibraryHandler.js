@@ -63,7 +63,8 @@ class LibraryHandler {
                     'Name': assetName,
                     'Type': assetType,
                 };
-                PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                    true);
                 if(successCallback) successCallback(assetId);
             });
         });
@@ -174,7 +175,8 @@ class LibraryHandler {
                 this.library[assetId]['Mesh'] = gltf.scene;
                 buildBVH(gltf.scene);
                 if(!ignorePublish)
-                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
                 resolve();
             });
         });
@@ -205,7 +207,7 @@ class LibraryHandler {
                     this.library[assetId]['Mesh'] = mesh;
                     if(!ignorePublish) {
                         PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId);
+                            assetId, true);
                     }
                     resolve();
                 }
@@ -221,7 +223,7 @@ class LibraryHandler {
                     this.library[assetId]['Buffer'] = buffer;
                     if(!ignorePublish) {
                         PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId);
+                            assetId, true);
                     }
                     resolve();
                 }
@@ -234,7 +236,8 @@ class LibraryHandler {
             let objectURL = URL.createObjectURL(blob);
             import(objectURL).then(module => {
                 if(!ignorePublish)
-                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
                 resolve();
             });
         });

@@ -9,10 +9,12 @@ import { setup, setupEditor } from '/scripts/core/setup.js';
 import * as Assets from '/scripts/core/assets/Assets.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
+import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import * as utils from '/scripts/core/helpers/utils.module.js';
 import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
@@ -44,6 +46,7 @@ if(window != null) {
         Assets: Assets,
         AudioHandler: AudioHandler,
         EditorHelpers: EditorHelpers,
+        InputHandler: InputHandler,
         Interactables: Interactables,
         LibraryHandler: LibraryHandler,
         MenuInputs: MenuInputs,
@@ -51,6 +54,7 @@ if(window != null) {
         PartyMessageHelper: PartyMessageHelper,
         ProjectHandler: ProjectHandler,
         PubSub: PubSub,
+        SettingsHandler: SettingsHandler,
         UserController: UserController,
         disableImmersion: disableImmersion,
         getCamera: getCamera,
@@ -66,6 +70,7 @@ if(window != null) {
 export { Assets };
 export { AudioHandler };
 export { EditorHelpers };
+export { InputHandler };
 export { Interactables };
 export { LibraryHandler };
 export { MenuInputs };
@@ -73,6 +78,7 @@ export { PartyHandler };
 export { PartyMessageHelper };
 export { ProjectHandler };
 export { PubSub };
+export { SettingsHandler };
 export { UserController };
 export { disableImmersion };
 export { getCamera };
