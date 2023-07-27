@@ -112,6 +112,13 @@ class GoogleDrive {
         this._fileId = null;
     }
 
+    getCurrentFileName() {
+        for(let file of this._files) {
+            if(file.id == this._fileId) return file.name;
+        }
+        return '';
+    }
+
     fetchFiles(callback) {
         var request = gapi.client.drive.files.list({
             'q': "mimeType='application/zip'",

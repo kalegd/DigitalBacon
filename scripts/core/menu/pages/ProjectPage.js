@@ -122,31 +122,54 @@ class ProjectPage extends PaginatedPage {
     _googleDriveSave() {
         if(GoogleDrive.isSignedIn()) {
             if(GoogleDrive.hasActiveFile()) {
-                this._updateSaving(false);
-                PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
-                GoogleDrive.save(
-                    ProjectHandler.exportProject(),
-                    () => { this._saveSuccessCallback(); },
-                    () => { this._saveErrorCallback(); });
-                return;
+                let page = this._controller.getPage(MenuPages.TWO_BUTTON);
+                let filename = GoogleDrive.getCurrentFileName();
+                page.setContent(
+                    "Would you like to overwrite " + filename
+                        + " or save the project as a new one?",
+                    "Overwrite existing project",
+                    "Save as new",
+                    () => {
+                        this._controller.popPage();
+                        this._googleDriveOverwrite();
+                    },
+                    () => {
+                        this._controller.popPage();
+                        this._googleDriveSaveAs();
+                    });
+                this._controller.pushPage(MenuPages.TWO_BUTTON);
+            } else {
+                this._googleDriveSaveAs();
             }
-            let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
-            inputPage.setContent("Save Project As", "Filename", "Save",
-                (projectName) => {
-                    this._updateSaving(false);
-                    PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING,false);
-                    GoogleDrive.saveAs(
-                        projectName,
-                        ProjectHandler.exportProject(),
-                        () => { this._saveSuccessCallback(); },
-                        () => { this._saveErrorCallback(); });
-                    this._controller.back();
-                }
-            );
-            this._controller.pushPage(MenuPages.TEXT_INPUT);
         } else {
             this._googleDriveSignin(() => this._googleDriveSave());
         }
+    }
+
+    _googleDriveOverwrite() {
+        this._updateSaving(false);
+        PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+        GoogleDrive.save(
+            ProjectHandler.exportProject(),
+            () => { this._saveSuccessCallback(); },
+            () => { this._saveErrorCallback(); });
+    }
+
+    _googleDriveSaveAs() {
+        let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
+        inputPage.setContent("Save Project As", "Filename", "Save",
+            (projectName) => {
+                this._updateSaving(false);
+                PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING,false);
+                GoogleDrive.saveAs(
+                    projectName,
+                    ProjectHandler.exportProject(),
+                    () => { this._saveSuccessCallback(); },
+                    () => { this._saveErrorCallback(); });
+                this._controller.back();
+            }
+        );
+        this._controller.pushPage(MenuPages.TEXT_INPUT);
     }
 
     _googleDriveLoad() {
@@ -194,7 +217,6 @@ class ProjectPage extends PaginatedPage {
     _handleLocalFile(file) {
         this._updateLoading(false);
         JSZip.loadAsync(file).then((jsZip) => {
-            GoogleDrive.clearActiveFile();
             ProjectHandler.loadZip(jsZip, () => {
                 PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
                     { text: 'Project Loaded', });
