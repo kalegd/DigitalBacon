@@ -38,6 +38,8 @@ class InputHandler {
         this._screenTouched = false;
         this._joystickAngle = 0;
         this._joystickDistance = 0;
+        this._extraControls = {};
+        this._extraControlsDiv = document.getElementById('extra-controls');
         this._addEventListeners();
     }
 
@@ -106,15 +108,15 @@ class InputHandler {
     createPointerControls() {
         let menuOpenButton = document.getElementById('mobile-menu-open-button');
         menuOpenButton.classList.remove("hidden");
+        this._extraControlsDiv.classList.remove("hidden");
     }
 
     createMobileControls() {
         let joystickParent = document.getElementById('mobile-joystick');
         let menuOpenButton = document.getElementById('mobile-menu-open-button');
-        let menuFlyingParent =document.getElementById('mobile-flying-controls');
         joystickParent.classList.remove("hidden");
         menuOpenButton.classList.remove("hidden");
-        menuFlyingParent.classList.remove("hidden");
+        this._extraControlsDiv.classList.remove("hidden");
         let options = {
             zone: joystickParent,
             mode: 'static',
@@ -259,6 +261,29 @@ class InputHandler {
 
     getJoystickDistance() {
         return this._joystickDistance;
+    }
+
+    addExtraControlsButton(id, name) {
+        let button = document.createElement('button');
+        button.id = id;
+        button.innerText = name;
+        this._extraControlsDiv.appendChild(button);
+        this._extraControls[id] = button;
+        return button;
+    }
+
+    getExtraControlsButton(id) {
+        return this._extraControls[id];
+    }
+
+    hideExtraControlsButton(id) {
+        let button = this._extraControls[id];
+        if(button) button.style.display = 'none';
+    }
+
+    showExtraControlsButton(id) {
+        let button = this._extraControls[id];
+        if(button) button.style.display = 'inline-block';
     }
 
     _updateXRController(frame, referenceSpace, xrInputSource, xrController) {

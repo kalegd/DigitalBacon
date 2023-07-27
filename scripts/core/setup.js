@@ -157,13 +157,13 @@ function setupContainer(containerId) {
     right: 10px;
 }
 
-#mobile-flying-controls {
+#extra-controls {
     position: absolute;
     bottom: 10px;
     right: 10px;
 }
 
-#mobile-flying-controls > button, #mobile-menu-open-button {
+#extra-controls > button, #mobile-menu-open-button {
     border-width: 1px;
     border-style: solid;
     border-color: #fff;
@@ -172,10 +172,11 @@ function setupContainer(containerId) {
     padding: 12px;
     color: #fff;
     font: normal 13px sans-serif;
+    margin-left: 5px;
     opacity: 0.75;
 }
 
-#mobile-flying-controls > button {
+#extra-controls > button {
     width: 70px;
 }
 
@@ -277,10 +278,7 @@ function setupContainer(containerId) {
       </div>
       <div id="mobile-joystick" class="hidden"></div>
       <button id="mobile-menu-open-button" class="hidden">OPEN MENU</button>
-      <div id="mobile-flying-controls" class="hidden">
-        <button id="mobile-flying-up-button">UP</button>
-        <button id="mobile-flying-down-button">DOWN</button>
-      </div>`;
+      <div id="extra-controls" class="hidden"></div>`;
     container.style.position = 'relative';
 }
 

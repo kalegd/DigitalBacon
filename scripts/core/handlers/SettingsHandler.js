@@ -8,6 +8,7 @@ import global from '/scripts/core/global.js';
 import Skybox from '/scripts/core/assets/Skybox.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
@@ -79,6 +80,7 @@ class SettingsHandler {
                     this.settings['User Settings']['Swap Joysticks'] = false;
                 }
             }
+            this._updateFlyingButtons();
         }
         Skybox.setSides(this.settings['Skybox']);
     }
@@ -125,6 +127,7 @@ class SettingsHandler {
 
     setEditorSetting(key, value) {
         if(key in this.editorSettings) this.editorSettings[key] = value;
+        this._updateFlyingButtons();
     }
 
     getUserSettings() {
@@ -135,6 +138,7 @@ class SettingsHandler {
         if(!(key in this.settings['User Settings'])) return;
 
         this.settings['User Settings'][key] = value;
+        this._updateFlyingButtons();
         if(!ignorePublish)
             PubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED, {
                 settings: this.settings,
@@ -168,6 +172,17 @@ class SettingsHandler {
 
     getSettings() {
         return this.settings;
+    }
+
+    _updateFlyingButtons() {
+        if(global.deviceType != 'MOBILE') return;
+        if(this.isFlyingEnabled()) {
+            InputHandler.showExtraControlsButton('mobile-flying-up-button');
+            InputHandler.showExtraControlsButton('mobile-flying-down-button');
+        } else {
+            InputHandler.hideExtraControlsButton('mobile-flying-up-button');
+            InputHandler.hideExtraControlsButton('mobile-flying-down-button');
+        }
     }
 
 }

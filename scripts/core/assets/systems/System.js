@@ -10,10 +10,23 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 
+const ATTACHED_COMPONENTS = {};
+
+PubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_ATTACHED, (message) =>{
+    if(!(message.componentAssetId in ATTACHED_COMPONENTS))
+        ATTACHED_COMPONENTS[message.componentAssetId] = {};
+    ATTACHED_COMPONENTS[message.componentAssetId][message.id] = message;
+});
+
+PubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_DETACHED, (message) =>{
+    if(!(message.componentAssetId in ATTACHED_COMPONENTS)) return;
+    delete ATTACHED_COMPONENTS[message.componentAssetId][message.id];
+});
+
 export default class System extends Asset {
     constructor(params = {}) {
         super(params);
-        this._addSystemSubscriptions();
+        this._subscriptionTopics = [];
     }
 
     _getDefaultName() {
@@ -30,36 +43,56 @@ export default class System extends Asset {
         PubSub.subscribe(this._id, PubSubTopics.PARTY_ENDED, () => {
             this._onPartyEnded();
         });
+        this._subscriptionTopics.push(PubSubTopics.PEER_READY);
+        this._subscriptionTopics.push(PubSubTopics.PARTY_STARTED);
+        this._subscriptionTopics.push(PubSubTopics.PARTY_ENDED);
+    }
+
+    _removeSubscriptions() {
+        for(let subscription of this._subscriptionTopics) {
+            PubSub.unsubscribe(this._id, subscription);
+        }
+        this._subscriptionTopics = [];
     }
 
     _listenForComponentAdded(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ADDED + ':'
-            + componentAssetId, (message) => { handler(message); });
+        let topic = PubSubTopics.COMPONENT_ADDED + ':' + componentAssetId;
+        PubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
     }
 
     _listenForComponentAttached(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
-            + componentAssetId, (message) => { handler(message); });
+        let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
+        PubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+        if(componentAssetId in ATTACHED_COMPONENTS) {
+            for(let id in ATTACHED_COMPONENTS[componentAssetId]) {
+                handler(ATTACHED_COMPONENTS[componentAssetId][id]);
+            }
+        }
     }
 
     _listenForComponentDeleted(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DELETED + ':'
-            + componentAssetId, (message) => { handler(message); });
+        let topic = PubSubTopics.COMPONENT_DELETED + ':' + componentAssetId;
+        PubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
     }
 
     _listenForComponentDetached(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
-            + componentAssetId, (message) => { handler(message); });
+        let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentAssetId;
+        PubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
     }
 
     _listenForComponentUpdated(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
-        PubSub.subscribe(this._id, PubSubTopics.COMPONENT_UPDATED + ':'
-            + componentAssetId, (message) => { handler(message); });
+        let topic = PubSubTopics.COMPONENT_UPDATED + ':' + componentAssetId;
+        PubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
     }
 
     _onPeerReady() {}
@@ -73,6 +106,14 @@ export default class System extends Asset {
 
     needsUpdates() {
         return false;
+    }
+
+    addToScene() {
+        this._addSystemSubscriptions();
+    }
+
+    removeFromScene() {
+        this._removeSubscriptions();
     }
 
     static assetType = AssetTypes.SYSTEM;

@@ -210,7 +210,6 @@ class PointerInteractableHandler extends InteractableHandler {
             let controller = controllers[option];
             let isPressed = controller['isPressed'];
             let selectedInteractable = this._selectedInteractables[option];
-            let userDistance = controller['userDistance'];
             if(this._mobileWasTouched) {
                 if(!selectedInteractable) {
                     this._mobileWasTouched = isPressed;
@@ -218,6 +217,7 @@ class PointerInteractableHandler extends InteractableHandler {
                 }
 
                 this._raycastInteractables(controller, this._interactables);
+                let userDistance = controller['userDistance'];
                 let closestInteractable = controller['closestInteractable'];
                 if(!isPressed) {
                     this._mobileWasTouched = false;
@@ -233,6 +233,7 @@ class PointerInteractableHandler extends InteractableHandler {
             } else if(isPressed) {
                 this._mobileWasTouched = true;
                 this._raycastInteractables(controller, this._interactables);
+                let userDistance = controller['userDistance'];
                 let closestInteractable = controller['closestInteractable'];
                 if(closestInteractable) {
                     closestInteractable.addSelectedBy(option,

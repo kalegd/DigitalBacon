@@ -27,8 +27,10 @@ export default class BasicMovement {
     _setupMobileFlyingButtons() {
         this._mobileUp = false;
         this._mobileDown = false;
-        let upButton = document.getElementById("mobile-flying-up-button")
-        let downButton = document.getElementById("mobile-flying-down-button")
+        let upButton = InputHandler.addExtraControlsButton(
+            'mobile-flying-up-button', 'UP');
+        let downButton = InputHandler.addExtraControlsButton(
+            'mobile-flying-down-button', 'DOWN');
         upButton.addEventListener('touchstart',
             () => { this._mobileUp = true; });
         upButton.addEventListener('touchend',

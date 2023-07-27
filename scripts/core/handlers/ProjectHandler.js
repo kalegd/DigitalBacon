@@ -169,15 +169,17 @@ class ProjectHandler {
         let assetId = asset.getAssetId();
         let assetType = LibraryHandler.getType(asset.getAssetId());
         if(this._assets[id]) {
-            if(asset.removeFromScene && asset.getObject) {
-                for(let i = 0; i < this._objects.length; i++) {
-                    if(asset.getObject() == this._objects[i]) {
-                        this._objects.splice(i,1);
-                        break;
+            if(asset.removeFromScene) {
+                if(asset.getObject) {
+                    for(let i = 0; i < this._objects.length; i++) {
+                        if(asset.getObject() == this._objects[i]) {
+                            this._objects.splice(i,1);
+                            break;
+                        }
                     }
-                }
-                if(asset.getObject().parent != this._scene) {
-                    this._scene.attach(asset.getObject());
+                    if(asset.getObject().parent != this._scene) {
+                        this._scene.attach(asset.getObject());
+                    }
                 }
                 asset.removeFromScene();
             }
@@ -202,9 +204,9 @@ class ProjectHandler {
         let id = asset.getId();
         let assetId = asset.getAssetId();
         let assetType = LibraryHandler.getType(asset.getAssetId());
-        if(asset.addToScene && asset.getObject) {
+        if(asset.addToScene) {
             asset.addToScene(this._scene);
-            this._objects.push(asset.getObject());
+            if(asset.getObject) this._objects.push(asset.getObject());
         }
         if(this._assets[id]) return; //Prevent multi-user collisions
                                               //caused by undo/redo
