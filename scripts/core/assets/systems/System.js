@@ -10,7 +10,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 
-const ATTACHED_COMPONENTS = {};
+let ATTACHED_COMPONENTS = {};
 
 PubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_ATTACHED, (message) =>{
     if(!(message.componentAssetId in ATTACHED_COMPONENTS))
@@ -21,6 +21,10 @@ PubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_ATTACHED, (message) =>{
 PubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_DETACHED, (message) =>{
     if(!(message.componentAssetId in ATTACHED_COMPONENTS)) return;
     delete ATTACHED_COMPONENTS[message.componentAssetId][message.id];
+});
+
+PubSub.subscribe('SYSTEM_MODULE', PubSubTopics.PROJECT_LOADING, (done) => {
+    if(!done) ATTACHED_COMPONENTS = {};
 });
 
 export default class System extends Asset {
