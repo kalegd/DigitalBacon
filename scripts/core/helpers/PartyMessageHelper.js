@@ -17,6 +17,7 @@ const SIXTEEN_KB = 1024 * 16;
 const BLOCKABLE_HANDLERS_MAP = {
     component_attached: '_handleComponentAttached',
     component_detached: '_handleComponentDetached',
+    entity_added: '_handleEntityAdded',
     instance_added: '_handleInstanceAdded',
     instance_deleted: '_handleInstanceDeleted',
     instance_updated: '_handleInstanceUpdated',
@@ -148,6 +149,23 @@ class PartyMessageHelper {
             delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
                 + message.componentAssetId, message);
+        }
+    }
+
+    _handleEntityAdded(peer, message) {
+        let parentAsset = ProjectHandler.getSessionAsset(message.parentId);
+        let childAsset = ProjectHandler.getSessionAsset(message.childId);
+        if(childAsset) {
+            if(childAsset.editorHelper) {
+                childAsset.editorHelper.addTo(parentAsset, true, true);
+            } else {
+                childAsset.addTo(parentAsset, true);
+            }
+            delete message['topic'];
+            PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, message);
+        } else {
+            console.error(
+                "Missing child from entity_added message");
         }
     }
 
@@ -329,6 +347,16 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishEntityAdded(message) {
+        let peerMessage = {
+            topic: 'entity_added',
+            parentId: message.parentId,
+            childId: message.childId,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+        return Promise.resolve();
+    }
+
     _publishInstanceAdded(asset, assetType) {
         let message = {
             topic: 'instance_added',
@@ -465,6 +493,11 @@ class PartyMessageHelper {
                     'component_detached', message);
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.ENTITY_ADDED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishEntityAdded(message);
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (message) =>{
             this._publishQueue.enqueue(() => {
                 return this._publishInstanceAttached(message);
@@ -520,6 +553,7 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.BOOT_PEER);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DETACHED);
+        PubSub.unsubscribe(this._id, PubSubTopics.ENTITY_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);

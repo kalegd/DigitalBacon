@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import Scene from '/scripts/core/assets/Scene.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
@@ -26,6 +27,7 @@ class GripInteractableHandler extends InteractableHandler {
         this._spheres[Hands.LEFT] = new THREE.Sphere();
         this._spheres[Hands.RIGHT] = new THREE.Sphere();
         this._box3 = new THREE.Box3();
+        this.addInteractable(Scene.getGripInteractable());
     }
 
     _setupXRSubscription() {
@@ -76,20 +78,17 @@ class GripInteractableHandler extends InteractableHandler {
         let boundingSphere = controller['boundingSphere'];
         if(boundingSphere == null) return;
         for(let interactable of interactables) {
+            if(interactable.children.size != 0)
+                this._scopeInteractables(controller, interactable.children);
             let threeObj = interactable.getThreeObj();
-            if(threeObj == null) {
-                if(interactable.children.size != 0)
-                    this._scopeInteractables(controller, interactable.children);
+            if(threeObj == null || interactable.isOnlyGroup()
+                    || !interactable.supportsOwner(controller.option)) {
                 continue;
             }
-            if(!interactable.supportsOwner(controller.option)) continue;
             let intersects = interactable.intersectsSphere(boundingSphere);
             if(intersects) {
-                if(interactable.children.size != 0) {
-                    this._scopeInteractables(controller, Array.from(interactable.children));
-                }
                 let distance = interactable.distanceToSphere(boundingSphere);
-                if(!interactable.isOnlyGroup() && distance < controller['closestPointDistance']) {
+                if(distance < controller['closestPointDistance']) {
                     controller['closestPointDistance'] = distance;
                     controller['closestInteractable'] = interactable;
                 }

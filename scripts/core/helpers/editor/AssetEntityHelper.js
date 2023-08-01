@@ -307,10 +307,12 @@ export default class AssetEntityHelper extends EditorHelper {
     _overwriteAssetFunctions() {
         this._asset._addToScene = this._asset.addToScene;
         this._asset._removeFromScene = this._asset.removeFromScene;
-        this._asset.addToScene = (scene) => {
-            this._asset._addToScene(scene);
-            this.addToScene();
-        };
+        this._asset.addToScene =
+            (scene, pointerInteractable, gripInteractable) => {
+                this._asset._addToScene(scene, pointerInteractable,
+                    gripInteractable);
+                this.addToScene();
+            };
         this._asset.removeFromScene = (scene) => {
             this._asset._removeFromScene();
             this.removeFromScene();
@@ -320,7 +322,20 @@ export default class AssetEntityHelper extends EditorHelper {
         }
     }
 
-    addToScene(scene) {
+    addTo(newParent, ignorePublish, ignoreUndoRedo) {
+        let oldParent = this._asset.parent;
+        if(oldParent == newParent) return;
+        this._asset.addTo(newParent, ignorePublish);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this.addTo(oldParent, ignorePublish, true);
+            }, () => {
+                this.addTo(newParent, ignorePublish, true);
+            });
+        }
+    }
+
+    addToScene() {
         if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
         this._addActions();
     }

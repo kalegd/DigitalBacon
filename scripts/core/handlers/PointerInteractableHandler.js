@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import Scene from '/scripts/core/assets/Scene.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
@@ -26,6 +27,7 @@ class PointerInteractableHandler extends InteractableHandler {
     init() {
         super.init();
         this._cursors = {};
+        this.addInteractable(Scene.getPointerInteractable());
     }
 
     _setupXRSubscription() {
@@ -106,7 +108,7 @@ class PointerInteractableHandler extends InteractableHandler {
         for(let interactable of interactables) {
             if(!interactable.supportsOwner(option)) continue;
             let object = interactable.getThreeObj();
-            if(object) objects.push(object);
+            if(object && !interactable.isOnlyGroup()) objects.push(object);
             if(interactable.children.size != 0) {
                 this._squashInteractables(option, interactable.children,
                     objects);

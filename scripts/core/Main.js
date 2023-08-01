@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import Scene from '/scripts/core/assets/Scene.js';
 import EditorMenuController from '/scripts/core/menu/EditorMenuController.js';
 import LiveMenuController from '/scripts/core/menu/LiveMenuController.js';
 import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
@@ -33,8 +34,8 @@ import * as THREE from 'three';
 export default class Main {
     constructor(callback, containerId, params) {
         this._renderer;
-        this._scene;
         this._camera;
+        this._scene = Scene.getObject();
         this._clock = new THREE.Clock();
         this._container = document.getElementById(containerId);
         this._loadingMessage = document.querySelector('#digital-bacon-loading');
@@ -42,7 +43,6 @@ export default class Main {
         this._callback = callback;
 
         this._createRenderer();
-        this._createScene();
         this._createCamera();
         this._createUser();
         this._createHandlers(params.onStart);
@@ -63,11 +63,6 @@ export default class Main {
             this._renderer.xr.enabled = true;
         }
         global.renderer = this._renderer;
-    }
-
-    _createScene() {
-        this._scene = new THREE.Scene();
-        global.scene = this._scene;
     }
 
     _createCamera() {
@@ -97,7 +92,6 @@ export default class Main {
     }
 
     _createHandlers(onStart) {
-        ProjectHandler.init(this._scene);
         if(global.disableImmersion) return;
         SessionHandler.init(this._container, onStart);
         InputHandler.init(this._container, this._renderer, this._userObj);

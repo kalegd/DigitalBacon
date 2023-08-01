@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import Scene from '/scripts/core/assets/Scene.js';
 import Skybox from '/scripts/core/assets/Skybox.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
@@ -37,11 +38,8 @@ class SettingsHandler {
         this.settings['Skybox'][CubeSides.RIGHT] = null;
         this.settings['Skybox'][CubeSides.TOP] = null;
         this.settings['Skybox'][CubeSides.BOTTOM] = null;
-    }
-
-    init(scene) {
-        this._scene = scene;
-        Skybox.init(scene);
+        this._scene = Scene.getObject();
+        Skybox.init(this._scene);
     }
 
     load(settings) {

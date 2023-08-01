@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import Scene from '/scripts/core/assets/Scene.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
@@ -20,16 +21,13 @@ const orderedHandlerKeys = [AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMP
   
 class ProjectHandler {
     constructor() {
-        this._assetHandlers = {};
-    }
-
-    init(scene) {
-        this._scene = scene;
         this._id = uuidv4();
+        this._scene = Scene.getObject();
         this._objects = [];
         this._assets = {};
+        this._assetHandlers = {};
         this._sessionAssets = {};
-        SettingsHandler.init(scene);
+        this._sessionAssets[Scene.getId()] = Scene;
     }
 
     load(projectFilePath, successCallback, errorCallback) {
@@ -74,6 +72,14 @@ class ProjectHandler {
                             this._assetHandlers[key].load(
                                 this._projectDetails[key.toLowerCase() + 's']);
                         }
+                        for(let id in this._assets) {
+                            let asset = this._assets[id];
+                            if(asset.addTo) {
+                                let parentAsset = this._sessionAssets[
+                                    asset.getParentId()];
+                                asset.addTo(parentAsset, true);
+                            }
+                        }
                     } catch(error) {
                         console.error(error);
                         this._handleLoadingError(errorCallback);
@@ -106,6 +112,14 @@ class ProjectHandler {
                         for(let key of orderedHandlerKeys) {
                             this._assetHandlers[key].load(
                                 projectDetails[key.toLowerCase() + 's'], true);
+                        }
+                        for(let id in this._assets) {
+                            let asset = this._assets[id];
+                            if(asset.addTo) {
+                                let parentAsset = this._sessionAssets[
+                                    asset.getParentId()];
+                                asset.addTo(parentAsset, true);
+                            }
                         }
                     } catch(error) {
                         console.error(error);
@@ -202,10 +216,14 @@ class ProjectHandler {
 
     addAssetFromHandler(asset) {
         let id = asset.getId();
-        let assetId = asset.getAssetId();
-        let assetType = LibraryHandler.getType(asset.getAssetId());
         if(asset.addToScene) {
-            asset.addToScene(this._scene);
+            if(asset.parent) {
+                asset.addToScene(asset.parent.getObject(),
+                    asset.parent.getPointerInteractable(),
+                    asset.parent.getGripInteractable());
+            } else {
+                asset.addToScene();
+            }
             if(asset.getObject) this._objects.push(asset.getObject());
         }
         if(this._assets[id]) return; //Prevent multi-user collisions
@@ -216,6 +234,7 @@ class ProjectHandler {
 
     reset() {
         this._sessionAssets = {};
+        this._sessionAssets[Scene.getId()] = Scene;
         if(!global.disableImmersion) UndoRedoHandler.reset();
         for(let type in this._assetHandlers) {
             this._assetHandlers[type].reset();
@@ -265,6 +284,7 @@ class ProjectHandler {
         for(let type in this._assetHandlers) {
             let handler = this._assetHandlers[type];
             let details = handler.getAssetsDetails();
+            if(!details) continue;
             projectDetails[type.toLowerCase() + 's'] = details;
             if(type == AssetTypes.TEXTURE) {
                 let texturesAssetIds = handler.getTexturesAssetIds();

@@ -6,9 +6,12 @@
 
 import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
+import Scene from '/scripts/core/assets/Scene.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
@@ -19,6 +22,8 @@ export default class AssetEntity extends Asset {
     constructor(params = {}) {
         super(params);
         this._object = new THREE.Object3D();
+        this._parentId = params['parentId'] || Scene.getId();
+        this.parent = Scene;
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
@@ -64,6 +69,7 @@ export default class AssetEntity extends Asset {
 
     exportParams() {
         let params = super.exportParams();
+        params['parentId'] = this._parentId;
         params['position'] = this.getPosition();
         params['rotation'] = this.getRotation();
         params['scale'] = this.getScale();
@@ -74,30 +80,25 @@ export default class AssetEntity extends Asset {
     addGripAction(selectedFunc, releasedFunc, tool, option){
         let action = this._gripInteractable.addAction(selectedFunc,
             releasedFunc, tool, option);
-        if(this._gripInteractable.getActionsLength()==1 && this._object.parent){
-            GripInteractableHandler.addInteractable(this._gripInteractable);
-        }
         return action;
     }
 
     addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
         let action = this._pointerInteractable.addAction(actionFunc,
             draggableActionFunc, maxDistance, tool, option);
-        if(this._pointerInteractable.getActionsLength() == 1
-                && this._object.parent)
-        {
-            PointerInteractableHandler.addInteractable(
-                this._pointerInteractable);
-        }
         return action;
+    }
+
+    getGripInteractable() {
+        return this._gripInteractable;
+    }
+
+    getPointerInteractable() {
+        return this._pointerInteractable;
     }
 
     removeGripAction(id) {
         this._gripInteractable.removeAction(id);
-        if(this._gripInteractable.getActionsLength() == 0) {
-            GripInteractableHandler.removeInteractable(
-                this._gripInteractable);
-        }
     }
 
     removePointerAction(id) {
@@ -110,6 +111,10 @@ export default class AssetEntity extends Asset {
 
     getObject() {
         return this._object;
+    }
+
+    getParentId() {
+        return this._parentId;
     }
 
     getPosition() {
@@ -167,24 +172,44 @@ export default class AssetEntity extends Asset {
         this.visualEdit = visualEdit;
     }
 
-    addToScene(scene) {
-        if(scene) scene.add(this._object);
-        if(this._gripInteractable.getActionsLength() > 0) {
-            GripInteractableHandler.addInteractable(
-                this._gripInteractable);
+    add(child, ignorePublish) {
+        child.addTo(this, ignorePublish);
+    }
+
+    addTo(newParent, ignorePublish) {
+        if(!newParent) return;
+        this.parent = newParent;
+        this._parentId = newParent.getId();
+        if(this._object.parent) {
+            this.addToScene(newParent.getObject(),
+                newParent.getPointerInteractable(),
+                newParent.getGripInteractable());
         }
-        if(this._pointerInteractable.getActionsLength() > 0) {
-            PointerInteractableHandler.addInteractable(
-                this._pointerInteractable);
+        if(!ignorePublish) {
+            PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
+                parentId: newParent.getId(),
+                childId: this._id,
+            });
         }
     }
 
+    addToScene(scene, pointerInteractable, gripInteractable) {
+        if(scene) scene.add(this._object);
+        if(pointerInteractable)
+            pointerInteractable.addChild(this._pointerInteractable);
+        if(gripInteractable)
+            gripInteractable.addChild(this._gripInteractable);
+    }
+
     removeFromScene() {
-        if(this._object.parent) {
-            GripInteractableHandler.removeInteractable(
-                this._gripInteractable);
-            PointerInteractableHandler.removeInteractable(
+        if(this._gripInteractable.parent) {
+            this._gripInteractable.parent.removeChild(this._gripInteractable);
+        }
+        if(this._pointerInteractable.parent) {
+            this._pointerInteractable.parent.removeChild(
                 this._pointerInteractable);
+        }
+        if(this._object.parent) {
             this._object.parent.remove(this._object);
             fullDispose(this._object);
         }
