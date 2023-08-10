@@ -67,7 +67,7 @@ export default class Avatar {
                         }
                     });
                     hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.7);
+                    gltf.scene.position.setY(-0.65);
                 }
                 this._avatarParent.add(gltf.scene);
                 this._saveOriginalTransparencyStates();

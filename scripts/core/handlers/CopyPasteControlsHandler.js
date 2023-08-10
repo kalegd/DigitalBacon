@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import UserController from '/scripts/core/assets/UserController.js';
+import global from '/scripts/core/global.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -33,8 +33,10 @@ class CopyPasteControlsHandler {
         if(this._copiedAsset) this._clear();
         this._copiedAsset = asset;
         this._previewAsset = asset.editorHelper.preview();
-        UserController.hands[Hands.LEFT].attach(this._previewAsset.getObject());
-        UserController.hands[Hands.RIGHT].add(this._previewAsset.getObject());
+        global.userController.getController(Hands.LEFT).getObject().attach(
+            this._previewAsset.getObject());
+        global.userController.getController(Hands.RIGHT).getObject().add(
+            this._previewAsset.getObject());
     }
 
     _paste() {

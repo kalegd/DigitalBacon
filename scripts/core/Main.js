@@ -12,11 +12,12 @@ import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
+import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
+import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
@@ -78,7 +79,6 @@ export default class Main {
 
     _createUser() {
         if(global.disableImmersion) return;
-        this._userObj = new THREE.Object3D();
         this._cameraFocus = new THREE.Object3D();
         if(global.deviceType != "XR") {
             //this._cameraFocus.position.setY(1.7); //Height of your eyes
@@ -86,15 +86,16 @@ export default class Main {
             this._camera.position.setZ(1.9);
         }
         this._cameraFocus.add(this._camera);
-        this._userObj.add(this._cameraFocus);
-        this._scene.add(this._userObj);
         global.cameraFocus = this._cameraFocus;
+        global.userController = UserController;
     }
 
     _createHandlers(onStart) {
+        AudioHandler.init();
         if(global.disableImmersion) return;
         SessionHandler.init(this._container, onStart);
-        InputHandler.init(this._container, this._renderer, this._userObj);
+        InputHandler.init(this._container, this._renderer,
+            UserController.getObject());
         PointerInteractableHandler.init();
         UndoRedoHandler.init();
         if(global.deviceType == "XR") {
@@ -143,11 +144,9 @@ export default class Main {
         this._menuController.addToScene(this._scene);
         global.menuController = this._menuController;
 
-        UserController.init({
-            'User Object': this._userObj,
-            'Flight Enabled': true,
-        });
-        UserController.addToScene(this._userObj);
+        UserController.init();
+        UserController.getObject().add(this._cameraFocus);
+        ProjectHandler.addAsset(UserController, true, true);
     }
 
     _addEventListeners() {

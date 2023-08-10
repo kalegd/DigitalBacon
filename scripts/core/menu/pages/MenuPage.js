@@ -113,6 +113,7 @@ class MenuPage extends PointerInteractableEntity {
         this._container.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
         this._containerInteractable = new PointerInteractable(
             this._container.children[0]);
+        this._containerInteractable.addAction(() => {});
         this._pointerInteractable.addChild(this._containerInteractable);
         borderedBlock.add(this._container);
         this._object.add(borderedBlock);

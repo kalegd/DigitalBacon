@@ -3,6 +3,7 @@ const AssetTypes = {
     COMPONENT: "COMPONENT",
     CUSTOM_ASSET: "CUSTOM_ASSET",
     IMAGE: "IMAGE",
+    INTERNAL: "INTERNAL",
     LIGHT: "LIGHT",
     MATERIAL: "MATERIAL",
     MODEL: "MODEL",

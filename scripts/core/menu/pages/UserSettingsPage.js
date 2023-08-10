@@ -50,8 +50,8 @@ class UserSettingsPage extends DynamicFieldsPage {
             'initialValue': 1,
             'onBlur': (oldValue, newValue) => {
                 if(!global.isEditor) {
-                    PubSub.publish(this._id, PubSubTopics.USER_SCALE_UPDATED,
-                        newValue);
+                    global.userController.setScale(
+                        [newValue, newValue, newValue]);
                 }
                 SettingsHandler.setUserSetting('User Scale', newValue);
             },

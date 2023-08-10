@@ -68,6 +68,7 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.UPLOAD] = new UploadPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         for(let assetType in AssetTypes) {
+            if(assetType == AssetTypes.INTERNAL) continue;
             this._pages[assetType + 'S'] = new AssetsPage(this, assetType);
             this._pages[assetType] = new AssetPage(this, assetType);
             this._pages['NEW_' + assetType] = new NewAssetPage(this, assetType);

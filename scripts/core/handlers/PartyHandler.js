@@ -6,8 +6,8 @@
 
 import global from '/scripts/core/global.js';
 import PeerController from '/scripts/core/assets/PeerController.js';
-import UserController from '/scripts/core/assets/UserController.js';
 import Party from '/scripts/core/clients/Party.js';
+import Hands from '/scripts/core/enums/Hands.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
@@ -38,7 +38,8 @@ class PartyHandler {
         for(let peerId in this._peers) {
             let peer = this._peers[peerId];
             if(peer.rtc) peer.rtc.close();
-            if(peer.controller) peer.controller.removeFromScene();
+            if(peer.controller)
+                ProjectHandler.deleteAsset(peer.controller, true, true);
         }
         this._peers = {};
         PartyMessageHelper.handlePartyEnded();
@@ -50,26 +51,11 @@ class PartyHandler {
         rtc.setOnSendDataChannelOpen(() => {
             if(this._successCallback) this._successCallback();
             peer.rtc = rtc;
-            peer.controller = new PeerController(peer.username,
-                this._displayingUsernames);
-            peer.controller.addToScene(global.scene);
-            rtc.sendData(JSON.stringify({
-                "topic": "avatar",
-                "url": UserController.getAvatarUrl(),
-                "isXR": global.deviceType == "XR",
-            }));
-            rtc.sendData(JSON.stringify({
-                topic: 'username',
-                username: this._username,
-            }));
-            rtc.sendData(JSON.stringify({
-                topic: 'user_scale',
-                scale: SettingsHandler.getUserScale(),
-            }));
+            this._sendUserInfo(rtc);
             PartyMessageHelper.handlePeerConnected(peer);
             if(this._isHost) {
                 let zip = (global.isEditor)
-                    ? ProjectHandler.exportProject()
+                    ? ProjectHandler.exportProject(true)
                     : ProjectHandler.exportDiff();
                 this._sendProjectZip(zip, [rtc]);
             }
@@ -78,7 +64,8 @@ class PartyHandler {
             delete peer['rtc'];
         });
         rtc.setOnDisconnect(() => {
-            if(peer.controller) peer.controller.removeFromScene();
+            if(peer.controller)
+                ProjectHandler.deleteAsset(peer.controller, true, true);
             if(peer.id in this._peers) {
                 delete this._peers[peer.id];
                 PartyMessageHelper.handlePeerDisconnected(peer);
@@ -96,6 +83,29 @@ class PartyHandler {
                 this._handleArrayBuffer(peer, message);
             }
         });
+    }
+
+    _sendUserInfo(rtc) {
+        rtc.sendData(JSON.stringify({
+            "topic": "user_controller",
+            "url": global.userController.getAvatarUrl(),
+            "controllerParams": global.userController.exportParams(),
+            "isXR": global.deviceType == "XR",
+        }));
+        for(let hand in Hands) {
+            let xrController = global.userController.getController(hand);
+            if(xrController) {
+                rtc.sendData(JSON.stringify({
+                    "topic": "instance_added",
+                    "asset": xrController.exportParams(),
+                    "assetType": xrController.constructor.assetType,
+                }));
+            }
+        }
+        rtc.sendData(JSON.stringify({
+            topic: 'user_scale',
+            scale: SettingsHandler.getUserScale(),
+        }));
     }
 
     _updatePeerId(oldPeerId, newPeerId) {
@@ -231,16 +241,12 @@ class PartyHandler {
         return this._peers;
     }
 
-    getUsername() {
-        return this._username;
-    }
-
     sendProject() {
         let rtcs = [];
         for(let peerId in this._peers) {
             if(this._peers[peerId].rtc) rtcs.push(this._peers[peerId].rtc);
         }
-        let zip = ProjectHandler.exportProject();
+        let zip = ProjectHandler.exportProject(true);
         this._sendProjectZip(zip, rtcs);
     }
 
@@ -310,13 +316,13 @@ class PartyHandler {
         let timestamp = new Date().getTime() % TWO_BYTE_MOD;
         let buffer = new Uint16Array([timestamp]).buffer;
         buffer = concatenateArrayBuffers(
-            [buffer, ...UserController.getDataForRTC()]);
+            [buffer, ...global.userController.getDataForRTC()]);
         for(let peerId in this._peers) {
             let peer = this._peers[peerId];
             if(peer.controller) {
                 let message = this._getNextJitterBufferMessage(
                     peer.jitterBuffer, timestamp);
-                peer.controller.update(timeDelta, message);
+                if(message) peer.controller.processMessage(message);
             }
             if(peer.rtc) peer.rtc.sendData(buffer);
         }

@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
+import Scene from '/scripts/core/assets/Scene.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
@@ -118,12 +119,15 @@ export default class MenuController extends PointerInteractableEntity {
         let border = this._createBorder();
         let interactable = new MenuGripInteractable(this._object, border);
         interactable.addAction((hand) => {
-                UserController.hands[hand].attach(this._object);
-                this._gripOwners.add(hand);
-            }, (hand) => {
-                UserController.hands[hand].remove(this._object);
-                this._gripOwners.delete(hand);
-            });
+            let controller = UserController.getController(hand);
+            controller.getObject().attach(this._object);
+            this._gripOwners.add(hand);
+        }, (hand) => {
+            let controller = UserController.getController(hand);
+            if(this._object.parent == controller.getObject())
+                Scene.getObject().attach(this._object);
+            this._gripOwners.delete(hand);
+        });
         this._gripInteractable.addChild(interactable);
         Keyboard.init(this._object);
     }

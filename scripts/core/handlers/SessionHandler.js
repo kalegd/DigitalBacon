@@ -19,7 +19,6 @@ class SessionHandler {
         this._orbitControlsTarget = new Vector3(0,0,0);
         this._onStart = onStart;
         global.sessionActive = false;
-        AudioHandler.init();
         if(global.deviceType == "XR") {
             this._configureForXR();
         } else if(global.deviceType == "POINTER") {

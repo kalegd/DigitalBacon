@@ -7,11 +7,14 @@
 import global from '/scripts/core/global.js';
 import Avatar from '/scripts/core/assets/Avatar.js';
 import BasicMovement from '/scripts/core/assets/BasicMovement.js';
-import UserHand from '/scripts/core/assets/UserHand.js';
+import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
+import XRController from '/scripts/core/assets/XRController.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
+import InputHandler from '/scripts/core/handlers/InputHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
@@ -19,27 +22,36 @@ import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js'
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
+const USERNAME_KEY = "DigitalBacon:Username";
 const FADE_START = 0.6;
 const FADE_END = 0.2;
 //const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
 const FADE_RANGE = FADE_START - FADE_END;
 const EPSILON = 0.00000000001;
   
-class UserController {
-    init(params) {
-        if(params == null) {
-            params = {};
-        }
-        this._id = uuidv4();
+class UserController extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = UserController.assetId;
+        super(params);
+        this._isXR = false;
+        this._username = localStorage.getItem(USERNAME_KEY)
+            || generateRandomUsername();
         this._dynamicAssets = [];
-        this._userObj = params['User Object'];
-        this._flightEnabled = params['Flight Enabled'] || false;
         this._avatarUrl = localStorage.getItem(AVATAR_KEY)
             || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
         this._avatarFadeUpdateNumber = 0;
+        this._xrControllers = {};
+        this._xrHands = {};
+        this._xrDevices = new Set();
+    }
 
+    init() {
+        if(global.deviceType == 'XR') {
+            this.setIsXR(true);
+        }
+        let scale = SettingsHandler.getUserScale();
+        this.setScale([scale, scale, scale]);
         this._setup();
-        this._addSubscriptions();
     }
 
     _setup() {
@@ -49,32 +61,12 @@ class UserController {
                 'URL': this._avatarUrl,
             });
             AudioHandler.setListenerParent(this._avatar.getObject());
-        } else {
-            this.hands = {};
-            for(let hand of [Hands.RIGHT, Hands.LEFT]) {
-                let userHand = new UserHand(hand);
-                this.hands[hand] = userHand;
-            }
         }
         this._basicMovement = new BasicMovement({
-            'User Object': this._userObj,
+            'User Object': this._object,
             'Avatar': this._avatar,
         });
         this._dynamicAssets.push(this._basicMovement);
-    }
-
-    _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.USER_SCALE_UPDATED, (scale) => {
-            this._userObj.scale.set(scale, scale, scale);
-        });
-    }
-
-    getId() {
-        return this._id;
-    }
-
-    getObject() {
-        return this._userObj;
     }
 
     getAvatar() {
@@ -85,21 +77,72 @@ class UserController {
         return this._avatarUrl;
     }
 
-    updateAvatar(url) {
+    getIsXR() {
+        return this._isXR;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    setAvatarUrl(url, ignorePublish) {
         localStorage.setItem(AVATAR_KEY, url);
         this._avatarUrl = url;
         if(global.deviceType != "XR") this._avatar.updateSourceUrl(url);
-        PubSub.publish(this._id, PubSubTopics.AVATAR_UPDATED, this._avatarUrl);
+        if(ignorePublish) return;
+        PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this, fields: ['avatarUrl'] });
+    }
+
+    setIsXR(isXR) {
+        this._isXR = isXR;
+    }
+
+    setScale(scale, ignorePublish) {
+        super.setScale(scale);
+        if(ignorePublish) return;
+        PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this, fields: ['scale'] });
+    }
+    setUsername(username, ignorePublish) {
+        localStorage.setItem(USERNAME_KEY, username);
+        this._username = username;
+        if(ignorePublish) return;
+        PubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
+    }
+
+    getController(hand) {
+        return this._xrControllers[hand];
     }
 
     getHand(hand) {
-        return this.hands[hand];
+        return this._xrHands[hand];
+    }
+
+    getXRDevices() {
+        return this._xrDevices;
+    }
+
+    registerXRController(hand, xrController) {
+        this._xrControllers[hand] = xrController;
+    }
+
+    registerXRHand(hand, xrHand) {
+        this._xrHands[hand] = xrHand;
+    }
+
+    registerXRDevice(xrDevice) {
+        this._xrDevices.add(xrDevice);
     }
 
     getDistanceBetweenHands() {
         if(global.deviceType != 'XR') return;
-        let leftPosition = this.hands[Hands.LEFT].getWorldPosition();
-        let rightPosition = this.hands[Hands.RIGHT].getWorldPosition();
+        let leftController = this._xrControllers[Hands.LEFT];
+        let rightController = this._xrControllers[Hands.RIGHT];
+        if(!leftController || !rightController) return;
+
+        let leftPosition = leftController.getWorldPosition();
+        let rightPosition = rightController.getWorldPosition();
         return leftPosition.distanceTo(rightPosition);
     }
 
@@ -118,7 +161,7 @@ class UserController {
             codes += UserMessageCodes.USER_VELOCITY;
         }
         if(global.renderer.info.render.frame % 300 == 0) {
-            this._userObj.getWorldPosition(vector3s[0]);
+            this._object.getWorldPosition(vector3s[0]);
             data.push(...vector3s[0].toArray());
             codes += UserMessageCodes.USER_POSITION;
         }
@@ -127,16 +170,8 @@ class UserController {
     }
 
     _pushAvatarDataForRTC(data) {
-        let userScale = SettingsHandler.getUserScale();
-        global.camera.getWorldPosition(vector3s[0]);
-        this._userObj.getWorldPosition(vector3s[1]);
-        let position = vector3s[0].sub(vector3s[1]).divideScalar(userScale)
-            .toArray();
-
-        global.camera.getWorldQuaternion(quaternion);
-        quaternion.normalize();
-        euler.setFromQuaternion(quaternion);
-        let rotation = euler.toArray();
+        let position = global.camera.position.toArray();
+        let rotation = global.camera.rotation.toArray();
         rotation.pop();
 
         data.push(...position);
@@ -148,14 +183,12 @@ class UserController {
         let codes = 0;
         let userScale = SettingsHandler.getUserScale();
         for(let hand of [Hands.LEFT, Hands.RIGHT]) {
-            let userHand = this.hands[hand];
-            if(userHand.isInScene()) {
-                //Assumes userObj.getWorldPosition() already in vector3s[1]
-                let position = userHand.getWorldPosition().sub(vector3s[1])
-                    .divideScalar(userScale);
-                let rotation = userHand.getWorldRotation().toArray();
+            let controller = this._xrControllers[hand];
+            if(controller.isInScene()) {
+                let position = controller.getObject().position.toArray();
+                let rotation = controller.getObject().rotation.toArray();
                 rotation.pop();
-                data.push(...position.toArray());
+                data.push(...position);
                 data.push(...rotation);
                 codes += UserMessageCodes[hand + '_HAND'];
             }
@@ -163,43 +196,31 @@ class UserController {
         return codes;
     }
 
-    attach(object) {
-        this._userObj.attach(object);
-    }
-
-    remove(object) {
-        if(object.parent == this._userObj) {
-            this._userObj.parent.attach(object);
-            return true;
-        }
-        return false;
-    }
-
     hasChild(object) {
-        return object.parent == this._userObj;
+        return object.parent == this._object;
     }
 
-    setPosition(position) {
-        this._userObj.position.fromArray(position);
+    exportParams() {
+        let params = super.exportParams();
+        params['avatarUrl'] = this._avatarUrl;
+        params['isXR'] = this._isXR;
+        params['username'] = this._username;
+        return params;
     }
 
     addToScene(scene) {
+        super.addToScene(scene);
         if(global.deviceType != "XR") {
             this._avatar.addToScene(global.cameraFocus);
-        } else {
-            this.hands[Hands.RIGHT].addToScene(scene);
-            this.hands[Hands.LEFT].addToScene(scene);
         }
     }
 
-    removeFromScene() {
-        if(global.deviceType != "XR") {
-            this._avatar.removeFromScene();
-        } else {
-            this.hands[Hands.RIGHT].removeFromScene();
-            this.hands[Hands.LEFT].removeFromScene();
-        }
-    }
+    //removeFromScene() {
+    //    super.removeFromScene();
+    //    if(global.deviceType != "XR") {
+    //        this._avatar.removeFromScene();
+    //    }
+    //}
 
     _updateAvatar() {
         if(!this._avatar.isDisplayingAvatar()) {
@@ -248,6 +269,7 @@ class UserController {
     }
 
     update(timeDelta) {
+        if(global.deviceType == "XR") this._updateHands(timeDelta);
         if(this._avatar) {
             this._updateAvatar();
         }
@@ -255,6 +277,48 @@ class UserController {
             this._dynamicAssets[i].update(timeDelta);
         }
     }
+
+    _getControllerModelUrl(object) {
+        if(object && object.children[0] && object.children[0].motionController){
+            return object.children[0].motionController.assetUrl;
+        }
+    }
+
+    _updateHands(timeDelta) {
+        for(let hand in Hands) {
+            let controller = this._xrControllers[hand];
+            let controllerModel = InputHandler.getXRControllerModel(hand);
+            if(controller && controller.isInScene()) {
+                if(controllerModel) {
+                    controller.resetTTL();
+                } else {
+                    controller.decrementTTL(timeDelta);
+                }
+            } else if(this._getControllerModelUrl(controllerModel)) {
+                if(!controller) {
+                    controller = new XRController({
+                        hand: hand,
+                        ownerId: this._id,
+                        controllerModel: controllerModel.children[0],
+                        object: InputHandler.getXRController(hand, 'grip'),
+                    });
+                    ProjectHandler.addAsset(controller, true);
+                    controller.attachTo(this);
+                    this._xrControllers[hand] = controller;
+                } else {
+                    ProjectHandler.addAsset(controller, true);
+                }
+            }
+        }
+    }
+
+    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
+    static assetName = 'User';
+}
+
+function generateRandomUsername() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
 }
 
 let userController = new UserController();

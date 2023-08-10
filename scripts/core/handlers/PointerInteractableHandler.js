@@ -36,15 +36,13 @@ class PointerInteractableHandler extends InteractableHandler {
                 this.update = this._updateForXREdit;
             } else if(tool == HandTools.COPY_PASTE) {
                 this.update = this._updateForXRCopyPaste;
-            } else if(tool == HandTools.DELETE) {
-                this.update = this._updateForXRDelete;
             } else {
                 this.update = this._updateForXR;
             }
         });
     }
 
-    createXRCursor(hand) {
+    _getXRCursor(hand) {
         if(this._cursors[hand]) return this._cursors[hand];
         let canvas = document.createElement('canvas');
         canvas.width = 64;
@@ -67,6 +65,7 @@ class PointerInteractableHandler extends InteractableHandler {
             cursor.visible = false;
             cursor.renderOrder = Infinity;
             this._cursors[h] = cursor;
+            Scene.getObject().add(cursor);
         }
         return this._cursors[hand];
     }
@@ -277,7 +276,7 @@ class PointerInteractableHandler extends InteractableHandler {
                 isPressed: this._isControllerPressed(option),
                 closestPoint: null,
                 closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
+                cursor: this._getXRCursor(option),
                 userDistance: Number.MAX_SAFE_INTEGER,
             };
             if(TransformControlsHandler.isPlacingObject(option)) {
@@ -306,7 +305,7 @@ class PointerInteractableHandler extends InteractableHandler {
                 isPressed: this._isControllerPressed(option),
                 closestPoint: null,
                 closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
+                cursor: this._getXRCursor(option),
                 userDistance: Number.MAX_SAFE_INTEGER,
             };
             controllers[option] = controller;
@@ -316,29 +315,6 @@ class PointerInteractableHandler extends InteractableHandler {
         this._updateInteractables(controllers);
         if(controllers[Hands.RIGHT].closestPoint == null)
             CopyPasteControlsHandler.checkPlacement(controllers[Hands.RIGHT]);
-        for(let option in controllers) {
-            this._updateCursor(controllers[option])
-        }
-    }
-
-    _updateForXRDelete() {
-        if(!global.sessionActive) return;
-        let controllers = {};
-        for(let option in Hands) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            controllers[option] = controller;
-            this._raycastInteractables(controller, this._interactables);
-        }
-
-        this._updateInteractables(controllers);
         for(let option in controllers) {
             this._updateCursor(controllers[option])
         }
@@ -354,7 +330,7 @@ class PointerInteractableHandler extends InteractableHandler {
                 isPressed: this._isControllerPressed(option),
                 closestPoint: null,
                 closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
+                cursor: this._getXRCursor(option),
                 userDistance: Number.MAX_SAFE_INTEGER,
             };
             controllers[option] = controller;

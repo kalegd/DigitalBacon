@@ -77,7 +77,7 @@ class RotateHandler {
             } else {
                 let rotation = asset.getWorldQuaternion();
                 heldAsset.preTransformState = rotation.toArray();
-                heldAsset.rotationDifference = controller.hands[hand]
+                heldAsset.rotationDifference = controller.getController(hand)
                     .getWorldQuaternion().conjugate().multiply(rotation)
                     .toArray();
             }
@@ -133,7 +133,7 @@ class RotateHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world rotation of the asset once
         //we support parent child relationships
-        let handRotation = heldAsset.controller.hands[heldAsset.hand]
+        let handRotation = heldAsset.controller.getController(heldAsset.hand)
             .getWorldQuaternion();
         this._quaternion.fromArray(heldAsset.rotationDifference);
         let newRotation = handRotation.multiply(this._quaternion).toArray();
@@ -152,7 +152,7 @@ class RotateHandler {
         } else {
             let rotation = heldAsset.asset.getWorldQuaternion();
             heldAsset.rotationDifference = heldAsset.controller
-                .hands[heldAsset.hand].getWorldQuaternion().conjugate()
+                .getController(heldAsset.hand).getWorldQuaternion().conjugate()
                 .multiply(rotation).toArray();
         }
     }

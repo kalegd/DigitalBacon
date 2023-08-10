@@ -21,8 +21,9 @@ import * as THREE from 'three';
 export default class AssetEntity extends Asset {
     constructor(params = {}) {
         super(params);
-        this._object = new THREE.Object3D();
+        this._object = params['object'] || new THREE.Object3D();
         this._parentId = params['parentId'] || Scene.getId();
+        this.children = new Set();
         this.parent = Scene;
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
@@ -178,7 +179,9 @@ export default class AssetEntity extends Asset {
 
     addTo(newParent, ignorePublish) {
         if(!newParent) return;
+        if(this.parent) this.parent.children.delete(this);
         this.parent = newParent;
+        newParent.children.add(this);
         this._parentId = newParent.getId();
         if(this._object.parent) {
             this.addToScene(newParent.getObject(),
@@ -193,8 +196,39 @@ export default class AssetEntity extends Asset {
         }
     }
 
+    attach(child, ignorePublish) {
+        child.attachTo(this, ignorePublish);
+    }
+
+    attachTo(newParent, ignorePublish) {
+        if(!newParent) return;
+        if(this.parent) this.parent.children.delete(this);
+        this.parent = newParent;
+        newParent.children.add(this);
+        this._parentId = newParent.getId();
+        if(this._object.parent) {
+            this.attachToScene(newParent.getObject(),
+                newParent.getPointerInteractable(),
+                newParent.getGripInteractable());
+        }
+        if(!ignorePublish) {
+            PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
+                parentId: newParent.getId(),
+                childId: this._id,
+            });
+        }
+    }
+
     addToScene(scene, pointerInteractable, gripInteractable) {
         if(scene) scene.add(this._object);
+        if(pointerInteractable)
+            pointerInteractable.addChild(this._pointerInteractable);
+        if(gripInteractable)
+            gripInteractable.addChild(this._gripInteractable);
+    }
+
+    attachToScene(scene, pointerInteractable, gripInteractable) {
+        if(scene) scene.attach(this._object);
         if(pointerInteractable)
             pointerInteractable.addChild(this._pointerInteractable);
         if(gripInteractable)

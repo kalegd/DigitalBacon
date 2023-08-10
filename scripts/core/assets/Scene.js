@@ -15,6 +15,7 @@ class Scene {
         this._object = new THREE.Scene();
         this._gripInteractable = new GripInteractable();
         this._pointerInteractable = new PointerInteractable();
+        this.children = new Set();
         global.scene = this._object;
     }
     
@@ -36,6 +37,10 @@ class Scene {
 
     add(child, ignorePublish) {
         child.addTo(this, ignorePublish);
+    }
+
+    attach(child, ignorePublish) {
+        child.attachTo(this, ignorePublish);
     }
 }
 

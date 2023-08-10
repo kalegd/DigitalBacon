@@ -68,7 +68,7 @@ class ScaleHandler {
             if(scaleIdentity) {
                 heldAsset.scaleIdentity = scaleIdentity;
             } else {
-                let distance = controller.hands[hand].getWorldPosition()
+                let distance = controller.getController(hand).getWorldPosition()
                     .distanceTo(asset.getWorldPosition());
                 let scale = asset.getWorldScale();
                 heldAsset.preTransformState = scale.toArray();
@@ -123,7 +123,7 @@ class ScaleHandler {
         //Eventually we'll need to set the world scale of the asset once
         //we support parent child relationships
         let distance = heldAsset.asset.getWorldPosition().distanceTo(heldAsset
-            .controller.hands[heldAsset.hand].getWorldPosition());
+            .controller.getController(heldAsset.hand).getWorldPosition());
         let newScale = [
             heldAsset.scaleIdentity[0] * distance,
             heldAsset.scaleIdentity[1] * distance,
@@ -142,7 +142,7 @@ class ScaleHandler {
         if(scaleIdentity) {
             heldAsset.scaleIdentity = scaleIdentity;
         } else {
-            let distance = controller.hands[newHand].getWorldPosition()
+            let distance = controller.getController(newHand).getWorldPosition()
                 .distanceTo(heldAsset.asset.getWorldPosition());
             let scale = heldAsset.asset.getWorldScale();
             heldAsset.scaleIdentity = scale.divideScalar(distance).toArray();

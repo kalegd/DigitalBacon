@@ -38,11 +38,10 @@ class PartyMessageHelper {
     init(PartyHandler) {
         this._partyHandler = PartyHandler;
         let handlers = {
-            avatar: (p, m) => { this._handleAvatar(p, m); },
             asset_added: (p, m) => { this._handleAssetAdded(p, m); },
             username: (p, m) => { this._handleUsername(p, m); },
-            user_perspective: (p, m) => { this._handleUserPerspective(p,m);},
-            user_scale: (p, m) => { this._handleUserScale(p,m);},
+            user_controller: (p, m) => { this._handleUserController(p, m); },
+            user_perspective: (p, m) => { this._handleUserPerspective(p,m); },
         };
         for(let topic in BLOCKABLE_HANDLERS_MAP) {
             let handler = (p,m) => {this[BLOCKABLE_HANDLERS_MAP[topic]](p, m);};
@@ -81,9 +80,26 @@ class PartyMessageHelper {
         });
     }
 
-    _handleAvatar(peer, message) {
-        peer.controller.updateAvatar(message.url);
-        if(message.isXR) peer.controller.configureAsXR();
+    _handleUserController(peer, message) {
+        if(!peer.controller) {
+            let params = message.controllerParams;
+            peer.username = params.username;
+            let controller = ProjectHandler.getSessionAsset(params.id);
+            if(controller) {
+                controller.addToScene(global.scene);
+                controller.setDisplayingUsername(this._partyHandler
+                    .getDisplayingUsernames());
+            } else {
+                params['displayingUsername'] = this._partyHandler
+                    .getDisplayingUsernames();
+                controller = ProjectHandler.addNewAsset(params.assetId, params,
+                    true, true);
+            }
+            if(controller.peer && controller.peer != peer)
+                controller.peer.controller = null;
+            peer.controller = controller;
+            controller.peer = peer;
+        }
     }
 
     _handleAssetAdded(peer, message) {
@@ -176,6 +192,9 @@ class PartyMessageHelper {
         } else {
             asset = ProjectHandler.addNewAsset(message.asset.assetId,
                 message.asset, true, true);
+            let parentId = asset.getParentId();
+            let parentAsset = ProjectHandler.getSessionAsset(parentId);
+            if(parentAsset) asset.addTo(parentAsset, true);
         }
         PubSub.publish(this._id, message.assetType + '_ADDED', asset);
     }
@@ -247,7 +266,7 @@ class PartyMessageHelper {
             let capitalizedParam = capitalizeFirstLetter(param);
             if(('set' + capitalizedParam) in asset)
                 asset['set' + capitalizedParam](params[param]);
-            if(global.isEditor) asset.editorHelper.updateMenuField(param);
+            if(asset.editorHelper) asset.editorHelper.updateMenuField(param);
         }
         let message = {
             asset: asset,
@@ -260,7 +279,7 @@ class PartyMessageHelper {
         let username = message.username;
         if(peer.username == username) return;
         peer.username = username;
-        if(peer.controller) peer.controller.updateUsername(username);
+        if(peer.controller) peer.controller.setUsername(username);
         PubSub.publish(this._id, PubSubTopics.PEER_USERNAME_UPDATED, {
             peer: peer,
         });
@@ -269,11 +288,6 @@ class PartyMessageHelper {
     _handleUserPerspective(peer, message) {
         let perspective = message.perspective;
         if(peer.controller) peer.controller.setFirstPerson(perspective == 1);
-    }
-
-    _handleUserScale(peer, message) {
-        let scale = message.scale;
-        if(peer.controller) peer.controller.updateScale(scale);
     }
 
     handlePartyStarted() {
@@ -324,14 +338,6 @@ class PartyMessageHelper {
                 resolve();
             });
         });
-    }
-
-    _publishAvatarUpdated(url) {
-        this._partyHandler.sendToAllPeers(JSON.stringify({
-            "topic": "avatar",
-            "url": url,
-        }));
-        return Promise.resolve();
     }
 
     _publishComponentAttachedDetached(topic, message) {
@@ -455,10 +461,10 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
-    _publishUserScaleUpdated(scale) {
+    _publishUsernameUpdated(username) {
         let message = {
-            topic: 'user_scale',
-            scale: scale,
+            topic: 'username',
+            username: username,
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(message));
         return Promise.resolve();
@@ -468,11 +474,6 @@ class PartyMessageHelper {
         PubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
             this._publishQueue.enqueue(() => {
                 return this._publishAssetAdded(assetId);
-            });
-        });
-        PubSub.subscribe(this._id, PubSubTopics.AVATAR_UPDATED, (url) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAvatarUpdated(url);
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.BECOME_PARTY_HOST, () => {
@@ -518,9 +519,9 @@ class PartyMessageHelper {
                 return this._publishUserPerspectiveChanged(n);
             });
         });
-        PubSub.subscribe(this._id, PubSubTopics.USER_SCALE_UPDATED, (scale) => {
+        PubSub.subscribe(this._id, PubSubTopics.USERNAME_UPDATED, (username) =>{
             this._publishQueue.enqueue(() => {
-                return this._publishUserScaleUpdated(scale);
+                return this._publishUsernameUpdated(username);
             });
         });
         for(let assetType in AssetTypes) {
@@ -548,7 +549,6 @@ class PartyMessageHelper {
 
     removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
-        PubSub.unsubscribe(this._id, PubSubTopics.AVATAR_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.BECOME_PARTY_HOST);
         PubSub.unsubscribe(this._id, PubSubTopics.BOOT_PEER);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
@@ -558,7 +558,7 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED);
-        PubSub.unsubscribe(this._id, PubSubTopics.USER_SCALE_UPDATED);
+        PubSub.unsubscribe(this._id, PubSubTopics.USERNAME_UPDATED);
         for(let assetType in AssetTypes) {
             PubSub.unsubscribe(this._id, PubSubTopics[assetType + '_ADDED']);
             PubSub.unsubscribe(this._id, PubSubTopics[assetType + '_DELETED']);

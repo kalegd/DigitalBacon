@@ -140,6 +140,7 @@ class InputHandler {
         };
         let inputSources = this._session.inputSources;
         for(let i = 0; i < inputSources.length; i++) {
+            if(inputSources[i].hand != null) continue; //Don't support hands yet
             if(inputSources[i].handedness == "right") {
                 this._rightXRInputSource = inputSources[i];
                 this._controllerParent.add(this._rightXRController.targetRay);
@@ -205,6 +206,14 @@ class InputHandler {
         }
     }
 
+    getXRInputSource(hand) {
+        if(hand == Hands.LEFT) {
+            return this._leftXRInputSource;
+        } else if(hand == Hands.RIGHT) {
+            return this._rightXRInputSource;
+        }
+        return null;
+    }
     getXRGamepad(hand) {
         if(hand == Hands.LEFT) {
             return (this._leftXRInputSource)

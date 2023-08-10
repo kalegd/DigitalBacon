@@ -52,7 +52,7 @@ class ReadyPlayerMe {
 
         // Get avatar GLB URL
         if(json.eventName === 'v1.avatar.exported') {
-            UserController.updateAvatar(json.data.url + '?useHands=false');
+            UserController.setAvatarUrl(json.data.url + '?useHands=false');
             this._close();
         }
 

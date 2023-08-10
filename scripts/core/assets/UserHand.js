@@ -5,12 +5,13 @@
  */
 
 import global from '/scripts/core/global.js';
+import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Hands from '/scripts/core/enums/Hands.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import { Euler, Quaternion, Vector3 } from 'three';
 
-export default class UserHand {
+export default class UserHand extends InternalAssetEntity {
     constructor(hand) {
         if(!hand in Hands) {
             throw new Error("constructor for UserXRInputSource must be LEFT or RIGHT");

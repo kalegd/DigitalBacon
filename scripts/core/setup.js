@@ -7,6 +7,7 @@
 import global from '/scripts/core/global.js';
 import '/scripts/core/handlers/assetTypes/ComponentsHandler.js';
 import '/scripts/core/handlers/assetTypes/CustomAssetsHandler.js';
+import '/scripts/core/handlers/assetTypes/InternalAssetsHandler.js';
 import '/scripts/core/handlers/assetTypes/AudiosHandler.js';
 import '/scripts/core/handlers/assetTypes/ImagesHandler.js';
 import '/scripts/core/handlers/assetTypes/LightsHandler.js';

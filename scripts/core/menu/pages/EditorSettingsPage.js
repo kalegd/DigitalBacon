@@ -49,8 +49,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'maxValue': 1000,
             'initialValue': 1,
             'onBlur': (oldValue, newValue) => {
-                PubSub.publish(this._id, PubSubTopics.USER_SCALE_UPDATED,
-                    newValue);
+                global.userController.setScale([newValue, newValue, newValue]);
                 SettingsHandler.setEditorSetting('User Scale', newValue);
             },
             'getFromSource': () => {

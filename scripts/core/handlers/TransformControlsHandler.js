@@ -5,7 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import UserController from '/scripts/core/assets/UserController.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import Hands from '/scripts/core/enums/Hands.js';
@@ -248,8 +247,7 @@ class TransformControlsHandler {
                 controller['closestPoint'] = intersections[0].point;
                 if(isPressed) {
                     if(global.deviceType == 'XR') {
-                        UserController.hands[option]
-                            .remove(attachedAsset.getObject());
+                        attachedAsset.attachTo(attachedAsset.parent, true);
                     } else {
                         $("#transform-controls > button")
                             .removeClass("selected");
@@ -275,7 +273,7 @@ class TransformControlsHandler {
     }
 
     scaleWithTwoHands() {
-        let distance = UserController.getDistanceBetweenHands();
+        let distance = global.userController.getDistanceBetweenHands();
         let factor = distance / this._initialScalingDistance;
         this._attachedAssets[Hands.LEFT].getObject().scale.set(
             factor * this._initialScalingValues.x,
@@ -318,17 +316,17 @@ class TransformControlsHandler {
             this._placingObject[option] = true;
             let otherOption = this._getOtherHand(option);
             if(asset == this._attachedAssets[otherOption]) {
-                UserController.hands[option].remove(asset.getObject());
-                UserController.hands[otherOption].remove(asset.getObject());
+                asset.attachTo(asset.parent, true);
                 publishMessage.twoHandScaling = true;
                 this._twoHandScaling = true;
                 this._initialScalingDistance =
-                    UserController.getDistanceBetweenHands();
+                    global.userController.getDistanceBetweenHands();
                 this._initialScalingValues = asset.getObject().scale.clone();
             } else {
                 this._preTransformStates[asset.getId()]
                     = asset.editorHelper.getObjectTransformation();
-                UserController.hands[option].attach(asset.getObject());
+                global.userController.getController(option).getObject().attach(
+                    asset.getObject());
                 asset.editorHelper.makeTranslucent();
             }
             publishMessage.position = asset.getPosition();
@@ -351,10 +349,11 @@ class TransformControlsHandler {
         if(!asset) return;
         let publishMessage = { instance: asset, option: option };
         if(global.deviceType == 'XR') {
-            UserController.hands[option].remove(asset.getObject());
+            asset.attachTo(asset.parent, true);
             let otherOption = this._getOtherHand(option);
             if(this._attachedAssets[otherOption] == asset) {
-                UserController.hands[otherOption].attach(asset.getObject());
+                global.userController.getController(otherOption).getObject()
+                    .attach(asset.getObject());
                 publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {

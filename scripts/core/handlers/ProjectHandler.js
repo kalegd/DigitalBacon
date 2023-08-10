@@ -17,7 +17,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //TODO: Delete this when we handle the debacle TODO in loadZip() + loadDiffZip()
-const orderedHandlerKeys = [AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.AUDIO, AssetTypes.MODEL, AssetTypes.SHAPE, AssetTypes.CUSTOM_ASSET];
+const orderedHandlerKeys = [AssetTypes.INTERNAL, AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.AUDIO, AssetTypes.MODEL, AssetTypes.SHAPE, AssetTypes.CUSTOM_ASSET];
   
 class ProjectHandler {
     constructor() {
@@ -185,15 +185,16 @@ class ProjectHandler {
         if(this._assets[id]) {
             if(asset.removeFromScene) {
                 if(asset.getObject) {
+                    let object = asset.getObject();
                     for(let i = 0; i < this._objects.length; i++) {
-                        if(asset.getObject() == this._objects[i]) {
+                        if(object == this._objects[i]) {
                             this._objects.splice(i,1);
                             break;
                         }
                     }
-                    if(asset.getObject().parent != this._scene) {
-                        this._scene.attach(asset.getObject());
-                    }
+                    let parentType=LibraryHandler.getType(asset.parent.getId());
+                    if(parentType == AssetTypes.INTERNAL && asset.parent!=Scene)
+                        this._scene.attach(object);
                 }
                 asset.removeFromScene();
             }
@@ -258,8 +259,8 @@ class ProjectHandler {
         return this._exportBlob(projectDetails);
     }
 
-    exportProject() {
-        let projectDetails = this._getProjectDetails();
+    exportProject(includeInternals) {
+        let projectDetails = this._getProjectDetails(false, !includeInternals);
         return this._exportBlob(projectDetails);
     }
 
@@ -269,7 +270,8 @@ class ProjectHandler {
         let library = LibraryHandler.getLibrary();
         for(let assetId in projectDetails['library']) {
             let assetType = projectDetails['library'][assetId]['Type'];
-            if(assetType != AssetTypes.PRIMITVE){
+            if(assetType != AssetTypes.PRIMITVE
+                    && assetType != AssetTypes.INTERNAL) {
                 let filename = projectDetails['library'][assetId]['Filepath'];
                 zip.file(filename, library[assetId]['Blob']);
             }
@@ -277,11 +279,12 @@ class ProjectHandler {
         return zip;
     }
 
-    _getProjectDetails(skipLibrary) {
+    _getProjectDetails(skipLibrary, skipInternals) {
         let assetIds = [];
         let settings = SettingsHandler.getSettings();
         let projectDetails = { settings: settings, version: global.version };
         for(let type in this._assetHandlers) {
+            if(skipInternals && type == AssetTypes.INTERNAL) continue;
             let handler = this._assetHandlers[type];
             let details = handler.getAssetsDetails();
             if(!details) continue;

@@ -72,7 +72,8 @@ class TranslateHandler {
                 let position = asset.getWorldPosition();
                 heldAsset.preTransformState = position.toArray();
                 heldAsset.positionDifference = position.sub(heldAsset
-                    .controller.hands[hand].getWorldPosition()).toArray();
+                    .controller.getController(hand).getWorldPosition())
+                    .toArray();
             }
             this._heldAssets[controllerId + ':' + hand] = heldAsset;
         }
@@ -122,7 +123,7 @@ class TranslateHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world position of the asset once
         //we support parent child relationships
-        let handPosition = heldAsset.controller.hands[heldAsset.hand]
+        let handPosition = heldAsset.controller.getController(heldAsset.hand)
             .getWorldPosition();
         let newPosition = [
             heldAsset.positionDifference[0] + handPosition.x,
@@ -144,7 +145,8 @@ class TranslateHandler {
         } else {
             let position = heldAsset.asset.getWorldPosition();
             heldAsset.positionDifference = position.sub(heldAsset
-                .controller.hands[heldAsset.hand].getWorldPosition()).toArray();
+                .controller.getController(heldAsset.hand).getWorldPosition())
+                .toArray();
         }
     }
 }

@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import Scene from '/scripts/core/assets/Scene.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import Hands from '/scripts/core/enums/Hands.js';
@@ -150,8 +151,8 @@ export default class AssetEntityHelper extends EditorHelper {
                         ScaleHandler.attach(peer.controller, message.option,
                             this._asset, message.scale);
                     } else {
-                        peer.controller.hands[message.option].attach(
-                            this._object);
+                        peer.controller.getController(message.option).attach(
+                            this._asset, true);
                         this._asset.setPosition(message.position);
                         this._asset.setRotation(message.rotation);
                     }
@@ -168,7 +169,8 @@ export default class AssetEntityHelper extends EditorHelper {
         if(message.isXR) {
             if(message.twoHandScaling) {
                 let otherHand = Hands.otherHand(message.option);
-                peer.controller.hands[otherHand].attach(this._object);
+                peer.controller.getController(otherHand).attach(this._asset,
+                    true);
                 this._asset.setPosition(message.position);
                 this._asset.setRotation(message.rotation);
                 return;
@@ -183,7 +185,7 @@ export default class AssetEntityHelper extends EditorHelper {
                     ScaleHandler.detach(peer.controller, message.option,
                         message.scale);
                 } else {
-                    global.scene.attach(this._object);
+                    Scene.attach(this._asset, true);
                     this._asset.setPosition(message.position);
                     this._asset.setRotation(message.rotation);
                 }
