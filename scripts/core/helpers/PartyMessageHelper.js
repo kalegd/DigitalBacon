@@ -18,6 +18,7 @@ const BLOCKABLE_HANDLERS_MAP = {
     component_attached: '_handleComponentAttached',
     component_detached: '_handleComponentDetached',
     entity_added: '_handleEntityAdded',
+    entity_attached: '_handleEntityAttached',
     instance_added: '_handleInstanceAdded',
     instance_deleted: '_handleInstanceDeleted',
     instance_updated: '_handleInstanceUpdated',
@@ -182,6 +183,23 @@ class PartyMessageHelper {
         } else {
             console.error(
                 "Missing child from entity_added message");
+        }
+    }
+
+    _handleEntityAttached(peer, message) {
+        let parentAsset = ProjectHandler.getSessionAsset(message.parentId);
+        let childAsset = ProjectHandler.getSessionAsset(message.childId);
+        if(childAsset) {
+            if(childAsset.editorHelper) {
+                childAsset.editorHelper.attachTo(parentAsset, true, true);
+            } else {
+                childAsset.attachTo(parentAsset, true);
+            }
+            delete message['topic'];
+            PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, message);
+        } else {
+            console.error(
+                "Missing child from entity_attached message");
         }
     }
 
@@ -363,6 +381,16 @@ class PartyMessageHelper {
         return Promise.resolve();
     }
 
+    _publishEntityAttached(message) {
+        let peerMessage = {
+            topic: 'entity_attached',
+            parentId: message.parentId,
+            childId: message.childId,
+        };
+        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+        return Promise.resolve();
+    }
+
     _publishInstanceAdded(asset, assetType) {
         let message = {
             topic: 'instance_added',
@@ -497,6 +525,11 @@ class PartyMessageHelper {
         PubSub.subscribe(this._id, PubSubTopics.ENTITY_ADDED, (message) => {
             this._publishQueue.enqueue(() => {
                 return this._publishEntityAdded(message);
+            });
+        });
+        PubSub.subscribe(this._id, PubSubTopics.ENTITY_ATTACHED, (message) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishEntityAttached(message);
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (message) =>{

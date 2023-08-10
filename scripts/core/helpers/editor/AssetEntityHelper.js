@@ -52,6 +52,7 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     _addActions() {
+        if(this._pointerActions.length > 0) return;
         if(global.deviceType == "XR") {
             this._gripActions.push(
                 this._asset.addGripAction((hand) => {
@@ -112,11 +113,11 @@ export default class AssetEntityHelper extends EditorHelper {
         for(let action of this._gripActions) {
             this._asset.removeGripAction(action.id);
         }
-        this._gripActionsIds = [];
+        this._gripActions = [];
         for(let action of this._pointerActions) {
             this._asset.removePointerAction(action.id);
         }
-        this._pointerActionsIds = [];
+        this._pointerActions = [];
     }
 
     updateVisualEdit(isVisualEdit) {
@@ -333,6 +334,19 @@ export default class AssetEntityHelper extends EditorHelper {
                 this.addTo(oldParent, ignorePublish, true);
             }, () => {
                 this.addTo(newParent, ignorePublish, true);
+            });
+        }
+    }
+
+    attachTo(newParent, ignorePublish, ignoreUndoRedo) {
+        let oldParent = this._asset.parent;
+        if(oldParent == newParent) return;
+        this._asset.attachTo(newParent, ignorePublish);
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this.attachTo(oldParent, ignorePublish, true);
+            }, () => {
+                this.attachTo(newParent, ignorePublish, true);
             });
         }
     }

@@ -385,6 +385,7 @@ class TransformControlsHandler {
             if(this._attachedAssets[otherOption] == asset) {
                 this._twoHandScaling = false;
             } else {
+                asset.attachTo(asset.parent);
                 asset.editorHelper.returnTransparency();
                 let preState = this._preTransformStates[asset.getId()];
                 let assetHelper = asset.editorHelper;

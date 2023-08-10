@@ -8,8 +8,6 @@ import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
@@ -104,10 +102,6 @@ export default class AssetEntity extends Asset {
 
     removePointerAction(id) {
         this._pointerInteractable.removeAction(id);
-        if(this._pointerInteractable.getActionsLength() == 0) {
-            PointerInteractableHandler.removeInteractable(
-                this._pointerInteractable);
-        }
     }
 
     getObject() {
