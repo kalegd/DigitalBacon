@@ -13,19 +13,27 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 
 class InternalAssetsHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.INTERNAL_ASSET_ADDED,
-            PubSubTopics.INTERNAL_ASSET_DELETED, AssetTypes.INTERNAL);
+        super(PubSubTopics.INTERNAL_ADDED,
+            PubSubTopics.INTERNAL_DELETED, AssetTypes.INTERNAL);
     }
 
     addAsset(asset, ignoreUndoRedo, ignorePublish) {
         if(this._assets[asset.getId()]) return;
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
-        if(asset.update) global.dynamicAssets.add(asset);
         ProjectHandler.addAssetFromHandler(asset);
         if(ignorePublish) return;
         let topic = this._addedTopic + ':' + asset.getAssetId();
         PubSub.publish(this._id, topic, asset, true);
+    }
+
+    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+        if(!(asset.getId() in this._assets)) return;
+        delete this._assets[asset.getId()];
+        ProjectHandler.deleteAssetFromHandler(asset);
+        if(ignorePublish) return;
+        let topic = this._deletedTopic + ':' + asset.getAssetId();
+        PubSub.publish(this._id, topic, { asset: asset });
     }
 
     load(assets) {

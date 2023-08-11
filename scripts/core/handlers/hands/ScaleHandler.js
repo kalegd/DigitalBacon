@@ -45,6 +45,22 @@ class ScaleHandler {
                     }
                 }
             });
+            PubSub.subscribe(this._id, assetType + '_UPDATED', (message) => {
+                for(let key in this._heldAssets) {
+                    let heldAsset = this._heldAssets[key];
+                    if(heldAsset.asset == message.asset) {
+                        let assetHelper = heldAsset.asset.editorHelper;
+                        let object = heldAsset.asset.getObject();
+                        if(message.fields.includes('visualEdit')
+                                && heldAsset.preTransformState)
+                        {
+                            object.scale.fromArray(heldAsset.preTransformState);
+                            assetHelper._publish(['scale']);
+                        }
+                        delete this._heldAssets[key];
+                    }
+                }
+            });
         }
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let key in this._heldAssets) {

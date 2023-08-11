@@ -288,13 +288,14 @@ class UserController extends InternalAssetEntity {
         for(let hand in Hands) {
             let controller = this._xrControllers[hand];
             let controllerModel = InputHandler.getXRControllerModel(hand);
+            let source = InputHandler.getXRInputSource(hand);
             if(controller && controller.isInScene()) {
-                if(controllerModel) {
+                if(source) {
                     controller.resetTTL();
                 } else {
                     controller.decrementTTL(timeDelta);
                 }
-            } else if(this._getControllerModelUrl(controllerModel)) {
+            } else if(source && this._getControllerModelUrl(controllerModel)) {
                 if(!controller) {
                     controller = new XRController({
                         hand: hand,

@@ -90,7 +90,7 @@ export default class XRDevice extends InternalAssetEntity {
     decrementTTL(timeDelta) {
         this._ttl -= timeDelta;
         if(this._ttl < 0) {
-            ProjectHandler.deleteAsset(this, true);
+            ProjectHandler.deleteAsset(this);
         }
     }
 

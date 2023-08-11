@@ -17,7 +17,6 @@ class InputHandler {
         this._container = container;
         this._renderer = renderer;
         this._renderer.domElement.tabIndex = "1";
-        this._controllerParent = controllerParent;
         this._session;
         this._leftXRInputSource;
         this._rightXRInputSource;
@@ -143,16 +142,12 @@ class InputHandler {
             if(inputSources[i].hand != null) continue; //Don't support hands yet
             if(inputSources[i].handedness == "right") {
                 this._rightXRInputSource = inputSources[i];
-                this._controllerParent.add(this._rightXRController.targetRay);
-                this._controllerParent.add(this._rightXRController.grip);
                 if(this._rightXRControllerModel.children.length == 0) {
                     this._rightXRControllerModel.add(controllerModelFactory
                         .createControllerModel(inputSources[i]));
                 }
             } else if(inputSources[i].handedness == "left") {
                 this._leftXRInputSource = inputSources[i];
-                this._controllerParent.add(this._leftXRController.targetRay);
-                this._controllerParent.add(this._leftXRController.grip);
                 if(this._leftXRControllerModel.children.length == 0) {
                     this._leftXRControllerModel.add(controllerModelFactory
                         .createControllerModel(inputSources[i]));
@@ -166,38 +161,26 @@ class InputHandler {
         this._session = null;
         this._rightXRInputSource = null;
         this._leftXRInputSource = null;
-        this._controllerParent.remove(this._rightXRController.targetRay);
-        this._controllerParent.remove(this._rightXRController.grip);
-        this._controllerParent.remove(this._leftXRController.targetRay);
-        this._controllerParent.remove(this._leftXRController.grip);
     }
 
     _onXRInputSourceChange(event) {
         for(let i = 0; i < event.removed.length; i++) {
             if(event.removed[i] == this._rightXRInputSource) {
                 this._rightXRInputSource = null;
-                this._controllerParent.remove(this._rightXRController.targetRay);
-                this._controllerParent.remove(this._rightXRController.grip);
             } else if(event.removed[i] == this._leftXRInputSource) {
                 this._leftXRInputSource = null;
-                this._controllerParent.remove(this._leftXRController.targetRay);
-                this._controllerParent.remove(this._leftXRController.grip);
             }
         }
         for(let i = 0; i < event.added.length; i++) {
             if(event.added[i].hand != null) continue; //Don't support hands yet
             if(event.added[i].handedness == "right") {
                 this._rightXRInputSource = event.added[i];
-                this._controllerParent.add(this._rightXRController.targetRay);
-                this._controllerParent.add(this._rightXRController.grip);
                 if(this._rightXRControllerModel.children.length == 0) {
                     this._rightXRControllerModel.add(controllerModelFactory
                         .createControllerModel(event.added[i]));
                 }
             } else if(event.added[i].handedness == "left") {
                 this._leftXRInputSource = event.added[i];
-                this._controllerParent.add(this._leftXRController.targetRay);
-                this._controllerParent.add(this._leftXRController.grip);
                 if(this._leftXRControllerModel.children.length == 0) {
                     this._leftXRControllerModel.add(controllerModelFactory
                         .createControllerModel(event.added[i]));

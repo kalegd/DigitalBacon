@@ -323,6 +323,7 @@ class PartyHandler {
                 let message = this._getNextJitterBufferMessage(
                     peer.jitterBuffer, timestamp);
                 if(message) peer.controller.processMessage(message);
+                peer.controller.update(timeDelta);
             }
             if(peer.rtc) peer.rtc.sendData(buffer);
         }

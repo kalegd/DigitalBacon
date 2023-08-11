@@ -62,6 +62,14 @@ class TransformControlsHandler {
                     }
                 }
             });
+            PubSub.subscribe(this._id, assetType + '_UPDATED', (e) => {
+                for(let option in this._attachedAssets) {
+                    if(this._attachedAssets[option] == e.asset) {
+                        if(e.fields.includes('visualEdit'))
+                            this._detachDeleted(option);
+                    }
+                }
+            });
         }
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let option in this._attachedAssets) {

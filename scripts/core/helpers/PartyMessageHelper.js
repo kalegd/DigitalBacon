@@ -87,7 +87,7 @@ class PartyMessageHelper {
             peer.username = params.username;
             let controller = ProjectHandler.getSessionAsset(params.id);
             if(controller) {
-                controller.addToScene(global.scene);
+                ProjectHandler.addAsset(controller);
                 controller.setDisplayingUsername(this._partyHandler
                     .getDisplayingUsernames());
             } else {
@@ -566,7 +566,7 @@ class PartyMessageHelper {
                     return this._publishInstanceAdded(asset, assetType);
                 });
             });
-                PubSub.subscribe(this._id, deletedTopic, (message) => {
+            PubSub.subscribe(this._id, deletedTopic, (message) => {
                 this._publishQueue.enqueue(() => {
                     return this._publishInstanceDeleted(message.asset,
                         assetType);

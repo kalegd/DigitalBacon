@@ -197,7 +197,6 @@ export default class Main {
                 if(this._callback) this._callback(this);
                 return;
             } else if(global.deviceType == "XR") {
-                global.dynamicAssets.add(GripInteractableHandler);
                 this._renderer.setAnimationLoop((time, frame) => {
                     InputHandler.update(frame);
                     this._update();
@@ -213,15 +212,17 @@ export default class Main {
             }
             global.dynamicAssets.add(this._menuController);
             global.dynamicAssets.add(UserController);
-            global.dynamicAssets.add(PointerInteractableHandler);
-            global.dynamicAssets.add(PubSub);
-            global.dynamicAssets.add(ThreeMeshUI);
             global.dynamicAssets.add(PartyHandler);
             if(global.isEditor) {
                 global.dynamicAssets.add(TranslateHandler);
                 global.dynamicAssets.add(RotateHandler);
                 global.dynamicAssets.add(ScaleHandler);
             }
+            global.dynamicAssets.add(PointerInteractableHandler);
+            if(global.deviceType == "XR")
+                global.dynamicAssets.add(GripInteractableHandler);
+            global.dynamicAssets.add(PubSub);
+            global.dynamicAssets.add(ThreeMeshUI);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "

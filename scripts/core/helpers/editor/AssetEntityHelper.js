@@ -118,6 +118,7 @@ export default class AssetEntityHelper extends EditorHelper {
             this._asset.removePointerAction(action.id);
         }
         this._pointerActions = [];
+        this._attachedPeers = new Set();
     }
 
     updateVisualEdit(isVisualEdit) {
@@ -152,8 +153,8 @@ export default class AssetEntityHelper extends EditorHelper {
                         ScaleHandler.attach(peer.controller, message.option,
                             this._asset, message.scale);
                     } else {
-                        peer.controller.getController(message.option).attach(
-                            this._asset, true);
+                        peer.controller.getController(message.option)
+                            .getObject().attach(this._object);
                         this._asset.setPosition(message.position);
                         this._asset.setRotation(message.rotation);
                     }
@@ -327,8 +328,8 @@ export default class AssetEntityHelper extends EditorHelper {
 
     addTo(newParent, ignorePublish, ignoreUndoRedo) {
         let oldParent = this._asset.parent;
-        if(oldParent == newParent) return;
         this._asset.addTo(newParent, ignorePublish);
+        if(oldParent == newParent) return;
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.addTo(oldParent, ignorePublish, true);
@@ -340,8 +341,8 @@ export default class AssetEntityHelper extends EditorHelper {
 
     attachTo(newParent, ignorePublish, ignoreUndoRedo) {
         let oldParent = this._asset.parent;
-        if(oldParent == newParent) return;
         this._asset.attachTo(newParent, ignorePublish);
+        if(oldParent == newParent) return;
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
                 this.attachTo(oldParent, ignorePublish, true);
