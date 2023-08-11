@@ -26,7 +26,6 @@ export default class InternalAssetEntity extends AssetEntity {
                 child.attachTo(inheritor, true);
             }
         }
-
     }
 
     static assetType = AssetTypes.INTERNAL;

@@ -30,6 +30,8 @@ class InputHandler {
             "targetRay": new Object3D(),
             "grip": new Object3D()
         };
+        controllerParent.add(this._leftXRController['targetRay']);
+        controllerParent.add(this._rightXRController['targetRay']);
         this._pointerPosition = new Vector2();
         this._pointerPressed = false;
         this._keysPressed = new Set();

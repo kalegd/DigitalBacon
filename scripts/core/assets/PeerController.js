@@ -156,10 +156,12 @@ export default class PeerController extends InternalAssetEntity {
 
     registerXRController(hand, xrController) {
         this._xrControllers[hand] = xrController;
+        this._xrDevices.add(xrController);
     }
 
     registerXRHand(hand, xrHand) {
         this._xrHands[hand] = xrHand;
+        this._xrDevices.add(xrHand);
     }
 
     registerXRDevice(xrDevice) {
