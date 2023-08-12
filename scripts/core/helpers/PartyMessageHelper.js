@@ -25,6 +25,7 @@ const BLOCKABLE_HANDLERS_MAP = {
     instance_attached: '_handleInstanceAttached',
     instance_detached: '_handleInstanceDetached',
     loaded_diff: '_handleLoadedDiff',
+    sanitize_internals: '_handleSanitizeInternals',
     settings_updated: '_handleSettingsUpdated',
 };
 
@@ -254,6 +255,10 @@ class PartyMessageHelper {
 
     _handleLoadedDiff(peer, message) {
         PubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
+    }
+
+    _handleSanitizeInternals(peer, message) {
+        PubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
     }
 
     _handleSettingsUpdated(peer, message) {
@@ -542,6 +547,13 @@ class PartyMessageHelper {
                 return this._publishInstanceDetached(message);
             });
         });
+        PubSub.subscribe(this._id, PubSubTopics.SANITIZE_INTERNALS, () => {
+            this._publishQueue.enqueue(() => {
+                this._partyHandler.sendToAllPeers(
+                    JSON.stringify({ topic: 'sanitize_internals' }));
+                return Promise.resolve();
+            });
+        });
         PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
             this._publishQueue.enqueue(() => {
                 return this._publishSettingsUpdate(message);
@@ -589,6 +601,7 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.ENTITY_ADDED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
+        PubSub.unsubscribe(this._id, PubSubTopics.SANITIZE_INTERNALS);
         PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
         PubSub.unsubscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED);
         PubSub.unsubscribe(this._id, PubSubTopics.USERNAME_UPDATED);

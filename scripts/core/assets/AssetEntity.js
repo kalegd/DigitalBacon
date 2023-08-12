@@ -20,6 +20,7 @@ export default class AssetEntity extends Asset {
     constructor(params = {}) {
         super(params);
         this._object = params['object'] || new THREE.Object3D();
+        this._object.asset = this;
         this._parentId = params['parentId'] || Scene.getId();
         this.children = new Set();
         this.parent = Scene;

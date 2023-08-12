@@ -149,98 +149,94 @@ class PointerInteractableHandler extends InteractableHandler {
         }
     }
 
-    _updateInteractables(controllers) {
-        for(let option in controllers) {
-            let controller = controllers[option];
-            let isPressed = controller['isPressed'];
-            let hoveredInteractable = this._hoveredInteractables[option];
-            let selectedInteractable = this._selectedInteractables[option];
-            let closestInteractable = controller['closestInteractable'];
-            let userDistance = controller['userDistance'];
-            if(closestInteractable && !closestInteractable.isOnlyGroup()) {
-                if(isPressed) {
-                    if(selectedInteractable) {
-                        if(selectedInteractable == closestInteractable) {
-                            selectedInteractable.triggerDraggableActions(option,
-                                controller['closestPoint'], userDistance);
-                        }
-                    } else if(hoveredInteractable == closestInteractable) {
-                        closestInteractable.addSelectedBy(option,
+    _updateInteractables(controller) {
+        let option = controller['option'];
+        let isPressed = controller['isPressed'];
+        let hoveredInteractable = this._hoveredInteractables[option];
+        let selectedInteractable = this._selectedInteractables[option];
+        let closestInteractable = controller['closestInteractable'];
+        let userDistance = controller['userDistance'];
+        if(closestInteractable && !closestInteractable.isOnlyGroup()) {
+            if(isPressed) {
+                if(selectedInteractable) {
+                    if(selectedInteractable == closestInteractable) {
+                        selectedInteractable.triggerDraggableActions(option,
                             controller['closestPoint'], userDistance);
-                        this._selectedInteractables[option] = closestInteractable;
-                        closestInteractable.removeHoveredBy(option);
-                        this._hoveredInteractables[option] = null;
                     }
-                } else {
-                    if(hoveredInteractable != closestInteractable) {
-                        if(hoveredInteractable) {
-                            hoveredInteractable.removeHoveredBy(option);
-                        }
-                        closestInteractable.addHoveredBy(option,
-                            controller['closestPoint'], userDistance);
-                        this._hoveredInteractables[option] =closestInteractable;
-                        //I can probably remove the below 2 lines
-                    //} else if(selectedInteractable) {
-                    //    selectedInteractable.releaseDraggedActions();
-                    }
-                    if(selectedInteractable) {
-                        selectedInteractable.removeSelectedBy(option);
-                        this._selectedInteractables[option] = null;
-                    }
+                } else if(hoveredInteractable == closestInteractable) {
+                    closestInteractable.addSelectedBy(option,
+                        controller['closestPoint'], userDistance);
+                    this._selectedInteractables[option] = closestInteractable;
+                    closestInteractable.removeHoveredBy(option);
+                    this._hoveredInteractables[option] = null;
                 }
-            } else if(!isPressed) {
-                if(this._wasPressed[option] && !hoveredInteractable
-                        && !selectedInteractable) {
-                    PubSub.publish(this._id, PubSubTopics.EMPTY_CLICK);
+            } else {
+                if(hoveredInteractable != closestInteractable) {
+                    if(hoveredInteractable) {
+                        hoveredInteractable.removeHoveredBy(option);
+                    }
+                    closestInteractable.addHoveredBy(option,
+                        controller['closestPoint'], userDistance);
+                    this._hoveredInteractables[option] = closestInteractable;
+                    //I can probably remove the below 2 lines
+                //} else if(selectedInteractable) {
+                //    selectedInteractable.releaseDraggedActions();
                 }
                 if(selectedInteractable) {
                     selectedInteractable.removeSelectedBy(option);
                     this._selectedInteractables[option] = null;
                 }
-                if(hoveredInteractable) {
-                    hoveredInteractable.removeHoveredBy(option);
-                    this._hoveredInteractables[option] = null;
-                }
             }
-            this._wasPressed[option] = isPressed;
+        } else if(!isPressed) {
+            if(this._wasPressed[option] && !hoveredInteractable
+                    && !selectedInteractable) {
+                PubSub.publish(this._id, PubSubTopics.EMPTY_CLICK);
+            }
+            if(selectedInteractable) {
+                selectedInteractable.removeSelectedBy(option);
+                this._selectedInteractables[option] = null;
+            }
+            if(hoveredInteractable) {
+                hoveredInteractable.removeHoveredBy(option);
+                this._hoveredInteractables[option] = null;
+            }
         }
+        this._wasPressed[option] = isPressed;
     }
 
-    _updateInteractablesMobile(controllers) {
-        for(let option in controllers) {
-            let controller = controllers[option];
-            let isPressed = controller['isPressed'];
-            let selectedInteractable = this._selectedInteractables[option];
-            if(this._mobileWasTouched) {
-                if(!selectedInteractable) {
-                    this._mobileWasTouched = isPressed;
-                    return;
-                }
+    _updateInteractablesMobile(controller) {
+        let option = controller['option'];
+        let isPressed = controller['isPressed'];
+        let selectedInteractable = this._selectedInteractables[option];
+        if(this._mobileWasTouched) {
+            if(!selectedInteractable) {
+                this._mobileWasTouched = isPressed;
+                return;
+            }
 
-                this._raycastInteractables(controller, this._interactables);
-                let userDistance = controller['userDistance'];
-                let closestInteractable = controller['closestInteractable'];
-                if(!isPressed) {
-                    this._mobileWasTouched = false;
-                    if(closestInteractable == selectedInteractable) {
-                        selectedInteractable.triggerActions(option,
-                            controller['closestPoint'], userDistance);
-                    }
-                    selectedInteractable.removeSelectedBy(option);
-                } else if(selectedInteractable == closestInteractable) {
-                    selectedInteractable.triggerDraggableActions(option,
+            this._raycastInteractables(controller, this._interactables);
+            let userDistance = controller['userDistance'];
+            let closestInteractable = controller['closestInteractable'];
+            if(!isPressed) {
+                this._mobileWasTouched = false;
+                if(closestInteractable == selectedInteractable) {
+                    selectedInteractable.triggerActions(option,
                         controller['closestPoint'], userDistance);
                 }
-            } else if(isPressed) {
-                this._mobileWasTouched = true;
-                this._raycastInteractables(controller, this._interactables);
-                let userDistance = controller['userDistance'];
-                let closestInteractable = controller['closestInteractable'];
-                if(closestInteractable) {
-                    closestInteractable.addSelectedBy(option,
-                        controller['closestPoint'], userDistance);
-                    this._selectedInteractables[option] = closestInteractable;
-                }
+                selectedInteractable.removeSelectedBy(option);
+            } else if(selectedInteractable == closestInteractable) {
+                selectedInteractable.triggerDraggableActions(option,
+                    controller['closestPoint'], userDistance);
+            }
+        } else if(isPressed) {
+            this._mobileWasTouched = true;
+            this._raycastInteractables(controller, this._interactables);
+            let userDistance = controller['userDistance'];
+            let closestInteractable = controller['closestInteractable'];
+            if(closestInteractable) {
+                closestInteractable.addSelectedBy(option,
+                    controller['closestPoint'], userDistance);
+                this._selectedInteractables[option] = closestInteractable;
             }
         }
     }
@@ -266,9 +262,6 @@ class PointerInteractableHandler extends InteractableHandler {
             TransformControlsHandler.scaleWithTwoHands();
             return;
         }
-        let controllersForPointerInteractables = {};
-        let controllersForPlacement = {};
-        let controllers = [];
         for(let option in Hands) {
             let controller = {
                 option: option,
@@ -280,24 +273,18 @@ class PointerInteractableHandler extends InteractableHandler {
                 userDistance: Number.MAX_SAFE_INTEGER,
             };
             if(TransformControlsHandler.isPlacingObject(option)) {
-                controllersForPlacement[option] = controller;
+                TransformControlsHandler.checkPlacement(controller);
             } else {
-                controllersForPointerInteractables[option] = controller;
                 this._raycastInteractables(controller, this._interactables);
+                this._updateInteractables(controller);
             }
-            controllers.push(controller);
-        }
-
-        this._updateInteractables(controllersForPointerInteractables);
-        TransformControlsHandler.checkPlacement(controllersForPlacement);
-        for(let controller of controllers) {
             this._updateCursor(controller)
         }
+
     }
 
     _updateForXRCopyPaste() {
         if(!global.sessionActive) return;
-        let controllers = {};
         for(let option in Hands) {
             let controller = {
                 option: option,
@@ -308,21 +295,16 @@ class PointerInteractableHandler extends InteractableHandler {
                 cursor: this._getXRCursor(option),
                 userDistance: Number.MAX_SAFE_INTEGER,
             };
-            controllers[option] = controller;
             this._raycastInteractables(controller, this._interactables);
-        }
-
-        this._updateInteractables(controllers);
-        if(controllers[Hands.RIGHT].closestPoint == null)
-            CopyPasteControlsHandler.checkPlacement(controllers[Hands.RIGHT]);
-        for(let option in controllers) {
-            this._updateCursor(controllers[option])
+            this._updateInteractables(controller);
+            if(option == Hands.RIGHT && controller.closestPoint == null)
+                CopyPasteControlsHandler.checkPlacement(controller);
+            this._updateCursor(controller)
         }
     }
 
     _updateForXR() {
         if(!global.sessionActive) return;
-        let controllers = {};
         for(let option in Hands) {
             let controller = {
                 option: option,
@@ -333,13 +315,9 @@ class PointerInteractableHandler extends InteractableHandler {
                 cursor: this._getXRCursor(option),
                 userDistance: Number.MAX_SAFE_INTEGER,
             };
-            controllers[option] = controller;
             this._raycastInteractables(controller, this._interactables);
-        }
-
-        this._updateInteractables(controllers);
-        for(let option in controllers) {
-            this._updateCursor(controllers[option])
+            this._updateInteractables(controller);
+            this._updateCursor(controller)
         }
     }
 
@@ -347,23 +325,21 @@ class PointerInteractableHandler extends InteractableHandler {
         if(!global.sessionActive)
             return;
 
-        let controllers = {
-            "POINTER": {
-                option: "POINTER",
-                raycaster: this._getRaycaster("POINTER"),
-                isPressed: this._isControllerPressed("POINTER"),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                userDistance: Number.MAX_SAFE_INTEGER,
-            }
+        let controller = {
+            option: "POINTER",
+            raycaster: this._getRaycaster("POINTER"),
+            isPressed: this._isControllerPressed("POINTER"),
+            closestPoint: null,
+            closestPointDistance: Number.MAX_SAFE_INTEGER,
+            userDistance: Number.MAX_SAFE_INTEGER,
         };
 
         if(TransformControlsHandler.isPlacingObject()) {
-            TransformControlsHandler.checkPlacement(controllers);
+            TransformControlsHandler.checkPlacement(controller);
             return;
         }
-        this._raycastInteractables(controllers['POINTER'], this._interactables);
-        this._updateInteractables(controllers);
+        this._raycastInteractables(controller, this._interactables);
+        this._updateInteractables(controller);
         let style = global.renderer.domElement.style;
         if(this._hoveredInteractables['POINTER']) {
             if(!style.cursor) style.cursor = 'pointer';
@@ -375,22 +351,20 @@ class PointerInteractableHandler extends InteractableHandler {
     _updateForMobile() {
         if(!global.sessionActive)
             return;
-        let controllers = {
-            "MOBILE": {
-                option: "MOBILE",
-                raycaster: this._getRaycaster("MOBILE"),
-                isPressed: this._isControllerPressed("MOBILE"),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                userDistance: Number.MAX_SAFE_INTEGER,
-            }
+        let controller = {
+            option: "MOBILE",
+            raycaster: this._getRaycaster("MOBILE"),
+            isPressed: this._isControllerPressed("MOBILE"),
+            closestPoint: null,
+            closestPointDistance: Number.MAX_SAFE_INTEGER,
+            userDistance: Number.MAX_SAFE_INTEGER,
         };
 
         if(TransformControlsHandler.isPlacingObject()) {
-            TransformControlsHandler.checkPlacement(controllers);
+            TransformControlsHandler.checkPlacement(controller);
             return;
         }
-        this._updateInteractablesMobile(controllers);
+        this._updateInteractablesMobile(controller);
     }
 
 }

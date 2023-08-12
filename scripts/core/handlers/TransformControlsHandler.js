@@ -35,6 +35,7 @@ class TransformControlsHandler {
         this._transformControls = new TransformControls(camera, this._canvas);
         this._transformControls.setSize(1.25);
         this._attachedAssets = {};
+        this._peerAttachedAssets = {};
         this._placingObject = {};
         this._preTransformStates = {};
         this._id = uuidv4();
@@ -60,6 +61,22 @@ class TransformControlsHandler {
                     if(this._attachedAssets[option] == e.asset) {
                         this._detachDeleted(option);
                     }
+                }
+            });
+            PubSub.subscribe(this._id, PubSubTopics.SANITIZE_INTERNALS, () => {
+                for(let option in this._attachedAssets) {
+                    let asset = this._attachedAssets[option];
+                    if(!asset) continue;
+                    let parentAsset = asset.getObject().parent.asset;
+                    if(parentAsset.constructor.assetType ==AssetTypes.INTERNAL){
+                        this.detach(option);
+                    }
+                }
+                for(let key in this._peerAttachedAssets) {
+                    let option = key.split(':')[1];
+                    let asset = this._peerAttachedAssets[key]['asset'];
+                    let peer = this._peerAttachedAssets[key]['peer'];
+                    this.detachFromPeer(peer, asset, { option: option });
                 }
             });
             PubSub.subscribe(this._id, assetType + '_UPDATED', (e) => {
@@ -240,42 +257,40 @@ class TransformControlsHandler {
         }
     }
 
-    checkPlacement(controllers) {
-        for(let option in controllers) {
-            let controller = controllers[option];
-            let raycaster = controller['raycaster'];
-            raycaster.firstHitOnly = true;
-            raycaster.far = Infinity;
-            let isPressed = controller['isPressed'];
-            let intersections = (global.deviceType == 'XR')
-                ? this._intersectRelevantObjects(raycaster, option)
-                : raycaster.intersectObjects(ProjectHandler.getObjects(), true);
-            let attachedAsset = this._attachedAssets[option];
-            if(intersections.length > 0) {
-                controller['closestPoint'] = intersections[0].point;
-                if(isPressed) {
-                    if(global.deviceType == 'XR') {
-                        attachedAsset.attachTo(attachedAsset.parent, true);
-                    } else {
-                        $("#transform-controls > button")
-                            .removeClass("selected");
-                        $('#' + this._transformControls.mode + "-button")
-                            .addClass("selected");
-                        this._transformControls.attach(
-                            attachedAsset.getObject());
-                        this._placingObject[option] = false;
-                    }
-                    let assetHelper = attachedAsset.editorHelper;
-                    let preState = assetHelper.getObjectTransformation();
-                    assetHelper.place(intersections[0]);
-                    if(global.deviceType == 'XR') {
-                        this.detach(option);
-                        return;
-                    }
-                    assetHelper.roundAttributes(true);
-                    let postState = assetHelper.getObjectTransformation();
-                    assetHelper.setObjectTransformation(preState, postState);
+    checkPlacement(controller) {
+        let option = controller.option;
+        let raycaster = controller['raycaster'];
+        raycaster.firstHitOnly = true;
+        raycaster.far = Infinity;
+        let isPressed = controller['isPressed'];
+        let intersections = (global.deviceType == 'XR')
+            ? this._intersectRelevantObjects(raycaster, option)
+            : raycaster.intersectObjects(ProjectHandler.getObjects(), true);
+        let attachedAsset = this._attachedAssets[option];
+        if(intersections.length > 0) {
+            controller['closestPoint'] = intersections[0].point;
+            if(isPressed) {
+                if(global.deviceType == 'XR') {
+                    attachedAsset.attachTo(attachedAsset.parent, true);
+                } else {
+                    $("#transform-controls > button")
+                        .removeClass("selected");
+                    $('#' + this._transformControls.mode + "-button")
+                        .addClass("selected");
+                    this._transformControls.attach(
+                        attachedAsset.getObject());
+                    this._placingObject[option] = false;
                 }
+                let assetHelper = attachedAsset.editorHelper;
+                let preState = assetHelper.getObjectTransformation();
+                assetHelper.place(intersections[0]);
+                if(global.deviceType == 'XR') {
+                    this.detach(option);
+                    return;
+                }
+                assetHelper.roundAttributes(true);
+                let postState = assetHelper.getObjectTransformation();
+                assetHelper.setObjectTransformation(preState, postState);
             }
         }
     }
@@ -333,6 +348,8 @@ class TransformControlsHandler {
             } else {
                 this._preTransformStates[asset.getId()]
                     = asset.editorHelper.getObjectTransformation();
+                //We CANNOT use asset.attach because we need to know who the
+                //actual parent is
                 global.userController.getController(option).getObject().attach(
                     asset.getObject());
                 asset.editorHelper.makeTranslucent();
@@ -348,6 +365,23 @@ class TransformControlsHandler {
                 .addClass("selected");
         }
         PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED,publishMessage);
+    }
+
+    attachToPeer(peer, asset, message) {
+        this._peerAttachedAssets[peer.id + ':' + message.option] = {
+            asset: asset,
+            peer: peer,
+        };
+        if(message.twoHandScaling) {
+            asset.attachTo(asset.parent, true);
+            asset.setPosition(message.position);
+            asset.setRotation(message.rotation);
+        } else {
+            peer.controller.getController(message.option).getObject().attach(
+                asset.getObject());
+            asset.setPosition(message.position);
+            asset.setRotation(message.rotation);
+        }
     }
 
     detach(option) {
@@ -383,6 +417,21 @@ class TransformControlsHandler {
         PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED,publishMessage);
         if(assetHelper && preState && postState)
             assetHelper.setObjectTransformation(preState, postState);
+    }
+
+    detachFromPeer(peer, asset, message) {
+        delete this._peerAttachedAssets[peer.id + ':' + message.option];
+        if(message.twoHandScaling) {
+            let otherHand = Hands.otherHand(message.option);
+            peer.controller.getController(otherHand).getObject().attach(
+                asset.getObject());
+            asset.setPosition(message.position);
+            asset.setRotation(message.rotation);
+        } else {
+            asset.attachTo(asset.parent, true);
+            if(message.position) asset.setPosition(message.position);
+            if(message.rotation) asset.setRotation(message.rotation);
+        }
     }
 
     _detachDeleted(option) {

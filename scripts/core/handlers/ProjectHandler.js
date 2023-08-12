@@ -283,6 +283,8 @@ class ProjectHandler {
         let assetIds = [];
         let settings = SettingsHandler.getSettings();
         let projectDetails = { settings: settings, version: global.version };
+        if(skipInternals)
+            PubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
         for(let type in this._assetHandlers) {
             if(skipInternals && type == AssetTypes.INTERNAL) continue;
             let handler = this._assetHandlers[type];

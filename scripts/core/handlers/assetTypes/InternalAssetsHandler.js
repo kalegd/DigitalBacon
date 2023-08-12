@@ -33,7 +33,7 @@ class InternalAssetsHandler extends AssetsHandler {
         ProjectHandler.deleteAssetFromHandler(asset);
         if(ignorePublish) return;
         let topic = this._deletedTopic + ':' + asset.getAssetId();
-        PubSub.publish(this._id, topic, { asset: asset });
+        PubSub.publish(this._id, topic, { asset: asset }, true);
     }
 
     load(assets) {

@@ -136,28 +136,19 @@ export default class AssetEntityHelper extends EditorHelper {
     attachToPeer(peer, message) {
         this._attachedPeers.add(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(message.twoHandScaling) {
-                global.scene.attach(this._object);
-                this._asset.setPosition(message.position);
-                this._asset.setRotation(message.rotation);
-                return;
-            } else {
-                if(message.option in Hands && peer.controller) {
-                    if(message.type == 'translate') {
-                        TranslateHandler.attach(peer.controller, message.option,
-                            this._asset, message.position);
-                    } else if(message.type == 'rotate') {
-                        RotateHandler.attach(peer.controller, message.option,
-                            this._asset, message.rotation);
-                    } else if(message.type == 'scale') {
-                        ScaleHandler.attach(peer.controller, message.option,
-                            this._asset, message.scale);
-                    } else {
-                        peer.controller.getController(message.option)
-                            .getObject().attach(this._object);
-                        this._asset.setPosition(message.position);
-                        this._asset.setRotation(message.rotation);
-                    }
+            if(message.option in Hands && peer.controller) {
+                if(message.type == 'translate') {
+                    TranslateHandler.attach(peer.controller, message.option,
+                        this._asset, message.position);
+                } else if(message.type == 'rotate') {
+                    RotateHandler.attach(peer.controller, message.option,
+                        this._asset, message.rotation);
+                } else if(message.type == 'scale') {
+                    ScaleHandler.attach(peer.controller, message.option,
+                        this._asset, message.scale);
+                } else {
+                    TransformControlsHandler.attachToPeer(peer, this._asset,
+                        message);
                 }
             }
         }
@@ -169,28 +160,19 @@ export default class AssetEntityHelper extends EditorHelper {
     detachFromPeer(peer, message) {
         this._attachedPeers.delete(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(message.twoHandScaling) {
-                let otherHand = Hands.otherHand(message.option);
-                peer.controller.getController(otherHand).attach(this._asset,
-                    true);
-                this._asset.setPosition(message.position);
-                this._asset.setRotation(message.rotation);
-                return;
+            if(message.type == 'translate') {
+                TranslateHandler.detach(peer.controller, message.option,
+                    message.position);
+            } else if(message.type == 'rotate') {
+                RotateHandler.detach(peer.controller, message.option,
+                    message.rotation);
+            } else if(message.type == 'scale') {
+                ScaleHandler.detach(peer.controller, message.option,
+                    message.scale);
             } else {
-                if(message.type == 'translate') {
-                    TranslateHandler.detach(peer.controller, message.option,
-                        message.position);
-                } else if(message.type == 'rotate') {
-                    RotateHandler.detach(peer.controller, message.option,
-                        message.rotation);
-                } else if(message.type == 'scale') {
-                    ScaleHandler.detach(peer.controller, message.option,
-                        message.scale);
-                } else {
-                    Scene.attach(this._asset, true);
-                    this._asset.setPosition(message.position);
-                    this._asset.setRotation(message.rotation);
-                }
+                TransformControlsHandler.detachFromPeer(peer, this._asset,
+                    message);
+                if(message.twoHandScaling) return;
             }
         }
         if(!this._asset.visualEdit) return;

@@ -66,7 +66,7 @@ export default class AssetsHandler {
         PubSub.publish(this._id, topic, {
             asset: asset,
             undoRedoAction: undoRedoAction,
-        });
+        }, true);
     }
 
     load(assets, isDiff) {
