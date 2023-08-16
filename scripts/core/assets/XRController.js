@@ -5,7 +5,7 @@
  */
 
 import XRDevice from '/scripts/core/assets/XRDevice.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Euler, Quaternion, Vector3 } from 'three';
@@ -14,13 +14,14 @@ export default class XRController extends XRDevice {
     constructor(params = {}) {
         params['assetId'] = XRController.assetId;
         super(params);
+        console.log("Creating XRController");
         let controllerModel = params['controllerModel'];
         if(controllerModel) {
             this._object.add(controllerModel);
             this._modelUrl = controllerModel.motionController.assetUrl;
         }
         this._hand = params['hand'];
-        if(!this._hand in Hands) {
+        if(!this._hand in Handedness) {
             throw new Error("hand must be LEFT or RIGHT");
         }
     }

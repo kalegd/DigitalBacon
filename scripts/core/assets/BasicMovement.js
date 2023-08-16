@@ -5,7 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -216,11 +216,11 @@ export default class BasicMovement {
         let movementGamepad;
         let rotationGamepad;
         if(SettingsHandler.areJoysticksSwapped()) {
-            movementGamepad = InputHandler.getXRGamepad(Hands.RIGHT);
-            rotationGamepad = InputHandler.getXRGamepad(Hands.LEFT);
+            movementGamepad = InputHandler.getXRGamepad(Handedness.RIGHT);
+            rotationGamepad = InputHandler.getXRGamepad(Handedness.LEFT);
         } else {
-            movementGamepad = InputHandler.getXRGamepad(Hands.LEFT);
-            rotationGamepad = InputHandler.getXRGamepad(Hands.RIGHT);
+            movementGamepad = InputHandler.getXRGamepad(Handedness.LEFT);
+            rotationGamepad = InputHandler.getXRGamepad(Handedness.RIGHT);
         }
         this._velocity.x = 0;
         this._velocity.y = 0;

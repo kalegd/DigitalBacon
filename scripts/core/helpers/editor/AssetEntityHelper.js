@@ -9,7 +9,7 @@ import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import States from '/scripts/core/enums/InteractableStates.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
@@ -71,11 +71,11 @@ export default class AssetEntityHelper extends EditorHelper {
             this._gripActions.push(
                 this._asset.addGripAction((hand) => {
                     CopyPasteControlsHandler.copy(this._asset);
-                }, null, HandTools.COPY_PASTE, Hands.LEFT));
+                }, null, HandTools.COPY_PASTE, Handedness.LEFT));
             this._pointerActions.push(
                 this._asset.addPointerAction(() => {
                     CopyPasteControlsHandler.copy(this._asset);
-                }, null, null, HandTools.COPY_PASTE, Hands.LEFT));
+                }, null, null, HandTools.COPY_PASTE, Handedness.LEFT));
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;
@@ -136,7 +136,7 @@ export default class AssetEntityHelper extends EditorHelper {
     attachToPeer(peer, message) {
         this._attachedPeers.add(peer.id + ':' + message.option);
         if(message.isXR) {
-            if(message.option in Hands && peer.controller) {
+            if(message.option in Handedness && peer.controller) {
                 if(message.type == 'translate') {
                     TranslateHandler.attach(peer.controller, message.option,
                         this._asset, message.position);

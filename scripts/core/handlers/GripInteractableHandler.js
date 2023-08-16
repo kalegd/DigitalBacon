@@ -7,9 +7,10 @@
 import global from '/scripts/core/global.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import States from '/scripts/core/enums/InteractableStates.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import InteractableHandler from '/scripts/core/handlers/InteractableHandler.js';
@@ -24,15 +25,15 @@ class GripInteractableHandler extends InteractableHandler {
     init() {
         super.init();
         this._spheres = {};
-        this._spheres[Hands.LEFT] = new THREE.Sphere();
-        this._spheres[Hands.RIGHT] = new THREE.Sphere();
+        this._spheres[Handedness.LEFT] = new THREE.Sphere();
+        this._spheres[Handedness.RIGHT] = new THREE.Sphere();
         this._box3 = new THREE.Box3();
         this.addInteractable(Scene.getGripInteractable());
     }
 
     _setupXRSubscription() {
         PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
-            let options = [Hands.LEFT, Hands.RIGHT];
+            let options = [Handedness.LEFT, Handedness.RIGHT];
             for(let option of options) {
                 let hoveredInteractable = this._hoveredInteractables[option];
                 if(hoveredInteractable && 
@@ -57,8 +58,10 @@ class GripInteractableHandler extends InteractableHandler {
     }
 
     _getBoundingSphere(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
-            let xrController = InputHandler.getXRController(option, "grip");
+        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
+            let xrController = InputHandler.getXRController(
+                XRInputDeviceTypes.CONTROLLER, option, "grip");
+            if(!xrController) return null;
             this._box3.setFromObject(xrController)
                 .getBoundingSphere(this._spheres[option]);
             return this._spheres[option];
@@ -66,7 +69,7 @@ class GripInteractableHandler extends InteractableHandler {
     }
 
     _isControllerPressed(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
+        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
             let gamepad = InputHandler.getXRGamepad(option);
             return gamepad != null
                 && gamepad.buttons.length > 1
@@ -143,21 +146,21 @@ class GripInteractableHandler extends InteractableHandler {
     _updateForXRCopyPaste() {
         if(!global.sessionActive) return;
         let controllers = {};
-        controllers[Hands.LEFT] = {
-            option: Hands.LEFT,
-            boundingSphere: this._getBoundingSphere(Hands.LEFT),
-            isPressed: this._isControllerPressed(Hands.LEFT),
+        controllers[Handedness.LEFT] = {
+            option: Handedness.LEFT,
+            boundingSphere: this._getBoundingSphere(Handedness.LEFT),
+            isPressed: this._isControllerPressed(Handedness.LEFT),
             closestPointDistance: Number.MAX_SAFE_INTEGER,
         };
 
         if(CopyPasteControlsHandler.hasCopiedObject()) {
             CopyPasteControlsHandler.checkGripPlacement(
-                this._isControllerPressed(Hands.RIGHT));
+                this._isControllerPressed(Handedness.RIGHT));
         } else {
-            controllers[Hands.RIGHT] = {
-                option: Hands.RIGHT,
-                boundingSphere: this._getBoundingSphere(Hands.RIGHT),
-                isPressed: this._isControllerPressed(Hands.RIGHT),
+            controllers[Handedness.RIGHT] = {
+                option: Handedness.RIGHT,
+                boundingSphere: this._getBoundingSphere(Handedness.RIGHT),
+                isPressed: this._isControllerPressed(Handedness.RIGHT),
                 closestPointDistance: Number.MAX_SAFE_INTEGER,
             };
         }
@@ -168,7 +171,7 @@ class GripInteractableHandler extends InteractableHandler {
     _updateForXREdit() {
         if(!global.sessionActive) return;
         let controllers = {};
-        let controllerOptions = [Hands.LEFT, Hands.RIGHT];
+        let controllerOptions = [Handedness.LEFT, Handedness.RIGHT];
         for(let i = 0; i < controllerOptions.length; i++) {
             let option = controllerOptions[i];
             controllers[option] = {

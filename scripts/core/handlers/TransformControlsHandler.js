@@ -7,7 +7,7 @@
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
@@ -298,13 +298,13 @@ class TransformControlsHandler {
     scaleWithTwoHands() {
         let distance = global.userController.getDistanceBetweenHands();
         let factor = distance / this._initialScalingDistance;
-        this._attachedAssets[Hands.LEFT].getObject().scale.set(
+        this._attachedAssets[Handedness.LEFT].getObject().scale.set(
             factor * this._initialScalingValues.x,
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
 
         if(global.renderer.info.render.frame % 6 == 0)
-            this._attachedAssets[Hands.LEFT].editorHelper
+            this._attachedAssets[Handedness.LEFT].editorHelper
                 ._publish(['scale']);
     }
 
@@ -323,10 +323,10 @@ class TransformControlsHandler {
     }
 
     _getOtherHand(hand) {
-        if(hand == Hands.RIGHT) {
-            return Hands.LEFT;
-        } else if(hand == Hands.LEFT) {
-            return Hands.RIGHT;
+        if(hand == Handedness.RIGHT) {
+            return Handedness.LEFT;
+        } else if(hand == Handedness.LEFT) {
+            return Handedness.RIGHT;
         }
         return null;
     }
@@ -422,7 +422,7 @@ class TransformControlsHandler {
     detachFromPeer(peer, asset, message) {
         delete this._peerAttachedAssets[peer.id + ':' + message.option];
         if(message.twoHandScaling) {
-            let otherHand = Hands.otherHand(message.option);
+            let otherHand = Handedness.otherHand(message.option);
             peer.controller.getController(otherHand).getObject().attach(
                 asset.getObject());
             asset.setPosition(message.position);

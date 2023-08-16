@@ -5,7 +5,8 @@
  */
 
 import global from '/scripts/core/global.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
+import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import { Object3D, Vector2 } from 'three';
 import { XRControllerModelFactory } from '/scripts/three/examples/jsm/webxr/XRControllerModelFactory.js';
 
@@ -16,22 +17,13 @@ class InputHandler {
     init(container, renderer, controllerParent) {
         this._container = container;
         this._renderer = renderer;
+        this._controllerParent = controllerParent;
         this._renderer.domElement.tabIndex = "1";
         this._session;
-        this._leftXRInputSource;
-        this._rightXRInputSource;
-        this._leftXRControllerModel = new Object3D();
-        this._rightXRControllerModel = new Object3D();
-        this._leftXRController = {
-            "targetRay": new Object3D(),
-            "grip": new Object3D()
-        };
-        this._rightXRController = {
-            "targetRay": new Object3D(),
-            "grip": new Object3D()
-        };
-        controllerParent.add(this._leftXRController['targetRay']);
-        controllerParent.add(this._rightXRController['targetRay']);
+        this._xrInputDevices = {};
+        for(let type in XRInputDeviceTypes) {
+            this._xrInputDevices[type] = {};
+        }
         this._pointerPosition = new Vector2();
         this._pointerPressed = false;
         this._keysPressed = new Set();
@@ -141,92 +133,94 @@ class InputHandler {
         };
         let inputSources = this._session.inputSources;
         for(let i = 0; i < inputSources.length; i++) {
-            if(inputSources[i].hand != null) continue; //Don't support hands yet
-            if(inputSources[i].handedness == "right") {
-                this._rightXRInputSource = inputSources[i];
-                if(this._rightXRControllerModel.children.length == 0) {
-                    this._rightXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(inputSources[i]));
-                }
-            } else if(inputSources[i].handedness == "left") {
-                this._leftXRInputSource = inputSources[i];
-                if(this._leftXRControllerModel.children.length == 0) {
-                    this._leftXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(inputSources[i]));
-                }
-            }
+            this._addXRInputSource(inputSources[i]);
         }
     }
 
     _onXRSessionEnd(event) {
         this._session.oninputsourcechange = null;
         this._session = null;
-        this._rightXRInputSource = null;
-        this._leftXRInputSource = null;
+        for(let type in this._xrInputDevices) {
+            for(let handedness in this._xrInputDevices[type]) {
+                delete this._xrInputDevices[type][handedness].inputSource;
+            }
+        }
     }
 
     _onXRInputSourceChange(event) {
         for(let i = 0; i < event.removed.length; i++) {
-            if(event.removed[i] == this._rightXRInputSource) {
-                this._rightXRInputSource = null;
-            } else if(event.removed[i] == this._leftXRInputSource) {
-                this._leftXRInputSource = null;
-            }
+            this._deleteXRInputSource(event.removed[i]);
         }
         for(let i = 0; i < event.added.length; i++) {
-            if(event.added[i].hand != null) continue; //Don't support hands yet
-            if(event.added[i].handedness == "right") {
-                this._rightXRInputSource = event.added[i];
-                if(this._rightXRControllerModel.children.length == 0) {
-                    this._rightXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(event.added[i]));
+            this._addXRInputSource(event.added[i]);
+        }
+    }
+
+    _addXRInputSource(inputSource) {
+        let type = (inputSource.hand != null)
+            ? XRInputDeviceTypes.HAND
+            : XRInputDeviceTypes.CONTROLLER;
+
+        let handedness = inputSource.handedness.toUpperCase();
+        if(handedness in Handedness) {
+            let xrInputDevice = this._xrInputDevices[type][handedness];
+            if(!xrInputDevice) {
+                xrInputDevice = { controllers: {} };
+                this._xrInputDevices[type][handedness] = xrInputDevice;
+                if(inputSource.targetRaySpace) {
+                    xrInputDevice.controllers.targetRay = new Object3D();
+                    this._controllerParent.add(xrInputDevice.controllers
+                        .targetRay);
                 }
-            } else if(event.added[i].handedness == "left") {
-                this._leftXRInputSource = event.added[i];
-                if(this._leftXRControllerModel.children.length == 0) {
-                    this._leftXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(event.added[i]));
+                if(inputSource.gripSpace) {
+                    xrInputDevice.controllers.grip = new Object3D();
+                    this._controllerParent.add(xrInputDevice.controllers.grip);
                 }
+            }
+            xrInputDevice.inputSource = inputSource;
+            if(!xrInputDevice.model) {
+                xrInputDevice.model = controllerModelFactory
+                    .createControllerModel(inputSource);
             }
         }
     }
 
-    getXRInputSource(hand) {
-        if(hand == Hands.LEFT) {
-            return this._leftXRInputSource;
-        } else if(hand == Hands.RIGHT) {
-            return this._rightXRInputSource;
-        }
-        return null;
-    }
-    getXRGamepad(hand) {
-        if(hand == Hands.LEFT) {
-            return (this._leftXRInputSource)
-                ? this._leftXRInputSource.gamepad
-                : null;
-        } else if(hand == Hands.RIGHT) {
-            return (this._rightXRInputSource)
-                ? this._rightXRInputSource.gamepad
-                : null;
-        } else {
-            return null;
-        }
+    _deleteXRInputSource(inputSource) {
+        let type = (inputSource.hand != null)
+            ? XRInputDeviceTypes.HAND
+            : XRInputDeviceTypes.CONTROLLER;
+
+        let handedness = inputSource.handedness.toUpperCase();
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        if(xrInputDevice && xrInputDevice.inputSource)
+            delete this._xrInputDevices[type][handedness].inputSource;
     }
 
-    getXRController(hand, type) {
-        if(hand == Hands.LEFT) {
-            return this._leftXRController[type];
-        } else if(hand == Hands.RIGHT) {
-            return this._rightXRController[type];
-        }
+    _getXRInputDevice(type, handedness) {
+        return (this._xrInputDevices[type])
+            ? this._xrInputDevices[type][handedness]
+            : null;
+    }
+
+    getXRInputSource(type, handedness) {
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        return (xrInputDevice) ? xrInputDevice.inputSource : null;
+    }
+
+    getXRGamepad(handedness) {
+        let type = XRInputDeviceTypes.CONTROLLER;
+        let inputSource = this.getXRInputSource(type, handedness);
+        return (inputSource) ? inputSource.gamepad : null;
+    }
+
+    getXRController(type, handedness, space) {
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        return (xrInputDevice) ? xrInputDevice.controllers[space] : null;
     }
     
-    getXRControllerModel(hand) {
-        if(hand == Hands.LEFT) {
-            return this._leftXRControllerModel;
-        } else if(hand == Hands.RIGHT) {
-            return this._rightXRControllerModel;
-        }
+    getXRControllerModel(type, handedness) {
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        return (xrInputDevice) ? xrInputDevice.model : null;
     }
 
     getPointerPosition() {
@@ -280,19 +274,21 @@ class InputHandler {
         if(button) button.style.display = 'inline-block';
     }
 
-    _updateXRController(frame, referenceSpace, xrInputSource, xrController) {
+    _updateXRController(frame, referenceSpace, xrInputDevice) {
+        let xrInputSource = xrInputDevice.inputSource;
+        let xrControllers = xrInputDevice.controllers;
         if(xrInputSource) {
             let targetRayPose = frame.getPose(
                 xrInputSource.targetRaySpace, referenceSpace
             );
             if(targetRayPose != null) {
-                xrController.targetRay.matrix.fromArray(
+                xrControllers.targetRay.matrix.fromArray(
                     targetRayPose.transform.matrix
                 );
-                xrController.targetRay.matrix.decompose(
-                    xrController.targetRay.position,
-                    xrController.targetRay.rotation,
-                    xrController.targetRay.scale
+                xrControllers.targetRay.matrix.decompose(
+                    xrControllers.targetRay.position,
+                    xrControllers.targetRay.rotation,
+                    xrControllers.targetRay.scale
                 );
             }
 
@@ -300,11 +296,11 @@ class InputHandler {
                 xrInputSource.gripSpace, referenceSpace
             );
             if ( gripPose !== null ) {
-                xrController.grip.matrix.fromArray(gripPose.transform.matrix);
-                xrController.grip.matrix.decompose(
-                    xrController.grip.position,
-                    xrController.grip.rotation,
-                    xrController.grip.scale
+                xrControllers.grip.matrix.fromArray(gripPose.transform.matrix);
+                xrControllers.grip.matrix.decompose(
+                    xrControllers.grip.position,
+                    xrControllers.grip.rotation,
+                    xrControllers.grip.scale
                 );
             }
         }
@@ -316,18 +312,12 @@ class InputHandler {
         }
         //Assumes device type is XR
         let referenceSpace = this._renderer.xr.getReferenceSpace();
-        this._updateXRController(
-            frame,
-            referenceSpace,
-            this._leftXRInputSource,
-            this._leftXRController
-        );
-        this._updateXRController(
-            frame,
-            referenceSpace,
-            this._rightXRInputSource,
-            this._rightXRController
-        );
+        for(let type in this._xrInputDevices) {
+            for(let handedness in this._xrInputDevices[type]) {
+                this._updateXRController(frame, referenceSpace,
+                    this._xrInputDevices[type][handedness]);
+            }
+        }
     }
 }
 

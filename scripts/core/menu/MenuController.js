@@ -8,7 +8,7 @@ import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import UserController from '/scripts/core/assets/UserController.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -184,8 +184,8 @@ export default class MenuController extends PointerInteractableEntity {
 
     _updateVR(timeDelta) {
         if(global.sessionActive) {
-            let rightGamepad = InputHandler.getXRGamepad(Hands.RIGHT);
-            let leftGamepad = InputHandler.getXRGamepad(Hands.LEFT);
+            let rightGamepad = InputHandler.getXRGamepad(Handedness.RIGHT);
+            let leftGamepad = InputHandler.getXRGamepad(Handedness.LEFT);
             if(rightGamepad?.buttons[4]?.pressed) {
                 if(!this._eventAlreadyTriggered) {
                     this._eventAlreadyTriggered = true;

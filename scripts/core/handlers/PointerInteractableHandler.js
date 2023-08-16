@@ -7,9 +7,10 @@
 import global from '/scripts/core/global.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import States from '/scripts/core/enums/InteractableStates.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import InteractableHandler from '/scripts/core/handlers/InteractableHandler.js';
@@ -59,23 +60,24 @@ class PointerInteractableHandler extends InteractableHandler {
             depthTest: false,
             sizeAttenuation: false,
         });
-        for(let h in Hands) {
+        for(let handedness in Handedness) {
             let cursor = new THREE.Sprite(spriteMaterial);
             cursor.scale.set(0.015,0.015,0.015);
             cursor.visible = false;
             cursor.renderOrder = Infinity;
-            this._cursors[h] = cursor;
+            this._cursors[handedness] = cursor;
             Scene.getObject().add(cursor);
         }
         return this._cursors[hand];
     }
 
     _getRaycaster(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
+        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
             let position = new THREE.Vector3();
             let direction = new THREE.Vector3();
-            let xrController = InputHandler.getXRController(option,
-                "targetRay");
+            let xrController = InputHandler.getXRController(
+                XRInputDeviceTypes.CONTROLLER, option, "targetRay");
+            if(!xrController) return null;
             xrController.getWorldPosition(position);
             xrController.getWorldDirection(direction).negate().normalize();
             return new THREE.Raycaster(position, direction, 0.01, 50);
@@ -93,7 +95,7 @@ class PointerInteractableHandler extends InteractableHandler {
     }
 
     _isControllerPressed(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
+        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
             let gamepad = InputHandler.getXRGamepad(option);
             return gamepad != null && gamepad.buttons[0].pressed;
         } else if(option == "POINTER") {
@@ -262,7 +264,7 @@ class PointerInteractableHandler extends InteractableHandler {
             TransformControlsHandler.scaleWithTwoHands();
             return;
         }
-        for(let option in Hands) {
+        for(let option in Handedness) {
             let controller = {
                 option: option,
                 raycaster: this._getRaycaster(option),
@@ -285,7 +287,7 @@ class PointerInteractableHandler extends InteractableHandler {
 
     _updateForXRCopyPaste() {
         if(!global.sessionActive) return;
-        for(let option in Hands) {
+        for(let option in Handedness) {
             let controller = {
                 option: option,
                 raycaster: this._getRaycaster(option),
@@ -297,7 +299,7 @@ class PointerInteractableHandler extends InteractableHandler {
             };
             this._raycastInteractables(controller, this._interactables);
             this._updateInteractables(controller);
-            if(option == Hands.RIGHT && controller.closestPoint == null)
+            if(option == Handedness.RIGHT && controller.closestPoint == null)
                 CopyPasteControlsHandler.checkPlacement(controller);
             this._updateCursor(controller)
         }
@@ -305,7 +307,7 @@ class PointerInteractableHandler extends InteractableHandler {
 
     _updateForXR() {
         if(!global.sessionActive) return;
-        for(let option in Hands) {
+        for(let option in Handedness) {
             let controller = {
                 option: option,
                 raycaster: this._getRaycaster(option),

@@ -9,9 +9,10 @@ import Avatar from '/scripts/core/assets/Avatar.js';
 import BasicMovement from '/scripts/core/assets/BasicMovement.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import XRController from '/scripts/core/assets/XRController.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
+import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -139,8 +140,8 @@ class UserController extends InternalAssetEntity {
 
     getDistanceBetweenHands() {
         if(global.deviceType != 'XR') return;
-        let leftController = this._xrControllers[Hands.LEFT];
-        let rightController = this._xrControllers[Hands.RIGHT];
+        let leftController = this._xrControllers[Handedness.LEFT];
+        let rightController = this._xrControllers[Handedness.RIGHT];
         if(!leftController || !rightController) return;
 
         let leftPosition = leftController.getWorldPosition();
@@ -184,7 +185,7 @@ class UserController extends InternalAssetEntity {
     _pushHandsDataForRTC(data) {
         let codes = 0;
         let userScale = SettingsHandler.getUserScale();
-        for(let hand of [Hands.LEFT, Hands.RIGHT]) {
+        for(let hand of [Handedness.LEFT, Handedness.RIGHT]) {
             let controller = this._xrControllers[hand];
             if(controller.isInScene()) {
                 let position = controller.getObject().position.toArray();
@@ -281,16 +282,17 @@ class UserController extends InternalAssetEntity {
     }
 
     _getControllerModelUrl(object) {
-        if(object && object.children[0] && object.children[0].motionController){
-            return object.children[0].motionController.assetUrl;
+        if(object && object.motionController) {
+            return object.motionController.assetUrl;
         }
     }
 
     _updateHands(timeDelta) {
-        for(let hand in Hands) {
+        let type = XRInputDeviceTypes.CONTROLLER;
+        for(let hand in Handedness) {
             let controller = this._xrControllers[hand];
-            let controllerModel = InputHandler.getXRControllerModel(hand);
-            let source = InputHandler.getXRInputSource(hand);
+            let controllerModel = InputHandler.getXRControllerModel(type, hand);
+            let source = InputHandler.getXRInputSource(type, hand);
             if(controller && controller.isInScene()) {
                 if(source) {
                     controller.resetTTL();
@@ -302,8 +304,8 @@ class UserController extends InternalAssetEntity {
                     controller = new XRController({
                         hand: hand,
                         ownerId: this._id,
-                        controllerModel: controllerModel.children[0],
-                        object: InputHandler.getXRController(hand, 'grip'),
+                        controllerModel: controllerModel,
+                        object: InputHandler.getXRController(type, hand,'grip'),
                     });
                     ProjectHandler.addAsset(controller, true);
                     controller.attachTo(this);

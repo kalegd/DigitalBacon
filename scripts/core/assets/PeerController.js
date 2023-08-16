@@ -7,7 +7,7 @@
 import global from '/scripts/core/global.js';
 import Avatar from '/scripts/core/assets/Avatar.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -200,11 +200,11 @@ export default class PeerController extends InternalAssetEntity {
             index += 6;
         }
         if(UserMessageCodes.LEFT_HAND & codes) {
-            this._updateHandData(float32Array, index, Hands.LEFT);
+            this._updateHandData(float32Array, index, Handedness.LEFT);
             index += 6;
         }
         if(UserMessageCodes.RIGHT_HAND & codes) {
-            this._updateHandData(float32Array, index, Hands.RIGHT);
+            this._updateHandData(float32Array, index, Handedness.RIGHT);
             index += 6;
         }
         if(UserMessageCodes.USER_VELOCITY & codes) {

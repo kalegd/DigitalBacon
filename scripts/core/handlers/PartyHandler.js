@@ -7,7 +7,7 @@
 import global from '/scripts/core/global.js';
 import PeerController from '/scripts/core/assets/PeerController.js';
 import Party from '/scripts/core/clients/Party.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
@@ -100,7 +100,7 @@ class PartyHandler {
             "controllerParams": global.userController.exportParams(),
             "isXR": global.deviceType == "XR",
         }));
-        for(let hand in Hands) {
+        for(let hand in Handedness) {
             let xrController = global.userController.getController(hand);
             if(xrController) {
                 rtc.sendData(JSON.stringify({

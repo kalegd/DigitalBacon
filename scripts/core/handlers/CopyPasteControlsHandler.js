@@ -5,7 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import Hands from '/scripts/core/enums/Hands.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -33,9 +33,9 @@ class CopyPasteControlsHandler {
         if(this._copiedAsset) this._clear();
         this._copiedAsset = asset;
         this._previewAsset = asset.editorHelper.preview();
-        global.userController.getController(Hands.LEFT).getObject().attach(
+        global.userController.getController(Handedness.LEFT).getObject().attach(
             this._previewAsset.getObject());
-        global.userController.getController(Hands.RIGHT).getObject().add(
+        global.userController.getController(Handedness.RIGHT).getObject().add(
             this._previewAsset.getObject());
     }
 
