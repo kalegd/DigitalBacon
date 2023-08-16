@@ -58,21 +58,21 @@ class ColorWheelPage extends MenuPage {
         });
         let colorInteractable = PointerInteractable.createDraggable(
             this._colorBlock,
-            (point) => {
+            (owner, point) => {
                 this._handleColorCursorDrag(point);
                 this._isDraggingColorCursor = false;
                 if(this._onEnter) this._onEnter();
             },
-            (point) => { this._handleColorCursorDrag(point); },
+            (owner, point) => { this._handleColorCursorDrag(point); },
         );
         let lightnessInteractable = PointerInteractable.createDraggable(
             this._lightnessBlock,
-            (point) => {
+            (owner, point) => {
                 this._handleLightnessCursorDrag(point);
                 this._isDraggingLightnessCursor = false;
                 if(this._onEnter) this._onEnter();
             },
-            (point) => { this._handleLightnessCursorDrag(point); });
+            (owner, point) => { this._handleLightnessCursorDrag(point); });
         rowBlock.add(this._colorBlock);
         rowBlock.add(this._lightnessBlock);
         this._container.add(rowBlock);

@@ -12,6 +12,7 @@ import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
@@ -39,6 +40,10 @@ class TransformControlsHandler {
         this._placingObject = {};
         this._preTransformStates = {};
         this._id = uuidv4();
+        let tool = (global.deviceType == 'XR') ? HandTools.EDIT : null;
+        PointerInteractableHandler.registerToolHandler(tool, (controller) => {
+            return this._toolHandler(controller);
+        });
         if(global.deviceType != 'XR') {
             scene.add(this._transformControls);
             this._addEventListeners();
@@ -257,7 +262,7 @@ class TransformControlsHandler {
         }
     }
 
-    checkPlacement(controller) {
+    _checkPlacement(controller) {
         let option = controller.option;
         let raycaster = controller['raycaster'];
         raycaster.firstHitOnly = true;
@@ -295,7 +300,7 @@ class TransformControlsHandler {
         }
     }
 
-    scaleWithTwoHands() {
+    _scaleWithTwoHands() {
         let distance = global.userController.getDistanceBetweenHands();
         let factor = distance / this._initialScalingDistance;
         this._attachedAssets[Handedness.LEFT].getObject().scale.set(
@@ -306,6 +311,17 @@ class TransformControlsHandler {
         if(global.renderer.info.render.frame % 6 == 0)
             this._attachedAssets[Handedness.LEFT].editorHelper
                 ._publish(['scale']);
+    }
+
+    _toolHandler(controller) {
+        if(this._twoHandScaling) {
+            this._scaleWithTwoHands();
+            return true;
+        } else if(this._placingObject[controller.option]) {
+            this._checkPlacement(controller);
+            return true;
+        }
+        return false;
     }
 
     //Slightly modified version of Raycaster::intersectObjects
@@ -489,15 +505,6 @@ class TransformControlsHandler {
     getObject() {
         return this._transformControls.object;
     }
-
-    isPlacingObject(option) {
-        return this._placingObject[option || global.deviceType];
-    }
-
-    isTwoHandScaling() {
-        return this._twoHandScaling;
-    }
-
 }
 
 //Copied from Raycaster.js

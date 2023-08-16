@@ -68,14 +68,10 @@ export default class AssetEntityHelper extends EditorHelper {
                 this._asset.addPointerAction(() => {
                     ProjectHandler.deleteAsset(this._asset);
                 }, null, null, HandTools.DELETE));
-            this._gripActions.push(
-                this._asset.addGripAction((hand) => {
-                    CopyPasteControlsHandler.copy(this._asset);
-                }, null, HandTools.COPY_PASTE, Handedness.LEFT));
             this._pointerActions.push(
-                this._asset.addPointerAction(() => {
-                    CopyPasteControlsHandler.copy(this._asset);
-                }, null, null, HandTools.COPY_PASTE, Handedness.LEFT));
+                this._asset.addPointerAction((hand) => {
+                    CopyPasteControlsHandler.copy(hand, this._asset);
+                }, null, null, HandTools.COPY_PASTE));
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;

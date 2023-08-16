@@ -12,9 +12,7 @@ import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
-import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import InteractableHandler from '/scripts/core/handlers/InteractableHandler.js';
-import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import * as THREE from 'three';
@@ -29,18 +27,6 @@ class PointerInteractableHandler extends InteractableHandler {
         super.init();
         this._cursors = {};
         this.addInteractable(Scene.getPointerInteractable());
-    }
-
-    _setupXRSubscription() {
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
-            if(tool == HandTools.EDIT) {
-                this.update = this._updateForXREdit;
-            } else if(tool == HandTools.COPY_PASTE) {
-                this.update = this._updateForXRCopyPaste;
-            } else {
-                this.update = this._updateForXR;
-            }
-        });
     }
 
     _getXRCursor(hand) {
@@ -258,12 +244,9 @@ class PointerInteractableHandler extends InteractableHandler {
         }
     }
 
-    _updateForXREdit() {
+    _updateForXR() {
         if(!global.sessionActive) return;
-        if(TransformControlsHandler.isTwoHandScaling()) {
-            TransformControlsHandler.scaleWithTwoHands();
-            return;
-        }
+
         for(let option in Handedness) {
             let controller = {
                 option: option,
@@ -274,58 +257,20 @@ class PointerInteractableHandler extends InteractableHandler {
                 cursor: this._getXRCursor(option),
                 userDistance: Number.MAX_SAFE_INTEGER,
             };
-            if(TransformControlsHandler.isPlacingObject(option)) {
-                TransformControlsHandler.checkPlacement(controller);
-            } else {
+            let skipUpdate = false;
+            if(this._toolHandlers[this._tool]) {
+                skipUpdate = this._toolHandlers[this._tool](controller);
+            }
+            if(!skipUpdate) {
                 this._raycastInteractables(controller, this._interactables);
                 this._updateInteractables(controller);
             }
             this._updateCursor(controller)
         }
-
-    }
-
-    _updateForXRCopyPaste() {
-        if(!global.sessionActive) return;
-        for(let option in Handedness) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._getXRCursor(option),
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            this._raycastInteractables(controller, this._interactables);
-            this._updateInteractables(controller);
-            if(option == Handedness.RIGHT && controller.closestPoint == null)
-                CopyPasteControlsHandler.checkPlacement(controller);
-            this._updateCursor(controller)
-        }
-    }
-
-    _updateForXR() {
-        if(!global.sessionActive) return;
-        for(let option in Handedness) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._getXRCursor(option),
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            this._raycastInteractables(controller, this._interactables);
-            this._updateInteractables(controller);
-            this._updateCursor(controller)
-        }
     }
 
     _updateForPointer() {
-        if(!global.sessionActive)
-            return;
+        if(!global.sessionActive) return;
 
         let controller = {
             option: "POINTER",
@@ -335,13 +280,14 @@ class PointerInteractableHandler extends InteractableHandler {
             closestPointDistance: Number.MAX_SAFE_INTEGER,
             userDistance: Number.MAX_SAFE_INTEGER,
         };
-
-        if(TransformControlsHandler.isPlacingObject()) {
-            TransformControlsHandler.checkPlacement(controller);
-            return;
+        let skipUpdate = false;
+        if(this._toolHandlers[this._tool]) {
+            let skipUpdate = this._toolHandlers[this._tool](controller);
         }
-        this._raycastInteractables(controller, this._interactables);
-        this._updateInteractables(controller);
+        if(!skipUpdate) {
+            this._raycastInteractables(controller, this._interactables);
+            this._updateInteractables(controller);
+        }
         let style = global.renderer.domElement.style;
         if(this._hoveredInteractables['POINTER']) {
             if(!style.cursor) style.cursor = 'pointer';
@@ -351,8 +297,8 @@ class PointerInteractableHandler extends InteractableHandler {
     }
 
     _updateForMobile() {
-        if(!global.sessionActive)
-            return;
+        if(!global.sessionActive) return;
+
         let controller = {
             option: "MOBILE",
             raycaster: this._getRaycaster("MOBILE"),
@@ -361,14 +307,12 @@ class PointerInteractableHandler extends InteractableHandler {
             closestPointDistance: Number.MAX_SAFE_INTEGER,
             userDistance: Number.MAX_SAFE_INTEGER,
         };
-
-        if(TransformControlsHandler.isPlacingObject()) {
-            TransformControlsHandler.checkPlacement(controller);
-            return;
+        if(this._toolHandlers[this._tool]) {
+            let skipUpdate = this._toolHandlers[this._tool](controller);
+            if(skipUpdate) return;
         }
         this._updateInteractablesMobile(controller);
     }
-
 }
 
 let pointerInteractableHandler = new PointerInteractableHandler();

@@ -115,7 +115,7 @@ class PointerInteractable extends Interactable {
                 && (action.maxDistance >= distance
                     || action.draggingOwners.has(owner)))
             {
-                action.action(closestPoint);
+                action.action(owner, closestPoint);
             }
             if(action.draggingOwners.has(owner))
                 action.draggingOwners.delete(owner);
@@ -130,7 +130,7 @@ class PointerInteractable extends Interactable {
                 && (action.draggingOwners.has(owner)
                     || action.maxDistance >= distance))
             {
-                action.draggableAction(closestPoint);
+                action.draggableAction(owner, closestPoint);
                 action.isDragging = true;
                 if(!action.draggingOwners.has(owner))
                     action.draggingOwners.add(owner);
@@ -141,7 +141,7 @@ class PointerInteractable extends Interactable {
     releaseDraggedActions(owner) {
         for(let action of this._actions) {
             if(action.draggingOwners.has(owner)) {
-                if(action.action) action.action();
+                if(action.action) action.action(owner);
                 action.draggingOwners.delete(owner);
             }
         }

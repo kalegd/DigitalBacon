@@ -14,7 +14,6 @@ export default class XRController extends XRDevice {
     constructor(params = {}) {
         params['assetId'] = XRController.assetId;
         super(params);
-        console.log("Creating XRController");
         let controllerModel = params['controllerModel'];
         if(controllerModel) {
             this._object.add(controllerModel);

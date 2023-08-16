@@ -6,7 +6,9 @@
 
 import global from '/scripts/core/global.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
+import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
@@ -16,73 +18,54 @@ class CopyPasteControlsHandler {
         this._id = uuidv4();
         this._assetAlreadyPastedByTrigger = false;
         this._assetAlreadyPastedByGrip = false;
-        this._copiedAsset;
+        this._copiedAssets = {};
+        this._previewAssets = {};
+        GripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
+            (controller) => { return this._toolHandler(controller); });
         PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
-            if(this._copiedAsset) this._clear();
+            if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByTrigger = false;
             this._assetAlreadyPastedByGrip = false;
         });
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
-            if(this._copiedAsset) this._clear();
+            if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByTrigger = false;
             this._assetAlreadyPastedByGrip = false;
         });
     }
 
-    copy(asset) {
-        if(this._copiedAsset) this._clear();
-        this._copiedAsset = asset;
-        this._previewAsset = asset.editorHelper.preview();
-        global.userController.getController(Handedness.LEFT).getObject().attach(
-            this._previewAsset.getObject());
-        global.userController.getController(Handedness.RIGHT).getObject().add(
-            this._previewAsset.getObject());
+    copy(hand, asset) {
+        if(this._previewAssets[hand])
+            this._previewAssets[hand].removeFromScene();
+        this._copiedAssets[hand] = asset;
+        this._previewAssets[hand] = asset.editorHelper.preview();
+        global.userController.getController(hand).getObject().attach(
+            this._previewAssets[hand].getObject());
     }
 
-    _paste() {
-        let clonedAsset = this._previewAsset.clone(
-            this._copiedAsset.visualEdit);
+    _paste(hand) {
+        this._previewAssets[hand].clone(
+            this._copiedAssets[hand].visualEdit);
         this._assetAlreadyPastedByGrip = true;
     }
 
-    checkPlacement(controller) {
-        if(!this._copiedAsset) return;
-        let raycaster = controller['raycaster'];
-        raycaster.far = Infinity;
-        let isPressed = controller['isPressed'];
-        let intersections = raycaster.intersectObjects(ProjectHandler.getObjects(), true);
-        if(this._assetAlreadyPastedByTrigger) {
-            if(isPressed) return;
-            this._assetAlreadyPastedByTrigger = false;
-        }
-        if(intersections.length > 0) {
-            controller['closestPoint'] = intersections[0].point;
-            if(isPressed && this._copiedAsset) {
-                let clonedAsset = this._copiedAsset.clone();
-                clonedAsset.editorHelper.place(intersections[0]);
-                this._assetAlreadyPastedByTrigger = true;
-            }
-        }
-    }
-
-    checkGripPlacement(isControllerPressed) {
-        if(!this._copiedAsset) return;
-        if(isControllerPressed != this._assetAlreadyPastedByGrip) {
-            if(isControllerPressed) this._paste();
+    _toolHandler(controller) {
+        let hand = controller.option;
+        if(!this._copiedAssets[hand]) return false;
+        if(controller.isPressed != this._assetAlreadyPastedByGrip) {
+            if(controller.isPressed) this._paste(hand);
             else this._assetAlreadyPastedByGrip = false;
         }
+        return true;
     }
 
     _clear() {
-        this._previewAsset.removeFromScene();
-        this._copiedAsset = null;
-        this._previewAsset = null;
+        for(let hand in this._previewAssets) {
+            this._previewAssets[hand].removeFromScene();
+        }
+        this._copiedAssets = {};
+        this._previewAssets = {};
     }
-
-    hasCopiedObject() {
-        return this._copiedAsset;
-    }
-
 }
 
 let copyPasteControlsHandler = new CopyPasteControlsHandler();
