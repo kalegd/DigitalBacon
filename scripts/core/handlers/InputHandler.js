@@ -9,8 +9,10 @@ import Handedness from '/scripts/core/enums/Handedness.js';
 import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import { Object3D, Vector2 } from 'three';
 import { XRControllerModelFactory } from '/scripts/three/examples/jsm/webxr/XRControllerModelFactory.js';
+import { XRHandModelFactory } from '/scripts/three/examples/jsm/webxr/XRHandModelFactory.js';
 
 const controllerModelFactory = new XRControllerModelFactory();
+const handModelFactory = new XRHandModelFactory();
 
 //Provides Polling for XR Input Sources, Keyboard, or Mobile Touch Screen inputs
 class InputHandler {
@@ -179,8 +181,17 @@ class InputHandler {
             }
             xrInputDevice.inputSource = inputSource;
             if(!xrInputDevice.model) {
-                xrInputDevice.model = controllerModelFactory
-                    .createControllerModel(inputSource);
+                if(type == XRInputDeviceTypes.HAND) {
+                    xrInputDevice.model = handModelFactory
+                        .createHandModel(inputSource);
+                } else if(type == XRInputDeviceTypes.CONTROLLER) {
+                    xrInputDevice.model = controllerModelFactory
+                        .createControllerModel(inputSource, 'mesh');
+                }
+            } else {
+                let motionController = xrInputDevice.model.motionController;
+                if(motionController)
+                    motionController.xrInputSource = inputSource;
             }
         }
     }
@@ -295,13 +306,21 @@ class InputHandler {
             let gripPose = frame.getPose(
                 xrInputSource.gripSpace, referenceSpace
             );
-            if ( gripPose !== null ) {
+            if(gripPose != null) {
                 xrControllers.grip.matrix.fromArray(gripPose.transform.matrix);
                 xrControllers.grip.matrix.decompose(
                     xrControllers.grip.position,
                     xrControllers.grip.rotation,
                     xrControllers.grip.scale
                 );
+            }
+
+            if(xrInputSource.hand && xrInputDevice.model) {
+                let motionController = xrInputDevice.model.motionController;
+                if(motionController){
+                    motionController.updateMesh(frame, referenceSpace,
+                        xrControllers.grip.matrix);
+                }
             }
         }
     }

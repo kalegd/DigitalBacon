@@ -9,6 +9,7 @@ import Avatar from '/scripts/core/assets/Avatar.js';
 import BasicMovement from '/scripts/core/assets/BasicMovement.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import XRController from '/scripts/core/assets/XRController.js';
+import XRHand from '/scripts/core/assets/XRHand.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
@@ -288,33 +289,41 @@ class UserController extends InternalAssetEntity {
     }
 
     _updateHands(timeDelta) {
-        let type = XRInputDeviceTypes.CONTROLLER;
-        for(let handedness in Handedness) {
-            let controller = this._xrControllers[handedness];
-            let controllerModel = InputHandler.getXRControllerModel(type,
-                handedness);
-            let source = InputHandler.getXRInputSource(type, handedness);
-            if(controller && controller.isInScene()) {
-                if(source) {
-                    controller.resetTTL();
-                } else {
-                    controller.decrementTTL(timeDelta);
-                }
-            } else if(source && this._getControllerModelUrl(controllerModel)) {
-                if(!controller) {
-                    controller = new XRController({
-                        handedness: handedness,
-                        ownerId: this._id,
-                        controllerModel: controllerModel,
-                        object: InputHandler.getXRController(type, handedness,
-                            'grip'),
-                    });
-                    ProjectHandler.addAsset(controller, true);
-                    controller.attachTo(this);
-                    //this._xrControllers[handedness] = controller;
-                } else {
-                    ProjectHandler.addAsset(controller, true);
-                }
+        for(let side in Handedness) {
+            this._updateHand(timeDelta, XRInputDeviceTypes.CONTROLLER, side);
+            this._updateHand(timeDelta, XRInputDeviceTypes.HAND, side);
+        }
+    }
+
+    _updateHand(timeDelta, type, handedness) {
+        let controller = (type == XRInputDeviceTypes.HAND)
+            ? this._xrHands[handedness]
+            : this._xrControllers[handedness];
+        let controllerModel = InputHandler.getXRControllerModel(type,
+            handedness);
+        let source = InputHandler.getXRInputSource(type, handedness);
+        if(controller && controller.isInScene()) {
+            if(source) {
+                controller.resetTTL();
+            } else {
+                controller.decrementTTL(timeDelta);
+            }
+        } else if(source && this._getControllerModelUrl(controllerModel)) {
+            if(!controller) {
+                let assetClass = (type == XRInputDeviceTypes.HAND)
+                    ? XRHand
+                    : XRController;
+                controller = new assetClass({
+                    handedness: handedness,
+                    ownerId: this._id,
+                    controllerModel: controllerModel,
+                    object: InputHandler.getXRController(type, handedness,
+                        'grip'),
+                });
+                ProjectHandler.addAsset(controller, true);
+                controller.attachTo(this);
+            } else {
+                ProjectHandler.addAsset(controller, true);
             }
         }
     }
