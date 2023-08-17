@@ -23,7 +23,7 @@ class RotateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
@@ -31,7 +31,7 @@ class RotateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -79,45 +79,48 @@ class RotateHandler {
         });
     }
 
-    attach(controller, hand, asset, rotationDifference) {
-        let controllerId = controller.getId();
-        let otherHand = Handedness.otherHand(hand);
-        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
-        if(otherHeldAsset && otherHeldAsset.asset == asset) {
-            this._swapToHand(controller, hand, otherHand, rotationDifference);
+    _otherOwner(ownerId, asset) {
+        for(let otherId in this._heldAssets) {
+            if(this._heldAssets[otherId].asset == asset && otherId != ownerId)
+                return otherId;
+        }
+    }
+
+    attach(owner, asset, rotationDifference) {
+        let otherOwner = this._otherOwner(owner);
+        if(otherOwner) {
+            this._swapToOwner(owner, otherOwner, rotationDifference);
         } else {
             let heldAsset = {
                 asset: asset,
-                controller: controller,
-                hand: hand,
-            }
+                ownerId: owner,
+            };
             if(rotationDifference) {
                 heldAsset.rotationDifference = rotationDifference;
             } else {
                 let rotation = asset.getWorldQuaternion();
                 heldAsset.preTransformState = rotation.toArray();
-                heldAsset.rotationDifference = controller.getController(hand)
+                heldAsset.rotationDifference = ProjectHandler.getAsset(owner)
                     .getWorldQuaternion().conjugate().multiply(rotation)
                     .toArray();
             }
-            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+            this._heldAssets[owner] = heldAsset;
         }
         if(!rotationDifference) {
-            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            let heldAsset = this._heldAssets[owner];
             PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: hand,
+                option: owner,
                 type: 'rotate',
                 rotation: heldAsset.rotationDifference,
             });
         }
     }
 
-    detach(controller, hand, rotation) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+    detach(owner, rotation) {
+        let heldAsset = this._heldAssets[owner];
         if(!heldAsset) return;
-        delete this._heldAssets[controllerId + ':' + hand];
+        delete this._heldAssets[owner];
         if(!rotation) {
             rotation = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -132,7 +135,7 @@ class RotateHandler {
             assetHelper._publish(['rotation']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: hand,
+                option: owner,
                 type: 'rotate',
                 rotation: rotation,
             });
@@ -152,7 +155,7 @@ class RotateHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world rotation of the asset once
         //we support parent child relationships
-        let handRotation = heldAsset.controller.getController(heldAsset.hand)
+        let handRotation = ProjectHandler.getAsset(heldAsset.ownerId)
             .getWorldQuaternion();
         this._quaternion.fromArray(heldAsset.rotationDifference);
         let newRotation = handRotation.multiply(this._quaternion).toArray();
@@ -160,19 +163,17 @@ class RotateHandler {
         return newRotation;
     }
 
-    _swapToHand(controller, newHand, oldHand, rotationDifference) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
-        heldAsset.hand = newHand;
-        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
-        delete this._heldAssets[controllerId + ':' + oldHand];
+    _swapToOwner(newOwner, newHand, rotationDifference) {
+        let heldAsset = this._heldAssets[oldOwner];
+        heldAsset.ownerId = newOwner;
+        this._heldAssets[newOwner] = heldAsset;
+        delete this._heldAssets[oldOwner];
         if(rotationDifference) {
             heldAsset.rotationDifference = rotationDifference;
         } else {
             let rotation = heldAsset.asset.getWorldQuaternion();
-            heldAsset.rotationDifference = heldAsset.controller
-                .getController(heldAsset.hand).getWorldQuaternion().conjugate()
-                .multiply(rotation).toArray();
+            heldAsset.rotationDifference = ProjectHandler.getAsset(newOwner)
+                .getWorldQuaternion().conjugate().multiply(rotation).toArray();
         }
     }
 }

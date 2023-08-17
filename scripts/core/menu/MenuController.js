@@ -17,6 +17,7 @@ import Keyboard from '/scripts/core/menu/input/Keyboard.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
@@ -118,15 +119,15 @@ export default class MenuController extends PointerInteractableEntity {
         if(global.deviceType != 'XR') return;
         let border = this._createBorder();
         let interactable = new MenuGripInteractable(this._object, border);
-        interactable.addAction((hand) => {
-            let controller = UserController.getController(hand);
-            controller.getObject().attach(this._object);
-            this._gripOwners.add(hand);
-        }, (hand) => {
-            let controller = UserController.getController(hand);
-            if(this._object.parent == controller.getObject())
+        interactable.addAction((ownerId) => {
+            let asset = ProjectHandler.getAsset(ownerId);
+            if(asset) asset.getObject().attach(this._object);
+            this._gripOwners.add(ownerId);
+        }, (ownerId) => {
+            let asset = ProjectHandler.getAsset(ownerId);
+            if(this._object.parent == asset.getObject())
                 Scene.getObject().attach(this._object);
-            this._gripOwners.delete(hand);
+            this._gripOwners.delete(ownerId);
         });
         this._gripInteractable.addChild(interactable);
         Keyboard.init(this._object);

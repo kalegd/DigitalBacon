@@ -6,9 +6,11 @@
 
 import XRDevice from '/scripts/core/assets/XRDevice.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
+import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
+import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { Euler, Quaternion, Vector3 } from 'three';
+import { Euler, Quaternion, Raycaster, Vector3 } from 'three';
 
 export default class XRController extends XRDevice {
     constructor(params = {}) {
@@ -17,25 +19,48 @@ export default class XRController extends XRDevice {
         let controllerModel = params['controllerModel'];
         if(controllerModel) {
             this._object.add(controllerModel);
+            this._modelObject = controllerModel;
             this._modelUrl = controllerModel.motionController.assetUrl;
         }
-        this._hand = params['hand'];
-        if(!this._hand in Handedness) {
+        this._handedness = params['handedness'];
+        if(!this._handedness in Handedness) {
             throw new Error("hand must be LEFT or RIGHT");
         }
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
     }
 
     _registerOwner(params) {
         let owner = ProjectHandler.getSessionAsset(params['ownerId']);
         if(owner) {
-            owner.registerXRController(params['hand'], this);
+            owner.registerXRController(params['handedness'], this);
         }
     }
 
     exportParams() {
         let params = super.exportParams();
-        params['hand'] = this._hand;
+        params['handedness'] = this._handedness;
         return params;
+    }
+
+    getHandedness() {
+        return this._handedness;
+    }
+
+    getRaycaster() {
+        let xrController = InputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldPosition(this._raycasterOrigin);
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    isButtonPressed(index) {
+        let gamepad = InputHandler.getXRGamepad(this._handedness);
+        return gamepad != null && gamepad.buttons[index].pressed;
     }
 
     static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';

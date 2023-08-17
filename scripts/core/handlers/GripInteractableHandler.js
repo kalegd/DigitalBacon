@@ -21,31 +21,17 @@ class GripInteractableHandler extends InteractableHandler {
 
     init() {
         super.init();
-        this._spheres = {};
-        this._spheres[Handedness.LEFT] = new THREE.Sphere();
-        this._spheres[Handedness.RIGHT] = new THREE.Sphere();
+        this._sphere = new THREE.Sphere();
         this._box3 = new THREE.Box3();
         this.addInteractable(Scene.getGripInteractable());
     }
 
-    _getBoundingSphere(option) {
-        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
-            let xrController = InputHandler.getXRController(
-                XRInputDeviceTypes.CONTROLLER, option, "grip");
-            if(!xrController) return null;
-            this._box3.setFromObject(xrController)
-                .getBoundingSphere(this._spheres[option]);
-            return this._spheres[option];
-        }
-    }
-
-    _isControllerPressed(option) {
-        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
-            let gamepad = InputHandler.getXRGamepad(option);
-            return gamepad != null
-                && gamepad.buttons.length > 1
-                && gamepad.buttons[1].pressed;
-        }
+    _getBoundingSphere(xrController) {
+        if(!xrController) return null;
+        let modelObject = xrController.getModelObject()
+            || xrController.getObject();
+        this._box3.setFromObject(modelObject).getBoundingSphere(this._sphere);
+        return this._sphere;
     }
 
     _scopeInteractables(controller, interactables) {
@@ -114,18 +100,31 @@ class GripInteractableHandler extends InteractableHandler {
 
     _updateForXR() {
         if(!global.sessionActive) return;
-        for(let option in Handedness) {
-            let controller = {
-                option: option,
-                boundingSphere: this._getBoundingSphere(option),
-                isPressed: this._isControllerPressed(option),
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-            };
-            let skipUpdate = false;
-            if(this._toolHandlers[this._tool]) {
-                skipUpdate = this._toolHandlers[this._tool](controller);
+        for(let handedness in Handedness) {
+            let controllerExists = false;
+            for(let type of ['getController', 'getHand']) {
+                let xrDevice = global.userController[type](handedness);
+                if(!xrDevice) continue;
+                let active = xrDevice.isInScene();
+                if(type == 'getController') {
+                    controllerExists = true;
+                } else if(controllerExists) {
+                    active = false;
+                }
+                let controller = {
+                    option: xrDevice.getId(),
+                    boundingSphere: (active)
+                        ? this._getBoundingSphere(xrDevice)
+                        : null,
+                    isPressed: (active) ? xrDevice.isButtonPressed(1) : false,
+                    closestPointDistance: Number.MAX_SAFE_INTEGER,
+                };
+                let skipUpdate = false;
+                if(this._toolHandlers[this._tool]) {
+                    skipUpdate = this._toolHandlers[this._tool](controller);
+                }
+                if(!skipUpdate) this._updateInteractables(controller);
             }
-            if(!skipUpdate) this._updateInteractables(controller);
         }
     }
 

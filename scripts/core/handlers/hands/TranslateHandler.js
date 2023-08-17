@@ -19,7 +19,7 @@ class TranslateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
@@ -27,7 +27,7 @@ class TranslateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -71,45 +71,47 @@ class TranslateHandler {
         });
     }
 
-    attach(controller, hand, asset, positionDifference) {
-        let controllerId = controller.getId();
-        let otherHand = Handedness.otherHand(hand);
-        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
-        if(otherHeldAsset && otherHeldAsset.asset == asset) {
-            this._swapToHand(controller, hand, otherHand, positionDifference);
+    _otherOwner(ownerId, asset) {
+        for(let otherId in this._heldAssets) {
+            if(this._heldAssets[otherId].asset == asset && otherId != ownerId)
+                return otherId;
+        }
+    }
+
+    attach(owner, asset, positionDifference) {
+        let otherOwner = this._otherOwner(owner);
+        if(otherOwner) {
+            this._swapToOwner(owner, otherOwner, positionDifference);
         } else {
             let heldAsset = {
                 asset: asset,
-                controller: controller,
-                hand: hand,
-            }
+                ownerId: owner,
+            };
             if(positionDifference) {
                 heldAsset.positionDifference = positionDifference;
             } else {
                 let position = asset.getWorldPosition();
                 heldAsset.preTransformState = position.toArray();
-                heldAsset.positionDifference = position.sub(heldAsset
-                    .controller.getController(hand).getWorldPosition())
-                    .toArray();
+                heldAsset.positionDifference = position.sub(ProjectHandler
+                    .getAsset(owner).getWorldPosition()).toArray();
             }
-            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+            this._heldAssets[owner] = heldAsset;
         }
         if(!positionDifference) {
-            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            let heldAsset = this._heldAssets[owner];
             PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: hand,
+                option: owner,
                 type: 'translate',
                 position: heldAsset.positionDifference,
             });
         }
     }
 
-    detach(controller, hand, position) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+    detach(owner, position) {
+        let heldAsset = this._heldAssets[owner];
         if(!heldAsset) return;
-        delete this._heldAssets[controllerId + ':' + hand];
+        delete this._heldAssets[owner];
         if(!position) {
             position = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -120,7 +122,7 @@ class TranslateHandler {
             assetHelper._publish(['position']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: hand,
+                option: owner,
                 type: 'translate',
                 position: position,
             });
@@ -140,7 +142,7 @@ class TranslateHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world position of the asset once
         //we support parent child relationships
-        let handPosition = heldAsset.controller.getController(heldAsset.hand)
+        let handPosition = ProjectHandler.getAsset(heldAsset.ownerId)
             .getWorldPosition();
         let newPosition = [
             heldAsset.positionDifference[0] + handPosition.x,
@@ -151,19 +153,17 @@ class TranslateHandler {
         return newPosition;
     }
 
-    _swapToHand(controller, newHand, oldHand, positionDifference) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
-        heldAsset.hand = newHand;
-        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
-        delete this._heldAssets[controllerId + ':' + oldHand];
+    _swapToOwner(newOwner, oldOwner, positionDifference) {
+        let heldAsset = this._heldAssets[oldOwner];
+        heldAsset.ownerId = newOwner;
+        this._heldAssets[newOwner] = heldAsset;
+        delete this._heldAssets[oldOwner];
         if(positionDifference) {
             heldAsset.positionDifference = positionDifference;
         } else {
             let position = heldAsset.asset.getWorldPosition();
-            heldAsset.positionDifference = position.sub(heldAsset
-                .controller.getController(heldAsset.hand).getWorldPosition())
-                .toArray();
+            heldAsset.positionDifference = position.sub(ProjectHandler
+                .getAsset(newOwner).getWorldPosition()).toArray();
         }
     }
 }

@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
@@ -113,7 +114,8 @@ class MenuPage extends PointerInteractableEntity {
         this._container.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
         this._containerInteractable = new PointerInteractable(
             this._container.children[0]);
-        this._containerInteractable.addAction(() => {});
+        if(global.deviceType == 'XR')
+            this._containerInteractable.addAction(() => {});
         this._pointerInteractable.addChild(this._containerInteractable);
         borderedBlock.add(this._container);
         this._object.add(borderedBlock);

@@ -112,25 +112,25 @@ class UserController extends InternalAssetEntity {
         PubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
     }
 
-    getController(hand) {
-        return this._xrControllers[hand];
+    getController(handedness) {
+        return this._xrControllers[handedness];
     }
 
-    getHand(hand) {
-        return this._xrHands[hand];
+    getHand(handedness) {
+        return this._xrHands[handedness];
     }
 
     getXRDevices() {
         return this._xrDevices;
     }
 
-    registerXRController(hand, xrController) {
-        this._xrControllers[hand] = xrController;
+    registerXRController(handedness, xrController) {
+        this._xrControllers[handedness] = xrController;
         this._xrDevices.add(xrController);
     }
 
-    registerXRHand(hand, xrHand) {
-        this._xrHands[hand] = xrHand;
+    registerXRHand(handedness, xrHand) {
+        this._xrHands[handedness] = xrHand;
         this._xrDevices.add(xrHand);
     }
 
@@ -185,15 +185,15 @@ class UserController extends InternalAssetEntity {
     _pushHandsDataForRTC(data) {
         let codes = 0;
         let userScale = SettingsHandler.getUserScale();
-        for(let hand of [Handedness.LEFT, Handedness.RIGHT]) {
-            let controller = this._xrControllers[hand];
+        for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
+            let controller = this._xrControllers[handedness];
             if(controller.isInScene()) {
                 let position = controller.getObject().position.toArray();
                 let rotation = controller.getObject().rotation.toArray();
                 rotation.pop();
                 data.push(...position);
                 data.push(...rotation);
-                codes += UserMessageCodes[hand + '_HAND'];
+                codes += UserMessageCodes[handedness + '_HAND'];
             }
         }
         return codes;
@@ -289,10 +289,11 @@ class UserController extends InternalAssetEntity {
 
     _updateHands(timeDelta) {
         let type = XRInputDeviceTypes.CONTROLLER;
-        for(let hand in Handedness) {
-            let controller = this._xrControllers[hand];
-            let controllerModel = InputHandler.getXRControllerModel(type, hand);
-            let source = InputHandler.getXRInputSource(type, hand);
+        for(let handedness in Handedness) {
+            let controller = this._xrControllers[handedness];
+            let controllerModel = InputHandler.getXRControllerModel(type,
+                handedness);
+            let source = InputHandler.getXRInputSource(type, handedness);
             if(controller && controller.isInScene()) {
                 if(source) {
                     controller.resetTTL();
@@ -302,14 +303,15 @@ class UserController extends InternalAssetEntity {
             } else if(source && this._getControllerModelUrl(controllerModel)) {
                 if(!controller) {
                     controller = new XRController({
-                        hand: hand,
+                        handedness: handedness,
                         ownerId: this._id,
                         controllerModel: controllerModel,
-                        object: InputHandler.getXRController(type, hand,'grip'),
+                        object: InputHandler.getXRController(type, handedness,
+                            'grip'),
                     });
                     ProjectHandler.addAsset(controller, true);
                     controller.attachTo(this);
-                    this._xrControllers[hand] = controller;
+                    //this._xrControllers[handedness] = controller;
                 } else {
                     ProjectHandler.addAsset(controller, true);
                 }

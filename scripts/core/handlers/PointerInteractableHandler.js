@@ -58,16 +58,7 @@ class PointerInteractableHandler extends InteractableHandler {
     }
 
     _getRaycaster(option) {
-        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
-            let position = new THREE.Vector3();
-            let direction = new THREE.Vector3();
-            let xrController = InputHandler.getXRController(
-                XRInputDeviceTypes.CONTROLLER, option, "targetRay");
-            if(!xrController) return null;
-            xrController.getWorldPosition(position);
-            xrController.getWorldDirection(direction).negate().normalize();
-            return new THREE.Raycaster(position, direction, 0.01, 50);
-        } else if(option == "POINTER") {
+        if(option == "POINTER") {
             let position = InputHandler.getPointerPosition();
             let raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(position, global.camera);
@@ -247,25 +238,36 @@ class PointerInteractableHandler extends InteractableHandler {
     _updateForXR() {
         if(!global.sessionActive) return;
 
-        for(let option in Handedness) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._getXRCursor(option),
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            let skipUpdate = false;
-            if(this._toolHandlers[this._tool]) {
-                skipUpdate = this._toolHandlers[this._tool](controller);
+        for(let handedness in Handedness) {
+            let controllerExists = false;
+            for(let type of ['getController', 'getHand']) {
+                let xrDevice = global.userController[type](handedness);
+                if(!xrDevice) continue;
+                let active = xrDevice.isInScene();
+                if(type == 'getController') {
+                    controllerExists = true;
+                } else if(controllerExists) {
+                    active = false;
+                }
+                let controller = {
+                    option: xrDevice.getId(),
+                    raycaster: (active) ? xrDevice.getRaycaster() : null,
+                    isPressed: (active) ? xrDevice.isButtonPressed(0) : false,
+                    closestPoint: null,
+                    closestPointDistance: Number.MAX_SAFE_INTEGER,
+                    cursor: (active) ? this._getXRCursor(handedness) : null,
+                    userDistance: Number.MAX_SAFE_INTEGER,
+                };
+                let skipUpdate = false;
+                if(this._toolHandlers[this._tool]) {
+                    skipUpdate = this._toolHandlers[this._tool](controller);
+                }
+                if(!skipUpdate) {
+                    this._raycastInteractables(controller, this._interactables);
+                    this._updateInteractables(controller);
+                }
+                this._updateCursor(controller)
             }
-            if(!skipUpdate) {
-                this._raycastInteractables(controller, this._interactables);
-                this._updateInteractables(controller);
-            }
-            this._updateCursor(controller)
         }
     }
 

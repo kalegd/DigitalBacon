@@ -32,6 +32,7 @@ export default class XRDevice extends InternalAssetEntity {
     _loadModelFromUrl() {
         let gltfLoader = new GLTFLoader();
         gltfLoader.load(this._modelUrl, (gltf) => {
+            this._modelObject = gltf.scene;
             this._object.add(gltf.scene);
         });
     }
@@ -52,6 +53,10 @@ export default class XRDevice extends InternalAssetEntity {
 
     isInScene() {
         return this._object.parent != null;
+    }
+
+    getModelObject() {
+        return this._modelObject;
     }
 
     getModelUrl() {

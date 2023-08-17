@@ -19,7 +19,7 @@ class ScaleHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
@@ -27,7 +27,7 @@ class ScaleHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -69,45 +69,48 @@ class ScaleHandler {
         });
     }
 
-    attach(controller, hand, asset, scaleIdentity) {
-        let controllerId = controller.getId();
-        let otherHand = Handedness.otherHand(hand);
-        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
-        if(otherHeldAsset && otherHeldAsset.asset == asset) {
-            this._swapToHand(controller, hand, otherHand, scaleIdentity);
+    _otherOwner(ownerId, asset) {
+        for(let otherId in this._heldAssets) {
+            if(this._heldAssets[otherId].asset == asset && otherId != ownerId)
+                return otherId;
+        }
+    }
+
+    attach(owner, asset, scaleIdentity) {
+        let otherOwner = this._otherOwner(owner);
+        if(otherOwner) {
+            this._swapToOwner(owner, otherOwner, scaleIdentity);
         } else {
             let heldAsset = {
                 asset: asset,
-                controller: controller,
-                hand: hand,
+                ownerId: owner,
             }
             if(scaleIdentity) {
                 heldAsset.scaleIdentity = scaleIdentity;
             } else {
-                let distance = controller.getController(hand).getWorldPosition()
+                let distance = ProjectHandler.getAsset(owner).getWorldPosition()
                     .distanceTo(asset.getWorldPosition());
                 let scale = asset.getWorldScale();
                 heldAsset.preTransformState = scale.toArray();
                 heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
             }
-            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+            this._heldAssets[owner] = heldAsset;
         }
         if(!scaleIdentity) {
-            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            let heldAsset = this._heldAssets[owner];
             PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: hand,
+                option: owner,
                 type: 'scale',
                 scale: heldAsset.scaleIdentity,
             });
         }
     }
 
-    detach(controller, hand, scale) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+    detach(owner, scale) {
+        let heldAsset = this._heldAssets[owner];
         if(!heldAsset) return;
-        delete this._heldAssets[controllerId + ':' + hand];
+        delete this._heldAssets[owner];
         if(!scale) {
             scale = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -118,7 +121,7 @@ class ScaleHandler {
             assetHelper._publish(['scale']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: hand,
+                option: owner,
                 type: 'scale',
                 scale: scale,
             });
@@ -138,8 +141,8 @@ class ScaleHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world scale of the asset once
         //we support parent child relationships
-        let distance = heldAsset.asset.getWorldPosition().distanceTo(heldAsset
-            .controller.getController(heldAsset.hand).getWorldPosition());
+        let distance = heldAsset.asset.getWorldPosition().distanceTo(
+            ProjectHandler.getAsset(heldAsset.ownerId).getWorldPosition());
         let newScale = [
             heldAsset.scaleIdentity[0] * distance,
             heldAsset.scaleIdentity[1] * distance,
@@ -149,16 +152,15 @@ class ScaleHandler {
         return newScale;
     }
 
-    _swapToHand(controller, newHand, oldHand, scaleIdentity) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
-        heldAsset.hand = newHand;
-        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
-        delete this._heldAssets[controllerId + ':' + oldHand];
+    _swapToOwner(newOwner, oldOwner, scaleIdentity) {
+        let heldAsset = this._heldAssets[oldOwner];
+        heldAsset.ownerId = newOwner;
+        this._heldAssets[newOwner] = heldAsset;
+        delete this._heldAssets[oldOwner];
         if(scaleIdentity) {
             heldAsset.scaleIdentity = scaleIdentity;
         } else {
-            let distance = controller.getController(newHand).getWorldPosition()
+            let distance = ProjectHandler.getAsset(newOwner).getWorldPosition()
                 .distanceTo(heldAsset.asset.getWorldPosition());
             let scale = heldAsset.asset.getWorldScale();
             heldAsset.scaleIdentity = scale.divideScalar(distance).toArray();

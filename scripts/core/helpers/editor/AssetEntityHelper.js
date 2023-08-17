@@ -55,13 +55,13 @@ export default class AssetEntityHelper extends EditorHelper {
         if(this._pointerActions.length > 0) return;
         if(global.deviceType == "XR") {
             this._gripActions.push(
-                this._asset.addGripAction((hand) => {
-                    TransformControlsHandler.attach(this._asset, hand);
-                }, (hand) => {
-                    TransformControlsHandler.detach(hand);
+                this._asset.addGripAction((ownerId) => {
+                    TransformControlsHandler.attach(this._asset, ownerId);
+                }, (ownerId) => {
+                    TransformControlsHandler.detach(ownerId);
                 }, HandTools.EDIT));
             this._gripActions.push(
-                this._asset.addGripAction((hand) => {
+                this._asset.addGripAction((ownerId) => {
                     ProjectHandler.deleteAsset(this._asset);
                 }, null, HandTools.DELETE));
             this._pointerActions.push(
@@ -69,17 +69,17 @@ export default class AssetEntityHelper extends EditorHelper {
                     ProjectHandler.deleteAsset(this._asset);
                 }, null, null, HandTools.DELETE));
             this._pointerActions.push(
-                this._asset.addPointerAction((hand) => {
-                    CopyPasteControlsHandler.copy(hand, this._asset);
+                this._asset.addPointerAction((ownerId) => {
+                    CopyPasteControlsHandler.copy(ownerId, this._asset);
                 }, null, null, HandTools.COPY_PASTE));
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;
                 this._gripActions.push(
-                    this._asset.addGripAction((hand) => {
-                        handler.attach(UserController, hand, this._asset);
-                    }, (hand) => {
-                        handler.detach(UserController, hand);
+                    this._asset.addGripAction((ownerId) => {
+                        handler.attach(ownerId, this._asset);
+                    }, (ownerId) => {
+                        handler.detach(ownerId);
                     }, tool));
             }
         } else {
@@ -130,22 +130,20 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     attachToPeer(peer, message) {
-        this._attachedPeers.add(peer.id + ':' + message.option);
+        this._attachedPeers.add(message.option);
         if(message.isXR) {
-            if(message.option in Handedness && peer.controller) {
-                if(message.type == 'translate') {
-                    TranslateHandler.attach(peer.controller, message.option,
-                        this._asset, message.position);
-                } else if(message.type == 'rotate') {
-                    RotateHandler.attach(peer.controller, message.option,
-                        this._asset, message.rotation);
-                } else if(message.type == 'scale') {
-                    ScaleHandler.attach(peer.controller, message.option,
-                        this._asset, message.scale);
-                } else {
-                    TransformControlsHandler.attachToPeer(peer, this._asset,
-                        message);
-                }
+            if(message.type == 'translate') {
+                TranslateHandler.attach(message.option, this._asset,
+                    message.position);
+            } else if(message.type == 'rotate') {
+                RotateHandler.attach(message.option, this._asset,
+                    message.rotation);
+            } else if(message.type == 'scale') {
+                ScaleHandler.attach(message.option, this._asset,
+                    message.scale);
+            } else {
+                TransformControlsHandler.attachToPeer(peer, this._asset,
+                    message);
             }
         }
         if(!this._asset.visualEdit) return;
@@ -154,16 +152,16 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     detachFromPeer(peer, message) {
-        this._attachedPeers.delete(peer.id + ':' + message.option);
+        this._attachedPeers.delete(message.option);
         if(message.isXR) {
             if(message.type == 'translate') {
-                TranslateHandler.detach(peer.controller, message.option,
+                TranslateHandler.detach(message.option,
                     message.position);
             } else if(message.type == 'rotate') {
-                RotateHandler.detach(peer.controller, message.option,
+                RotateHandler.detach(message.option,
                     message.rotation);
             } else if(message.type == 'scale') {
-                ScaleHandler.detach(peer.controller, message.option,
+                ScaleHandler.detach(message.option,
                     message.scale);
             } else {
                 TransformControlsHandler.detachFromPeer(peer, this._asset,

@@ -77,10 +77,9 @@ class TransformControlsHandler {
                         this.detach(option);
                     }
                 }
-                for(let key in this._peerAttachedAssets) {
-                    let option = key.split(':')[1];
-                    let asset = this._peerAttachedAssets[key]['asset'];
-                    let peer = this._peerAttachedAssets[key]['peer'];
+                for(let option in this._peerAttachedAssets) {
+                    let asset = this._peerAttachedAssets[option]['asset'];
+                    let peer = this._peerAttachedAssets[option]['peer'];
                     this.detachFromPeer(peer, asset, { option: option });
                 }
             });
@@ -303,14 +302,18 @@ class TransformControlsHandler {
     _scaleWithTwoHands() {
         let distance = global.userController.getDistanceBetweenHands();
         let factor = distance / this._initialScalingDistance;
-        this._attachedAssets[Handedness.LEFT].getObject().scale.set(
+        let asset;
+        for(let ownerId in this._attachedAssets) {
+            asset = this._attachedAssets[ownerId];
+            break;
+        }
+        asset.getObject().scale.set(
             factor * this._initialScalingValues.x,
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
 
         if(global.renderer.info.render.frame % 6 == 0)
-            this._attachedAssets[Handedness.LEFT].editorHelper
-                ._publish(['scale']);
+            asset.editorHelper._publish(['scale']);
     }
 
     _toolHandler(controller) {
@@ -338,22 +341,26 @@ class TransformControlsHandler {
 		return intersects;
     }
 
-    _getOtherHand(hand) {
-        if(hand == Handedness.RIGHT) {
-            return Handedness.LEFT;
-        } else if(hand == Handedness.LEFT) {
-            return Handedness.RIGHT;
-        }
+    _otherOption(userController, ownerId) {
+        let asset = ProjectHandler.getAsset(ownerId);
+        let handedness = asset.getHandedness();
+        let otherHand = Handedness.otherHand(handedness);
+        let otherAsset = userController.getController(otherHand);
+        if(otherAsset) return otherAsset.getId();
         return null;
     }
 
     attach(asset, option) {
         option = option || global.deviceType;
         let publishMessage = { instance: asset, option: option };
+        //Don't allow more than 2 controllers/hands to grab objects for now
+        //Almost no benefit allowing user to grab with hands and controllers
+        //simultaineously as they'd be holding the controllers in their hands
+        if(Object.keys(this._attachedAssets).length > 1) return;
         this._attachedAssets[option] = asset;
         if(global.deviceType == 'XR') {
             this._placingObject[option] = true;
-            let otherOption = this._getOtherHand(option);
+            let otherOption = this._otherOption(global.userController, option);
             if(asset == this._attachedAssets[otherOption]) {
                 asset.attachTo(asset.parent, true);
                 publishMessage.twoHandScaling = true;
@@ -366,7 +373,7 @@ class TransformControlsHandler {
                     = asset.editorHelper.getObjectTransformation();
                 //We CANNOT use asset.attach because we need to know who the
                 //actual parent is
-                global.userController.getController(option).getObject().attach(
+                ProjectHandler.getAsset(option).getObject().attach(
                     asset.getObject());
                 asset.editorHelper.makeTranslucent();
             }
@@ -384,7 +391,7 @@ class TransformControlsHandler {
     }
 
     attachToPeer(peer, asset, message) {
-        this._peerAttachedAssets[peer.id + ':' + message.option] = {
+        this._peerAttachedAssets[message.option] = {
             asset: asset,
             peer: peer,
         };
@@ -393,7 +400,7 @@ class TransformControlsHandler {
             asset.setPosition(message.position);
             asset.setRotation(message.rotation);
         } else {
-            peer.controller.getController(message.option).getObject().attach(
+            ProjectHandler.getAsset(message.option).getObject().attach(
                 asset.getObject());
             asset.setPosition(message.position);
             asset.setRotation(message.rotation);
@@ -408,10 +415,10 @@ class TransformControlsHandler {
         let publishMessage = { instance: asset, option: option };
         if(global.deviceType == 'XR') {
             asset.attachTo(asset.parent, true);
-            let otherOption = this._getOtherHand(option);
+            let otherOption = this._otherOption(global.userController, option);
             if(this._attachedAssets[otherOption] == asset) {
-                global.userController.getController(otherOption).getObject()
-                    .attach(asset.getObject());
+                ProjectHandler.getAsset(otherOption).getObject().attach(
+                    asset.getObject());
                 publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {
@@ -436,10 +443,10 @@ class TransformControlsHandler {
     }
 
     detachFromPeer(peer, asset, message) {
-        delete this._peerAttachedAssets[peer.id + ':' + message.option];
+        delete this._peerAttachedAssets[message.option];
         if(message.twoHandScaling) {
-            let otherHand = Handedness.otherHand(message.option);
-            peer.controller.getController(otherHand).getObject().attach(
+            let otherOption = this._otherOption(peer.controller,message.option);
+            ProjectHandler.getAsset(otherOption).getObject().attach(
                 asset.getObject());
             asset.setPosition(message.position);
             asset.setRotation(message.rotation);
@@ -454,7 +461,7 @@ class TransformControlsHandler {
         let asset = this._attachedAssets[option];
         if(!asset) return;
         if(global.deviceType == 'XR') {
-            let otherOption = this._getOtherHand(option);
+            let otherOption = this._otherOption(global.userController, option);
             if(this._attachedAssets[otherOption] == asset) {
                 this._twoHandScaling = false;
             } else {

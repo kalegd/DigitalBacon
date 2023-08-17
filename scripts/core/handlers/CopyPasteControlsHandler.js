@@ -22,7 +22,7 @@ class CopyPasteControlsHandler {
         this._previewAssets = {};
         GripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
             (controller) => { return this._toolHandler(controller); });
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByTrigger = false;
             this._assetAlreadyPastedByGrip = false;
@@ -34,34 +34,34 @@ class CopyPasteControlsHandler {
         });
     }
 
-    copy(hand, asset) {
-        if(this._previewAssets[hand])
-            this._previewAssets[hand].removeFromScene();
-        this._copiedAssets[hand] = asset;
-        this._previewAssets[hand] = asset.editorHelper.preview();
-        global.userController.getController(hand).getObject().attach(
-            this._previewAssets[hand].getObject());
+    copy(ownerId, asset) {
+        if(this._previewAssets[ownerId])
+            this._previewAssets[ownerId].removeFromScene();
+        this._copiedAssets[ownerId] = asset;
+        this._previewAssets[ownerId] = asset.editorHelper.preview();
+        ProjectHandler.getAsset(ownerId).getObject().attach(
+            this._previewAssets[ownerId].getObject());
     }
 
-    _paste(hand) {
-        this._previewAssets[hand].clone(
-            this._copiedAssets[hand].visualEdit);
+    _paste(ownerId) {
+        this._previewAssets[ownerId].clone(
+            this._copiedAssets[ownerId].visualEdit);
         this._assetAlreadyPastedByGrip = true;
     }
 
     _toolHandler(controller) {
-        let hand = controller.option;
-        if(!this._copiedAssets[hand]) return false;
+        let ownerId = controller.option;
+        if(!this._copiedAssets[ownerId]) return false;
         if(controller.isPressed != this._assetAlreadyPastedByGrip) {
-            if(controller.isPressed) this._paste(hand);
+            if(controller.isPressed) this._paste(ownerId);
             else this._assetAlreadyPastedByGrip = false;
         }
         return true;
     }
 
     _clear() {
-        for(let hand in this._previewAssets) {
-            this._previewAssets[hand].removeFromScene();
+        for(let ownerId in this._previewAssets) {
+            this._previewAssets[ownerId].removeFromScene();
         }
         this._copiedAssets = {};
         this._previewAssets = {};
