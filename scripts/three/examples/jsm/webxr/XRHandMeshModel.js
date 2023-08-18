@@ -1,6 +1,8 @@
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 
 const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
+const CONTACT_DISTANCE = 0.015;
+const SEPARATE_DISTANCE = 0.025;
 
 class XRHandMeshModel {
 
@@ -10,6 +12,10 @@ class XRHandMeshModel {
 		this.handModel = handModel;
 
 		this.bones = [];
+        this._fingertips = [];
+        this._phalanxProximals = [];
+        this.isPinching = false;
+        this.isGrabbing = false;
 
 		if ( loader === null ) {
 
@@ -74,10 +80,42 @@ class XRHandMeshModel {
 				this.bones.push( bone );
 
 			} );
-
+            for(let i of [4, 9, 14, 19, 24]) {
+                this._fingertips.push(this.bones[i]);
+            }
+            for(let i of [2, 6, 11, 16, 21]) {
+                this._phalanxProximals.push(this.bones[i]);
+            }
 		} );
 
 	}
+
+    _updateGestures() {
+        let wrist = this.bones[0];
+        if(!wrist) return;
+        let grabbing = true;
+        let wristPosition = wrist.position;
+        for(let i = 2; i < 5; i++) {
+            let fingertipPosition = this._fingertips[i].position;
+            let knucklePosition = this._phalanxProximals[i].position;
+            let tipDist = fingertipPosition.distanceTo(wristPosition);
+            let knuckleDist = knucklePosition.distanceTo(wristPosition);
+            if(tipDist > knuckleDist) {
+                grabbing = false;
+                break;
+            }
+        }
+        this.isGrabbing = grabbing;
+        let thumbTip = this.bones[4];
+        let indexTip = this.bones[9];
+        let thumbIndexDist = thumbTip.position.distanceTo(indexTip.position);
+        if(this.isPinching) {
+            if(thumbIndexDist > SEPARATE_DISTANCE)
+                this.isPinching = false;
+        } else if(thumbIndexDist < CONTACT_DISTANCE) {
+            this.isPinching = true;
+        }
+    }
 
 	updateMesh(frame, referenceSpace, parentMatrix) {
         if(!parentMatrix) return;
@@ -93,7 +131,7 @@ class XRHandMeshModel {
 			}
             i++;
 		}
-
+        this._updateGestures();
 	}
 
 }

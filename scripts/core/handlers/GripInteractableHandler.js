@@ -106,10 +106,12 @@ class GripInteractableHandler extends InteractableHandler {
                 let xrDevice = global.userController[type](handedness);
                 if(!xrDevice) continue;
                 let active = xrDevice.isInScene();
-                if(type == 'getController') {
-                    controllerExists = true;
-                } else if(controllerExists) {
-                    active = false;
+                if(active) {
+                    if(type == 'getController') {
+                        controllerExists = true;
+                    } else if(controllerExists) {
+                        active = false;
+                    }
                 }
                 let controller = {
                     option: xrDevice.getId(),

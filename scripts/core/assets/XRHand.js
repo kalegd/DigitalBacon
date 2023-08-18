@@ -51,9 +51,8 @@ export default class XRHand extends XRDevice {
     }
 
     getRaycaster() {
-        return null;
-        let xrHand = InputHandler.getXRController(
-            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        let xrHand = InputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
         if(!xrHand) return null;
         xrHand.getWorldPosition(this._raycasterOrigin);
         xrHand.getWorldDirection(this._raycasterDirection).negate()
@@ -63,9 +62,14 @@ export default class XRHand extends XRDevice {
     }
 
     isButtonPressed(index) {
+        let model = InputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
+            this._handedness);
+        if(index == 0) {
+            return model.motionController.isPinching;
+        } else if(index == 1) {
+            return model.motionController.isGrabbing;
+        }
         return false;
-        let gamepad = InputHandler.getXRGamepad(this._handedness);
-        return gamepad != null && gamepad.buttons[index].pressed;
     }
 
     static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';

@@ -320,7 +320,8 @@ class TransformControlsHandler {
         if(this._twoHandScaling) {
             this._scaleWithTwoHands();
             return true;
-        } else if(this._placingObject[controller.option]) {
+        } else if(global.deviceType != 'XR'
+                && this._placingObject[controller.option]) {
             this._checkPlacement(controller);
             return true;
         }
@@ -345,7 +346,9 @@ class TransformControlsHandler {
         let asset = ProjectHandler.getAsset(ownerId);
         let handedness = asset.getHandedness();
         let otherHand = Handedness.otherHand(handedness);
-        let otherAsset = userController.getController(otherHand);
+        let otherAsset = (asset.constructor.name == 'XRHand')
+            ? userController.getHand(otherHand)
+            : userController.getController(otherHand);
         if(otherAsset) return otherAsset.getId();
         return null;
     }
