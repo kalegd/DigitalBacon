@@ -71,9 +71,9 @@ export default class PeerController extends InternalAssetEntity {
         object.rotation.fromArray(rotation);
     }
 
-    _updateHandData(float32Array, index, hand) {
-        if(!this._xrControllers[hand]) return;
-        let peerHand = this._xrControllers[hand].getObject();
+    _updateHandData(float32Array, index, asset) {
+        if(!asset) return;
+        let peerHand = asset.getObject();
         peerHand.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
         peerHand.rotation.fromArray(rotation);
@@ -199,12 +199,24 @@ export default class PeerController extends InternalAssetEntity {
             this._updateAvatarData(float32Array, index);
             index += 6;
         }
+        if(UserMessageCodes.LEFT_CONTROLLER & codes) {
+            let asset = this._xrControllers[Handedness.LEFT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.RIGHT_CONTROLLER & codes) {
+            let asset = this._xrControllers[Handedness.RIGHT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
         if(UserMessageCodes.LEFT_HAND & codes) {
-            this._updateHandData(float32Array, index, Handedness.LEFT);
+            let asset = this._xrHands[Handedness.LEFT];
+            this._updateHandData(float32Array, index, asset);
             index += 6;
         }
         if(UserMessageCodes.RIGHT_HAND & codes) {
-            this._updateHandData(float32Array, index, Handedness.RIGHT);
+            let asset = this._xrHands[Handedness.RIGHT];
+            this._updateHandData(float32Array, index, asset);
             index += 6;
         }
         if(UserMessageCodes.USER_VELOCITY & codes) {

@@ -72,6 +72,14 @@ export default class XRHand extends XRDevice {
         return false;
     }
 
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
     static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
     static assetName = 'XR Hand';
 }

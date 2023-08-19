@@ -188,18 +188,17 @@ class UserController extends InternalAssetEntity {
         return UserMessageCodes.AVATAR;
     }
 
-    _pushHandsDataForRTC(data) {
+    _pushHandsDataForRTC(data, type) {
         let codes = 0;
         let userScale = SettingsHandler.getUserScale();
-        for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
-            let controller = this._xrControllers[handedness];
-            if(controller.isInScene()) {
-                let position = controller.getObject().position.toArray();
-                let rotation = controller.getObject().rotation.toArray();
-                rotation.pop();
-                data.push(...position);
-                data.push(...rotation);
-                codes += UserMessageCodes[handedness + '_HAND'];
+        for(let type of ['CONTROLLER', 'HAND']) {
+            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
+            for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
+                let controller = this[map][handedness];
+                if(controller && controller.isInScene()) {
+                    controller.pushDataForRTC(data);
+                    codes += UserMessageCodes[handedness + '_' + type];
+                }
             }
         }
         return codes;
