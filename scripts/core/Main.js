@@ -81,7 +81,7 @@ export default class Main {
         if(global.disableImmersion) return;
         this._cameraFocus = new THREE.Object3D();
         if(global.deviceType != "XR") {
-            //this._cameraFocus.position.setY(1.7); //Height of your eyes
+            this._cameraFocus.position.setY(1.7); //Height of your eyes
             this._camera.position.setY(0.5);
             this._camera.position.setZ(1.9);
         }
@@ -144,9 +144,9 @@ export default class Main {
         this._menuController.addToScene(this._scene);
         global.menuController = this._menuController;
 
+        ProjectHandler.addAsset(UserController, true, true);
         UserController.init();
         UserController.getObject().add(this._cameraFocus);
-        ProjectHandler.addAsset(UserController, true, true);
     }
 
     _addEventListeners() {

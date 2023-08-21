@@ -5,7 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import Avatar from '/scripts/core/assets/Avatar.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
@@ -37,11 +36,6 @@ export default class PeerController extends InternalAssetEntity {
     }
 
     _setup() {
-        this._avatar = new Avatar({
-            'Vertical Offset': 1.7,
-            'URL': this._avatarUrl,
-        });
-        this._avatar.addToScene(this._object);
         let usernameParams = {
             'text': this._username, 
             'fontFamily': Fonts.defaultFamily,
@@ -65,6 +59,7 @@ export default class PeerController extends InternalAssetEntity {
     }
 
     _updateAvatarData(float32Array, index) {
+        if(!this._avatar) return;
         let object = this._avatar.getObject();
         if(this._isXR) object.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
@@ -82,6 +77,7 @@ export default class PeerController extends InternalAssetEntity {
     _updateVelocity(float32Array, index) {
         this._velocity.fromArray(float32Array, index);
         if(!this._isXR && !this._firstPerson) {
+            if(!this._avatar) return;
             let object = this._avatar.getObject();
             vector3s[0].copy(this._velocity).setY(0).multiplyScalar(-1);
             if(vector3s[0].length() < 0.001) return;
@@ -98,7 +94,6 @@ export default class PeerController extends InternalAssetEntity {
 
     exportParams() {
         let params = super.exportParams();
-        params['avatarUrl'] = this._avatarUrl;
         params['isXR'] = this._isXR;
         params['username'] = this._username;
         return params;
@@ -106,10 +101,6 @@ export default class PeerController extends InternalAssetEntity {
 
     getAvatar() {
         return this._avatar;
-    }
-
-    getAvatarUrl() {
-        return this._avatarUrl;
     }
 
     getIsXR() {
@@ -120,9 +111,8 @@ export default class PeerController extends InternalAssetEntity {
         return this._username;
     }
 
-    setAvatarUrl(url) {
-        this._avatarUrl = url;
-        this._avatar.updateSourceUrl(url);
+    setAvatar(avatar) {
+        this._avatar = avatar;
     }
 
     setIsXR(isXR) {
@@ -138,10 +128,6 @@ export default class PeerController extends InternalAssetEntity {
         });
     }
 
-    updateAvatar(url) {
-        this._avatar.updateSourceUrl(url);
-    }
-
     getController(hand) {
         return this._xrControllers[hand];
     }
@@ -152,6 +138,10 @@ export default class PeerController extends InternalAssetEntity {
 
     getXRDevices() {
         return this._xrDevices;
+    }
+
+    registerAvatar(avatar) {
+        this._avatar = avatar;
     }
 
     registerXRController(hand, xrController) {
@@ -230,21 +220,6 @@ export default class PeerController extends InternalAssetEntity {
             index += 3;
         }
     }
-
-    addToScene(scene) {
-        super.addToScene(scene);
-        this._avatar.addToScene(this._object);
-        if(this._displayingUsername) {
-            this._object.add(this._usernameBlock);
-        } else {
-            this._object.remove(this._usernameBlock);
-        }
-    }
-
-    //removeFromScene() {
-    //    if(this._avatar) this._avatar.removeFromScene();
-    //    super.removeFromScene();
-    //}
 
     static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
     static assetName = 'Peer';

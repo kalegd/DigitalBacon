@@ -196,6 +196,9 @@ class PartyMessageHelper {
             } else {
                 childAsset.attachTo(parentAsset, true);
             }
+            let object = childAsset.getObject();
+            object.position.fromArray(message.position);
+            object.rotation.fromArray(message.rotation);
             delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, message);
         } else {
@@ -255,6 +258,7 @@ class PartyMessageHelper {
 
     _handleLoadedDiff(peer, message) {
         PubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
+        peer.readyForUpdates = true;
     }
 
     _handleSanitizeInternals(peer, message) {
@@ -387,10 +391,13 @@ class PartyMessageHelper {
     }
 
     _publishEntityAttached(message) {
+        let childAsset = ProjectHandler.getSessionAsset(message.childId);
         let peerMessage = {
             topic: 'entity_attached',
             parentId: message.parentId,
             childId: message.childId,
+            position: childAsset.getObject().position.toArray(),
+            rotation: childAsset.getObject().rotation.toArray(),
         };
         this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
         return Promise.resolve();

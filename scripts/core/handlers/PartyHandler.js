@@ -40,6 +40,8 @@ class PartyHandler {
             if(peer.rtc) peer.rtc.close();
             if(peer.controller) {
                 ProjectHandler.deleteAsset(peer.controller, true, true);
+                let avatar = peer.controller.getAvatar();
+                if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
                 for(let device of peer.controller.getXRDevices()) {
                     ProjectHandler.deleteAsset(device, true, true);
                 }
@@ -50,7 +52,11 @@ class PartyHandler {
     }
 
     _registerPeer(rtc) {
-        let peer = { id: rtc.getPeerId(), jitterBuffer: new Queue() };
+        let peer = {
+            id: rtc.getPeerId(),
+            jitterBuffer: new Queue(),
+            readyForUpdates: false,
+        };
         this._peers[peer.id] = peer;
         rtc.setOnSendDataChannelOpen(() => {
             if(this._successCallback) this._successCallback();
@@ -70,6 +76,8 @@ class PartyHandler {
         rtc.setOnDisconnect(() => {
             if(peer.controller) {
                 ProjectHandler.deleteAsset(peer.controller, true, true);
+                let avatar = peer.controller.getAvatar();
+                if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
                 for(let device of peer.controller.getXRDevices()) {
                     ProjectHandler.deleteAsset(device, true, true);
                 }
@@ -96,18 +104,26 @@ class PartyHandler {
     _sendUserInfo(rtc) {
         rtc.sendData(JSON.stringify({
             "topic": "user_controller",
-            "url": global.userController.getAvatarUrl(),
             "controllerParams": global.userController.exportParams(),
             "isXR": global.deviceType == "XR",
         }));
+        let avatar = global.userController.getAvatar();
+        rtc.sendData(JSON.stringify({
+            "topic": "instance_added",
+            "asset": avatar.exportParams(),
+            "assetType": avatar.constructor.assetType,
+        }));
         for(let hand in Handedness) {
             let xrController = global.userController.getController(hand);
-            if(xrController) {
-                rtc.sendData(JSON.stringify({
-                    "topic": "instance_added",
-                    "asset": xrController.exportParams(),
-                    "assetType": xrController.constructor.assetType,
-                }));
+            let xrHand = global.userController.getHand(hand);
+            for(let controller of [xrController, xrHand]) {
+                if(controller && controller.isInScene()) {
+                    rtc.sendData(JSON.stringify({
+                        "topic": "instance_added",
+                        "asset": controller.exportParams(),
+                        "assetType": controller.constructor.assetType,
+                    }));
+                }
             }
         }
         rtc.sendData(JSON.stringify({
@@ -199,6 +215,9 @@ class PartyHandler {
                             this.sendToAllPeers(JSON.stringify({
                                 topic: 'loaded_diff',
                             }));
+                            for(let peerId in this._peers) {
+                                this._peers[peerId].readyForUpdates = true;
+                            }
                         }, () => {
                             Party.disconnect();
                             PartyMessageHelper.notifyDiffError();
@@ -208,6 +227,9 @@ class PartyHandler {
                             this.sendToAllPeers(JSON.stringify({
                                 topic: 'loaded_diff',
                             }));
+                            for(let peerId in this._peers) {
+                                this._peers[peerId].readyForUpdates = true;
+                            }
                         }, () => {
                             Party.disconnect();
                             PartyMessageHelper.notifyDiffError();
@@ -333,7 +355,7 @@ class PartyHandler {
                 if(message) peer.controller.processMessage(message);
                 peer.controller.update(timeDelta);
             }
-            if(peer.rtc) peer.rtc.sendData(buffer);
+            if(peer.rtc && peer.readyForUpdates) peer.rtc.sendData(buffer);
         }
         PartyMessageHelper.update();
     }

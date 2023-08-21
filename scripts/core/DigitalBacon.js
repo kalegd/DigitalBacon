@@ -7,6 +7,7 @@
 import global from '/scripts/core/global.js';
 import { setup, setupEditor } from '/scripts/core/setup.js';
 import * as Assets from '/scripts/core/assets/Assets.js';
+import Scene from '/scripts/core/assets/Scene.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
@@ -54,6 +55,7 @@ if(window != null) {
         PartyMessageHelper: PartyMessageHelper,
         ProjectHandler: ProjectHandler,
         PubSub: PubSub,
+        Scene: Scene,
         SettingsHandler: SettingsHandler,
         UserController: UserController,
         disableImmersion: disableImmersion,
@@ -78,6 +80,7 @@ export { PartyHandler };
 export { PartyMessageHelper };
 export { ProjectHandler };
 export { PubSub };
+export { Scene };
 export { SettingsHandler };
 export { UserController };
 export { disableImmersion };

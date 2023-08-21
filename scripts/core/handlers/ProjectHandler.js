@@ -250,7 +250,8 @@ class ProjectHandler {
         for(let key of orderedHandlerKeys) {
             key = key.toLowerCase() + 's';
             for(let assetId in projectDetails[key]) {
-                if(!(assetId in this._projectDetails[key])) {
+                if(!this._projectDetails[key]
+                        || !(assetId in this._projectDetails[key])) {
                     assetIds.push(assetId);
                 }
             }

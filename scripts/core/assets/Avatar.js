@@ -5,53 +5,34 @@
  */
 
 import global from '/scripts/core/global.js';
+import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
+import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import * as THREE from 'three';
+
+const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
   
-export default class Avatar {
-    constructor(params) {
+export default class Avatar extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = Avatar.assetId;
+        super(params);
         if(params == null) {
             params = {};
         }
-        let verticalOffset = params['Vertical Offset'] || 0;
-        let focusCamera = params['Focus Camera'] || false;
-        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
-        this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
         this._avatarParent = new THREE.Object3D();
-        this._pivotPoint = new THREE.Object3D();
-        this._pivotPoint.position.setY(verticalOffset);
-        this._pivotPoint.add(this._avatarParent);
-        this._createBoundingBox(params);
-        //this._pivotPoint.position.setY(1.3);
+        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
+        this._verticalOffset = params['verticalOffset'] || 0;
+        this._object.position.setY(this._verticalOffset);
+        this._object.add(this._avatarParent);
 
-        if(params['URL']) this._createMesh(params['URL']);
-        if(focusCamera) {
-            global.cameraFocus.position.fromArray(cameraFocalPoint);
+        this._createMesh(this._avatarUrl);
+        let parentAsset = ProjectHandler.getSessionAsset(this._parentId);
+        if(parentAsset && parentAsset.registerAvatar) {
+            parentAsset.registerAvatar(this);
         }
-    }
-
-    _createBoundingBox(params) {
-        let boundingBoxSize = (params['Bounding Box Size'])
-            ? params['Bounding Box Min']
-            : [0.2, 0.8, 0.2];
-        let boundingBoxCenter = (params['Bounding Box Center'])
-            ? params['Bounding Box Max']
-            : [0, 0.4, 0];
-        let boundingBoxQuaternion = (params['Bounding Box Quaternion'])
-            ? params['Bounding Box Quaternion']
-            : [0, 0, 0, 0];
-        let geometry = new THREE.BoxGeometry(
-            boundingBoxSize[0],
-            boundingBoxSize[1],
-            boundingBoxSize[2],
-        );
-        let material = new THREE.MeshBasicMaterial({ wireframe: true });
-        this._boundingBox = new THREE.Mesh(geometry, material);
-        this._boundingBox.position.fromArray(boundingBoxCenter);
-        this._boundingBox.quaternion.fromArray(boundingBoxQuaternion);
-        //this._pivotPoint.add(this._boundingBox);
     }
 
     _createMesh(filename) {
@@ -74,8 +55,8 @@ export default class Avatar {
                 this._dimensions = 3;
             }, () => {}, (error) => {
                 console.log(error);
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
                 } else {
                     console.error("Can't display default avatar :(");
                 }
@@ -107,15 +88,15 @@ export default class Avatar {
                 //this._avatarParent.add(sprite);
                 this._dimensions = 2;
             }, () => {}, () => {
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
                 } else {
                     console.error("Can't display default avatar :(");
                 }
             });
         } else {
-            if(filename != this._defaultURL) {
-                this._createMesh(this._defaultURL);
+            if(filename != DEFAULT_URL) {
+                this._createMesh(DEFAULT_URL);
             } else {
                 console.error("Default avatar URL is invalid :(");
             }
@@ -193,10 +174,10 @@ export default class Avatar {
     }
 
     lookAtLocal(point) {
-        if(this._pivotPoint.parent) {
+        if(this._object.parent) {
             vector3s[0].copy(point);
-            this._pivotPoint.parent.localToWorld(vector3s[0]);
-            this._pivotPoint.lookAt(vector3s[0]);
+            this._object.parent.localToWorld(vector3s[0]);
+            this._object.lookAt(vector3s[0]);
         }
     }
 
@@ -206,57 +187,49 @@ export default class Avatar {
             this._avatarParent.remove(child);
             fullDispose(child, true);
         }
+        this._avatarUrl = url;
         this._createMesh(url);
     }
 
-    getObject() {
-        return this._pivotPoint;
+    getAvatarUrl() {
+        return this._avatarUrl;
+    }
+
+    getVerticalOffset(verticalOffset) {
+        return this._verticalOffset;
+    }
+
+    setAvatarUrl(avatarUrl) {
+        this.updateSourceUrl(avatarUrl);
     }
 
     setVerticalOffset(verticalOffset) {
-        this._pivotPoint.position.setY(verticalOffset);
-    }
-
-    attach(object) {
-        this._pivotPoint.attach(object);
-    }
-
-    remove(object) {
-        if(object.parent == this._pivotPoint) {
-            global.scene.attach(object);
-            return true;
-        }
-        return false;
-    }
-
-    hasChild(object) {
-        return object.parent == this._pivotPoint;
+        this._verticalOffsert = verticalOffset;
+        this._object.position.setY(verticalOffset);
     }
 
     displayAvatar() {
-        this._pivotPoint.add(this._avatarParent);
+        this._object.add(this._avatarParent);
     }
 
     hideAvatar() {
-        this._pivotPoint.remove(this._avatarParent);
+        this._object.remove(this._avatarParent);
     }
 
     isDisplayingAvatar() {
-        return this._avatarParent.parent == this._pivotPoint;
+        return this._avatarParent.parent == this._object;
     }
 
-    addToScene(scene) {
-        scene.add(this._pivotPoint);
+    exportParams() {
+        let params = super.exportParams();
+        params['avatarUrl'] = this._avatarUrl;
+        params['verticalOffset'] = this._verticalOffset;
+        return params;
     }
 
-    removeFromScene() {
-        if(this._pivotPoint.parent) {
-            for(let child of this._pivotPoint.children) {
-                if(child != this._avatarParent) {
-                    global.scene.attach(child);
-                }
-            }
-            this._pivotPoint.parent.remove(this._pivotPoint);
-        }
-    }
+    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
+    static assetName = 'Avatar';
 }
+
+ProjectHandler.registerAsset(Avatar);
+LibraryHandler.loadBuiltIn(Avatar);

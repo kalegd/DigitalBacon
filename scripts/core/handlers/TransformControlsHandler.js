@@ -97,6 +97,9 @@ class TransformControlsHandler {
                 this._detachDeleted(option);
             }
         });
+        //This should be in _addEventListeners, but convenient to allow XR users
+        //when testing via emulator
+        window.addEventListener('paste', (event) => { this._paste(event); });
     }
 
     _addEventListeners() {
@@ -164,7 +167,6 @@ class TransformControlsHandler {
         }
 
         window.addEventListener('copy', (event) => { this._copy(event); });
-        window.addEventListener('paste', (event) => { this._paste(event); });
         this._canvas.addEventListener('keydown', (event) => {
             if(event.code == "Backspace") {
                 this._delete();

@@ -41,6 +41,9 @@ export default class System extends Asset {
         PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
             this._onPeerReady(message.peer);
         });
+        PubSub.subscribe(this._id, PubSubTopics.PEER_DISCONNECTED, (message) =>{
+            this._onPeerDisconnected(message.peer);
+        });
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(PartyHandler.isHost());
         });
@@ -100,6 +103,7 @@ export default class System extends Asset {
     }
 
     _onPeerReady() {}
+    _onPeerDisconnected() {}
     _onPartyStarted() {}
     _onPartyEnded() {}
 

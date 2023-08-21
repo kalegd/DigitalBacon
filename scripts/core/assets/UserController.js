@@ -38,7 +38,6 @@ class UserController extends InternalAssetEntity {
         this._isXR = false;
         this._username = localStorage.getItem(USERNAME_KEY)
             || generateRandomUsername();
-        this._dynamicAssets = [];
         this._avatarUrl = localStorage.getItem(AVATAR_KEY)
             || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
         this._avatarFadeUpdateNumber = 0;
@@ -59,24 +58,28 @@ class UserController extends InternalAssetEntity {
     _setup() {
         if(global.deviceType != "XR") {
             this._avatar = new Avatar({
-                'Focus Camera': true,
-                'URL': this._avatarUrl,
+                'avatarUrl': this._avatarUrl,
+                'parentId': this._id,
+                'verticalOffset': global.cameraFocus.position.y,
             });
             AudioHandler.setListenerParent(this._avatar.getObject());
+        } else {
+            this._avatar = new Avatar({
+                'object': global.camera,
+                'parentId': this._id,
+                'avatarUrl': this._avatarUrl,
+            });
         }
+        this._avatar.parent = this;
+        ProjectHandler.addAsset(this._avatar);
         this._basicMovement = new BasicMovement({
             'User Object': this._object,
             'Avatar': this._avatar,
         });
-        this._dynamicAssets.push(this._basicMovement);
     }
 
     getAvatar() {
         return this._avatar;
-    }
-
-    getAvatarUrl() {
-        return this._avatarUrl;
     }
 
     getIsXR() {
@@ -90,10 +93,10 @@ class UserController extends InternalAssetEntity {
     setAvatarUrl(url, ignorePublish) {
         localStorage.setItem(AVATAR_KEY, url);
         this._avatarUrl = url;
-        if(global.deviceType != "XR") this._avatar.updateSourceUrl(url);
+        this._avatar.updateSourceUrl(url);
         if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: this, fields: ['avatarUrl'] });
+            { asset: this._avatar, fields: ['avatarUrl'] });
     }
 
     setIsXR(isXR) {
@@ -210,25 +213,10 @@ class UserController extends InternalAssetEntity {
 
     exportParams() {
         let params = super.exportParams();
-        params['avatarUrl'] = this._avatarUrl;
         params['isXR'] = this._isXR;
         params['username'] = this._username;
         return params;
     }
-
-    addToScene(scene) {
-        super.addToScene(scene);
-        if(global.deviceType != "XR") {
-            this._avatar.addToScene(global.cameraFocus);
-        }
-    }
-
-    //removeFromScene() {
-    //    super.removeFromScene();
-    //    if(global.deviceType != "XR") {
-    //        this._avatar.removeFromScene();
-    //    }
-    //}
 
     _updateAvatar() {
         if(!this._avatar.isDisplayingAvatar()) {
@@ -271,19 +259,19 @@ class UserController extends InternalAssetEntity {
         //if(cameraDistance < FADE_MIDDLE) {
         //    if(object.parent) this._avatar.removeFromScene();
         //} else if(!object.parent) {
-        //    this._avatar.addToScene(global.cameraFocus);
+        //    this._avatar.addToScene(global.cameraFocus,
+        //        this._pointerInteractable, this._gripInteractable);
         //}
         //Disappear Logic end
     }
 
     update(timeDelta) {
-        if(global.deviceType == "XR") this._updateHands(timeDelta);
-        if(this._avatar) {
+        if(global.deviceType == "XR") {
+            this._updateHands(timeDelta);
+        } else if(this._avatar) {
             this._updateAvatar();
         }
-        for(let i = 0; i < this._dynamicAssets.length; i++) {
-            this._dynamicAssets[i].update(timeDelta);
-        }
+        this._basicMovement.update(timeDelta);
     }
 
     _getControllerModelUrl(object) {

@@ -147,6 +147,10 @@ export default class AssetEntity extends Asset {
         return vector3;
     }
 
+    setParentId(parentId) {
+        this._parentId = parentId;
+    }
+
     setPosition(position) {
         this._object.position.fromArray(position);
     }
