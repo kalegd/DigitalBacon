@@ -58,8 +58,7 @@ export default class Material extends Asset {
     }
 
     getMaps() {
-        console.error("Material.getMaps() should be overridden");
-        return;
+        return [];
     }
 
     getMaterial() {
@@ -67,8 +66,7 @@ export default class Material extends Asset {
     }
 
     getSampleTexture() {
-        console.error("Material.getSampleTexture() should be overridden");
-        return;
+        return null;
     }
 
     getOpacity() {
