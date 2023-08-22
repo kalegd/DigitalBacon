@@ -238,7 +238,7 @@ export default class BasicMovement {
         if(rotationGamepad) {
             let verticalForce = rotationGamepad.axes[3];
             let rotationForce = rotationGamepad.axes[2];
-            if(Math.abs(rotationForce) > 0.5) {
+            if(Math.abs(rotationForce) > 0.7) {
                 if(!this._snapRotationTriggered) {
                     this._snapRotationTriggered = true; 
                     (rotationForce > 0) ? this._snapRight() : this._snapLeft();

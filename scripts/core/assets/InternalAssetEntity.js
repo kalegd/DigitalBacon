@@ -14,7 +14,11 @@ export default class InternalAssetEntity extends AssetEntity {
     }
 
     removeFromScene() {
-        this.promoteExternalAssets(this.parent, this.children);
+        let inheritor = this.parent;
+        while(inheritor.constructor.assetType == AssetTypes.INTERNAL) {
+            inheritor = inheritor.parent;
+        }
+        this.promoteExternalAssets(inheritor, this.children);
         super.removeFromScene();
     }
 

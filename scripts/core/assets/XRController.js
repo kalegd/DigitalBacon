@@ -43,6 +43,17 @@ export default class XRController extends XRDevice {
         return params;
     }
 
+    addFromTargetRay(asset, position, rotation) {
+        let controller = InputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        let assetObject = asset.getObject();
+        if(!controller) return;
+        controller.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
     getHandedness() {
         return this._handedness;
     }

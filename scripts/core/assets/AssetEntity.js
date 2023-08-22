@@ -33,6 +33,7 @@ export default class AssetEntity extends Asset {
         this._object.scale.fromArray(scale);
         this._gripInteractable = new GripInteractable(this._object);
         this._pointerInteractable = new PointerInteractable(this._object);
+        this._deleteCallbacks = {};
     }
 
     _getDefaultName() {
@@ -103,6 +104,10 @@ export default class AssetEntity extends Asset {
 
     removePointerAction(id) {
         this._pointerInteractable.removeAction(id);
+    }
+
+    addDeleteCallback(id, handler) {
+        this._deleteCallbacks[id] = handler;
     }
 
     getObject() {
@@ -245,6 +250,9 @@ export default class AssetEntity extends Asset {
         if(this._object.parent) {
             this._object.parent.remove(this._object);
             fullDispose(this._object);
+        }
+        for(let id in this._deleteCallbacks) {
+            if(this._deleteCallbacks[id]) this._deleteCallbacks[id]();
         }
     }
 }
