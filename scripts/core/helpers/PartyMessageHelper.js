@@ -333,6 +333,13 @@ class PartyMessageHelper {
         PubSub.publish(this._id, PubSubTopics.PEER_DISCONNECTED,{ peer: peer });
     }
 
+    handleDiffLoaded() {
+        this._partyHandler.sendToAllPeers(JSON.stringify({
+            topic: 'loaded_diff',
+        }));
+        PubSub.publish(this._id, PubSubTopics.USER_READY);
+    }
+
     _removeHandlingLock(lock) {
         this._handlingLocks.delete(lock);
         while(this._handleQueue.length > 0 && this._handlingLocks.size == 0) {

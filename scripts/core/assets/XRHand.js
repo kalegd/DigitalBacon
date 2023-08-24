@@ -61,6 +61,15 @@ export default class XRHand extends XRDevice {
         return this._handedness;
     }
 
+    getTargetRayDirection() {
+        let xrController = InputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
     getRaycaster() {
         let xrHand = InputHandler.getXRController(XRInputDeviceTypes.HAND,
             this._handedness, 'targetRay');
@@ -70,6 +79,12 @@ export default class XRHand extends XRDevice {
             .normalize();
         return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
             0.01, 50);
+    }
+
+    getPalmDirection() {
+        let model = InputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
+            this._handedness);
+        return model.motionController.palmDirection;
     }
 
     isButtonPressed(index) {

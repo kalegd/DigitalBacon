@@ -3,6 +3,7 @@ import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.
 const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
 const CONTACT_DISTANCE = 0.015;
 const SEPARATE_DISTANCE = 0.025;
+import { Triangle, Vector3 } from 'three';
 
 class XRHandMeshModel {
 
@@ -14,8 +15,12 @@ class XRHandMeshModel {
 		this.bones = [];
         this._fingertips = [];
         this._phalanxProximals = [];
+        this._palmTriangleVectors = [new Vector3(),new Vector3(),new Vector3()];
+        this._palmTriangleBones = [];
+        this._palmTriangle = new Triangle();
         this.isPinching = false;
         this.isGrabbing = false;
+        this.palmDirection = new Vector3();
 
 		if ( loader === null ) {
 
@@ -86,6 +91,10 @@ class XRHandMeshModel {
             for(let i of [2, 6, 11, 16, 21]) {
                 this._phalanxProximals.push(this.bones[i]);
             }
+            this._palmTriangleBones.push(this.bones[5]);
+            this._palmTriangleBones.push(this.bones[6]);
+            this._palmTriangleBones.push(this.bones[10]);
+            if(handedness == 'left') this._palmTriangleBones.reverse();
 		} );
 
 	}
@@ -115,6 +124,13 @@ class XRHandMeshModel {
         } else if(thumbIndexDist < CONTACT_DISTANCE) {
             this.isPinching = true;
         }
+        for(let i = 0; i < 3; i++) {
+            this._palmTriangleBones[i].getWorldPosition(
+                this._palmTriangleVectors[i]);
+        }
+        this._palmTriangle.setFromPointsAndIndices(this._palmTriangleVectors, 0,
+            1, 2);
+        this._palmTriangle.getNormal(this.palmDirection);
     }
 
 	updateMesh(frame, referenceSpace, parentMatrix) {

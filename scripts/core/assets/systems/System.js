@@ -38,6 +38,9 @@ export default class System extends Asset {
     }
 
     _addSystemSubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.USER_READY, () => {
+            this._onUserReady();
+        });
         PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
             this._onPeerReady(message.peer);
         });
@@ -50,6 +53,7 @@ export default class System extends Asset {
         PubSub.subscribe(this._id, PubSubTopics.PARTY_ENDED, () => {
             this._onPartyEnded();
         });
+        this._subscriptionTopics.push(PubSubTopics.USER_READY);
         this._subscriptionTopics.push(PubSubTopics.PEER_READY);
         this._subscriptionTopics.push(PubSubTopics.PARTY_STARTED);
         this._subscriptionTopics.push(PubSubTopics.PARTY_ENDED);
@@ -102,6 +106,7 @@ export default class System extends Asset {
         this._subscriptionTopics.push(topic);
     }
 
+    _onUserReady() {}
     _onPeerReady() {}
     _onPeerDisconnected() {}
     _onPartyStarted() {}

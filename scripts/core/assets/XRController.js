@@ -58,6 +58,15 @@ export default class XRController extends XRDevice {
         return this._handedness;
     }
 
+    getTargetRayDirection() {
+        let xrController = InputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
     getRaycaster() {
         let xrController = InputHandler.getXRController(
             XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
