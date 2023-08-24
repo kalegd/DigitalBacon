@@ -196,7 +196,7 @@ export default class AssetEntity extends Asset {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
                 parentId: newParent.getId(),
                 childId: this._id,
-            });
+            }, true);
         }
     }
 
@@ -219,7 +219,7 @@ export default class AssetEntity extends Asset {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
                 parentId: newParent.getId(),
                 childId: this._id,
-            });
+            }, true);
         }
     }
 

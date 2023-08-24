@@ -26,7 +26,6 @@ export default class PeerController extends InternalAssetEntity {
         this._positionError = new THREE.Vector3();
         this._errorFixFrame = ERROR_FIX_FRAMES;
         this._isXR = params['isXR'];
-        this._avatarUrl = params['avatarUrl'];
         this._username = params['username'] || '...';
         this._displayingUsername = params['displayingUsername'];
         this._xrControllers = {};

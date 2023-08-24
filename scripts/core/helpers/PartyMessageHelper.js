@@ -179,6 +179,9 @@ class PartyMessageHelper {
             } else {
                 childAsset.addTo(parentAsset, true);
             }
+            let object = childAsset.getObject();
+            object.position.fromArray(message.position);
+            object.rotation.fromArray(message.rotation);
             delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, message);
         } else {
@@ -383,18 +386,25 @@ class PartyMessageHelper {
             componentId: message.componentId,
             componentAssetId: message.componentAssetId,
         };
-        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
     }
 
     _publishEntityAdded(message) {
+        let childAsset = ProjectHandler.getSessionAsset(message.childId);
         let peerMessage = {
             topic: 'entity_added',
             parentId: message.parentId,
             childId: message.childId,
+            position: childAsset.getObject().position.toArray(),
+            rotation: childAsset.getObject().rotation.toArray(),
         };
-        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
     }
 
     _publishEntityAttached(message) {
@@ -406,8 +416,10 @@ class PartyMessageHelper {
             position: childAsset.getObject().position.toArray(),
             rotation: childAsset.getObject().rotation.toArray(),
         };
-        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
     }
 
     _publishInstanceAdded(asset, assetType) {
@@ -416,8 +428,10 @@ class PartyMessageHelper {
             asset: asset.exportParams(),
             assetType: assetType,
         };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
     }
 
     _publishInstanceDeleted(asset, assetType) {
@@ -427,8 +441,10 @@ class PartyMessageHelper {
             assetId: asset.getAssetId(),
             assetType: assetType,
         };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
     }
 
     _publishInstanceUpdated(updateMessage, assetType) {
@@ -443,9 +459,11 @@ class PartyMessageHelper {
             params: asset,
             assetType: assetType,
         };
-        this._partyHandler.sendToAllPeers(
-            JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(
+                JSON.stringify(peerMessage, (k, v) => v === undefined ?null:v));
+            return Promise.resolve();
+        });
     }
 
     _publishInstanceAttached(data) {
@@ -463,8 +481,10 @@ class PartyMessageHelper {
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
     }
 
     _publishInstanceDetached(data) {
@@ -482,8 +502,10 @@ class PartyMessageHelper {
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
     }
 
     _publishSettingsUpdate(updateMessage) {
@@ -495,8 +517,10 @@ class PartyMessageHelper {
         };
         peerMessage.settings[keys[0]] = {};
         peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
-        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
     }
 
     _publishUserPerspectiveChanged(perspective) {
@@ -504,8 +528,10 @@ class PartyMessageHelper {
             topic: 'user_perspective',
             perspective: perspective,
         };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
     }
 
     _publishUsernameUpdated(username) {
@@ -513,8 +539,10 @@ class PartyMessageHelper {
             topic: 'username',
             username: username,
         };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
     }
 
     addSubscriptions() {
@@ -530,36 +558,24 @@ class PartyMessageHelper {
             this._partyHandler.bootPeer(peerId);
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
-            this._publishQueue.enqueue(() => {
-                return this._publishComponentAttachedDetached(
-                    'component_attached', message);
-            });
+            this._publishComponentAttachedDetached('component_attached',
+                message);
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED, (message)=>{
-            this._publishQueue.enqueue(() => {
-                return this._publishComponentAttachedDetached(
-                    'component_detached', message);
-            });
+            this._publishComponentAttachedDetached('component_detached',
+                message);
         });
         PubSub.subscribe(this._id, PubSubTopics.ENTITY_ADDED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishEntityAdded(message);
-            });
+            this._publishEntityAdded(message);
         });
         PubSub.subscribe(this._id, PubSubTopics.ENTITY_ATTACHED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishEntityAttached(message);
-            });
+            this._publishEntityAttached(message);
         });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (message) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishInstanceAttached(message);
-            });
+            this._publishInstanceAttached(message);
         });
         PubSub.subscribe(this._id, PubSubTopics.INSTANCE_DETACHED, (message) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishInstanceDetached(message);
-            });
+            this._publishInstanceDetached(message);
         });
         PubSub.subscribe(this._id, PubSubTopics.SANITIZE_INTERNALS, () => {
             this._publishQueue.enqueue(() => {
@@ -569,39 +585,26 @@ class PartyMessageHelper {
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishSettingsUpdate(message);
-            });
+            this._publishSettingsUpdate(message);
         });
         PubSub.subscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, (n)=>{
-            this._publishQueue.enqueue(() => {
-                return this._publishUserPerspectiveChanged(n);
-            });
+            this._publishUserPerspectiveChanged(n);
         });
         PubSub.subscribe(this._id, PubSubTopics.USERNAME_UPDATED, (username) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishUsernameUpdated(username);
-            });
+            this._publishUsernameUpdated(username);
         });
         for(let assetType in AssetTypes) {
             let addedTopic = PubSubTopics[assetType + '_ADDED'];
             let deletedTopic = PubSubTopics[assetType + '_DELETED'];
             let updatedTopic = PubSubTopics[assetType + '_UPDATED'];
             PubSub.subscribe(this._id, addedTopic, (asset) => {
-                this._publishQueue.enqueue(() => {
-                    return this._publishInstanceAdded(asset, assetType);
-                });
+                this._publishInstanceAdded(asset, assetType);
             });
             PubSub.subscribe(this._id, deletedTopic, (message) => {
-                this._publishQueue.enqueue(() => {
-                    return this._publishInstanceDeleted(message.asset,
-                        assetType);
-                });
+                this._publishInstanceDeleted(message.asset, assetType);
             });
             PubSub.subscribe(this._id, updatedTopic, (message) => {
-                this._publishQueue.enqueue(() => {
-                    return this._publishInstanceUpdated(message,assetType);
-                });
+                this._publishInstanceUpdated(message, assetType);
             });
         }
     }

@@ -189,8 +189,6 @@ export default class Main {
                 }, 1000);
             }, 50);
             if(global.disableImmersion) {
-                global.dynamicAssets.add(PubSub);
-                global.dynamicAssets.add(ThreeMeshUI);
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });
@@ -221,8 +219,6 @@ export default class Main {
             global.dynamicAssets.add(PointerInteractableHandler);
             if(global.deviceType == "XR")
                 global.dynamicAssets.add(GripInteractableHandler);
-            global.dynamicAssets.add(PubSub);
-            global.dynamicAssets.add(ThreeMeshUI);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "
@@ -236,6 +232,8 @@ export default class Main {
         for(let asset of global.dynamicAssets) {
             asset.update(timeDelta);
         }
+        PubSub.update(timeDelta);
+        ThreeMeshUI.update(timeDelta);
         this._renderer.render(this._scene, this._camera);
         this._stats.end();
     }
