@@ -58,7 +58,6 @@ export default class Main {
 
     _createRenderer() {
         this._renderer = new THREE.WebGLRenderer({ antialias : true });
-        this._renderer.useLegacyLights = false;
         this._container.appendChild(this._renderer.domElement);
         if(global.deviceType == "XR") {
             this._renderer.xr.enabled = true;
