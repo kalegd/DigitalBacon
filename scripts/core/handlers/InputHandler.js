@@ -97,6 +97,14 @@ class InputHandler {
                 this._pointerPosition.y = -((event.touches[0].clientY -rect.top)
                     / this._renderer.domElement.clientHeight) * 2 + 1;
             });
+            //Prevent zoom on double tapping the joystick/buttons on iOS
+            //https://stackoverflow.com/a/38573198/11626958
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                let now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) event.preventDefault();
+                lastTouchEnd = now;
+            }, false);
         }
     }
 

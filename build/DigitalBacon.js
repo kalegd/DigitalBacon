@@ -6997,6 +6997,14 @@ class InputHandler {
                 this._pointerPosition.y = -((event.touches[0].clientY -rect.top)
                     / this._renderer.domElement.clientHeight) * 2 + 1;
             });
+            //Prevent zoom on double tapping the joystick/buttons on iOS
+            //https://stackoverflow.com/a/38573198/11626958
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                let now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) event.preventDefault();
+                lastTouchEnd = now;
+            }, false);
         }
     }
 
@@ -9345,7 +9353,7 @@ class SettingsHandler {
     }
 
     _updateFlyingButtons() {
-        if(global$1.deviceType != 'MOBILE') return;
+        if(global$1.deviceType != 'MOBILE' || global$1.disableImmersion) return;
         if(this.isFlyingEnabled()) {
             inputHandler.showExtraControlsButton('mobile-flying-up-button');
             inputHandler.showExtraControlsButton('mobile-flying-down-button');
@@ -43003,7 +43011,7 @@ var MenuInputs = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.1.5";
+const version = "0.1.6";
 
 global$1.version = version;
 

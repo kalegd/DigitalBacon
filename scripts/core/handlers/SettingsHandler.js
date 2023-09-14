@@ -173,7 +173,7 @@ class SettingsHandler {
     }
 
     _updateFlyingButtons() {
-        if(global.deviceType != 'MOBILE') return;
+        if(global.deviceType != 'MOBILE' || global.disableImmersion) return;
         if(this.isFlyingEnabled()) {
             InputHandler.showExtraControlsButton('mobile-flying-up-button');
             InputHandler.showExtraControlsButton('mobile-flying-down-button');
