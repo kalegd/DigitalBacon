@@ -26,6 +26,18 @@ class SessionHandler {
         } else if(global.deviceType == "MOBILE") {
             this._configureForMobile();
         }
+        this._addBakedWithLabel();
+    }
+
+    _addBakedWithLabel() {
+        this._bakedWithLabel = document.createElement('p');
+        this._bakedWithLabel.innerHTML = 'Baked with <a style="color: rgb(255, 199, 229);" href="https://digitalbacon.io">Digital Bacon</a> &#10084;';
+        this._bakedWithLabel.style.color = 'rgb(255, 199, 229)';
+        this._bakedWithLabel.style.bottom = '0';
+        this._bakedWithLabel.style.fontSize = '12px';
+        this._bakedWithLabel.style.fontStyle = 'italic';
+        this._bakedWithLabel.style.position = 'absolute';
+        this._bakedWithLabel.style.width = '100%';
     }
 
     _configureForXR() {
@@ -74,6 +86,7 @@ class SessionHandler {
         });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
+            this._bakedWithLabel.style.display = "none";
             this._controls.enabled = true;
             global.sessionActive = true;
             AudioHandler.resume();
@@ -109,6 +122,7 @@ class SessionHandler {
         });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
+            this._bakedWithLabel.style.display = "none";
             this._controls.enabled = true;
             global.sessionActive = true;
             AudioHandler.resume();
@@ -178,6 +192,7 @@ class SessionHandler {
 
     displayButton() {
         this._container.appendChild(this._div);
+        this._container.appendChild(this._bakedWithLabel);
     }
 
     exitXRSession() {
