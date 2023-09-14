@@ -75,6 +75,13 @@
               </a>
             </li>
             <li>
+              <a href="#section/InputHandler">
+                <label type="section" role="menuitem">
+                  <span title="InputHandler">InputHandler</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/Interactables">
                 <label type="section" role="menuitem">
                   <span title="Interactables">Interactables</span>
@@ -124,6 +131,13 @@
               </a>
             </li>
             <li>
+              <a href="#section/SettingsHandler">
+                <label type="section" role="menuitem">
+                  <span title="SettingsHandler">SettingsHandler</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/UserController">
                 <label type="section" role="menuitem">
                   <span title="UserController">UserController</span>
@@ -137,7 +151,7 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.1.3)</h1>
+        <h1>DigitalBacon (0.1.5)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
@@ -198,6 +212,16 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/EditorHelpers">EditorHelpers</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">InputHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/InputHandler">InputHandler</a> for more info</p>     
               </td>
             </tr>
             <tr>
@@ -268,6 +292,16 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/PubSub">PubSub</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">SettingsHandler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/SettingsHandler">SettingsHandler</a> for more info</p>
               </td>
             </tr>
             <tr>
@@ -472,6 +506,118 @@
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/SystemHelper.js">SystemHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/TextureHelper.js">TextureHelper</a></li>
         </ul>
+        <h1 id="section/InputHandler">InputHandler</h1>
+        <p class="bold">addExtraControlsButton(id, name)</p>
+        <p>Adds html button to the bottom right of the screen</p>
+        <p class="return-data">Returns an html button with the provided id and name</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The id of the button you're creating</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">name</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The text on the button that will be seen by the user</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">getExtraControlsButton(id)</p>
+        <p class="return-data">Returns the html button with the provided id</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The id of the button you've already created</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">hideExtraControlsButton(id)</p>
+        <p>Sets the css display property of the html button to none</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The id of the button you've already created</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">showExtraControlsButton(id)</p>
+        <p>Sets the css display property of the html button to inline-block</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The id of the button you've already created</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">getXRGamepad(handedness)</p>
+        <p class="return-data">Returns the <a href="https://www.w3.org/TR/webxr-gamepads-module-1/">XR Gamepad</a> associated with the controller with the provided handedness if it exists</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">handedness</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String (LEFT or RIGHT)</p>
+                <p>The handedness associated with the controller you want the XR Gamepad for</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">isPointerPressed()</p>
+        <p class="return-data">Returns a boolean that signifies if the mouse is currently being pressed down</p>
+        <p class="bold">isScreenTouched()</p>
+        <p class="return-data">Returns a boolean that signifies if the touch screen is currently being touched</p>
+        <p class="bold">isKeyCodePressed(code)</p>
+        <p class="return-data">Returns whether the key associated with the provided <a href="https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code">code</a> is currently pressed on the keyboard</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">code</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The code that represents a physical key on the keyboard. <a href="https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code">Please see here</a> for more information</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <h1 id="section/Interactables">Interactables</h1>
         <p>Make assets interactive by creating Interactables for them and adding them to their corresponding InteractableHandler</p>
         <h5>Attributes</h5>
@@ -883,22 +1029,77 @@
             </tr>
           </tbody>
         </table>
-        <h1 id="section/UserController">UserController</h1>
+        <h1 id="section/SettingsHandler">SettingsHandler</h1>
         <h5>Functions</h5>
-        <p class="bold">getAvatar()</p>
-        <p>Gets the Avatar of the user</p>
-        <p class="bold">getHand(side)</p>
-        <p>Gets the hand of user for the corresponding side. Returns null if the user is not on an XR device</p>
+        <p class="bold">setUserSetting(key, value, ignorePublish)</p>
+        <p>Updates the value of a user setting</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">side</span>
+                <span class="property-name">key</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>They key associated with the user setting such as "Enable Flying"</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">value</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Any</p>
+                <p>The value of the setting you want set to</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignorePublish</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>If true, will suppress the "SETTINGS_UPDATED" message published through PubSub</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="section/UserController">UserController</h1>
+        <h5>Functions</h5>
+        <p class="bold">getAvatar()</p>
+        <p>Gets the Avatar of the user</p>
+        <p class="bold">getController(handedness)</p>
+        <p class="return-data">Returns the XRController of user for the corresponding side. Returns null if the user is not on an XR device</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">handedness</span>
               </td>
               <td class="details">
                 <p class="datatype">String (RIGHT or LEFT)</p>
-                <p>Which hand you want</p>
+                <p>Which XRController you want</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">getHand(handedness)</p>
+        <p class="return-data">Returns the XRHand of user for the corresponding side. Returns null if the user is not on an XR device</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">handedness</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String (RIGHT or LEFT)</p>
+                <p>Which XRHand you want</p>
               </td>
             </tr>
           </tbody>

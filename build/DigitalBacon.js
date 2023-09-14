@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, SpotLight, PointLight as PointLight$1, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, NumberKeyframeTrack, QuaternionKeyframeTrack, Box3, Sphere, Interpolant, CubeTexture as CubeTexture$1, SphereGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, Raycaster, Euler, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
+import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, LinearSRGBColorSpace, SpotLight, PointLight as PointLight$1, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, ColorManagement, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, NumberKeyframeTrack, QuaternionKeyframeTrack, Box3, Sphere, Interpolant, SphereGeometry, Triangle, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Euler, Raycaster, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
@@ -19,6 +19,7 @@ const AssetTypes = {
     COMPONENT: "COMPONENT",
     CUSTOM_ASSET: "CUSTOM_ASSET",
     IMAGE: "IMAGE",
+    INTERNAL: "INTERNAL",
     LIGHT: "LIGHT",
     MATERIAL: "MATERIAL",
     MODEL: "MODEL",
@@ -30,6 +31,7 @@ const AssetTypes = {
 const PubSubTopics = {
     ASSET_ADDED: "ASSET_ADDED",
     AUDIO_ADDED: "AUDIO_ADDED",
+    AUDIO_CREATED: "AUDIO_CREATED",
     AUDIO_DELETED: "AUDIO_DELETED",
     AUDIO_UPDATED: "AUDIO_UPDATED",
     AUDIO_ATTACHED: "AUDIO_ATTACHED",
@@ -38,35 +40,46 @@ const PubSubTopics = {
     BECOME_PARTY_HOST: "BECOME_PARTY_HOST",
     BOOT_PEER: "BOOT_PEER",
     COMPONENT_ADDED: "COMPONENT_ADDED",
+    COMPONENT_CREATED: "COMPONENT_CREATED",
     COMPONENT_DELETED: "COMPONENT_DELETED",
     COMPONENT_UPDATED: "COMPONENT_UPDATED",
     COMPONENT_ATTACHED: "COMPONENT_ATTACHED",
     COMPONENT_DETACHED: "COMPONENT_DETACHED",
     CUSTOM_ASSET_ADDED: "CUSTOM_ASSET_ADDED",
+    CUSTOM_ASSET_CREATED: "CUSTOM_ASSET_CREATED",
     CUSTOM_ASSET_DELETED: "CUSTOM_ASSET_DELETED",
     CUSTOM_ASSET_UPDATED: "CUSTOM_ASSET_UPDATED",
     CUSTOM_ASSET_ATTACHED: "CUSTOM_ASSET_ATTACHED",
     CUSTOM_ASSET_DETACHED: "CUSTOM_ASSET_DETACHED",
     EMPTY_CLICK: "EMPTY_CLICK",
+    ENTITY_ADDED: "ENTITY_ADDED",
+    ENTITY_ATTACHED: "ENTITY_ATTACHED",
     IMAGE_ADDED: "IMAGE_ADDED",
+    IMAGE_CREATED: "IMAGE_CREATED",
     IMAGE_DELETED: "IMAGE_DELETED",
     IMAGE_UPDATED: "IMAGE_UPDATED",
     IMAGE_ATTACHED: "IMAGE_ATTACHED",
     IMAGE_DETACHED: "IMAGE_DETACHED",
     INSTANCE_ATTACHED: "INSTANCE_ATTACHED",
     INSTANCE_DETACHED: "INSTANCE_DETACHED",
+    INTERNAL_ADDED: "INTERNAL_ADDED",
+    INTERNAL_DELETED: "INTERNAL_DELETED",
+    INTERNAL_UPDATED: "INTERNAL_UPDATED",
     LIGHT_ADDED: "LIGHT_ADDED",
+    LIGHT_CREATED: "LIGHT_CREATED",
     LIGHT_DELETED: "LIGHT_DELETED",
     LIGHT_UPDATED: "LIGHT_UPDATED",
     LIGHT_ATTACHED: "LIGHT_ATTACHED",
     LIGHT_DETACHED: "LIGHT_DETACHED",
     MATERIAL_ADDED: "MATERIAL_ADDED",
+    MATERIAL_CREATED: "MATERIAL_CREATED",
     MATERIAL_DELETED: "MATERIAL_DELETED",
     MATERIAL_UPDATED: "MATERIAL_UPDATED",
     MENU_FIELD_FOCUSED: "MENU_FIELD_FOCUSED",
     MENU_NOTIFICATION: "MENU_NOTIFICATION",
     MENU_PAGE_CHANGED: "MENU_PAGE_CHANGED",
     MODEL_ADDED: "MODEL_ADDED",
+    MODEL_CREATED: "MODEL_CREATED",
     MODEL_DELETED: "MODEL_DELETED",
     MODEL_UPDATED: "MODEL_UPDATED",
     MODEL_ATTACHED: "MODEL_ATTACHED",
@@ -80,21 +93,25 @@ const PubSubTopics = {
     PEER_USERNAME_UPDATED: "PEER_USERNAME_UPDATED",
     PROJECT_LOADING: "PROJECT_LOADING",
     PROJECT_SAVING: "PROJECT_SAVING",
+    SANITIZE_INTERNALS: "SANITIZE_INTERNALS",
     SETTINGS_UPDATED: "SETTINGS_UPDATED",
     SHAPE_ADDED: "SHAPE_ADDED",
+    SHAPE_CREATED: "SHAPE_CREATED",
     SHAPE_DELETED: "SHAPE_DELETED",
     SHAPE_UPDATED: "SHAPE_UPDATED",
     SHAPE_ATTACHED: "SHAPE_ATTACHED",
     SHAPE_DETACHED: "SHAPE_DETACHED",
     SYSTEM_ADDED: "SYSTEM_ADDED",
+    SYSTEM_CREATED: "SYSTEM_CREATED",
     SYSTEM_DELETED: "SYSTEM_DELETED",
     SYSTEM_UPDATED: "SYSTEM_UPDATED",
     TEXTURE_ADDED: "TEXTURE_ADDED",
+    TEXTURE_CREATED: "TEXTURE_CREATED",
     TEXTURE_DELETED: "TEXTURE_DELETED",
     TEXTURE_UPDATED: "TEXTURE_UPDATED",
     TOOL_UPDATED: "TOOL_UPDATED",
     USER_PERSPECTIVE_CHANGED: "USER_PERSPECTIVE_CHANGED",
-    USER_SCALE_UPDATED: "USER_SCALE_UPDATED",
+    USERNAME_UPDATED: "USERNAME_UPDATED",
 };
 
 const AssetScriptTypes = {
@@ -187,6 +204,7 @@ let pubSub = new PubSub();
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const uuidv4 = () => {
   return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -435,6 +453,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
 let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'system', 'texture', 'trash', 'undo', 'redo', 'video'];
@@ -1226,7 +1245,7 @@ class GLTFLightsExtension {
 
 		const color = new Color( 0xffffff );
 
-		if ( lightDef.color !== undefined ) color.fromArray( lightDef.color );
+		if ( lightDef.color !== undefined ) color.setRGB( lightDef.color[ 0 ], lightDef.color[ 1 ], lightDef.color[ 2 ], LinearSRGBColorSpace );
 
 		const range = lightDef.range !== undefined ? lightDef.range : 0;
 
@@ -1344,7 +1363,7 @@ class GLTFMaterialsUnlitExtension {
 
 				const array = metallicRoughness.baseColorFactor;
 
-				materialParams.color.fromArray( array );
+				materialParams.color.setRGB( array[ 0 ], array[ 1 ], array[ 2 ], LinearSRGBColorSpace );
 				materialParams.opacity = array[ 3 ];
 
 			}
@@ -1620,7 +1639,8 @@ class GLTFMaterialsSheenExtension {
 
 		if ( extension.sheenColorFactor !== undefined ) {
 
-			materialParams.sheenColor.fromArray( extension.sheenColorFactor );
+			const colorFactor = extension.sheenColorFactor;
+			materialParams.sheenColor.setRGB( colorFactor[ 0 ], colorFactor[ 1 ], colorFactor [ 2 ], LinearSRGBColorSpace );
 
 		}
 
@@ -1758,7 +1778,7 @@ class GLTFMaterialsVolumeExtension {
 		materialParams.attenuationDistance = extension.attenuationDistance || Infinity;
 
 		const colorArray = extension.attenuationColor || [ 1, 1, 1 ];
-		materialParams.attenuationColor = new Color( colorArray[ 0 ], colorArray[ 1 ], colorArray[ 2 ] );
+		materialParams.attenuationColor = new Color().setRGB( colorArray[ 0 ], colorArray[ 1 ], colorArray[ 2 ], LinearSRGBColorSpace );
 
 		return Promise.all( pending );
 
@@ -1861,7 +1881,7 @@ class GLTFMaterialsSpecularExtension {
 		}
 
 		const colorArray = extension.specularColorFactor || [ 1, 1, 1 ];
-		materialParams.specularColor = new Color( colorArray[ 0 ], colorArray[ 1 ], colorArray[ 2 ] );
+		materialParams.specularColor = new Color().setRGB( colorArray[ 0 ], colorArray[ 1 ], colorArray[ 2 ], LinearSRGBColorSpace );
 
 		if ( extension.specularColorTexture !== undefined ) {
 
@@ -4067,7 +4087,7 @@ class GLTFParser {
 
 				const array = metallicRoughness.baseColorFactor;
 
-				materialParams.color.fromArray( array );
+				materialParams.color.setRGB( array[ 0 ], array[ 1 ], array[ 2 ], LinearSRGBColorSpace );
 				materialParams.opacity = array[ 3 ];
 
 			}
@@ -4159,7 +4179,8 @@ class GLTFParser {
 
 		if ( materialDef.emissiveFactor !== undefined && materialType !== MeshBasicMaterial ) {
 
-			materialParams.emissive = new Color().fromArray( materialDef.emissiveFactor );
+			const emissiveFactor = materialDef.emissiveFactor;
+			materialParams.emissive = new Color().setRGB( emissiveFactor[ 0 ], emissiveFactor[ 1 ], emissiveFactor[ 2 ], LinearSRGBColorSpace );
 
 		}
 
@@ -4599,7 +4620,6 @@ class GLTFParser {
 				if ( node.updateMatrix ) {
 
 					node.updateMatrix();
-					node.matrixAutoUpdate = true;
 
 				}
 
@@ -4948,7 +4968,6 @@ class GLTFParser {
 		const tracks = [];
 
 		const targetName = node.name ? node.name : node.uuid;
-
 		const targetNames = [];
 
 		if ( PATH_PROPERTIES[ target.path ] === PATH_PROPERTIES.weights ) {
@@ -4985,7 +5004,12 @@ class GLTFParser {
 
 			case PATH_PROPERTIES.position:
 			case PATH_PROPERTIES.scale:
+
+				TypedKeyframeTrack = VectorKeyframeTrack;
+				break;
+
 			default:
+
 				switch ( outputAccessor.itemSize ) {
 
 					case 1:
@@ -4993,6 +5017,7 @@ class GLTFParser {
 						break;
 					case 2:
 					case 3:
+					default:
 						TypedKeyframeTrack = VectorKeyframeTrack;
 						break;
 
@@ -5003,6 +5028,7 @@ class GLTFParser {
 		}
 
 		const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[ sampler.interpolation ] : InterpolateLinear;
+
 
 		const outputArray = this._getArrayFromAccessor( outputAccessor );
 
@@ -5016,7 +5042,7 @@ class GLTFParser {
 			);
 
 			// Override interpolation with custom factory method.
-			if ( interpolation === 'CUBICSPLINE' ) {
+			if ( sampler.interpolation === 'CUBICSPLINE' ) {
 
 				this._createCubicSplineTrackInterpolant( track );
 
@@ -5235,6 +5261,12 @@ function addPrimitiveAttributes( geometry, primitiveDef, parser ) {
 
 	}
 
+	if ( ColorManagement.workingColorSpace !== LinearSRGBColorSpace && 'COLOR_0' in attributes ) {
+
+		console.warn( `THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${ColorManagement.workingColorSpace}" not supported.` );
+
+	}
+
 	assignExtrasToUserData( geometry, primitiveDef );
 
 	computeBounds( geometry, primitiveDef, parser );
@@ -5306,6 +5338,7 @@ function parallelTraverse( a, b, callback ) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const OPTIONAL_PARAMS = ['Sketchfab ID'];
 
 class LibraryHandler {
@@ -5354,7 +5387,8 @@ class LibraryHandler {
                     'Name': assetName,
                     'Type': assetType,
                 };
-                pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                    true);
                 if(successCallback) successCallback(assetId);
             });
         });
@@ -5465,7 +5499,8 @@ class LibraryHandler {
                 this.library[assetId]['Mesh'] = gltf.scene;
                 buildBVH(gltf.scene);
                 if(!ignorePublish)
-                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
                 resolve();
             });
         });
@@ -5496,7 +5531,7 @@ class LibraryHandler {
                     this.library[assetId]['Mesh'] = mesh;
                     if(!ignorePublish) {
                         pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId);
+                            assetId, true);
                     }
                     resolve();
                 }
@@ -5512,7 +5547,7 @@ class LibraryHandler {
                     this.library[assetId]['Buffer'] = buffer;
                     if(!ignorePublish) {
                         pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId);
+                            assetId, true);
                     }
                     resolve();
                 }
@@ -5525,7 +5560,8 @@ class LibraryHandler {
             let objectURL = URL.createObjectURL(blob);
             import(objectURL).then(module => {
                 if(!ignorePublish)
-                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
                 resolve();
             });
         });
@@ -5628,13 +5664,10 @@ class LibraryHandler {
 
 let libraryHandler = new LibraryHandler();
 
-const CubeSides = {
-    FRONT: "FRONT",
-    BACK: "BACK",
-    LEFT: "LEFT",
-    RIGHT: "RIGHT",
-    TOP: "TOP",
-    BOTTOM: "BOTTOM",
+const InteractableStates = {
+    IDLE: "IDLE",
+    HOVERED: "HOVERED",
+    SELECTED: "SELECTED"
 };
 
 /*
@@ -5643,66 +5676,23 @@ const CubeSides = {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const RESOLUTION = 1024;
-const SIDES$1 = {};
-for(let side in CubeSides) {
-    let canvas = document.createElement('canvas');
-    canvas.width = RESOLUTION;
-    canvas.height = RESOLUTION;
-    SIDES$1[side] = {
-        canvas: canvas,
-        context: canvas.getContext("2d"),
-    };
-}
 
-class Skybox {
-    init(scene) {
-        this._scene = scene;
-        this._scene.background = new CubeTexture$1([
-            SIDES$1[CubeSides.RIGHT].canvas,
-            SIDES$1[CubeSides.LEFT].canvas,
-            SIDES$1[CubeSides.TOP].canvas,
-            SIDES$1[CubeSides.BOTTOM].canvas,
-            SIDES$1[CubeSides.FRONT].canvas,
-            SIDES$1[CubeSides.BACK].canvas,
-        ]);
-        this._scene.background.colorSpace = SRGBColorSpace;
+class ToolHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._tool = null;
     }
 
-    setSides(assetIds) {
-        for(let side in assetIds) {
-            this.setSide(side, assetIds[side]);
-        }
+    getTool() {
+        return this._tool;
     }
-
-    setSide(side, assetId) {
-        let image = (assetId)
-            ? libraryHandler.getImage(assetId)
-            : null;
-        this._drawImage(side, image);
-        this._scene.background.needsUpdate = true;
-    }
-
-    deleteSide(side) {
-        this._drawImage(side);
-        this._scene.background.needsUpdate = true;
-    }
-
-    //https://stackoverflow.com/a/23105310
-    _drawImage(side, image) {
-        let canvas = SIDES$1[side]['canvas'];
-        let context = SIDES$1[side]['context'];
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        if(!image) return;
-        let ratio  = RESOLUTION / Math.max(image.width, image.height);
-        let centerShift_x = (canvas.width - image.width*ratio) / 2;
-        let centerShift_y = (canvas.height - image.height*ratio) / 2;
-        context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
-            centerShift_y, image.width * ratio, image.height * ratio);
+    setTool(tool) {
+        this._tool = tool;
+        pubSub.publish(this._id, PubSubTopics.TOOL_UPDATED, tool);
     }
 }
 
-let skybox = new Skybox();
+let toolHandler = new ToolHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -5710,176 +5700,340 @@ let skybox = new Skybox();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class SettingsHandler {
-    constructor() {
-        this.settings = {
-            "Acknowledgements": [],
-            "Skybox": {},
-            "User Settings": {
-                "Movement Speed": 3,
-                "User Scale": 1,
-                "Enable Flying": true,
-                "Swap Joysticks": false,
-            },
-        };
-        this.editorSettings = {
-            "Movement Speed": 3,
-            "User Scale": 1,
-            "Enable Flying": true,
-            "Swap Joysticks": false,
-        };
-        this.settings['Skybox'][CubeSides.FRONT] = null;
-        this.settings['Skybox'][CubeSides.BACK] = null;
-        this.settings['Skybox'][CubeSides.LEFT] = null;
-        this.settings['Skybox'][CubeSides.RIGHT] = null;
-        this.settings['Skybox'][CubeSides.TOP] = null;
-        this.settings['Skybox'][CubeSides.BOTTOM] = null;
+
+class Box3Helper extends LineSegments {
+
+	constructor(box) {
+		super(BoundingBox.geometry, BoundingBox.material);
+
+		this.box = box;
+
+		this.type = 'Box3Helper';
+
+		this.geometry.computeBoundingSphere();
+
+	}
+
+	updateMatrixWorld( force ) {
+
+		const box = this.box;
+
+		if ( box.isEmpty() ) return;
+
+		box.getCenter( this.position );
+
+		box.getSize( this.scale );
+
+		this.scale.multiplyScalar( 0.5 );
+
+		super.updateMatrixWorld( force );
+
+	}
+
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class Interactable {
+    constructor(threeObj) {
+        this._threeObj = threeObj;
+        this._state = InteractableStates.IDLE;
+        this.children = new Set();
+        this._hoveredOwners = new Set();
+        this._selectedOwners = new Set();
+        this._actions = [];
     }
 
-    init(scene) {
-        this._scene = scene;
-        skybox.init(scene);
-    }
-
-    load(settings) {
-        if(!settings) {
-            for(let side in this.settings['Skybox']) {
-                this.settings['Skybox'][side] = null;
-            }
-            this.settings['User Settings']['Movement Speed'] = 3;
-            this.settings['User Settings']['User Scale'] = 1;
-            this.settings['User Settings']['Enable Flying'] = true;
-            this.settings['User Settings']['Swap Joysticks'] = false;
-        } else {
-            this.settings = settings;
-            if(!this.settings['Acknowledgements']) {
-                this.settings['Acknowledgements'] = [];
-            }
-            if(!this.settings['User Settings']) {
-                this.settings['User Settings'] = {
-                    "Movement Speed": 3,
-                    "User Scale": 1,
-                    "Enable Flying": true,
-                    "Swap Joysticks": false,
-                };
-            } else {
-                if(!this.settings['User Settings']['Movement Speed']) {
-                    this.settings['User Settings']['Movement Speed'] = 3;
-                }
-                if(!this.settings['User Settings']['User Scale']) {
-                    this.settings['User Settings']['User Scale'] = 1;
-                }
-                if(!this.settings['User Settings']['Enable Flying']) {
-                    this.settings['User Settings']['Enable Flying'] = true;
-                }
-                if(!this.settings['User Settings']['Swap Joysticks']) {
-                    this.settings['User Settings']['Swap Joysticks'] = false;
-                }
+    removeAction(id) {
+        for(let i = this._actions.length - 1; i >= 0; i--) {
+            if(this._actions[i].id == id) {
+                this._actions.splice(i, 1);
             }
         }
-        skybox.setSides(this.settings['Skybox']);
+    }
+
+    getActionsLength() {
+        return this._actions.length;
+    }
+
+    isOnlyGroup() {
+        console.error("Interactable.isOnlyGroup() should be overridden");
+        return;
+    }
+
+    getThreeObj() {
+        return this._threeObj;
+    }
+
+    getState() {
+        return this._state;
+    }
+
+    setState(newState) {
+        if(this._state != newState) {
+            this._state = newState;
+            if(this._threeObj.states && newState in this._threeObj.states) {
+                this._threeObj.setState(newState);
+            }
+        }
+    }
+
+    addHoveredBy(owner) {
+        console.error("Interactable.addHoveredBy(owner) should be overridden");
+    }
+
+    removeHoveredBy(owner) {
+        console.error("Interactable.removeHoveredBy(owner) should be overridden");
+    }
+
+    addSelectedBy(owner) {
+        console.error("Interactable.addSelectedBy(owner) should be overridden");
+    }
+
+    removeSelectedBy(owner) {
+        console.error("Interactable.removeSelectedBy(owner) should be overridden");
     }
 
     reset() {
-        this.load();
+        this._hoveredOwners.clear();
+        this._selectedOwners.clear();
+        this.setState(InteractableStates.IDLE);
+        this.children.forEach((interactable) => {
+            interactable.reset();
+        });
     }
 
-    getAcknowledgements() {
-        return this.settings['Acknowledgements'];
+    addChild(interactable) {
+        if(interactable.parent) interactable.parent.removeChild(interactable);
+        this.children.add(interactable);
+        interactable.parent = this;
     }
 
-    addAcknowledgement(acknowledgement) {
-        this.settings['Acknowledgements'].push(acknowledgement);
+    addChildren(interactables) {
+        interactables.forEach((interactable) => {
+            this.addChild(interactable);
+        });
     }
 
-    getSkyboxTextures() {
-        let textures = {};
-        let skybox = this.settings['Skybox'];
-        for(let side in skybox) {
-            if(skybox[side]) {
-                textures[side] = libraryHandler.getTexture(skybox[side]);
-            } else {
-                textures[side] = Textures.searchIcon;
-            }
-        }
-        return textures;
+    removeChild(interactable) {
+        this.children.delete(interactable);
+        interactable.parent = null;
     }
 
-    setSkyboxSide(side, assetId, ignorePublish) {
-        //Should validate image size is square before setting Skybox side
-        this.settings['Skybox'][side] = assetId;
-        skybox.setSide(side, assetId);
-        if(!ignorePublish)
-            pubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED, {
-                settings: this.settings,
-                keys: ['Skybox', side],
-            });
+    removeChildren(interactables) {
+        interactables.forEach((interactable) => {
+            this.removeChild(interactable);
+        });
     }
-
-    getEditorSettings() {
-        return this.editorSettings;
-    }
-
-    setEditorSetting(key, value) {
-        if(key in this.editorSettings) this.editorSettings[key] = value;
-    }
-
-    getUserSettings() {
-        return this.settings['User Settings'];
-    }
-
-    setUserSetting(key, value, ignorePublish) {
-        if(!(key in this.settings['User Settings'])) return;
-
-        this.settings['User Settings'][key] = value;
-        if(!ignorePublish)
-            pubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED, {
-                settings: this.settings,
-                keys: ['User Settings', key],
-            });
-    }
-
-    getMovementSpeed() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Movement Speed']
-            : this.settings['User Settings']['Movement Speed'];
-    }
-
-    getUserScale() {
-        return (global$1.isEditor)
-            ? this.editorSettings['User Scale']
-            : this.settings['User Settings']['User Scale'];
-    }
-
-    isFlyingEnabled() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Enable Flying']
-            : this.settings['User Settings']['Enable Flying'];
-    }
-
-    areJoysticksSwapped() {
-        return (global$1.isEditor)
-            ? this.editorSettings['Swap Joysticks']
-            : this.settings['User Settings']['Swap Joysticks'];
-    }
-
-    getSettings() {
-        return this.settings;
-    }
-
 }
 
-let settingsHandler = new SettingsHandler();
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
-const Hands = {
+
+class GripInteractable extends Interactable {
+    constructor(threeObj) {
+        super(threeObj);
+        if(threeObj) threeObj.gripInteractable = this;
+        this._createBoundingObject();
+    }
+
+    addAction(selectedAction, releasedAction, tool, option) {
+        if(selectedAction && typeof selectedAction == 'object') {
+            this._actions.push(selectedAction);
+            return selectedAction;
+        }
+        let id = uuidv4();
+        let action = {
+            id: id,
+            selectedAction: selectedAction,
+            releasedAction: releasedAction,
+            selectedBy: new Set(),
+            tool: tool,
+            specificOption: option,
+            type: 'GRIP',
+        };
+        this._actions.push(action);
+        return action;
+    }
+
+    isOnlyGroup() {
+        return this._actions.length == 0;
+    }
+
+    supportsOwner(owner) {
+        //TODO: Should have a map that tracks how many actions for each tool as
+        //      we add + remove actions so we can respond to this function call
+        //      faster
+        for(let action of this._actions) {
+            if((!action.tool || action.tool == toolHandler.getTool())
+                && (!action.specificOption || action.specificOption == owner))
+                return true;
+        }
+        return this._actions.length == 0;
+    }
+
+    _createBoundingObject() {
+        this._boundingBox = new THREE.Box3();
+        this._boundingBoxObj = new Box3Helper(this._boundingBox);
+    }
+
+    _getBoundingObject() {
+        this._boundingBox.setFromObject(this._threeObj);
+        return this._boundingBox;
+    }
+
+    _displayBoundingObject() {
+        global$1.scene.add(this._boundingBoxObj);
+    }
+
+    _hideBoundingObject() {
+        global$1.scene.remove(this._boundingBoxObj);
+    }
+
+    intersectsSphere(sphere) {
+        let boundingBox = this._getBoundingObject();
+        let intersects;
+        if(boundingBox) {
+            intersects = sphere.intersectsBox(boundingBox);
+        } else {
+            intersects = false;
+        }
+        return intersects;
+    }
+
+    // Assumes intersectsSphere(sphere) is called first so we don't update the
+    // bounding box by calling _getBoundingObject()
+    distanceToSphere(sphere) {
+        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s[0]));
+    }
+
+    _determineAndSetState() {
+        if(this._selectedOwners.size > 0) {
+            this.setState(InteractableStates.SELECTED);
+            if(this._hoveredOwners.size >= this._selectedOwners.size) {
+                this._displayBoundingObject();
+            } else {
+                this._hideBoundingObject();
+            }
+        } else if(this._hoveredOwners.size > 0) {
+            this.setState(InteractableStates.HOVERED);
+            this._displayBoundingObject();
+        } else {
+            this.setState(InteractableStates.IDLE);
+            this._hideBoundingObject();
+        }
+    }
+
+    addHoveredBy(owner) {
+        if(this._hoveredOwners.has(owner)) {
+            return;
+        }
+        this._hoveredOwners.add(owner);
+        if(this._selectedOwners.size == 0) {
+            this.setState(InteractableStates.HOVERED);
+        }
+        this._displayBoundingObject();
+    }
+
+    removeHoveredBy(owner) {
+        this._hoveredOwners.delete(owner);
+        this._determineAndSetState();
+    }
+
+    addSelectedBy(owner) {
+        this._triggerSelected(owner);
+        this._selectedOwners.add(owner);
+        this.setState(InteractableStates.SELECTED);
+    }
+
+    removeSelectedBy(owner) {
+        this._triggerReleased(owner);
+        this._selectedOwners.delete(owner);
+        this._determineAndSetState();
+    }
+    
+    _triggerSelected(owner) {
+        for(let action of this._actions) {
+            if((!action.specificOption || action.specificOption == owner)
+                    && (!action.tool || action.tool == toolHandler.getTool()))
+            {
+                if(action.selectedAction) action.selectedAction(owner);
+                action.selectedBy.add(owner);
+            }
+        }
+    }
+
+    _triggerReleased(owner) {
+        for(let action of this._actions) {
+            if(action.selectedBy.has(owner)) {
+                if(action.releasedAction) action.releasedAction(owner);
+                action.selectedBy.delete(owner);
+            }
+        }
+    }
+
+    static emptyGroup() {
+        return new GripInteractable();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+let AudioHandler$1 = class AudioHandler {
+    init() {
+        if(this._audioListener) return;
+        this._audioListener = new THREE.AudioListener();
+        global$1.camera.add(this._audioListener);
+    }
+
+    getListener() {
+        return this._audioListener;
+    }
+
+    setListenerParent(listenerParent) {
+        listenerParent.add(this._audioListener);
+    }
+
+    resume() {
+        this._audioListener.context.resume();
+    }
+
+    suspend() {
+        this._audioListener.context.suspend();
+    }
+};
+
+let audioHandler = new AudioHandler$1();
+
+const Handedness = {
     LEFT: "LEFT",
     RIGHT: "RIGHT",
 };
 
-Hands.otherHand = (hand) => {
-    if(hand == Hands.LEFT) return Hands.RIGHT;
-    if(hand == Hands.RIGHT) return Hands.LEFT;
-    console.error('ERROR: Unexpected hand provided to Hands.otherHand');
+Handedness.otherHand = (hand) => {
+    if(hand == Handedness.LEFT) return Handedness.RIGHT;
+    if(hand == Handedness.RIGHT) return Handedness.LEFT;
+    console.error('ERROR: Unexpected hand provided to Handedness.otherHand');
+};
+
+const XRInputDeviceTypes = {
+    CONTROLLER: "CONTROLLER",
+    HAND: "HAND",
+    OTHER: "OTHER",
 };
 
 /**
@@ -6547,34 +6701,231 @@ class XRControllerModelFactory {
 
 }
 
+const DEFAULT_HAND_PROFILE_PATH$1 = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
+const CONTACT_DISTANCE = 0.015;
+const SEPARATE_DISTANCE = 0.025;
+
+class XRHandMeshModel {
+
+	constructor( handModel, xrInputSource, path, handedness, loader = null ) {
+
+		this.xrInputSource = xrInputSource;
+		this.handModel = handModel;
+
+		this.bones = [];
+        this._fingertips = [];
+        this._phalanxProximals = [];
+        this._palmTriangleVectors = [new Vector3(),new Vector3(),new Vector3()];
+        this._palmTriangleBones = [];
+        this._palmTriangle = new Triangle();
+        this.isPinching = false;
+        this.isGrabbing = false;
+        this.palmDirection = new Vector3();
+
+		if ( loader === null ) {
+
+			loader = new GLTFLoader();
+			loader.setPath( path || DEFAULT_HAND_PROFILE_PATH$1 );
+
+		}
+
+		loader.load( `${handedness}.glb`, gltf => {
+
+			const object = gltf.scene.children[ 0 ];
+			this.handModel.add( object );
+            this.assetUrl = DEFAULT_HAND_PROFILE_PATH$1 + `${handedness}.glb`;
+
+			const mesh = object.getObjectByProperty( 'type', 'SkinnedMesh' );
+			mesh.frustumCulled = false;
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
+
+			const joints = [
+				'wrist',
+				'thumb-metacarpal',
+				'thumb-phalanx-proximal',
+				'thumb-phalanx-distal',
+				'thumb-tip',
+				'index-finger-metacarpal',
+				'index-finger-phalanx-proximal',
+				'index-finger-phalanx-intermediate',
+				'index-finger-phalanx-distal',
+				'index-finger-tip',
+				'middle-finger-metacarpal',
+				'middle-finger-phalanx-proximal',
+				'middle-finger-phalanx-intermediate',
+				'middle-finger-phalanx-distal',
+				'middle-finger-tip',
+				'ring-finger-metacarpal',
+				'ring-finger-phalanx-proximal',
+				'ring-finger-phalanx-intermediate',
+				'ring-finger-phalanx-distal',
+				'ring-finger-tip',
+				'pinky-finger-metacarpal',
+				'pinky-finger-phalanx-proximal',
+				'pinky-finger-phalanx-intermediate',
+				'pinky-finger-phalanx-distal',
+				'pinky-finger-tip',
+			];
+
+			joints.forEach( jointName => {
+
+				const bone = object.getObjectByName( jointName );
+
+				if ( bone !== undefined ) {
+
+					bone.jointName = jointName;
+
+				} else {
+
+					console.warn( `Couldn't find ${jointName} in ${handedness} hand mesh` );
+
+				}
+
+				this.bones.push( bone );
+
+			} );
+            for(let i of [4, 9, 14, 19, 24]) {
+                this._fingertips.push(this.bones[i]);
+            }
+            for(let i of [2, 6, 11, 16, 21]) {
+                this._phalanxProximals.push(this.bones[i]);
+            }
+            this._palmTriangleBones.push(this.bones[5]);
+            this._palmTriangleBones.push(this.bones[6]);
+            this._palmTriangleBones.push(this.bones[10]);
+            if(handedness == 'left') this._palmTriangleBones.reverse();
+		} );
+
+	}
+
+    _updateGestures() {
+        let wrist = this.bones[0];
+        if(!wrist) return;
+        let grabbing = true;
+        let wristPosition = wrist.position;
+        for(let i = 2; i < 5; i++) {
+            let fingertipPosition = this._fingertips[i].position;
+            let knucklePosition = this._phalanxProximals[i].position;
+            let tipDist = fingertipPosition.distanceTo(wristPosition);
+            let knuckleDist = knucklePosition.distanceTo(wristPosition);
+            if(tipDist > knuckleDist) {
+                grabbing = false;
+                break;
+            }
+        }
+        this.isGrabbing = grabbing;
+        let thumbTip = this.bones[4];
+        let indexTip = this.bones[9];
+        let thumbIndexDist = thumbTip.position.distanceTo(indexTip.position);
+        if(this.isPinching) {
+            if(thumbIndexDist > SEPARATE_DISTANCE)
+                this.isPinching = false;
+        } else if(thumbIndexDist < CONTACT_DISTANCE) {
+            this.isPinching = true;
+        }
+        for(let i = 0; i < 3; i++) {
+            this._palmTriangleBones[i].getWorldPosition(
+                this._palmTriangleVectors[i]);
+        }
+        this._palmTriangle.setFromPointsAndIndices(this._palmTriangleVectors, 0,
+            1, 2);
+        this._palmTriangle.getNormal(this.palmDirection);
+    }
+
+	updateMesh(frame, referenceSpace, parentMatrix) {
+        if(!parentMatrix) return;
+        parentMatrix = parentMatrix.clone().invert();
+        let i = 0;
+        for(let joint of this.xrInputSource.hand.values()) {
+            let bone = this.bones[i];
+            let jointPose = frame.getJointPose(joint, referenceSpace);
+			if(bone && jointPose) {
+                bone.matrix.fromArray(jointPose.transform.matrix)
+                    .premultiply(parentMatrix);
+                bone.matrix.decompose(bone.position, bone.rotation, bone.scale);
+			}
+            i++;
+		}
+        this._updateGestures();
+	}
+
+}
+
+class XRHandModel extends Object3D {
+
+	constructor( controller ) {
+
+		super();
+
+		this.controller = controller;
+		this.motionController = null;
+		this.envMap = null;
+
+		this.mesh = null;
+
+	}
+
+}
+
+class XRHandModelFactory {
+
+	constructor() {
+
+		this.path = null;
+
+	}
+
+	setPath( path ) {
+
+		this.path = path;
+
+		return this;
+
+	}
+
+	createHandModel( xrInputDevice, profile ) {
+
+        let xrInputSource = xrInputDevice;
+
+		const handModel = new XRHandModel();
+
+		if ( xrInputSource.hand && ! handModel.motionController ) {
+
+			handModel.xrInputSource = xrInputSource;
+
+            handModel.motionController = new XRHandMeshModel( handModel, xrInputSource, this.path, xrInputSource.handedness );
+
+		}
+
+		return handModel;
+
+	}
+
+}
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const controllerModelFactory = new XRControllerModelFactory();
+const handModelFactory = new XRHandModelFactory();
 
 //Provides Polling for XR Input Sources, Keyboard, or Mobile Touch Screen inputs
 class InputHandler {
     init(container, renderer, controllerParent) {
         this._container = container;
         this._renderer = renderer;
-        this._renderer.domElement.tabIndex = "1";
         this._controllerParent = controllerParent;
+        this._renderer.domElement.tabIndex = "1";
         this._session;
-        this._leftXRInputSource;
-        this._rightXRInputSource;
-        this._leftXRControllerModel = new Object3D();
-        this._rightXRControllerModel = new Object3D();
-        this._leftXRController = {
-            "targetRay": new Object3D(),
-            "grip": new Object3D()
-        };
-        this._rightXRController = {
-            "targetRay": new Object3D(),
-            "grip": new Object3D()
-        };
+        this._xrInputDevices = {};
+        for(let type in XRInputDeviceTypes) {
+            this._xrInputDevices[type] = {};
+        }
         this._pointerPosition = new Vector2();
         this._pointerPressed = false;
         this._keysPressed = new Set();
@@ -6582,6 +6933,8 @@ class InputHandler {
         this._screenTouched = false;
         this._joystickAngle = 0;
         this._joystickDistance = 0;
+        this._extraControls = {};
+        this._extraControlsDiv = document.getElementById('extra-controls');
         this._addEventListeners();
     }
 
@@ -6650,15 +7003,15 @@ class InputHandler {
     createPointerControls() {
         let menuOpenButton = document.getElementById('mobile-menu-open-button');
         menuOpenButton.classList.remove("hidden");
+        this._extraControlsDiv.classList.remove("hidden");
     }
 
     createMobileControls() {
         let joystickParent = document.getElementById('mobile-joystick');
         let menuOpenButton = document.getElementById('mobile-menu-open-button');
-        let menuFlyingParent =document.getElementById('mobile-flying-controls');
         joystickParent.classList.remove("hidden");
         menuOpenButton.classList.remove("hidden");
-        menuFlyingParent.classList.remove("hidden");
+        this._extraControlsDiv.classList.remove("hidden");
         let options = {
             zone: joystickParent,
             mode: 'static',
@@ -6682,99 +7035,103 @@ class InputHandler {
         };
         let inputSources = this._session.inputSources;
         for(let i = 0; i < inputSources.length; i++) {
-            if(inputSources[i].handedness == "right") {
-                this._rightXRInputSource = inputSources[i];
-                this._controllerParent.add(this._rightXRController.targetRay);
-                this._controllerParent.add(this._rightXRController.grip);
-                if(this._rightXRControllerModel.children.length == 0) {
-                    this._rightXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(inputSources[i]));
-                }
-            } else if(inputSources[i].handedness == "left") {
-                this._leftXRInputSource = inputSources[i];
-                this._controllerParent.add(this._leftXRController.targetRay);
-                this._controllerParent.add(this._leftXRController.grip);
-                if(this._leftXRControllerModel.children.length == 0) {
-                    this._leftXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(inputSources[i]));
-                }
-            }
+            this._addXRInputSource(inputSources[i]);
         }
     }
 
     _onXRSessionEnd(event) {
         this._session.oninputsourcechange = null;
         this._session = null;
-        this._rightXRInputSource = null;
-        this._leftXRInputSource = null;
-        this._controllerParent.remove(this._rightXRController.targetRay);
-        this._controllerParent.remove(this._rightXRController.grip);
-        this._controllerParent.remove(this._leftXRController.targetRay);
-        this._controllerParent.remove(this._leftXRController.grip);
+        for(let type in this._xrInputDevices) {
+            for(let handedness in this._xrInputDevices[type]) {
+                delete this._xrInputDevices[type][handedness].inputSource;
+            }
+        }
     }
 
     _onXRInputSourceChange(event) {
         for(let i = 0; i < event.removed.length; i++) {
-            if(event.removed[i] == this._rightXRInputSource) {
-                this._rightXRInputSource = null;
-                this._controllerParent.remove(this._rightXRController.targetRay);
-                this._controllerParent.remove(this._rightXRController.grip);
-            } else if(event.removed[i] == this._leftXRInputSource) {
-                this._leftXRInputSource = null;
-                this._controllerParent.remove(this._leftXRController.targetRay);
-                this._controllerParent.remove(this._leftXRController.grip);
-            }
+            this._deleteXRInputSource(event.removed[i]);
         }
         for(let i = 0; i < event.added.length; i++) {
-            if(event.added[i].hand != null) continue; //Don't support hands yet
-            if(event.added[i].handedness == "right") {
-                this._rightXRInputSource = event.added[i];
-                this._controllerParent.add(this._rightXRController.targetRay);
-                this._controllerParent.add(this._rightXRController.grip);
-                if(this._rightXRControllerModel.children.length == 0) {
-                    this._rightXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(event.added[i]));
+            this._addXRInputSource(event.added[i]);
+        }
+    }
+
+    _addXRInputSource(inputSource) {
+        let type = (inputSource.hand != null)
+            ? XRInputDeviceTypes.HAND
+            : XRInputDeviceTypes.CONTROLLER;
+
+        let handedness = inputSource.handedness.toUpperCase();
+        if(handedness in Handedness) {
+            let xrInputDevice = this._xrInputDevices[type][handedness];
+            if(!xrInputDevice) {
+                xrInputDevice = { controllers: {} };
+                this._xrInputDevices[type][handedness] = xrInputDevice;
+                if(inputSource.targetRaySpace) {
+                    xrInputDevice.controllers.targetRay = new Object3D();
+                    this._controllerParent.add(xrInputDevice.controllers
+                        .targetRay);
                 }
-            } else if(event.added[i].handedness == "left") {
-                this._leftXRInputSource = event.added[i];
-                this._controllerParent.add(this._leftXRController.targetRay);
-                this._controllerParent.add(this._leftXRController.grip);
-                if(this._leftXRControllerModel.children.length == 0) {
-                    this._leftXRControllerModel.add(controllerModelFactory
-                        .createControllerModel(event.added[i]));
+                if(inputSource.gripSpace) {
+                    xrInputDevice.controllers.grip = new Object3D();
+                    this._controllerParent.add(xrInputDevice.controllers.grip);
                 }
+            }
+            xrInputDevice.inputSource = inputSource;
+            if(!xrInputDevice.model) {
+                if(type == XRInputDeviceTypes.HAND) {
+                    xrInputDevice.model = handModelFactory
+                        .createHandModel(inputSource);
+                } else if(type == XRInputDeviceTypes.CONTROLLER) {
+                    xrInputDevice.model = controllerModelFactory
+                        .createControllerModel(inputSource, 'mesh');
+                }
+            } else {
+                let motionController = xrInputDevice.model.motionController;
+                if(motionController)
+                    motionController.xrInputSource = inputSource;
             }
         }
     }
 
-    getXRGamepad(hand) {
-        if(hand == Hands.LEFT) {
-            return (this._leftXRInputSource)
-                ? this._leftXRInputSource.gamepad
-                : null;
-        } else if(hand == Hands.RIGHT) {
-            return (this._rightXRInputSource)
-                ? this._rightXRInputSource.gamepad
-                : null;
-        } else {
-            return null;
-        }
+    _deleteXRInputSource(inputSource) {
+        let type = (inputSource.hand != null)
+            ? XRInputDeviceTypes.HAND
+            : XRInputDeviceTypes.CONTROLLER;
+
+        let handedness = inputSource.handedness.toUpperCase();
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        if(xrInputDevice && xrInputDevice.inputSource)
+            delete this._xrInputDevices[type][handedness].inputSource;
     }
 
-    getXRController(hand, type) {
-        if(hand == Hands.LEFT) {
-            return this._leftXRController[type];
-        } else if(hand == Hands.RIGHT) {
-            return this._rightXRController[type];
-        }
+    _getXRInputDevice(type, handedness) {
+        return (this._xrInputDevices[type])
+            ? this._xrInputDevices[type][handedness]
+            : null;
+    }
+
+    getXRInputSource(type, handedness) {
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        return (xrInputDevice) ? xrInputDevice.inputSource : null;
+    }
+
+    getXRGamepad(handedness) {
+        let type = XRInputDeviceTypes.CONTROLLER;
+        let inputSource = this.getXRInputSource(type, handedness);
+        return (inputSource) ? inputSource.gamepad : null;
+    }
+
+    getXRController(type, handedness, space) {
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        return (xrInputDevice) ? xrInputDevice.controllers[space] : null;
     }
     
-    getXRControllerModel(hand) {
-        if(hand == Hands.LEFT) {
-            return this._leftXRControllerModel;
-        } else if(hand == Hands.RIGHT) {
-            return this._rightXRControllerModel;
-        }
+    getXRControllerModel(type, handedness) {
+        let xrInputDevice = this._getXRInputDevice(type, handedness);
+        return (xrInputDevice) ? xrInputDevice.model : null;
     }
 
     getPointerPosition() {
@@ -6805,32 +7162,65 @@ class InputHandler {
         return this._joystickDistance;
     }
 
-    _updateXRController(frame, referenceSpace, xrInputSource, xrController) {
+    addExtraControlsButton(id, name) {
+        let button = document.createElement('button');
+        button.id = id;
+        button.innerText = name;
+        this._extraControlsDiv.appendChild(button);
+        this._extraControls[id] = button;
+        return button;
+    }
+
+    getExtraControlsButton(id) {
+        return this._extraControls[id];
+    }
+
+    hideExtraControlsButton(id) {
+        let button = this._extraControls[id];
+        if(button) button.style.display = 'none';
+    }
+
+    showExtraControlsButton(id) {
+        let button = this._extraControls[id];
+        if(button) button.style.display = 'inline-block';
+    }
+
+    _updateXRController(frame, referenceSpace, xrInputDevice) {
+        let xrInputSource = xrInputDevice.inputSource;
+        let xrControllers = xrInputDevice.controllers;
         if(xrInputSource) {
             let targetRayPose = frame.getPose(
                 xrInputSource.targetRaySpace, referenceSpace
             );
             if(targetRayPose != null) {
-                xrController.targetRay.matrix.fromArray(
+                xrControllers.targetRay.matrix.fromArray(
                     targetRayPose.transform.matrix
                 );
-                xrController.targetRay.matrix.decompose(
-                    xrController.targetRay.position,
-                    xrController.targetRay.rotation,
-                    xrController.targetRay.scale
+                xrControllers.targetRay.matrix.decompose(
+                    xrControllers.targetRay.position,
+                    xrControllers.targetRay.rotation,
+                    xrControllers.targetRay.scale
                 );
             }
 
             let gripPose = frame.getPose(
                 xrInputSource.gripSpace, referenceSpace
             );
-            if ( gripPose !== null ) {
-                xrController.grip.matrix.fromArray(gripPose.transform.matrix);
-                xrController.grip.matrix.decompose(
-                    xrController.grip.position,
-                    xrController.grip.rotation,
-                    xrController.grip.scale
+            if(gripPose != null) {
+                xrControllers.grip.matrix.fromArray(gripPose.transform.matrix);
+                xrControllers.grip.matrix.decompose(
+                    xrControllers.grip.position,
+                    xrControllers.grip.rotation,
+                    xrControllers.grip.scale
                 );
+            }
+
+            if(xrInputSource.hand && xrInputDevice.model) {
+                let motionController = xrInputDevice.model.motionController;
+                if(motionController){
+                    motionController.updateMesh(frame, referenceSpace,
+                        xrControllers.grip.matrix);
+                }
             }
         }
     }
@@ -6841,60 +7231,16 @@ class InputHandler {
         }
         //Assumes device type is XR
         let referenceSpace = this._renderer.xr.getReferenceSpace();
-        this._updateXRController(
-            frame,
-            referenceSpace,
-            this._leftXRInputSource,
-            this._leftXRController
-        );
-        this._updateXRController(
-            frame,
-            referenceSpace,
-            this._rightXRInputSource,
-            this._rightXRController
-        );
+        for(let type in this._xrInputDevices) {
+            for(let handedness in this._xrInputDevices[type]) {
+                this._updateXRController(frame, referenceSpace,
+                    this._xrInputDevices[type][handedness]);
+            }
+        }
     }
 }
 
 let inputHandler = new InputHandler();
-
-const InteractableStates = {
-    IDLE: "IDLE",
-    HOVERED: "HOVERED",
-    SELECTED: "SELECTED"
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-let AudioHandler$1 = class AudioHandler {
-    init() {
-        if(this._audioListener) return;
-        this._audioListener = new THREE.AudioListener();
-        global$1.camera.add(this._audioListener);
-    }
-
-    getListener() {
-        return this._audioListener;
-    }
-
-    setListenerParent(listenerParent) {
-        listenerParent.add(this._audioListener);
-    }
-
-    resume() {
-        this._audioListener.context.resume();
-    }
-
-    suspend() {
-        this._audioListener.context.suspend();
-    }
-};
-
-let audioHandler = new AudioHandler$1();
 
 class VRButton {
 
@@ -8350,6 +8696,7 @@ class OrbitControls extends EventDispatcher {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
 
 class SessionHandler {
@@ -8358,7 +8705,6 @@ class SessionHandler {
         this._orbitControlsTarget = new Vector3(0,0,0);
         this._onStart = onStart;
         global$1.sessionActive = false;
-        audioHandler.init();
         if(global$1.deviceType == "XR") {
             this._configureForXR();
         } else if(global$1.deviceType == "POINTER") {
@@ -8366,6 +8712,18 @@ class SessionHandler {
         } else if(global$1.deviceType == "MOBILE") {
             this._configureForMobile();
         }
+        this._addBakedWithLabel();
+    }
+
+    _addBakedWithLabel() {
+        this._bakedWithLabel = document.createElement('p');
+        this._bakedWithLabel.innerHTML = 'Baked with <a style="color: rgb(255, 199, 229);" href="https://digitalbacon.io">Digital Bacon</a> &#10084;';
+        this._bakedWithLabel.style.color = 'rgb(255, 199, 229)';
+        this._bakedWithLabel.style.bottom = '0';
+        this._bakedWithLabel.style.fontSize = '12px';
+        this._bakedWithLabel.style.fontStyle = 'italic';
+        this._bakedWithLabel.style.position = 'absolute';
+        this._bakedWithLabel.style.width = '100%';
     }
 
     _configureForXR() {
@@ -8414,6 +8772,7 @@ class SessionHandler {
         });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
+            this._bakedWithLabel.style.display = "none";
             this._controls.enabled = true;
             global$1.sessionActive = true;
             audioHandler.resume();
@@ -8449,6 +8808,7 @@ class SessionHandler {
         });
         this._button.addEventListener('click', () => {
             this._div.style.display = "none";
+            this._bakedWithLabel.style.display = "none";
             this._controls.enabled = true;
             global$1.sessionActive = true;
             audioHandler.resume();
@@ -8518,6 +8878,7 @@ class SessionHandler {
 
     displayButton() {
         this._container.appendChild(this._div);
+        this._container.appendChild(this._bakedWithLabel);
     }
 
     exitXRSession() {
@@ -8549,127 +8910,6 @@ let sessionHandler = new SessionHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class ToolHandler {
-    constructor() {
-        this._id = uuidv4();
-        this._tool = null;
-    }
-
-    getTool() {
-        return this._tool;
-    }
-    setTool(tool) {
-        this._tool = tool;
-        pubSub.publish(this._id, PubSubTopics.TOOL_UPDATED, tool);
-    }
-}
-
-let toolHandler = new ToolHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Interactable {
-    constructor(threeObj) {
-        this._threeObj = threeObj;
-        this._state = InteractableStates.IDLE;
-        this.children = new Set();
-        this._hoveredOwners = new Set();
-        this._selectedOwners = new Set();
-        this._actions = [];
-    }
-
-    removeAction(id) {
-        for(let i = this._actions.length - 1; i >= 0; i--) {
-            if(this._actions[i].id == id) {
-                this._actions.splice(i, 1);
-            }
-        }
-    }
-
-    getActionsLength() {
-        return this._actions.length;
-    }
-
-    isOnlyGroup() {
-        console.error("Interactable.isOnlyGroup() should be overridden");
-        return;
-    }
-
-    getThreeObj() {
-        return this._threeObj;
-    }
-
-    getState() {
-        return this._state;
-    }
-
-    setState(newState) {
-        if(this._state != newState) {
-            this._state = newState;
-            if(this._threeObj.states && newState in this._threeObj.states) {
-                this._threeObj.setState(newState);
-            }
-        }
-    }
-
-    addHoveredBy(owner) {
-        console.error("Interactable.addHoveredBy(owner) should be overridden");
-    }
-
-    removeHoveredBy(owner) {
-        console.error("Interactable.removeHoveredBy(owner) should be overridden");
-    }
-
-    addSelectedBy(owner) {
-        console.error("Interactable.addSelectedBy(owner) should be overridden");
-    }
-
-    removeSelectedBy(owner) {
-        console.error("Interactable.removeSelectedBy(owner) should be overridden");
-    }
-
-    reset() {
-        this._hoveredOwners.clear();
-        this._selectedOwners.clear();
-        this.setState(InteractableStates.IDLE);
-        this.children.forEach((interactable) => {
-            interactable.reset();
-        });
-    }
-
-    addChild(interactable) {
-        if(interactable.parent) interactable.parent.removeChild(interactable);
-        this.children.add(interactable);
-        interactable.parent = this;
-    }
-
-    addChildren(interactables) {
-        interactables.forEach((interactable) => {
-            this.addChild(interactable);
-        });
-    }
-
-    removeChild(interactable) {
-        this.children.delete(interactable);
-        interactable.parent = null;
-    }
-
-    removeChildren(interactables) {
-        interactables.forEach((interactable) => {
-            this.removeChild(interactable);
-        });
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
 
 class PointerInteractable extends Interactable {
     constructor(threeObj, canDisableOrbit) {
@@ -8775,7 +9015,7 @@ class PointerInteractable extends Interactable {
                 && (action.maxDistance >= distance
                     || action.draggingOwners.has(owner)))
             {
-                action.action(closestPoint);
+                action.action(owner, closestPoint);
             }
             if(action.draggingOwners.has(owner))
                 action.draggingOwners.delete(owner);
@@ -8790,7 +9030,7 @@ class PointerInteractable extends Interactable {
                 && (action.draggingOwners.has(owner)
                     || action.maxDistance >= distance))
             {
-                action.draggableAction(closestPoint);
+                action.draggableAction(owner, closestPoint);
                 action.isDragging = true;
                 if(!action.draggingOwners.has(owner))
                     action.draggingOwners.add(owner);
@@ -8801,7 +9041,7 @@ class PointerInteractable extends Interactable {
     releaseDraggedActions(owner) {
         for(let action of this._actions) {
             if(action.draggingOwners.has(owner)) {
-                if(action.action) action.action();
+                if(action.action) action.action(owner);
                 action.draggingOwners.delete(owner);
             }
         }
@@ -8823,6 +9063,308 @@ class PointerInteractable extends Interactable {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
+
+class Scene {
+    constructor() {
+        this._id = 'dc23454b-9d3c-4c94-b1d2-0448ec28415f';
+        this._object = new THREE.Scene();
+        this._gripInteractable = new GripInteractable();
+        this._pointerInteractable = new PointerInteractable();
+        this.children = new Set();
+        global$1.scene = this._object;
+    }
+    
+    getId() {
+        return this._id;
+    }
+
+    getObject() {
+        return this._object;
+    }
+
+    getGripInteractable() {
+        return this._gripInteractable;
+    }
+
+    getPointerInteractable() {
+        return this._pointerInteractable;
+    }
+
+    add(child, ignorePublish) {
+        child.addTo(this, ignorePublish);
+    }
+
+    attach(child, ignorePublish) {
+        child.attachTo(this, ignorePublish);
+    }
+}
+
+let scene = new Scene();
+
+const CubeSides = {
+    FRONT: "FRONT",
+    BACK: "BACK",
+    LEFT: "LEFT",
+    RIGHT: "RIGHT",
+    TOP: "TOP",
+    BOTTOM: "BOTTOM",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const RESOLUTION = 1024;
+const SIDES$1 = {};
+for(let side in CubeSides) {
+    let canvas = document.createElement('canvas');
+    canvas.width = RESOLUTION;
+    canvas.height = RESOLUTION;
+    SIDES$1[side] = {
+        canvas: canvas,
+        context: canvas.getContext("2d"),
+    };
+}
+
+class Skybox {
+    init(scene) {
+        this._scene = scene;
+        this._scene.background = new CubeTexture$1([
+            SIDES$1[CubeSides.RIGHT].canvas,
+            SIDES$1[CubeSides.LEFT].canvas,
+            SIDES$1[CubeSides.TOP].canvas,
+            SIDES$1[CubeSides.BOTTOM].canvas,
+            SIDES$1[CubeSides.FRONT].canvas,
+            SIDES$1[CubeSides.BACK].canvas,
+        ]);
+        this._scene.background.colorSpace = SRGBColorSpace;
+    }
+
+    setSides(assetIds) {
+        for(let side in assetIds) {
+            this.setSide(side, assetIds[side]);
+        }
+    }
+
+    setSide(side, assetId) {
+        let image = (assetId)
+            ? libraryHandler.getImage(assetId)
+            : null;
+        this._drawImage(side, image);
+        this._scene.background.needsUpdate = true;
+    }
+
+    deleteSide(side) {
+        this._drawImage(side);
+        this._scene.background.needsUpdate = true;
+    }
+
+    //https://stackoverflow.com/a/23105310
+    _drawImage(side, image) {
+        let canvas = SIDES$1[side]['canvas'];
+        let context = SIDES$1[side]['context'];
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if(!image) return;
+        let ratio  = RESOLUTION / Math.max(image.width, image.height);
+        let centerShift_x = (canvas.width - image.width*ratio) / 2;
+        let centerShift_y = (canvas.height - image.height*ratio) / 2;
+        context.drawImage(image, 0, 0, image.width, image.height, centerShift_x,
+            centerShift_y, image.width * ratio, image.height * ratio);
+    }
+}
+
+let skybox = new Skybox();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class SettingsHandler {
+    constructor() {
+        this.settings = {
+            "Acknowledgements": [],
+            "Skybox": {},
+            "User Settings": {
+                "Movement Speed": 3,
+                "User Scale": 1,
+                "Enable Flying": true,
+                "Swap Joysticks": false,
+            },
+        };
+        this.editorSettings = {
+            "Movement Speed": 3,
+            "User Scale": 1,
+            "Enable Flying": true,
+            "Swap Joysticks": false,
+        };
+        this.settings['Skybox'][CubeSides.FRONT] = null;
+        this.settings['Skybox'][CubeSides.BACK] = null;
+        this.settings['Skybox'][CubeSides.LEFT] = null;
+        this.settings['Skybox'][CubeSides.RIGHT] = null;
+        this.settings['Skybox'][CubeSides.TOP] = null;
+        this.settings['Skybox'][CubeSides.BOTTOM] = null;
+        this._scene = scene.getObject();
+        skybox.init(this._scene);
+    }
+
+    load(settings) {
+        if(!settings) {
+            for(let side in this.settings['Skybox']) {
+                this.settings['Skybox'][side] = null;
+            }
+            this.settings['User Settings']['Movement Speed'] = 3;
+            this.settings['User Settings']['User Scale'] = 1;
+            this.settings['User Settings']['Enable Flying'] = true;
+            this.settings['User Settings']['Swap Joysticks'] = false;
+            this.settings['Acknowledgements'] = [];
+        } else {
+            this.settings = settings;
+            if(!this.settings['Acknowledgements']) {
+                this.settings['Acknowledgements'] = [];
+            }
+            if(!this.settings['User Settings']) {
+                this.settings['User Settings'] = {
+                    "Movement Speed": 3,
+                    "User Scale": 1,
+                    "Enable Flying": true,
+                    "Swap Joysticks": false,
+                };
+            } else {
+                if(!this.settings['User Settings']['Movement Speed']) {
+                    this.settings['User Settings']['Movement Speed'] = 3;
+                }
+                if(!this.settings['User Settings']['User Scale']) {
+                    this.settings['User Settings']['User Scale'] = 1;
+                }
+                if(!this.settings['User Settings']['Enable Flying']) {
+                    this.settings['User Settings']['Enable Flying'] = true;
+                }
+                if(!this.settings['User Settings']['Swap Joysticks']) {
+                    this.settings['User Settings']['Swap Joysticks'] = false;
+                }
+            }
+            this._updateFlyingButtons();
+        }
+        skybox.setSides(this.settings['Skybox']);
+    }
+
+    reset() {
+        this.load();
+    }
+
+    getAcknowledgements() {
+        return this.settings['Acknowledgements'];
+    }
+
+    addAcknowledgement(acknowledgement) {
+        this.settings['Acknowledgements'].push(acknowledgement);
+    }
+
+    getSkyboxTextures() {
+        let textures = {};
+        let skybox = this.settings['Skybox'];
+        for(let side in skybox) {
+            if(skybox[side]) {
+                textures[side] = libraryHandler.getTexture(skybox[side]);
+            } else {
+                textures[side] = Textures.searchIcon;
+            }
+        }
+        return textures;
+    }
+
+    setSkyboxSide(side, assetId, ignorePublish) {
+        //Should validate image size is square before setting Skybox side
+        this.settings['Skybox'][side] = assetId;
+        skybox.setSide(side, assetId);
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['Skybox', side],
+            });
+    }
+
+    getEditorSettings() {
+        return this.editorSettings;
+    }
+
+    setEditorSetting(key, value) {
+        if(key in this.editorSettings) this.editorSettings[key] = value;
+        this._updateFlyingButtons();
+    }
+
+    getUserSettings() {
+        return this.settings['User Settings'];
+    }
+
+    setUserSetting(key, value, ignorePublish) {
+        if(!(key in this.settings['User Settings'])) return;
+
+        this.settings['User Settings'][key] = value;
+        this._updateFlyingButtons();
+        if(!ignorePublish)
+            pubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED, {
+                settings: this.settings,
+                keys: ['User Settings', key],
+            });
+    }
+
+    getMovementSpeed() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Movement Speed']
+            : this.settings['User Settings']['Movement Speed'];
+    }
+
+    getUserScale() {
+        return (global$1.isEditor)
+            ? this.editorSettings['User Scale']
+            : this.settings['User Settings']['User Scale'];
+    }
+
+    isFlyingEnabled() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Enable Flying']
+            : this.settings['User Settings']['Enable Flying'];
+    }
+
+    areJoysticksSwapped() {
+        return (global$1.isEditor)
+            ? this.editorSettings['Swap Joysticks']
+            : this.settings['User Settings']['Swap Joysticks'];
+    }
+
+    getSettings() {
+        return this.settings;
+    }
+
+    _updateFlyingButtons() {
+        if(global$1.deviceType != 'MOBILE') return;
+        if(this.isFlyingEnabled()) {
+            inputHandler.showExtraControlsButton('mobile-flying-up-button');
+            inputHandler.showExtraControlsButton('mobile-flying-down-button');
+        } else {
+            inputHandler.hideExtraControlsButton('mobile-flying-up-button');
+            inputHandler.hideExtraControlsButton('mobile-flying-down-button');
+        }
+    }
+
+}
+
+let settingsHandler = new SettingsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 
 const defaultOffset = 0.008;
 const defaultMargin = 0.01;
@@ -9152,6 +9694,7 @@ class ThreeMeshUIHelper {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class UndoRedoHandler {
     init() {
         this._currentAction = {};
@@ -9320,21 +9863,19 @@ let editorHelperFactory = new EditorHelperFactory();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 //TODO: Delete this when we handle the debacle TODO in loadZip() + loadDiffZip()
-const orderedHandlerKeys = [AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.AUDIO, AssetTypes.MODEL, AssetTypes.SHAPE, AssetTypes.CUSTOM_ASSET];
+const orderedHandlerKeys = [AssetTypes.INTERNAL, AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.AUDIO, AssetTypes.MODEL, AssetTypes.SHAPE, AssetTypes.CUSTOM_ASSET];
   
 class ProjectHandler {
     constructor() {
-        this._assetHandlers = {};
-    }
-
-    init(scene) {
-        this._scene = scene;
         this._id = uuidv4();
+        this._scene = scene.getObject();
         this._objects = [];
         this._assets = {};
+        this._assetHandlers = {};
         this._sessionAssets = {};
-        settingsHandler.init(scene);
+        this._sessionAssets[scene.getId()] = scene;
     }
 
     load(projectFilePath, successCallback, errorCallback) {
@@ -9379,6 +9920,14 @@ class ProjectHandler {
                             this._assetHandlers[key].load(
                                 this._projectDetails[key.toLowerCase() + 's']);
                         }
+                        for(let id in this._assets) {
+                            let asset = this._assets[id];
+                            if(asset.addTo) {
+                                let parentAsset = this._sessionAssets[
+                                    asset.getParentId()];
+                                asset.addTo(parentAsset, true);
+                            }
+                        }
                     } catch(error) {
                         console.error(error);
                         this._handleLoadingError(errorCallback);
@@ -9411,6 +9960,14 @@ class ProjectHandler {
                         for(let key of orderedHandlerKeys) {
                             this._assetHandlers[key].load(
                                 projectDetails[key.toLowerCase() + 's'], true);
+                        }
+                        for(let id in this._assets) {
+                            let asset = this._assets[id];
+                            if(asset.addTo) {
+                                let parentAsset = this._sessionAssets[
+                                    asset.getParentId()];
+                                asset.addTo(parentAsset, true);
+                            }
                         }
                     } catch(error) {
                         console.error(error);
@@ -9474,15 +10031,18 @@ class ProjectHandler {
         asset.getAssetId();
         libraryHandler.getType(asset.getAssetId());
         if(this._assets[id]) {
-            if(asset.removeFromScene && asset.getObject) {
-                for(let i = 0; i < this._objects.length; i++) {
-                    if(asset.getObject() == this._objects[i]) {
-                        this._objects.splice(i,1);
-                        break;
+            if(asset.removeFromScene) {
+                if(asset.getObject) {
+                    let object = asset.getObject();
+                    for(let i = 0; i < this._objects.length; i++) {
+                        if(object == this._objects[i]) {
+                            this._objects.splice(i,1);
+                            break;
+                        }
                     }
-                }
-                if(asset.getObject().parent != this._scene) {
-                    this._scene.attach(asset.getObject());
+                    let parentType=libraryHandler.getType(asset.parent.getId());
+                    if(parentType == AssetTypes.INTERNAL && asset.parent!=scene)
+                        this._scene.attach(object);
                 }
                 asset.removeFromScene();
             }
@@ -9505,11 +10065,15 @@ class ProjectHandler {
 
     addAssetFromHandler(asset) {
         let id = asset.getId();
-        asset.getAssetId();
-        libraryHandler.getType(asset.getAssetId());
-        if(asset.addToScene && asset.getObject) {
-            asset.addToScene(this._scene);
-            this._objects.push(asset.getObject());
+        if(asset.addToScene) {
+            if(asset.parent) {
+                asset.addToScene(asset.parent.getObject(),
+                    asset.parent.getPointerInteractable(),
+                    asset.parent.getGripInteractable());
+            } else {
+                asset.addToScene();
+            }
+            if(asset.getObject) this._objects.push(asset.getObject());
         }
         if(this._assets[id]) return; //Prevent multi-user collisions
                                               //caused by undo/redo
@@ -9519,6 +10083,7 @@ class ProjectHandler {
 
     reset() {
         this._sessionAssets = {};
+        this._sessionAssets[scene.getId()] = scene;
         if(!global$1.disableImmersion) undoRedoHandler.reset();
         for(let type in this._assetHandlers) {
             this._assetHandlers[type].reset();
@@ -9533,7 +10098,8 @@ class ProjectHandler {
         for(let key of orderedHandlerKeys) {
             key = key.toLowerCase() + 's';
             for(let assetId in projectDetails[key]) {
-                if(!(assetId in this._projectDetails[key])) {
+                if(!this._projectDetails[key]
+                        || !(assetId in this._projectDetails[key])) {
                     assetIds.push(assetId);
                 }
             }
@@ -9542,8 +10108,8 @@ class ProjectHandler {
         return this._exportBlob(projectDetails);
     }
 
-    exportProject() {
-        let projectDetails = this._getProjectDetails();
+    exportProject(includeInternals) {
+        let projectDetails = this._getProjectDetails(false, !includeInternals);
         return this._exportBlob(projectDetails);
     }
 
@@ -9553,7 +10119,8 @@ class ProjectHandler {
         let library = libraryHandler.getLibrary();
         for(let assetId in projectDetails['library']) {
             let assetType = projectDetails['library'][assetId]['Type'];
-            if(assetType != AssetTypes.PRIMITVE){
+            if(assetType != AssetTypes.PRIMITVE
+                    && assetType != AssetTypes.INTERNAL) {
                 let filename = projectDetails['library'][assetId]['Filepath'];
                 zip.file(filename, library[assetId]['Blob']);
             }
@@ -9561,13 +10128,17 @@ class ProjectHandler {
         return zip;
     }
 
-    _getProjectDetails(skipLibrary) {
+    _getProjectDetails(skipLibrary, skipInternals) {
         let assetIds = [];
         let settings = settingsHandler.getSettings();
         let projectDetails = { settings: settings, version: global$1.version };
+        if(skipInternals)
+            pubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
         for(let type in this._assetHandlers) {
+            if(skipInternals && type == AssetTypes.INTERNAL) continue;
             let handler = this._assetHandlers[type];
             let details = handler.getAssetsDetails();
+            if(!details) continue;
             projectDetails[type.toLowerCase() + 's'] = details;
             if(type == AssetTypes.TEXTURE) {
                 let texturesAssetIds = handler.getTexturesAssetIds();
@@ -9596,6 +10167,7 @@ let projectHandler = new ProjectHandler();
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class AssetsHandler {
     constructor(addedTopic, deletedTopic, detailsName) {
@@ -9628,8 +10200,9 @@ class AssetsHandler {
                 this.addAsset(asset, true, ignorePublish);
             });
         }
-        if(!ignorePublish)
-            pubSub.publish(this._id, this._addedTopic, asset);
+        if(ignorePublish) return;
+        let topic = this._addedTopic + ':' + asset.getAssetId();
+        pubSub.publish(this._id, topic, asset, true);
     }
 
     deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
@@ -9646,10 +10219,11 @@ class AssetsHandler {
         projectHandler.deleteAssetFromHandler(asset);
         if(asset.update) global$1.dynamicAssets.delete(asset);
         if(ignorePublish) return;
-        pubSub.publish(this._id, this._deletedTopic, {
+        let topic = this._deletedTopic + ':' + asset.getAssetId();
+        pubSub.publish(this._id, topic, {
             asset: asset,
             undoRedoAction: undoRedoAction,
-        });
+        }, true);
     }
 
     load(assets, isDiff) {
@@ -9739,6 +10313,7 @@ class AssetsHandler {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class ComponentsHandler extends AssetsHandler {
     constructor() {
         super(PubSubTopics.COMPONENT_ADDED, PubSubTopics.COMPONENT_DELETED,
@@ -9754,6 +10329,7 @@ let componentsHandler = new ComponentsHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class CustomAssetsHandler extends AssetsHandler {
     constructor() {
         super(PubSubTopics.CUSTOM_ASSET_ADDED,
@@ -9768,6 +10344,70 @@ new CustomAssetsHandler();
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
+
+class InternalAssetsHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.INTERNAL_ADDED,
+            PubSubTopics.INTERNAL_DELETED, AssetTypes.INTERNAL);
+    }
+
+    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+        if(this._assets[asset.getId()]) return;
+        this._assets[asset.getId()] = asset;
+        this._sessionAssets[asset.getId()] = asset;
+        projectHandler.addAssetFromHandler(asset);
+        if(ignorePublish) return;
+        let topic = this._addedTopic + ':' + asset.getAssetId();
+        pubSub.publish(this._id, topic, asset, true);
+    }
+
+    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+        if(!(asset.getId() in this._assets)) return;
+        delete this._assets[asset.getId()];
+        projectHandler.deleteAssetFromHandler(asset);
+        if(ignorePublish) return;
+        let topic = this._deletedTopic + ':' + asset.getAssetId();
+        pubSub.publish(this._id, topic, { asset: asset }, true);
+    }
+
+    load(assets) {
+        if(!assets) return;
+        for(let assetTypeId in assets) {
+            if(!(assetTypeId in this._assetClassMap)) {
+                console.error("Unrecognized asset found");
+                continue;
+            }
+            for(let params of assets[assetTypeId]) {
+                if(this._assets[params.id]) {
+                    this._assets[params.id].updateFromParams(params);
+                } else if(this._sessionAssets[params.id]) {
+                    this.addAsset(this._sessionAssets[params.id], true, true);
+                } else {
+                    this.addNewAsset(assetTypeId, params, true, true);
+                }
+            }
+        }
+    }
+
+    reset() {
+        this._assets;
+        for(let assetId in this._assets) {
+            let asset = this._assets[assetId];
+            this.deleteAsset(asset, true, true);
+            this.addAsset(asset, true, true);
+        }
+    }
+}
+
+new InternalAssetsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 
 class Asset {
     constructor(params = {}) {
@@ -9883,64 +10523,315 @@ class Asset {
     }
 }
 
-const HandTools = {
-    ACTIVE: "EDIT",
-    COPY_PASTE: "COPY_PASTE",
-    DELETE: "DELETE",
-    EDIT: "EDIT",
-    ROTATE: "ROTATE",
-    SCALE: "SCALE",
-    TRANSLATE: "TRANSLATE",
-};
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class AssetEntity extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._object = params['object'] || new THREE.Object3D();
+        this._object.asset = this;
+        this._parentId = params['parentId'] || scene.getId();
+        this.children = new Set();
+        this.parent = scene;
+        let position = (params['position']) ? params['position'] : [0,0,0];
+        let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
+        let scale = (params['scale']) ? params['scale'] : [1,1,1];
+        this.visualEdit = params['visualEdit'] || false;
+        this._object.position.fromArray(position);
+        this._object.rotation.fromArray(rotation);
+        this._object.scale.fromArray(scale);
+        this._gripInteractable = new GripInteractable(this._object);
+        this._pointerInteractable = new PointerInteractable(this._object);
+        this._deleteCallbacks = {};
+    }
+
+    _getDefaultName() {
+        return 'Object';
+    }
+
+    _fetchCloneParams(visualEditOverride) {
+        let params = this.exportParams();
+        let visualEdit = (visualEditOverride != null)
+            ? visualEditOverride
+            : this.visualEdit;
+        let position = this._object.getWorldPosition(vector3s[0]).toArray();
+        let rotation = euler.setFromQuaternion(
+            this._object.getWorldQuaternion(quaternion)).toArray();
+        params['visualEdit'] = visualEdit;
+        params['position'] = position;
+        params['rotation'] = rotation;
+        delete params['id'];
+        return params;
+    }
+
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
+        return projectHandler.addNewAsset(this._assetId, params);
+    }
+
+    preview() {
+        let params = this.exportParams();
+        params['visualEdit'] = false;
+        params['isPreview'] = true;
+        delete params['id'];
+        return new this.constructor(params);
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['parentId'] = this._parentId;
+        params['position'] = this.getPosition();
+        params['rotation'] = this.getRotation();
+        params['scale'] = this.getScale();
+        params['visualEdit'] = this.getVisualEdit();
+        return params;
+    }
+
+    addGripAction(selectedFunc, releasedFunc, tool, option){
+        let action = this._gripInteractable.addAction(selectedFunc,
+            releasedFunc, tool, option);
+        return action;
+    }
+
+    addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
+        let action = this._pointerInteractable.addAction(actionFunc,
+            draggableActionFunc, maxDistance, tool, option);
+        return action;
+    }
+
+    getGripInteractable() {
+        return this._gripInteractable;
+    }
+
+    getPointerInteractable() {
+        return this._pointerInteractable;
+    }
+
+    removeGripAction(id) {
+        this._gripInteractable.removeAction(id);
+    }
+
+    removePointerAction(id) {
+        this._pointerInteractable.removeAction(id);
+    }
+
+    addDeleteCallback(id, handler) {
+        this._deleteCallbacks[id] = handler;
+    }
+
+    getObject() {
+        return this._object;
+    }
+
+    getParentId() {
+        return this._parentId;
+    }
+
+    getPosition() {
+        return this._object.position.toArray();
+    }
+
+    getRotation() {
+        return this._object.rotation.toArray();
+    }
+
+    getScale() {
+        return this._object.scale.toArray();
+    }
+
+    getVisualEdit() {
+        return this.visualEdit;
+    }
+
+    getWorldPosition(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldPosition(vector3);
+        return vector3;
+    }
+
+    getWorldQuaternion(quat) {
+        if(!quat) quat = quaternion;
+        this._object.getWorldQuaternion(quat);
+        return quat;
+    }
+
+    getWorldScale(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldScale(vector3);
+        return vector3;
+    }
+
+    setParentId(parentId) {
+        this._parentId = parentId;
+    }
+
+    setPosition(position) {
+        this._object.position.fromArray(position);
+    }
+
+    setRotation(rotation) {
+        this._object.rotation.fromArray(rotation);
+    }
+
+    setRotationFromQuaternion(quat) {
+        quaternion.fromArray(quat);
+        this._object.setRotationFromQuaternion(quaternion);
+    }
+
+    setScale(scale) {
+        this._object.scale.fromArray(scale);
+    }
+
+    setVisualEdit(visualEdit) {
+        this.visualEdit = visualEdit;
+    }
+
+    add(child, ignorePublish) {
+        child.addTo(this, ignorePublish);
+    }
+
+    addTo(newParent, ignorePublish) {
+        if(!newParent) return;
+        if(this.parent) this.parent.children.delete(this);
+        this.parent = newParent;
+        newParent.children.add(this);
+        this._parentId = newParent.getId();
+        if(this._object.parent) {
+            this.addToScene(newParent.getObject(),
+                newParent.getPointerInteractable(),
+                newParent.getGripInteractable());
+        }
+        if(!ignorePublish) {
+            pubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
+                parentId: newParent.getId(),
+                childId: this._id,
+            }, true);
+        }
+    }
+
+    attach(child, ignorePublish) {
+        child.attachTo(this, ignorePublish);
+    }
+
+    attachTo(newParent, ignorePublish) {
+        if(!newParent) return;
+        if(this.parent) this.parent.children.delete(this);
+        this.parent = newParent;
+        newParent.children.add(this);
+        this._parentId = newParent.getId();
+        if(this._object.parent) {
+            this.attachToScene(newParent.getObject(),
+                newParent.getPointerInteractable(),
+                newParent.getGripInteractable());
+        }
+        if(!ignorePublish) {
+            pubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
+                parentId: newParent.getId(),
+                childId: this._id,
+            }, true);
+        }
+    }
+
+    addToScene(scene, pointerInteractable, gripInteractable) {
+        if(scene) scene.add(this._object);
+        if(pointerInteractable)
+            pointerInteractable.addChild(this._pointerInteractable);
+        if(gripInteractable)
+            gripInteractable.addChild(this._gripInteractable);
+    }
+
+    attachToScene(scene, pointerInteractable, gripInteractable) {
+        if(scene) scene.attach(this._object);
+        if(pointerInteractable)
+            pointerInteractable.addChild(this._pointerInteractable);
+        if(gripInteractable)
+            gripInteractable.addChild(this._gripInteractable);
+    }
+
+    removeFromScene() {
+        if(this._gripInteractable.parent) {
+            this._gripInteractable.parent.removeChild(this._gripInteractable);
+        }
+        if(this._pointerInteractable.parent) {
+            this._pointerInteractable.parent.removeChild(
+                this._pointerInteractable);
+        }
+        if(this._object.parent) {
+            this._object.parent.remove(this._object);
+            fullDispose(this._object);
+        }
+        for(let id in this._deleteCallbacks) {
+            if(this._deleteCallbacks[id]) this._deleteCallbacks[id]();
+        }
+    }
+}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-  
-class Avatar {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        let verticalOffset = params['Vertical Offset'] || 0;
-        let focusCamera = params['Focus Camera'] || false;
-        let cameraFocalPoint = params['Camera Focal Point'] || [0,1.7,0];
-        this._defaultURL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-        this._avatarParent = new THREE.Object3D();
-        this._pivotPoint = new THREE.Object3D();
-        this._pivotPoint.position.setY(verticalOffset);
-        this._pivotPoint.add(this._avatarParent);
-        this._createBoundingBox(params);
-        //this._pivotPoint.position.setY(1.3);
 
-        if(params['URL']) this._createMesh(params['URL']);
-        if(focusCamera) {
-            global$1.cameraFocus.position.fromArray(cameraFocalPoint);
+
+class InternalAssetEntity extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+    }
+
+    removeFromScene() {
+        let inheritor = this.parent;
+        while(inheritor.constructor.assetType == AssetTypes.INTERNAL) {
+            inheritor = inheritor.parent;
+        }
+        this.promoteExternalAssets(inheritor, this.children);
+        super.removeFromScene();
+    }
+
+    promoteExternalAssets(inheritor, children) {
+        for(let child of children) {
+            if(child.constructor.assetType == AssetTypes.INTERNAL) {
+                this.promoteExternalAssets(inheritor, child.children);
+            } else {
+                child.attachTo(inheritor, true);
+            }
         }
     }
 
-    _createBoundingBox(params) {
-        let boundingBoxSize = (params['Bounding Box Size'])
-            ? params['Bounding Box Min']
-            : [0.2, 0.8, 0.2];
-        let boundingBoxCenter = (params['Bounding Box Center'])
-            ? params['Bounding Box Max']
-            : [0, 0.4, 0];
-        let boundingBoxQuaternion = (params['Bounding Box Quaternion'])
-            ? params['Bounding Box Quaternion']
-            : [0, 0, 0, 0];
-        let geometry = new THREE.BoxGeometry(
-            boundingBoxSize[0],
-            boundingBoxSize[1],
-            boundingBoxSize[2],
-        );
-        let material = new THREE.MeshBasicMaterial({ wireframe: true });
-        this._boundingBox = new THREE.Mesh(geometry, material);
-        this._boundingBox.position.fromArray(boundingBoxCenter);
-        this._boundingBox.quaternion.fromArray(boundingBoxQuaternion);
-        //this._pivotPoint.add(this._boundingBox);
+    static assetType = AssetTypes.INTERNAL;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+  
+class Avatar extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = Avatar.assetId;
+        super(params);
+        if(params == null) {
+            params = {};
+        }
+        this._avatarParent = new THREE.Object3D();
+        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
+        this._verticalOffset = params['verticalOffset'] || 0;
+        this._object.position.setY(this._verticalOffset);
+        this._object.add(this._avatarParent);
+
+        this._createMesh(this._avatarUrl);
+        let parentAsset = projectHandler.getSessionAsset(this._parentId);
+        if(parentAsset && parentAsset.registerAvatar) {
+            parentAsset.registerAvatar(this);
+        }
     }
 
     _createMesh(filename) {
@@ -9956,15 +10847,15 @@ class Avatar {
                         }
                     });
                     hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.7);
+                    gltf.scene.position.setY(-0.65);
                 }
                 this._avatarParent.add(gltf.scene);
                 this._saveOriginalTransparencyStates();
                 this._dimensions = 3;
             }, () => {}, (error) => {
                 console.log(error);
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
                 } else {
                     console.error("Can't display default avatar :(");
                 }
@@ -9996,15 +10887,15 @@ class Avatar {
                 //this._avatarParent.add(sprite);
                 this._dimensions = 2;
             }, () => {}, () => {
-                if(filename != this._defaultURL) {
-                    this._createMesh(this._defaultURL);
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
                 } else {
                     console.error("Can't display default avatar :(");
                 }
             });
         } else {
-            if(filename != this._defaultURL) {
-                this._createMesh(this._defaultURL);
+            if(filename != DEFAULT_URL) {
+                this._createMesh(DEFAULT_URL);
             } else {
                 console.error("Default avatar URL is invalid :(");
             }
@@ -10082,10 +10973,10 @@ class Avatar {
     }
 
     lookAtLocal(point) {
-        if(this._pivotPoint.parent) {
+        if(this._object.parent) {
             vector3s[0].copy(point);
-            this._pivotPoint.parent.localToWorld(vector3s[0]);
-            this._pivotPoint.lookAt(vector3s[0]);
+            this._object.parent.localToWorld(vector3s[0]);
+            this._object.lookAt(vector3s[0]);
         }
     }
 
@@ -10095,66 +10986,59 @@ class Avatar {
             this._avatarParent.remove(child);
             fullDispose(child, true);
         }
+        this._avatarUrl = url;
         this._createMesh(url);
     }
 
-    getObject() {
-        return this._pivotPoint;
+    getAvatarUrl() {
+        return this._avatarUrl;
+    }
+
+    getVerticalOffset(verticalOffset) {
+        return this._verticalOffset;
+    }
+
+    setAvatarUrl(avatarUrl) {
+        this.updateSourceUrl(avatarUrl);
     }
 
     setVerticalOffset(verticalOffset) {
-        this._pivotPoint.position.setY(verticalOffset);
-    }
-
-    attach(object) {
-        this._pivotPoint.attach(object);
-    }
-
-    remove(object) {
-        if(object.parent == this._pivotPoint) {
-            global$1.scene.attach(object);
-            return true;
-        }
-        return false;
-    }
-
-    hasChild(object) {
-        return object.parent == this._pivotPoint;
+        this._verticalOffsert = verticalOffset;
+        this._object.position.setY(verticalOffset);
     }
 
     displayAvatar() {
-        this._pivotPoint.add(this._avatarParent);
+        this._object.add(this._avatarParent);
     }
 
     hideAvatar() {
-        this._pivotPoint.remove(this._avatarParent);
+        this._object.remove(this._avatarParent);
     }
 
     isDisplayingAvatar() {
-        return this._avatarParent.parent == this._pivotPoint;
+        return this._avatarParent.parent == this._object;
     }
 
-    addToScene(scene) {
-        scene.add(this._pivotPoint);
+    exportParams() {
+        let params = super.exportParams();
+        params['avatarUrl'] = this._avatarUrl;
+        params['verticalOffset'] = this._verticalOffset;
+        return params;
     }
 
-    removeFromScene() {
-        if(this._pivotPoint.parent) {
-            for(let child of this._pivotPoint.children) {
-                if(child != this._avatarParent) {
-                    global$1.scene.attach(child);
-                }
-            }
-            this._pivotPoint.parent.remove(this._pivotPoint);
-        }
-    }
+    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
+    static assetName = 'Avatar';
 }
+
+projectHandler.registerAsset(Avatar);
+libraryHandler.loadBuiltIn(Avatar);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class BasicMovement {
     constructor(params) {
@@ -10172,8 +11056,10 @@ class BasicMovement {
     _setupMobileFlyingButtons() {
         this._mobileUp = false;
         this._mobileDown = false;
-        let upButton = document.getElementById("mobile-flying-up-button");
-        let downButton = document.getElementById("mobile-flying-down-button");
+        let upButton = inputHandler.addExtraControlsButton(
+            'mobile-flying-up-button', 'UP');
+        let downButton = inputHandler.addExtraControlsButton(
+            'mobile-flying-down-button', 'DOWN');
         upButton.addEventListener('touchstart',
             () => { this._mobileUp = true; });
         upButton.addEventListener('touchend',
@@ -10214,10 +11100,14 @@ class BasicMovement {
 
     _snapLeft() {
         this._userObj.rotateY(Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
     }
 
     _snapRight() {
         this._userObj.rotateY(-Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
     }
 
     getWorldVelocity() {
@@ -10287,7 +11177,8 @@ class BasicMovement {
             vector3s[1].add(vector3s[0]);
             if(this._perspective != 1 && vector3s[1].length() > 0.001
                     * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2);
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.getObject().position);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
@@ -10332,7 +11223,8 @@ class BasicMovement {
             vector3s[1].add(vector3s[0]);
             if(this._perspective != 1 && vector3s[1].length() > 0.001
                     * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2);
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.getObject().position);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
@@ -10353,11 +11245,11 @@ class BasicMovement {
         let movementGamepad;
         let rotationGamepad;
         if(settingsHandler.areJoysticksSwapped()) {
-            movementGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
-            rotationGamepad = inputHandler.getXRGamepad(Hands.LEFT);
+            movementGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
+            rotationGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
         } else {
-            movementGamepad = inputHandler.getXRGamepad(Hands.LEFT);
-            rotationGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
+            movementGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
+            rotationGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
         }
         this._velocity.x = 0;
         this._velocity.y = 0;
@@ -10373,7 +11265,7 @@ class BasicMovement {
         if(rotationGamepad) {
             let verticalForce = rotationGamepad.axes[3];
             let rotationForce = rotationGamepad.axes[2];
-            if(Math.abs(rotationForce) > 0.5) {
+            if(Math.abs(rotationForce) > 0.7) {
                 if(!this._snapRotationTriggered) {
                     this._snapRotationTriggered = true; 
                     (rotationForce > 0) ? this._snapRight() : this._snapLeft();
@@ -10398,13 +11290,3319 @@ class BasicMovement {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
+const TTL = 5;
+
+class XRDevice extends InternalAssetEntity {
+    constructor(params = {}) {
+        if(!params['assetId']) params['assetId'] = XRDevice.assetId;
+        super(params);
+        this._ttl = TTL;
+        this._ownerId = params['ownerId'];
+        this._modelUrl = params['modelUrl'];
+        if(this._modelUrl) {
+            this._loadModelFromUrl();
+        }
+        this._vector3 = new Vector3();
+        this._euler = new Euler();
+        this._quaternion = new Quaternion();
+        this._registerOwner(params);
+    }
+
+    _loadModelFromUrl() {
+        let gltfLoader = new GLTFLoader();
+        gltfLoader.load(this._modelUrl, (gltf) => {
+            this._modelObject = gltf.scene;
+            this._object.add(gltf.scene);
+        });
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRDevice(this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['ownerId'] = this._ownerId;
+        params['modelUrl'] = this._modelUrl;
+        return params;
+    }
+
+    isInScene() {
+        return this._object.parent != null;
+    }
+
+    getModelObject() {
+        return this._modelObject;
+    }
+
+    getModelUrl() {
+        return this._modelUrl;
+    }
+
+    getOwnerId() {
+        return this._ownerId;
+    }
+
+    getWorldPosition() {
+        this._object.getWorldPosition(this._vector3);
+        return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._object.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._object.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
+    }
+
+    setModelUrl(modelUrl) {
+        this._modelUrl = modelUrl;
+    }
+
+    setOwnerId(ownerId) {
+        this._ownerId = ownerId;
+    }
+
+    decrementTTL(timeDelta) {
+        this._ttl -= timeDelta;
+        if(this._ttl < 0) {
+            projectHandler.deleteAsset(this);
+        }
+    }
+
+    resetTTL() {
+        this._ttl = TTL;
+    }
+
+    static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';
+    static assetName = 'XR Device';
+}
+
+projectHandler.registerAsset(XRDevice);
+libraryHandler.loadBuiltIn(XRDevice);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class XRController extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRController.assetId;
+        super(params);
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = controllerModel.motionController.assetUrl;
+        }
+        this._handedness = params['handedness'];
+        if(!this._handedness in Handedness) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRController(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let controller = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        let assetObject = asset.getObject();
+        if(!controller) return;
+        controller.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    getHandedness() {
+        return this._handedness;
+    }
+
+    getTargetRayDirection() {
+        let xrController = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrController = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldPosition(this._raycasterOrigin);
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    isButtonPressed(index) {
+        let gamepad = inputHandler.getXRGamepad(this._handedness);
+        return gamepad != null && gamepad.buttons[index].pressed;
+    }
+
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
+    static assetName = 'XR Controller';
+}
+
+projectHandler.registerAsset(XRController);
+libraryHandler.loadBuiltIn(XRController);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
+
+class XRHand extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRHand.assetId;
+        super(params);
+        this._handedness = params['handedness'];
+        if(!this._handedness in Handedness) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = DEFAULT_HAND_PROFILE_PATH
+                + this._handedness.toLowerCase() + '.glb';
+        }
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRHand(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let hand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        let assetObject = asset.getObject();
+        if(!hand) return;
+        hand.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    getHandedness() {
+        return this._handedness;
+    }
+
+    getTargetRayDirection() {
+        let xrController = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrHand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        if(!xrHand) return null;
+        xrHand.getWorldPosition(this._raycasterOrigin);
+        xrHand.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    getPalmDirection() {
+        let model = inputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
+            this._handedness);
+        return model.motionController.palmDirection;
+    }
+
+    isButtonPressed(index) {
+        let model = inputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
+            this._handedness);
+        if(index == 0) {
+            return model.motionController.isPinching;
+        } else if(index == 1) {
+            return model.motionController.isGrabbing;
+        }
+        return false;
+    }
+
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
+    static assetName = 'XR Hand';
+}
+
+projectHandler.registerAsset(XRHand);
+libraryHandler.loadBuiltIn(XRHand);
+
+const UserMessageCodes = {
+    AVATAR: 1,
+    LEFT_CONTROLLER: 2,
+    RIGHT_CONTROLLER: 4,
+    LEFT_HAND: 8,
+    RIGHT_HAND: 16,
+    USER_VELOCITY: 32,
+    USER_POSITION: 64,
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const AVATAR_KEY = "DigitalBacon:Avatar";
+const USERNAME_KEY = "DigitalBacon:Username";
+const FADE_START = 0.6;
+const FADE_END = 0.2;
+//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
+const FADE_RANGE = FADE_START - FADE_END;
+const EPSILON = 0.00000000001;
+  
+class UserController extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = UserController.assetId;
+        super(params);
+        this._isXR = false;
+        this._username = localStorage.getItem(USERNAME_KEY)
+            || generateRandomUsername$1();
+        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
+            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._avatarFadeUpdateNumber = 0;
+        this._xrControllers = {};
+        this._xrHands = {};
+        this._xrDevices = new Set();
+    }
+
+    init() {
+        if(global$1.deviceType == 'XR') {
+            this.setIsXR(true);
+        }
+        let scale = settingsHandler.getUserScale();
+        this.setScale([scale, scale, scale]);
+        this._setup();
+    }
+
+    _setup() {
+        if(global$1.deviceType != "XR") {
+            this._avatar = new Avatar({
+                'avatarUrl': this._avatarUrl,
+                'parentId': this._id,
+                'verticalOffset': global$1.cameraFocus.position.y,
+            });
+            audioHandler.setListenerParent(this._avatar.getObject());
+        } else {
+            this._avatar = new Avatar({
+                'object': global$1.camera,
+                'parentId': this._id,
+                'avatarUrl': this._avatarUrl,
+            });
+        }
+        this._avatar.parent = this;
+        projectHandler.addAsset(this._avatar);
+        this._basicMovement = new BasicMovement({
+            'User Object': this._object,
+            'Avatar': this._avatar,
+        });
+    }
+
+    getAvatar() {
+        return this._avatar;
+    }
+
+    getIsXR() {
+        return this._isXR;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    setAvatarUrl(url, ignorePublish) {
+        localStorage.setItem(AVATAR_KEY, url);
+        this._avatarUrl = url;
+        this._avatar.updateSourceUrl(url);
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this._avatar, fields: ['avatarUrl'] });
+    }
+
+    setIsXR(isXR) {
+        this._isXR = isXR;
+    }
+
+    setScale(scale, ignorePublish) {
+        super.setScale(scale);
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this, fields: ['scale'] });
+    }
+    setUsername(username, ignorePublish) {
+        localStorage.setItem(USERNAME_KEY, username);
+        this._username = username;
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
+    }
+
+    getController(handedness) {
+        return this._xrControllers[handedness];
+    }
+
+    getHand(handedness) {
+        return this._xrHands[handedness];
+    }
+
+    getXRDevices() {
+        return this._xrDevices;
+    }
+
+    registerXRController(handedness, xrController) {
+        this._xrControllers[handedness] = xrController;
+        this._xrDevices.add(xrController);
+    }
+
+    registerXRHand(handedness, xrHand) {
+        this._xrHands[handedness] = xrHand;
+        this._xrDevices.add(xrHand);
+    }
+
+    registerXRDevice(xrDevice) {
+        this._xrDevices.add(xrDevice);
+    }
+
+    getDistanceBetweenHands() {
+        if(global$1.deviceType != 'XR') return;
+        let leftController = this._xrControllers[Handedness.LEFT];
+        let rightController = this._xrControllers[Handedness.RIGHT];
+        if(!leftController || !rightController) return;
+        if(!leftController.isInScene()) {
+            leftController = this._xrHands[Handedness.LEFT];
+            rightController = this._xrHands[Handedness.RIGHT];
+            if(!leftController || !rightController) return;
+        }
+
+        let leftPosition = leftController.getWorldPosition();
+        let rightPosition = rightController.getWorldPosition();
+        return leftPosition.distanceTo(rightPosition);
+    }
+
+    getDataForRTC() {
+        let codes = 0;
+        let data = [];
+        if(global$1.deviceType == "XR") {
+            codes += this._pushAvatarDataForRTC(data);
+            codes += this._pushHandsDataForRTC(data);
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            codes += this._pushAvatarDataForRTC(data);
+        }
+        let worldVelocity = this._basicMovement.getWorldVelocity();
+        if(worldVelocity.length() >= 0.00001) {
+            data.push(...this._basicMovement.getWorldVelocity().toArray());
+            codes += UserMessageCodes.USER_VELOCITY;
+        }
+        if(global$1.renderer.info.render.frame % 300 == 0) {
+            this._object.getWorldPosition(vector3s[0]);
+            data.push(...vector3s[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
+    }
+
+    _pushAvatarDataForRTC(data) {
+        let position = global$1.camera.position.toArray();
+        let rotation = global$1.camera.rotation.toArray();
+        rotation.pop();
+
+        data.push(...position);
+        data.push(...rotation);
+        return UserMessageCodes.AVATAR;
+    }
+
+    _pushHandsDataForRTC(data, type) {
+        let codes = 0;
+        settingsHandler.getUserScale();
+        for(let type of ['CONTROLLER', 'HAND']) {
+            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
+            for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
+                let controller = this[map][handedness];
+                if(controller && controller.isInScene()) {
+                    controller.pushDataForRTC(data);
+                    codes += UserMessageCodes[handedness + '_' + type];
+                }
+            }
+        }
+        return codes;
+    }
+
+    hasChild(object) {
+        return object.parent == this._object;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['isXR'] = this._isXR;
+        params['username'] = this._username;
+        return params;
+    }
+
+    _updateAvatar() {
+        if(!this._avatar.isDisplayingAvatar()) {
+            let data = [];
+            this._pushAvatarDataForRTC(data);
+            let rotation = data.slice(3, 6);
+            this._avatar.getObject().rotation.fromArray(rotation);
+        }
+        let updateNumber = sessionHandler.getControlsUpdateNumber();
+        if(this._avatarFadeUpdateNumber == updateNumber) return;
+        this._avatarFadeUpdateNumber = updateNumber;
+        let cameraDistance = sessionHandler.getCameraDistance();
+        if(cameraDistance > FADE_START * 2) return;
+        let diff = cameraDistance - this._avatarFadeCameraDistance;
+        if(Math.abs(diff) < EPSILON) return;
+        //Fade Logic Start
+        this._avatarFadeCameraDistance = cameraDistance;
+        let fadePercent = Math.max(cameraDistance, FADE_END);
+        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
+        if(fadePercent == 0) {
+            if(this._avatar.isDisplayingAvatar()) {
+                this._basicMovement.setPerspective(1);
+                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
+                    1);
+                this._avatar.hideAvatar();
+            }
+            return;
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            this._basicMovement.setPerspective(3);
+            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
+            this._avatar.displayAvatar();
+        }
+        (fadePercent < 1)
+            ? this._avatar.fade(fadePercent)
+            : this._avatar.endFade();
+        //Fade Logic end
+
+        //Disappear Logic start
+        //let object = this._avatar.getObject();
+        //if(cameraDistance < FADE_MIDDLE) {
+        //    if(object.parent) this._avatar.removeFromScene();
+        //} else if(!object.parent) {
+        //    this._avatar.addToScene(global.cameraFocus,
+        //        this._pointerInteractable, this._gripInteractable);
+        //}
+        //Disappear Logic end
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updateHands(timeDelta);
+        } else if(this._avatar) {
+            this._updateAvatar();
+        }
+        this._basicMovement.update(timeDelta);
+    }
+
+    _getControllerModelUrl(object) {
+        if(object && object.motionController) {
+            return object.motionController.assetUrl;
+        }
+    }
+
+    _updateHands(timeDelta) {
+        for(let side in Handedness) {
+            this._updateHand(timeDelta, XRInputDeviceTypes.CONTROLLER, side);
+            this._updateHand(timeDelta, XRInputDeviceTypes.HAND, side);
+        }
+    }
+
+    _updateHand(timeDelta, type, handedness) {
+        let controller = (type == XRInputDeviceTypes.HAND)
+            ? this._xrHands[handedness]
+            : this._xrControllers[handedness];
+        let controllerModel = inputHandler.getXRControllerModel(type,
+            handedness);
+        let source = inputHandler.getXRInputSource(type, handedness);
+        if(controller && controller.isInScene()) {
+            if(source) {
+                controller.resetTTL();
+            } else {
+                controller.decrementTTL(timeDelta);
+            }
+        } else if(source && this._getControllerModelUrl(controllerModel)) {
+            if(!controller) {
+                let assetClass = (type == XRInputDeviceTypes.HAND)
+                    ? XRHand
+                    : XRController;
+                controller = new assetClass({
+                    handedness: handedness,
+                    ownerId: this._id,
+                    controllerModel: controllerModel,
+                    object: inputHandler.getXRController(type, handedness,
+                        'grip'),
+                });
+                projectHandler.addAsset(controller, true);
+                controller.attachTo(this);
+            } else {
+                projectHandler.addAsset(controller, true);
+            }
+        }
+    }
+
+    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
+    static assetName = 'User';
+}
+
+function generateRandomUsername$1() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
+}
+
+let userController = new UserController();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const ERROR_FIX_FRAMES = 30;
+const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
+
+class PeerController extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = PeerController.assetId;
+        super(params);
+        this._velocity = new THREE.Vector3();
+        this._positionError = new THREE.Vector3();
+        this._errorFixFrame = ERROR_FIX_FRAMES;
+        this._isXR = params['isXR'];
+        this._username = params['username'] || '...';
+        this._displayingUsername = params['displayingUsername'];
+        this._xrControllers = {};
+        this._xrHands = {};
+        this._xrDevices = new Set();
+        this._setup();
+    }
+
+    _setup() {
+        let usernameParams = {
+            'text': this._username, 
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'fontSize': 0.06,
+            'height': 0.04,
+            'width': 0.5,
+            'offset': 0,
+            'margin': 0,
+        };
+        this._usernameBlock = new THREE.Object3D();
+        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        usernameFront.rotateY(Math.PI);
+        this._usernameBlock.position.setY(1.85);
+        this._usernameBlock.add(usernameFront);
+        this._usernameBlock.add(usernameBack);
+        if(this._displayingUsername) {
+            this._object.add(this._usernameBlock);
+        }
+    }
+
+    _updateAvatarData(float32Array, index) {
+        if(!this._avatar) return;
+        let object = this._avatar.getObject();
+        if(this._isXR) object.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        object.rotation.fromArray(rotation);
+    }
+
+    _updateHandData(float32Array, index, asset) {
+        if(!asset) return;
+        let peerHand = asset.getObject();
+        peerHand.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        peerHand.rotation.fromArray(rotation);
+    }
+
+    _updateVelocity(float32Array, index) {
+        this._velocity.fromArray(float32Array, index);
+        if(!this._isXR && !this._firstPerson) {
+            if(!this._avatar) return;
+            let object = this._avatar.getObject();
+            vector3s[0].copy(this._velocity).setY(0).multiplyScalar(-1);
+            if(vector3s[0].length() < 0.001) return;
+            object.getWorldPosition(vector3s[1]).add(vector3s[0]);
+            object.lookAt(vector3s[1]);
+        }
+    }
+
+    _updatePosition(float32Array, index) {
+        this._positionError.fromArray(float32Array, index)
+            .sub(this._object.position);
+        this._errorFixFrame = 0;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['isXR'] = this._isXR;
+        params['username'] = this._username;
+        return params;
+    }
+
+    getAvatar() {
+        return this._avatar;
+    }
+
+    getIsXR() {
+        return this._isXR;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    setAvatar(avatar) {
+        this._avatar = avatar;
+    }
+
+    setIsXR(isXR) {
+        this._isXR = isXR;
+    }
+
+    setUsername(username) {
+        if(this._username == username) return;
+        this._username = username;
+        let shortName = username = stringWithMaxLength(username || '...', 17);
+        this._usernameBlock.children.forEach((block) => {
+            block.children[1].set({ content: shortName });
+        });
+    }
+
+    getController(hand) {
+        return this._xrControllers[hand];
+    }
+
+    getHand(hand) {
+        return this._xrHands[hand];
+    }
+
+    getXRDevices() {
+        return this._xrDevices;
+    }
+
+    registerAvatar(avatar) {
+        this._avatar = avatar;
+    }
+
+    registerXRController(hand, xrController) {
+        this._xrControllers[hand] = xrController;
+        this._xrDevices.add(xrController);
+    }
+
+    registerXRHand(hand, xrHand) {
+        this._xrHands[hand] = xrHand;
+        this._xrDevices.add(xrHand);
+    }
+
+    registerXRDevice(xrDevice) {
+        this._xrDevices.add(xrDevice);
+    }
+
+    setDisplayingUsername(displayingUsername) {
+        if(this._displayingUsername == displayingUsername) return;
+        this._displayingUsername = displayingUsername;
+        if(this._displayingUsername) {
+            this._object.add(this._usernameBlock);
+        } else {
+            this._object.remove(this._usernameBlock);
+        }
+    }
+
+    setFirstPerson(firstPerson) {
+        this._firstPerson = firstPerson;
+    }
+
+    update(timeDelta) {
+        this._object.position.addScaledVector(this._velocity, timeDelta);
+        if(this._errorFixFrame < ERROR_FIX_FRAMES) {
+            this._object.position.addScaledVector(this._positionError,
+                ERROR_FACTOR);
+            this._errorFixFrame++;
+        }
+    }
+
+    processMessage(message) {
+        let codes = new Uint8Array(message.slice(2, 3))[0];
+        let float32Array = new Float32Array(message.slice(3));
+        let index = 0;
+        if(UserMessageCodes.AVATAR & codes) {
+            this._updateAvatarData(float32Array, index);
+            index += 6;
+        }
+        if(UserMessageCodes.LEFT_CONTROLLER & codes) {
+            let asset = this._xrControllers[Handedness.LEFT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.RIGHT_CONTROLLER & codes) {
+            let asset = this._xrControllers[Handedness.RIGHT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.LEFT_HAND & codes) {
+            let asset = this._xrHands[Handedness.LEFT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.RIGHT_HAND & codes) {
+            let asset = this._xrHands[Handedness.RIGHT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.USER_VELOCITY & codes) {
+            this._updateVelocity(float32Array, index);
+            index += 3;
+        } else {
+            this._velocity.set(0, 0, 0);
+        }
+        if(UserMessageCodes.USER_POSITION & codes) {
+            this._updatePosition(float32Array, index);
+            index += 3;
+        }
+    }
+
+    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
+    static assetName = 'Peer';
+}
+
+projectHandler.registerAsset(PeerController);
+libraryHandler.loadBuiltIn(PeerController);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const ICE_SERVER_URLS = [
+    'stun:stun1.l.google.com:19302',
+    'stun:stun2.l.google.com:19302',
+    'stun:stun3.l.google.com:19302',
+    'stun:stun4.l.google.com:19302'
+];
+const CONFIGURATION = { iceServers: [{ urls: ICE_SERVER_URLS }] };
+const SIXTY_FOUR_KB = 1024 * 64;
+const TIMEOUT = 20000; //20 Seconds
+
+class RTCPeer {
+    constructor(peerId, polite, socket, mediaStream, onTimeout) {
+        this._peerId = peerId;
+        this._polite = polite;
+        this._socket = socket;
+        this._onTimeout = onTimeout;
+        this._myAudioStream = mediaStream;
+        this._myAudioTrack = mediaStream.getAudioTracks()[0];
+        this._peerAudioTrack;
+        this._connection = new RTCPeerConnection(CONFIGURATION);
+        this._audio = createAudioElement$1();
+        this._makingOffer = false;
+        this._ignoreOffer = false;
+        this._isSettingRemoteAnswerPending = false;
+        this._hasConnected = false;
+        this._dataChannel = null;
+        if(!polite) this._timeoutId = setTimeout(() => this._timeout(),TIMEOUT);
+        this._setupConnection();
+        this._sendDataQueue = new Queue();
+        if(!this._polite) this._setupDataChannel();
+    }
+
+    _setupConnection() {
+        this._connection.ontrack = (e) => {
+            this._peerAudioTrack = e.track;
+            e.track.onunmute = () => {
+                if(this._audio.srcObject) return;
+                this._audio.srcObject = e.streams[0];
+            };
+        };
+        this._connection.onicecandidate = (e) => {
+            this._socket.send({
+                topic: "candidate",
+                to: this._peerId,
+                candidate: e.candidate,
+            });
+        };
+        this._connection.onnegotiationneeded = async () => {
+            try {
+                this._makingOffer = true;
+                await this._connection.setLocalDescription();
+                this._socket.send({
+                    topic: "description",
+                    to: this._peerId,
+                    description: this._connection.localDescription,
+                });
+            } catch(error) {
+                console.error(error);
+            } finally {
+                this._makingOffer = false;
+            }
+        };
+        this._connection.ondatachannel = (e) => {
+            if(!this._polite) return;
+            this._dataChannel = e.channel;
+            this._dataChannel.binaryType = "arraybuffer";
+            this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+            this._dataChannel.onopen = (e) => {
+                if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
+            };
+            this._dataChannel.onclose = (e) => {
+                if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+            };
+            this._dataChannel.onmessage = (message) => {
+                if(this._onMessage) this._onMessage(message.data);
+            };
+        };
+        this._connection.onconnectionstatechange = (e) => {
+            let state = this._connection.connectionState;
+            if(state == "connected" && !this._hasConnected) {
+                this._hasConnected = true;
+                if(this._myAudioTrack)
+                    this._addAudioTrack();
+                if(!this._polite) clearTimeout(this._timeoutId);
+            } else if(state == "disconnected" || state == "failed") {
+                if(!this._polite) {
+                    clearTimeout(this._timeoutId);
+                    if(!this._hasConnected && this._onFailedImpoliteConnect)
+                        this._onFailedImpoliteConnect();
+                }
+                if(this._onDisconnect) this._onDisconnect();
+            }
+        };
+    }
+
+    _setupDataChannel() {
+        this._dataChannel = this._connection.createDataChannel(
+            this._peerId);
+        this._dataChannel.binaryType = "arraybuffer";
+        this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
+        this._dataChannel.onopen = (e) => {
+            if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
+        };
+        this._dataChannel.onclose = (e) => {
+            if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+        };
+        this._dataChannel.onmessage = (message) => {
+            if(this._onMessage) this._onMessage(message.data);
+        };
+    }
+
+    _timeout() {
+        if(this._onTimeout) {
+            this._onFailedImpoliteConnect = null;
+            this._onTimeout();
+        }
+    }
+
+    toggleMyselfMuted(muted) {
+        if(!this._myAudioTrack) return;
+        this._myAudioTrack.enabled = !muted;
+    }
+
+    togglePeerMuted(muted) {
+        if(!this._peerAudioTrack) return;
+        this._peerAudioTrack.enabled = !muted;
+    }
+
+    _addAudioTrack(track, srcObject) {
+        this._connection.addTrack(this._myAudioTrack, this._myAudioStream);
+    }
+
+    close() {
+        this._connection.close();
+        this._audio.srcObject = null;
+        if(this._audio.parentNode) document.body.removeChild(this._audio);
+        if(this._onDisconnect) this._onDisconnect();
+    }
+
+    getPeerId() {
+        return this._peerId;
+    }
+
+    setPeerId(peerId) {
+        this._peerId = peerId;
+    }
+
+    async handleCandidate(message) {
+        try {
+            await this._connection.addIceCandidate(message.candidate);
+        } catch(error) {
+            if(!this._ignoreOffer) console.error(error);
+        }
+    }
+
+    async handleDescription(message) {
+        let description = message.description;
+        try {
+            let readyForOffer = !this._makingOffer
+                && (this._connection.signalingState == "stable"
+                    || this._isSettingRemoteAnswerPending);
+            let offerCollision = description.type == "offer" && !readyForOffer;
+            this._ignoreOffer = !this._polite && offerCollision;
+            if(this._ignoreOffer) return;
+
+            this._isSettingRemoteAnswerPending = description.type == "answer";
+            await this._connection.setRemoteDescription(description);
+            this._isSettingRemoteAnswerPending = false;
+            if(description.type == "offer") {
+                await this._connection.setLocalDescription();
+                this._socket.send({
+                    topic: "description",
+                    to: this._peerId,
+                    description: this._connection.localDescription,
+                });
+            }
+        } catch(error) {
+            console.error(error);
+        }
+    }
+
+    isConnected() {
+        return this._hasConnected;
+    }
+
+    sendData(data) {
+        this._sendDataQueue.enqueue(data);
+        if(this._dataChannel.onbufferedamountlow) return;
+        if(this._sendDataQueue.length == 1) this._sendData();
+    }
+
+    _sendData() {
+        let channel = this._dataChannel;
+        while(channel.bufferedAmount <= channel.bufferedAmountLowThreshold) {
+            try {
+                channel.send(this._sendDataQueue.dequeue());
+            } catch(err) {
+                if(!err.message.includes("readyState is not 'open'")) throw err;
+            }
+            if(this._sendDataQueue.length == 0) return;
+        }
+        channel.onbufferedamountlow = () => {
+            channel.onbufferedamountlow = null;
+            this._sendData();
+        };
+    }
+
+    setOnDisconnect(f) {
+        this._onDisconnect = f;
+    }
+
+    setOnFailedImpoliteConnect(f) {
+        this._onFailedImpoliteConnect = f;
+    }
+
+    setOnMessage(f) {
+        this._onMessage = f;
+    }
+
+    setOnSendDataChannelOpen(f) {
+        this._onSendDataChannelOpen = f;
+    }
+
+    setOnSendDataChannelClose(f) {
+        this._onSendDataChannelClose = f;
+    }
+}
+
+function createAudioElement$1() {
+    let audioElement = document.createElement('audio');
+    audioElement.autoplay = true;
+    document.body.appendChild(audioElement);
+    return audioElement;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const CONSTRAINTS = { audio: true, video: false };
+const NINE_MINUTES = 60000 * 9;
+const FIFTY_MINUTES = 60000 * 50;
+
+class Party {
+    constructor() {
+        //this._id = uuidv4();
+        this._peers = {};
+        this._userAudio = createAudioElement();
+        this._userAudio.defaultMuted = true;
+        this._userAudio.muted = true;
+        this._pingIntervalId = null;
+        this._authIntervalId = null;
+    }
+
+    host(roomId, successCallback, errorCallback) {
+        this._fetchAuthToken(() => {
+            this.connect(true, roomId, successCallback, errorCallback);
+        }, errorCallback);
+    }
+
+    join(roomId, successCallback, errorCallback) {
+        this._fetchAuthToken(() => {
+            this.connect(false, roomId, successCallback, errorCallback);
+        }, errorCallback);
+    }
+
+    connect(isHost, roomId, successCallback, errorCallback) {
+        if(this._socket) this.disconnect();
+        this._isHost = isHost;
+        this._roomId = window.location.pathname + '_' + roomId;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        if(this._userAudio.srcObject) {
+            this._setupWebSocket();
+        } else {
+            this._setupUserMedia();
+        }
+    }
+
+    disconnect() {
+        if(this._socket) this._socket.close();
+        if(this._replacementSocket) this._replacementSocket.close();
+        if(this._pingIntervalId) {
+            clearInterval(this._pingIntervalId);
+            this._pingIntervalId = null;
+        }
+        if(this._authIntervalId) {
+            clearInterval(this._authIntervalId);
+            this._authIntervalId = null;
+        }
+        this._socket = null;
+        this._isHost = false;
+        for(let peerId in this._peers) {
+            this._peers[peerId].close();
+        }
+        this._peers = {};
+        if(this._onDisconnect) this._onDisconnect();
+    }
+
+    bootPeer(peerId) {
+        this._socket.send({
+            topic: "boot-peer",
+            peerId: peerId,
+        });
+    }
+
+    designateHost(peerId) {
+        this._socket.send({
+            topic: "designate-host",
+            peerId: peerId,
+        });
+    }
+
+    setOnPeerIdUpdate(f) {
+        this._onPeerIdUpdate = f;
+    }
+
+    setOnSetupPeer(f) {
+        this._onSetupPeer = f;
+    }
+
+    setOnDisconnect(f) {
+        this._onDisconnect = f;
+    }
+
+    _fetchAuthToken(successCallback, errorCallback) {
+        fetch(global$1.authUrl, { cache: "no-store" })
+            .then((response) => response.json())
+            .then((body) => {
+                if(!body.authToken) {
+                    this.disconnect();
+                    if(errorCallback) errorCallback({ topic: 'bad-auth' });
+                    return;
+                }
+                this._authToken = body.authToken;
+                if(successCallback) successCallback();
+            })
+            .catch((error) => {
+                this.disconnect();
+                if(errorCallback) errorCallback({ topic: 'bad-auth' });
+            });
+    }
+
+    _initiateUpdateSocket() {
+        this._socket.send({
+            topic: "update-connection",
+            initiate: true,
+        });
+    }
+
+    _updateSocket(code) {
+        this._replacementSocket.send({
+            topic: "update-connection",
+            code: code,
+        });
+    }
+
+    _updateSocketSuccess() {
+        let oldSocket = this._socket;
+        this._socket = this._replacementSocket;
+        this._socket.send = (body) => {
+            body['authToken'] = this._authToken;
+            this._socket._send(JSON.stringify(body));
+        };
+        oldSocket.onclose = () => {};
+        oldSocket.close();
+        this._replacementSocket = null;
+    }
+
+    _replacePeerId(oldPeerId, newPeerId) {
+        this._peers[oldPeerId].setPeerId(newPeerId);
+        this._peers[newPeerId] = this._peers[oldPeerId];
+        delete this._peers[oldPeerId];
+        if(this._onPeerIdUpdate) this._onPeerIdUpdate(oldPeerId, newPeerId);
+    }
+
+    _setupUserMedia() {
+        navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
+            this._userAudio.srcObject = stream;
+            this._setupWebSocket();
+        }).catch((error) => {
+            this._userAudio.srcObject = new MediaStream();
+            this._setupWebSocket();
+        });
+    }
+
+    _setupWebSocket() {
+        this._socket = new WebSocket(global$1.socketUrl);
+        this._socket.onopen = (e) => { this._onSocketOpen(e); };
+        this._socket.onclose = (e) => { this._onSocketClose(e); };
+        this._socket.onmessage = (e) => { this._onSocketMessage(e); };
+        this._socket.onerror = (e) => { this._onSocketError(e); };
+        this._socket._send = this._socket.send;
+        this._socket.send = (body) => {
+            body['authToken'] = this._authToken;
+            this._socket._send(JSON.stringify(body));
+        };
+    }
+
+    _setupReplacementSocket() {
+        this._replacementSocket = new WebSocket(global$1.socketUrl);
+        this._replacementSocket.onopen = () => { this._initiateUpdateSocket();};
+        this._replacementSocket.onclose = this._socket.onclose;
+        this._replacementSocket.onmessage = this._socket.onmessage;
+        this._replacementSocket.onerror = this._socket.onerror;
+        this._replacementSocket._send = this._replacementSocket.send;
+        this._replacementSocket.send = (body) => {
+            body['authToken'] = this._authToken;
+            this._replacementSocket._send(JSON.stringify(body));
+        };
+    }
+
+    _onSocketOpen(e) {
+        this._socket.send({
+            topic: "identify",
+            //id: this._id,
+            roomId: this._roomId,
+            isHost: this._isHost,
+        });
+        this._pingIntervalId = setInterval(() => {
+            this._socket.send({ topic: "ping" });
+        }, NINE_MINUTES);
+        this._authIntervalId = setInterval(() => {
+            this._fetchAuthToken(() => { this._setupReplacementSocket(); },
+                () => {
+                    pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Could not authenticate with Server',
+                    });
+                });
+        }, FIFTY_MINUTES);
+    }
+
+    _onSocketClose(e) {
+        if(this._socket) this.disconnect();
+    }
+
+    _onSocketMessage(e) {
+        let message = JSON.parse(e.data);
+        let topic = message.topic;
+        if(topic == "initiate") {
+            this._setupRTCPeer(message);
+        } else if(topic == "candidate") {
+            this._peers[message.from].handleCandidate(message);
+        } else if(topic == "description") {
+            this._peers[message.from].handleDescription(message);
+        } else if(topic == "hosting") {
+            if(this._successCallback) this._successCallback();
+        } else if(topic == "update-connection-ready") {
+            this._updateSocket(message.code);
+        } else if(topic == "update-connection-success") {
+            this._updateSocketSuccess();
+        } else if(topic == "replace-connection") {
+            this._replacePeerId(message.oldPeerId, message.newPeerId);
+        } else if(topic == "designate-host") {
+            pubSub.publish(this._id, PubSubTopics.BECOME_PARTY_HOST);
+        } else if(topic == "boot-peer") {
+            pubSub.publish(this._id, PubSubTopics.BOOT_PEER, message.peerId);
+        } else if(topic == "disconnect") {
+            this.disconnect();
+        } else if(topic == "error" && message.requestTopic == "boot-peer") {
+            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: "Error: Couldn't kick out user",
+            });
+        } else if(topic == "error" && message.requestTopic == "designate-host"){
+            pubSub.publish(this._id, PubSubTopics.BECOME_PARTY_HOST);
+            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: "Error: Couldn't make user host",
+            });
+        } else if(topic == "error" && message.requestTopic == "update-connection"){
+            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'Could not reinitiate connection with Server',
+            });
+            this.disconnect();
+        } else {
+            this.disconnect();
+            if(this._errorCallback) this._errorCallback(message);
+        }
+    }
+
+    _onSocketError(e) {
+        this.disconnect();
+        if(this._errorCallback) this._errorCallback(e);
+    }
+
+    _onRTCTimeout() {
+        if(this._socket) this._onSocketError({ topic: "rtc-timeout" });
+    }
+
+    _setupRTCPeer(message) {
+        let peerId = message.peerId;
+        let polite = message.polite;
+        this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket,
+            this._userAudio.srcObject.clone(), () => this._onRTCTimeout());
+        if(this._onSetupPeer) this._onSetupPeer(this._peers[peerId]);
+    }
+}
+
+function createAudioElement() {
+    let audioElement = document.createElement('audio');
+    audioElement.autoplay = true;
+    document.body.appendChild(audioElement);
+    return audioElement;
+}
+
+let party = new Party();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const SIXTEEN_KB$1 = 1024 * 16;
+const BLOCKABLE_HANDLERS_MAP = {
+    component_attached: '_handleComponentAttached',
+    component_detached: '_handleComponentDetached',
+    entity_added: '_handleEntityAdded',
+    entity_attached: '_handleEntityAttached',
+    instance_added: '_handleInstanceAdded',
+    instance_deleted: '_handleInstanceDeleted',
+    instance_updated: '_handleInstanceUpdated',
+    instance_attached: '_handleInstanceAttached',
+    instance_detached: '_handleInstanceDetached',
+    loaded_diff: '_handleLoadedDiff',
+    sanitize_internals: '_handleSanitizeInternals',
+    settings_updated: '_handleSettingsUpdated',
+};
+
+class PartyMessageHelper {
+    constructor() {
+        this._id = uuidv4();
+        this._handlingLocks = new Set();
+        this._handleQueue = new Queue();
+        this._publishQueue = new Queue();
+    }
+
+    init(PartyHandler) {
+        this._partyHandler = PartyHandler;
+        let handlers = {
+            asset_added: (p, m) => { this._handleAssetAdded(p, m); },
+            username: (p, m) => { this._handleUsername(p, m); },
+            user_controller: (p, m) => { this._handleUserController(p, m); },
+            user_perspective: (p, m) => { this._handleUserPerspective(p,m); },
+        };
+        for(let topic in BLOCKABLE_HANDLERS_MAP) {
+            let handler = (p,m) => {this[BLOCKABLE_HANDLERS_MAP[topic]](p, m);};
+            handlers[topic] = (p, m) => { this._handleBlockable(handler,p,m); };
+        }
+        this._partyHandler.addMessageHandlers(handlers);
+    }
+
+    registerHandler(topic, handler) {
+        this._partyHandler.addMessageHandler(topic, handler);
+    }
+
+    registerBlockableHandler(topic, handler) {
+        let blockableHandler = (p, m) => { this._handleBlockable(handler,p,m);};
+        this._partyHandler.addMessageHandler(topic, blockableHandler);
+    }
+
+    publish(message) {
+        this._partyHandler.sendToAllPeers(message);
+    }
+
+    queuePublish(message) {
+        if(typeof message == 'function') {
+            this._publishQueue.enqueue(f);
+        } else {
+            this._publishQueue.enqueue(() => {
+                this._partyHandler.sendToAllPeers(message);
+                return Promise.resolve();
+            });
+        }
+    }
+
+    notifyDiffError() {
+        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+            text: "An unexpected error occured when loading the host's state",
+        });
+    }
+
+    _handleUserController(peer, message) {
+        if(!peer.controller) {
+            let params = message.controllerParams;
+            peer.username = params.username;
+            let controller = projectHandler.getSessionAsset(params.id);
+            if(controller) {
+                projectHandler.addAsset(controller);
+                controller.setDisplayingUsername(this._partyHandler
+                    .getDisplayingUsernames());
+            } else {
+                params['displayingUsername'] = this._partyHandler
+                    .getDisplayingUsernames();
+                controller = projectHandler.addNewAsset(params.assetId, params,
+                    true, true);
+            }
+            if(controller.peer && controller.peer != peer)
+                controller.peer.controller = null;
+            peer.controller = controller;
+            controller.peer = peer;
+        }
+    }
+
+    _handleAssetAdded(peer, message) {
+        let lock = uuidv4();
+        this._handlingLocks.add(lock);
+        let partsLength = message.parts;
+        let assetId = message.assetId;
+        let name = message.name;
+        let type = message.type;
+        let parts = [];
+        this._partyHandler.setEventBufferHandler(peer, (peer, message) => {
+            parts.push(message);
+            if(parts.length == partsLength) {
+                this._partyHandler.setEventBufferHandler(peer);
+                let blob = new Blob(parts, { type: 'application/javascript' });
+                let assetDetails = {
+                    Name: name,
+                    Type: type,
+                };
+                libraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
+                    .then(() => {
+                        pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                            assetId);
+                        this._removeHandlingLock(lock);
+                    });
+            }
+        });
+    }
+
+    _handleBlockable(handler, peer, message) {
+        if(this._handlingLocks.size > 0) {
+            this._handleQueue.enqueue(() => {
+                handler(peer, message);
+            });
+            return;
+        }
+        handler(peer, message);
+    }
+
+    _handleComponentAttached(peer, message) {
+        let asset = projectHandler.getSessionAsset(message.id);
+        if(asset) {
+            if(asset.editorHelper) {
+                asset.editorHelper.addComponent(message.componentId, true,true);
+            } else {
+                asset.addComponent(message.componentId, true);
+            }
+            delete message['topic'];
+            pubSub.publish(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
+                + message.componentAssetId, message);
+        }
+    }
+
+    _handleComponentDetached(peer, message) {
+        let asset = projectHandler.getSessionAsset(message.id);
+        if(asset) {
+            if(asset.editorHelper) {
+                asset.editorHelper.removeComponent(message.componentId, true,
+                    true);
+            } else {
+                asset.removeComponent(message.componentId, true);
+            }
+            delete message['topic'];
+            pubSub.publish(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
+                + message.componentAssetId, message);
+        }
+    }
+
+    _handleEntityAdded(peer, message) {
+        let parentAsset = projectHandler.getSessionAsset(message.parentId);
+        let childAsset = projectHandler.getSessionAsset(message.childId);
+        if(childAsset) {
+            if(childAsset.editorHelper) {
+                childAsset.editorHelper.addTo(parentAsset, true, true);
+            } else {
+                childAsset.addTo(parentAsset, true);
+            }
+            let object = childAsset.getObject();
+            object.position.fromArray(message.position);
+            object.rotation.fromArray(message.rotation);
+            delete message['topic'];
+            pubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, message);
+        } else {
+            console.error(
+                "Missing child from entity_added message");
+        }
+    }
+
+    _handleEntityAttached(peer, message) {
+        let parentAsset = projectHandler.getSessionAsset(message.parentId);
+        let childAsset = projectHandler.getSessionAsset(message.childId);
+        if(childAsset) {
+            if(childAsset.editorHelper) {
+                childAsset.editorHelper.attachTo(parentAsset, true, true);
+            } else {
+                childAsset.attachTo(parentAsset, true);
+            }
+            let object = childAsset.getObject();
+            object.position.fromArray(message.position);
+            object.rotation.fromArray(message.rotation);
+            delete message['topic'];
+            pubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, message);
+        } else {
+            console.error(
+                "Missing child from entity_attached message");
+        }
+    }
+
+    _handleInstanceAdded(peer, message) {
+        let asset = projectHandler.getSessionAsset(message.asset.id);
+        if(asset) {
+            projectHandler.addAsset(asset, true, true);
+        } else {
+            asset = projectHandler.addNewAsset(message.asset.assetId,
+                message.asset, true, true);
+            let parentId = asset.getParentId();
+            let parentAsset = projectHandler.getSessionAsset(parentId);
+            if(parentAsset) asset.addTo(parentAsset, true);
+        }
+        pubSub.publish(this._id, message.assetType + '_ADDED', asset);
+    }
+
+    _handleInstanceDeleted(peer, message) {
+        let asset = projectHandler.getAsset(message.id);
+        if(asset) {
+            projectHandler.deleteAsset(asset, true, true);
+            let topic = message.assetType + '_DELETED:' + message.id;
+            pubSub.publish(this._id, topic, { asset: asset });
+        } else {
+            console.error("Asset to delete does not exist");
+        }
+    }
+
+    _handleInstanceUpdated(peer, message) {
+        let asset = projectHandler.getSessionAsset(message.params.id);
+        if(asset) {
+            this._handleAssetUpdate(asset, message.params,
+                message.assetType + '_UPDATED');
+        }
+    }
+
+    _handleInstanceAttached(peer, message) {
+        let instance = projectHandler.getSessionAsset(message.id);
+        if(instance) {
+            let editorHelper = instance.editorHelper;
+            if(editorHelper) editorHelper.attachToPeer(peer, message);
+        }
+    }
+
+    _handleInstanceDetached(peer, message) {
+        let instance = projectHandler.getSessionAsset(message.id);
+        if(instance) {
+            let editorHelper = instance.editorHelper;
+            if(editorHelper) editorHelper.detachFromPeer(peer, message);
+        }
+    }
+
+    _handleLoadedDiff(peer, message) {
+        pubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
+        peer.readyForUpdates = true;
+    }
+
+    _handleSanitizeInternals(peer, message) {
+        pubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
+    }
+
+    _handleSettingsUpdated(peer, message) {
+        let settings = message.settings;
+        for(let setting in settings) {
+            let handler;
+            if(setting == 'User Settings') {
+                handler = 'setUserSetting';
+            } else if(setting == 'Skybox') {
+                handler = 'setSkyboxSide';
+            } else {
+                console.error("Unknown setting updated: " + setting);
+                return;
+            }
+            for(let key in settings[setting]) {
+                settingsHandler[handler](key, settings[setting][key], true);
+            }
+        }
+        pubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED,
+            { settings: settings });
+    }
+
+    _handleAssetUpdate(asset, params, topic) {
+        let updatedParams = [];
+        for(let param in params) {
+            if(param == 'id') continue;
+            updatedParams.push(param);
+            let capitalizedParam = capitalizeFirstLetter(param);
+            if(('set' + capitalizedParam) in asset)
+                asset['set' + capitalizedParam](params[param]);
+            if(asset.editorHelper) asset.editorHelper.updateMenuField(param);
+        }
+        let message = {
+            asset: asset,
+            fields: updatedParams,
+        };
+        pubSub.publish(this._id, topic, message);
+    }
+
+    _handleUsername(peer, message) {
+        let username = message.username;
+        if(peer.username == username) return;
+        peer.username = username;
+        if(peer.controller) peer.controller.setUsername(username);
+        pubSub.publish(this._id, PubSubTopics.PEER_USERNAME_UPDATED, {
+            peer: peer,
+        });
+    }
+
+    _handleUserPerspective(peer, message) {
+        let perspective = message.perspective;
+        if(peer.controller) peer.controller.setFirstPerson(perspective == 1);
+    }
+
+    handlePartyStarted() {
+        pubSub.publish(this._id, PubSubTopics.PARTY_STARTED);
+    }
+
+    handlePartyEnded() {
+        pubSub.publish(this._id, PubSubTopics.PARTY_ENDED);
+    }
+
+    handlePeerConnected(peer) {
+        pubSub.publish(this._id, PubSubTopics.PEER_CONNECTED, { peer: peer });
+    }
+
+    handlePeerDisconnected(peer) {
+        pubSub.publish(this._id, PubSubTopics.PEER_DISCONNECTED,{ peer: peer });
+    }
+
+    handleDiffLoaded() {
+        this._partyHandler.sendToAllPeers(JSON.stringify({
+            topic: 'loaded_diff',
+        }));
+        pubSub.publish(this._id, PubSubTopics.USER_READY);
+    }
+
+    _removeHandlingLock(lock) {
+        this._handlingLocks.delete(lock);
+        while(this._handleQueue.length > 0 && this._handlingLocks.size == 0) {
+            this._handleQueue.dequeue()();
+        }
+    }
+
+    _publishAssetAdded(assetId) {
+        return new Promise((resolve) => {
+            let libraryDetails = libraryHandler.getLibrary()[assetId];
+            let blob = libraryDetails['Blob'];
+            blob.arrayBuffer().then((buffer) => {
+                let parts = [];
+                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB$1);
+                for(let i = 0; i < n; i++) {
+                    let chunkStart = i * SIXTEEN_KB$1;
+                    let chunkEnd = (i + 1) * SIXTEEN_KB$1;
+                    parts.push(buffer.slice(chunkStart, chunkEnd));
+                }
+                this._partyHandler.sendToAllPeers(JSON.stringify({
+                    topic: 'asset_added',
+                    assetId: assetId,
+                    name: libraryDetails['Name'],
+                    type: libraryDetails['Type'],
+                    parts: parts.length,
+                }));
+                for(let part of parts) {
+                    this._partyHandler.sendToAllPeers(part);
+                }
+                resolve();
+            });
+        });
+    }
+
+    _publishComponentAttachedDetached(topic, message) {
+        let peerMessage = {
+            topic: topic,
+            id: message.id,
+            assetId: message.assetId,
+            assetType: message.assetType,
+            componentId: message.componentId,
+            componentAssetId: message.componentAssetId,
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
+    }
+
+    _publishEntityAdded(message) {
+        let childAsset = projectHandler.getSessionAsset(message.childId);
+        let peerMessage = {
+            topic: 'entity_added',
+            parentId: message.parentId,
+            childId: message.childId,
+            position: childAsset.getObject().position.toArray(),
+            rotation: childAsset.getObject().rotation.toArray(),
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
+    }
+
+    _publishEntityAttached(message) {
+        let childAsset = projectHandler.getSessionAsset(message.childId);
+        let peerMessage = {
+            topic: 'entity_attached',
+            parentId: message.parentId,
+            childId: message.childId,
+            position: childAsset.getObject().position.toArray(),
+            rotation: childAsset.getObject().rotation.toArray(),
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
+    }
+
+    _publishInstanceAdded(asset, assetType) {
+        let message = {
+            topic: 'instance_added',
+            asset: asset.exportParams(),
+            assetType: assetType,
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
+    }
+
+    _publishInstanceDeleted(asset, assetType) {
+        let message = {
+            topic: 'instance_deleted',
+            id: asset.getId(),
+            assetId: asset.getAssetId(),
+            assetType: assetType,
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
+    }
+
+    _publishInstanceUpdated(updateMessage, assetType) {
+        let asset = {};
+        asset['id'] = updateMessage.asset.getId();
+        for(let param of updateMessage.fields) {
+            let capitalizedParam = capitalizeFirstLetter(param);
+            asset[param] = updateMessage.asset['get' + capitalizedParam]();
+        }
+        let peerMessage = {
+            topic: "instance_updated",
+            params: asset,
+            assetType: assetType,
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(
+                JSON.stringify(peerMessage, (k, v) => v === undefined ?null:v));
+            return Promise.resolve();
+        });
+    }
+
+    _publishInstanceAttached(data) {
+        let message = {
+            topic: 'instance_attached',
+            id: data.instance.getId(),
+            assetId: data.instance.getAssetId(),
+            option: data.option,
+            type: data.type,
+        };
+        if(global$1.deviceType == 'XR') {
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
+            message['twoHandScaling'] = data.twoHandScaling;
+            message['isXR'] = true;
+        }
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
+    }
+
+    _publishInstanceDetached(data) {
+        let message = {
+            topic: 'instance_detached',
+            id: data.instance.getId(),
+            assetId: data.instance.getAssetId(),
+            option: data.option,
+            type: data.type,
+        };
+        if(global$1.deviceType == 'XR') {
+            message['position'] = data.position;
+            message['rotation'] = data.rotation;
+            message['scale'] = data.scale;
+            message['twoHandScaling'] = data.twoHandScaling;
+            message['isXR'] = true;
+        }
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
+    }
+
+    _publishSettingsUpdate(updateMessage) {
+        let settings = updateMessage.settings;
+        let keys = updateMessage.keys;
+        let peerMessage = {
+            topic: 'settings_updated',
+            settings: {},
+        };
+        peerMessage.settings[keys[0]] = {};
+        peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
+            return Promise.resolve();
+        });
+    }
+
+    _publishUserPerspectiveChanged(perspective) {
+        let message = {
+            topic: 'user_perspective',
+            perspective: perspective,
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
+    }
+
+    _publishUsernameUpdated(username) {
+        let message = {
+            topic: 'username',
+            username: username,
+        };
+        this._publishQueue.enqueue(() => {
+            this._partyHandler.sendToAllPeers(JSON.stringify(message));
+            return Promise.resolve();
+        });
+    }
+
+    addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
+            this._publishQueue.enqueue(() => {
+                return this._publishAssetAdded(assetId);
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics.BECOME_PARTY_HOST, () => {
+            this._partyHandler.setIsHost(true);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.BOOT_PEER, (peerId) => {
+            this._partyHandler.bootPeer(peerId);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
+            this._publishComponentAttachedDetached('component_attached',
+                message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED, (message)=>{
+            this._publishComponentAttachedDetached('component_detached',
+                message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.ENTITY_ADDED, (message) => {
+            this._publishEntityAdded(message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.ENTITY_ATTACHED, (message) => {
+            this._publishEntityAttached(message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (message) =>{
+            this._publishInstanceAttached(message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_DETACHED, (message) =>{
+            this._publishInstanceDetached(message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.SANITIZE_INTERNALS, () => {
+            this._publishQueue.enqueue(() => {
+                this._partyHandler.sendToAllPeers(
+                    JSON.stringify({ topic: 'sanitize_internals' }));
+                return Promise.resolve();
+            });
+        });
+        pubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+            this._publishSettingsUpdate(message);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, (n)=>{
+            this._publishUserPerspectiveChanged(n);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.USERNAME_UPDATED, (username) =>{
+            this._publishUsernameUpdated(username);
+        });
+        for(let assetType in AssetTypes) {
+            let addedTopic = PubSubTopics[assetType + '_ADDED'];
+            let deletedTopic = PubSubTopics[assetType + '_DELETED'];
+            let updatedTopic = PubSubTopics[assetType + '_UPDATED'];
+            pubSub.subscribe(this._id, addedTopic, (asset) => {
+                this._publishInstanceAdded(asset, assetType);
+            });
+            pubSub.subscribe(this._id, deletedTopic, (message) => {
+                this._publishInstanceDeleted(message.asset, assetType);
+            });
+            pubSub.subscribe(this._id, updatedTopic, (message) => {
+                this._publishInstanceUpdated(message, assetType);
+            });
+        }
+    }
+
+    removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics.BECOME_PARTY_HOST);
+        pubSub.unsubscribe(this._id, PubSubTopics.BOOT_PEER);
+        pubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DETACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics.ENTITY_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
+        pubSub.unsubscribe(this._id, PubSubTopics.SANITIZE_INTERNALS);
+        pubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
+        pubSub.unsubscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED);
+        pubSub.unsubscribe(this._id, PubSubTopics.USERNAME_UPDATED);
+        for(let assetType in AssetTypes) {
+            pubSub.unsubscribe(this._id, PubSubTopics[assetType + '_ADDED']);
+            pubSub.unsubscribe(this._id, PubSubTopics[assetType + '_DELETED']);
+            pubSub.unsubscribe(this._id, PubSubTopics[assetType + '_UPDATED']);
+        }
+    }
+
+    update() {
+        if(this._isPublishing || this._publishQueue.length == 0) return;
+        this._isPublishing = true;
+        this._publishQueue.dequeue()().then(() => this._isPublishing = false);
+    }
+}
+
+let partyMessageHelper = new PartyMessageHelper();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const SIXTEEN_KB = 1024 * 16;
+const TWO_BYTE_MOD = 2 ** 16;
+const JITTER_DELAY = 50;
+
+class PartyHandler {
+    constructor() {
+        this._peers = {};
+        this._partyActive = false;
+        this._displayingUsernames = false;
+        this._username = generateRandomUsername();
+        this._messageHandlers = {
+            project: (p, m) => { this._handleProject(p, m); },
+        };
+        partyMessageHelper.init(this);
+        party.setOnPeerIdUpdate((o, n) => { this._updatePeerId(o, n); });
+        party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
+        party.setOnDisconnect(() => { this._onDisconnect(); });
+    }
+
+    _onDisconnect() {
+        this._partyActive = false;
+        partyMessageHelper.removeSubscriptions();
+        for(let peerId in this._peers) {
+            let peer = this._peers[peerId];
+            if(peer.rtc) peer.rtc.close();
+            if(peer.controller) {
+                projectHandler.deleteAsset(peer.controller, true, true);
+                let avatar = peer.controller.getAvatar();
+                if(avatar) projectHandler.deleteAsset(avatar, true, true);
+                for(let device of peer.controller.getXRDevices()) {
+                    projectHandler.deleteAsset(device, true, true);
+                }
+            }
+        }
+        this._peers = {};
+        partyMessageHelper.handlePartyEnded();
+    }
+
+    _registerPeer(rtc) {
+        let peer = {
+            id: rtc.getPeerId(),
+            jitterBuffer: new Queue(),
+            readyForUpdates: false,
+        };
+        this._peers[peer.id] = peer;
+        rtc.setOnSendDataChannelOpen(() => {
+            if(this._successCallback) this._successCallback();
+            peer.rtc = rtc;
+            this._sendUserInfo(rtc);
+            partyMessageHelper.handlePeerConnected(peer);
+            if(this._isHost) {
+                let zip = (global$1.isEditor)
+                    ? projectHandler.exportProject(true)
+                    : projectHandler.exportDiff();
+                this._sendProjectZip(zip, [rtc]);
+            }
+        });
+        rtc.setOnSendDataChannelClose(() => {
+            delete peer['rtc'];
+        });
+        rtc.setOnDisconnect(() => {
+            if(peer.controller) {
+                projectHandler.deleteAsset(peer.controller, true, true);
+                let avatar = peer.controller.getAvatar();
+                if(avatar) projectHandler.deleteAsset(avatar, true, true);
+                for(let device of peer.controller.getXRDevices()) {
+                    projectHandler.deleteAsset(device, true, true);
+                }
+            }
+            if(peer.id in this._peers) {
+                delete this._peers[peer.id];
+                partyMessageHelper.handlePeerDisconnected(peer);
+            }
+        });
+        rtc.setOnFailedImpoliteConnect(() => {
+            if(this._errorCallback)
+                this._errorCallback({ topic: 'could-not-connect' });
+            party.disconnect();
+        });
+        rtc.setOnMessage((message) => {
+            if(typeof message == "string") {
+                this._handleJSON(peer, JSON.parse(message));
+            } else {
+                this._handleArrayBuffer(peer, message);
+            }
+        });
+    }
+
+    _sendUserInfo(rtc) {
+        rtc.sendData(JSON.stringify({
+            "topic": "user_controller",
+            "controllerParams": global$1.userController.exportParams(),
+            "isXR": global$1.deviceType == "XR",
+        }));
+        let avatar = global$1.userController.getAvatar();
+        rtc.sendData(JSON.stringify({
+            "topic": "instance_added",
+            "asset": avatar.exportParams(),
+            "assetType": avatar.constructor.assetType,
+        }));
+        for(let hand in Handedness) {
+            let xrController = global$1.userController.getController(hand);
+            let xrHand = global$1.userController.getHand(hand);
+            for(let controller of [xrController, xrHand]) {
+                if(controller && controller.isInScene()) {
+                    rtc.sendData(JSON.stringify({
+                        "topic": "instance_added",
+                        "asset": controller.exportParams(),
+                        "assetType": controller.constructor.assetType,
+                    }));
+                }
+            }
+        }
+        rtc.sendData(JSON.stringify({
+            topic: 'user_scale',
+            scale: settingsHandler.getUserScale(),
+        }));
+    }
+
+    _updatePeerId(oldPeerId, newPeerId) {
+        this._peers[oldPeerId].id = newPeerId;
+        this._peers[newPeerId] = this._peers[oldPeerId];
+        delete this._peers[oldPeerId];
+    }
+
+    _handleJSON(peer, message) {
+        if(message.topic in this._messageHandlers)
+            this._messageHandlers[message.topic](peer, message);
+    }
+
+    _handleArrayBuffer(peer, message) {
+        if(peer.handleEventArrayBuffer) {
+            peer.handleEventArrayBuffer(peer, message);
+            return;
+        }
+        peer.jitterBuffer.enqueue(message);
+    }
+
+    _getNextJitterBufferMessage(jitterBuffer, timestamp) {
+        let message = jitterBuffer.peek();
+        if(!message) return null;
+        let messageTimestamp = this._getMessageTimestamp(message);
+        let timestampDiff = timestamp - messageTimestamp;
+        timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
+            % TWO_BYTE_MOD;
+        if(timestampDiff <= JITTER_DELAY) return null;
+        let nextMessage;
+        do {
+            message = jitterBuffer.dequeue();
+            nextMessage = jitterBuffer.peek();
+            if(!nextMessage) return message;
+            messageTimestamp = this._getMessageTimestamp(nextMessage);
+            timestampDiff = timestamp - messageTimestamp;
+            timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
+                % TWO_BYTE_MOD;
+        } while(timestampDiff > JITTER_DELAY)
+        return message;
+    }
+
+    _getMessageTimestamp(message) {
+        let uint16array = new Uint16Array(message, 0, 1);
+        return uint16array[0];
+    }
+
+    _sendProjectZip(zip, rtcs) {
+        zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
+            let parts = [];
+            let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
+            for(let i = 0; i < n; i++) {
+                let chunkStart = i * SIXTEEN_KB;
+                let chunkEnd = (i + 1) * SIXTEEN_KB;
+                parts.push(buffer.slice(chunkStart, chunkEnd));
+            }
+            this._sendProjectParts(rtcs, parts);
+        });
+    }
+
+    _sendProjectParts(rtcs, parts) {
+        rtcs.forEach((rtc) => rtc.sendData(JSON.stringify({
+            "topic": "project",
+            "parts": parts.length,
+        })));
+        for(let part of parts) {
+            rtcs.forEach((rtc) => rtc.sendData(part));
+        }
+    }
+
+    _handleProject(peer, message) {
+        let partsLength = message.parts;
+        let parts = [];
+        peer.handleEventArrayBuffer = (peer, message) => {
+            parts.push(message);
+            if(parts.length == partsLength) {
+                peer.handleEventArrayBuffer = null;
+                let buffer = concatenateArrayBuffers(parts);
+                let zip = new JSZip();
+                zip.loadAsync(buffer).then((zip) => {
+                    if(global$1.isEditor) {
+                        projectHandler.loadZip(zip, () => {
+                            this.sendToAllPeers(JSON.stringify({
+                                topic: 'loaded_diff',
+                            }));
+                            for(let peerId in this._peers) {
+                                this._peers[peerId].readyForUpdates = true;
+                            }
+                        }, () => {
+                            party.disconnect();
+                            partyMessageHelper.notifyDiffError();
+                        });
+                    } else {
+                        projectHandler.loadDiffZip(zip, () => {
+                            this.sendToAllPeers(JSON.stringify({
+                                topic: 'loaded_diff',
+                            }));
+                            for(let peerId in this._peers) {
+                                this._peers[peerId].readyForUpdates = true;
+                            }
+                        }, () => {
+                            party.disconnect();
+                            partyMessageHelper.notifyDiffError();
+                        });
+                    }
+                });
+            }
+        };
+    }
+
+    addMessageHandler(topic, messageHandler) {
+        this._messageHandlers[topic] = messageHandler;
+    }
+
+    addMessageHandlers(messageHandlers) {
+        for(let key in messageHandlers) {
+            this._messageHandlers[key] = messageHandlers[key];
+        }
+    }
+
+    bootPeer(peerId) {
+        let peer = this._peers[peerId];
+        if(peer && peer.rtc) {
+            peer.rtc.close();
+        } else {
+            console.warn("Warn: couldn't boot peer because peer's rtc connection does not exist. Likely a race condition where the peer disconnecting from their end already closed the connection");
+        }
+    }
+
+    getDisplayingUsernames() {
+        return this._displayingUsernames;
+    }
+
+    getPeer(peerId) {
+        return this._peers[peerId];
+    }
+
+    getPeers() {
+        return this._peers;
+    }
+
+    sendProject() {
+        let rtcs = [];
+        for(let peerId in this._peers) {
+            if(this._peers[peerId].rtc) rtcs.push(this._peers[peerId].rtc);
+        }
+        let zip = projectHandler.exportProject(true);
+        this._sendProjectZip(zip, rtcs);
+    }
+
+    setDisplayingUsernames(displayingUsernames) {
+        if(this._displayingUsernames == displayingUsernames) return;
+        this._displayingUsernames = !this._displayingUsernames;
+        for(let peerId in this._peers) {
+            let controller = this._peers[peerId].controller;
+            if(controller)
+                controller.setDisplayingUsername(this._displayingUsernames);
+        }
+    }
+
+    setIsHost(isHost) {
+        this._isHost = isHost;
+    }
+
+    setUsername(username) {
+        this._username = username;
+        this.sendToAllPeers(JSON.stringify({
+            topic: 'username',
+            username: username,
+        }));
+    }
+
+    isHost() {
+        return this._isHost;
+    }
+
+    isPartyActive() {
+        return this._partyActive;
+    }
+
+    host(roomId, successCallback, errorCallback) {
+        this._isHost = true;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        party.host(roomId, successCallback, errorCallback);
+        partyMessageHelper.addSubscriptions();
+        this._partyActive = true;
+        partyMessageHelper.handlePartyStarted();
+    }
+
+    join(roomId, successCallback, errorCallback) {
+        this._isHost = false;
+        this._successCallback = successCallback;
+        this._errorCallback = errorCallback;
+        party.join(roomId, successCallback, errorCallback);
+        partyMessageHelper.addSubscriptions();
+        this._partyActive = true;
+        partyMessageHelper.handlePartyStarted();
+    }
+
+    sendToAllPeers(data) {
+        for(let peerId in this._peers) {
+            let rtc = this._peers[peerId].rtc;
+            if(rtc) rtc.sendData(data);
+        }
+    }
+
+    setEventBufferHandler(peer, handler) {
+        peer.handleEventArrayBuffer = handler;
+    }
+
+    update(timeDelta) {
+        if(!this._partyActive) return;
+        let timestamp = new Date().getTime() % TWO_BYTE_MOD;
+        let buffer = new Uint16Array([timestamp]).buffer;
+        buffer = concatenateArrayBuffers(
+            [buffer, ...global$1.userController.getDataForRTC()]);
+        for(let peerId in this._peers) {
+            let peer = this._peers[peerId];
+            if(peer.controller) {
+                let message = this._getNextJitterBufferMessage(
+                    peer.jitterBuffer, timestamp);
+                if(message) peer.controller.processMessage(message);
+                peer.controller.update(timeDelta);
+            }
+            if(peer.rtc && peer.readyForUpdates) peer.rtc.sendData(buffer);
+        }
+        partyMessageHelper.update();
+    }
+}
+
+function generateRandomUsername() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
+}
+
+let partyHandler = new PartyHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const PLAY_TOPIC_PREFIX = 'PLAY_AUDIO_ASSET:';
+
+class AudioAsset extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+        this._autoplay = params['autoplay'] || false;
+        this._coneInnerAngle = numberOr(params['coneInner'], 360);
+        this._coneOuterAngle = params['coneOuterAngle'] || 0;
+        this._coneOuterGain = params['coneOuterGain'] || 0;
+        this._distanceModel = params['distanceModel'] || 'inverse';
+        this._loop = params['loop'] || false;
+        this._maxDistance = numberOr(params['maxDistance'], 100);
+        this._refDistance = numberOr(params['refDistance'], 1);
+        this._rolloffFactor = numberOr(params['rolloffFactor'], 1);
+        this._volume = numberOr(params['volume'], 1);
+        this._createMesh(params['assetId']);
+        this.setPlayTopic(params['playTopic'] || '');
+        this.setPauseTopic(params['pauseTopic'] || '');
+        this.setStopTopic(params['stopTopic'] || '');
+        if(!global$1.isEditor) this._addPartySubscriptions();
+    }
+
+    _createMesh(assetId) {
+        let audioBuffer = libraryHandler.getBuffer(assetId);
+        this._audio = new THREE.PositionalAudio(audioHandler.getListener());
+        if(!global$1.isEditor) this._audio.autoplay = this._autoplay;
+        this._audio.autoplay = this._autoplay;
+        this._audio.setDirectionalCone(this._coneInnerAngle,
+            this._coneOuterAngle, this._coneOuterGain);
+        this._audio.setDistanceModel(this._distanceModel);
+        this._audio.setLoop(this._loop);
+        this._audio.setMaxDistance(this._maxDistance);
+        this._audio.setRefDistance(this._refDistance);
+        this._audio.setRolloffFactor(this._rolloffFactor);
+        this._audio.setVolume(this._volume);
+        this._audio.setBuffer(audioBuffer);
+        this._object.add(this._audio);
+    }
+
+    _getDefaultName() {
+        return libraryHandler.getAssetName(this._assetId)
+            || 'Audio';
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['autoplay'] = this._autoplay;
+        params['coneInnerAngle'] = this._coneInnerAngle;
+        params['coneOuterAngle'] = this._coneOuterAngle;
+        params['coneOuterGain'] = this._coneOuterGain;
+        params['distanceModel'] = this._distanceModel;
+        params['loop'] = this._loop;
+        params['maxDistance'] = this._maxDistance;
+        params['pauseTopic'] = this._pauseTopic;
+        params['playTopic'] = this._playTopic;
+        params['refDistance'] = this._refDistance;
+        params['rolloffFactor'] = this._rolloffFactor;
+        params['stopTopic'] = this._stopTopic;
+        params['volume'] = this._volume;
+        return params;
+    }
+
+    getAudio() {
+        return this._audio;
+    }
+
+    getAutoplay(autoplay) {
+        return this._autoplay;
+    }
+
+    getConeInnerAngle(coneInnerAngle) {
+        return this._coneInnerAngle;
+    }
+
+    getConeOuterAngle(coneOuterAngle) {
+        return this._coneOuterAngle;
+    }
+
+    getConeOuterGain(coneOuterGain) {
+        return this._coneOuterGain;
+    }
+
+    getDistanceModel(distanceModel) {
+        return this._distanceModel;
+    }
+
+    getLoop(loop) {
+        return this._loop;
+    }
+
+    getMaxDistance(maxDistance) {
+        return this._maxDistance;
+    }
+
+    getPlayTopic(playTopic) {
+        return this._playTopic;
+    }
+
+    getPauseTopic(pauseTopic) {
+        return this._pauseTopic;
+    }
+
+    getRefDistance(refDistance) {
+        return this._refDistance;
+    }
+
+    getRolloffFactor(rolloffFactor) {
+        return this._rolloffFactor;
+    }
+
+    getStopTopic(stopTopic) {
+        return this._stopTopic;
+    }
+
+    getVolume(volume) {
+        return this._volume;
+    }
+
+    setAutoplay(autoplay) {
+        this._autoplay = autoplay;
+        if(!global$1.isEditor) this._audio.autoplay = autoplay;
+    }
+
+    setConeInnerAngle(coneInnerAngle) {
+        this._coneInnerAngle = coneInnerAngle;
+        this._audio.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
+            this._coneOuterGain);
+    }
+
+    setConeOuterAngle(coneOuterAngle) {
+        this._coneOuterAngle = coneOuterAngle;
+        this._audio.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
+            this._coneOuterGain);
+    }
+
+    setConeOuterGain(coneOuterGain) {
+        this._coneOuterGain = coneOuterGain;
+        this._audio.setDirectionalCone(this._coneInnerAngle,
+            this._coneOuterAngle, coneOuterGain);
+    }
+
+    setDistanceModel(distanceModel) {
+        this._distanceModel = distanceModel;
+        this._audio.setDistanceModel(distanceModel);
+    }
+
+    setLoop(loop) {
+        this._loop = loop;
+        this._audio.setLoop(loop);
+    }
+
+    setMaxDistance(maxDistance) {
+        this._maxDistance = maxDistance;
+        this._audio.setMaxDistance(maxDistance);
+    }
+
+    setPlayTopic(playTopic) {
+        if(this._playTopic) {
+            pubSub.unsubscribe(this._id, this._playTopic);
+        }
+        this._playTopic = playTopic;
+        if(this._playTopic) {
+            pubSub.subscribe(this._id, this._playTopic, (message) => {
+                if(!global$1.isEditor)
+                    this.play(null, message.userController == userController);
+            });
+        }
+    }
+
+    setPauseTopic(pauseTopic) {
+        if(this._pauseTopic) {
+            pubSub.unsubscribe(this._id, this._pauseTopic);
+        }
+        this._pauseTopic = pauseTopic;
+        if(this._pauseTopic) {
+            pubSub.subscribe(this._id, this._pauseTopic, (message) => {
+                if(!global$1.isEditor) this._audio.pause();
+            });
+        }
+    }
+
+    setRefDistance(refDistance) {
+        this._refDistance = refDistance;
+        this._audio.setRefDistance(refDistance);
+    }
+
+    setRolloffFactor(rolloffFactor) {
+        this._rolloffFactor = rolloffFactor;
+        this._audio.setRolloffFactor(rolloffFactor);
+    }
+
+    setStopTopic(stopTopic) {
+        if(this._stopTopic) {
+            pubSub.unsubscribe(this._id, this._stopTopic);
+        }
+        this._stopTopic = stopTopic;
+        if(this._stopTopic) {
+            pubSub.subscribe(this._id, this._stopTopic, (message) => {
+                if(!global$1.isEditor) this._audio.stop();
+            });
+        }
+    }
+
+    setVolume(volume) {
+        this._volume = volume;
+        this._audio.setVolume(volume);
+    }
+
+    play(position, ignorePublish) {
+        this._audio.pause();//pause() update audio._progress
+        if(position != null) {
+            this._audio._progress = position || 0;
+        }
+        this._audio.play();
+        if(ignorePublish) return;
+        let message = {
+            topic: PLAY_TOPIC_PREFIX + this._id,
+            position: this._audio._progress,
+        };
+        partyMessageHelper.queuePublish(JSON.stringify(message));
+    }
+
+    _addPartySubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            this._onPeerReady(message.peer);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
+            this._onPartyStarted(partyHandler.isHost());
+        });
+        let playTopic = PLAY_TOPIC_PREFIX + this._id;
+        partyMessageHelper.registerBlockableHandler(playTopic, (p, m) => {
+            this.play(m.position, true);
+        });
+    }
+
+    _onPeerReady() {
+        if(!partyHandler.isHost()) return;
+        if(!this._audio.isPlaying) return;
+        this._audio.pause();//pause() update audio._progress
+        this._audio.play();
+        let message = {
+            topic: PLAY_TOPIC_PREFIX + this._id,
+            position: this._audio._progress,
+        };
+        partyMessageHelper.queuePublish(JSON.stringify(message));
+    }
+
+    _onPartyStarted(isHost) {
+        if(isHost) return;
+        this._audio.stop();
+    }
+
+    static assetType = AssetTypes.AUDIO;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class AudioHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.AUDIO_ADDED, PubSubTopics.AUDIO_DELETED,
+            AssetTypes.AUDIO);
+    }
+
+    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+        let asset = new AudioAsset(params || { assetId: assetId });
+        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        return asset;
+    }
+
+    load(assets, isDiff) {
+        if(!assets) return;
+        if(isDiff) {
+            let assetsToDelete = [];
+            for(let id in this._assets) {
+                let asset = this._assets[id];
+                let assetId = asset.getAssetId();
+                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+                    assetsToDelete.push(asset);
+            }
+            for(let asset of assetsToDelete) {
+                this.deleteAsset(asset, true, true);
+            }
+        }
+        for(let assetTypeId in assets) {
+            if(!(assetTypeId in libraryHandler.library)) {
+                console.error("Unrecognized asset found");
+                continue;
+            }
+            for(let params of assets[assetTypeId]) {
+                if(isDiff && this._assets[params.id]) {
+                    this._assets[params.id].updateFromParams(params);
+                } else {
+                    this.addNewAsset(assetTypeId, params, true, true);
+                }
+            }
+        }
+    }
+}
+
+new AudioHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class ClampedTexturePlane extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+        this._createMesh(params['assetId']);
+        this._doubleSided = !(params.doubleSided == false);
+        if(!this._doubleSided) this._updateDoubleSided(false);
+        this._transparent = params['transparent'] != false;
+        if(!this._transparent) this._updateTransparent(false);
+    }
+
+    _createMesh(assetId) {
+        this._mesh = libraryHandler.cloneMesh(assetId);
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return libraryHandler.getAssetName(this._assetId)
+            || super._getDefaultName();
+    }
+
+    _updateTransparent(isTransparent) {
+        if(!this._materialAlreadyCloned) {
+            this._mesh.material = this._mesh.material.clone();
+            this._materialAlreadyCloned = true;
+        }
+        this._mesh.material.transparent = isTransparent;
+        this._transparent = isTransparent;
+     }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['doubleSided'] = this._mesh.material.side == THREE.DoubleSide;
+        params['transparent'] = this._transparent;
+        return params;
+    }
+
+    getDoubleSided() {
+        return this._mesh.material.side == THREE.DoubleSide;
+    }
+
+    setDoubleSided(doubleSided) {
+        if(doubleSided == this._doubleSided) return;
+        if(!this._materialAlreadyCloned) {
+            this._mesh.material = this._mesh.material.clone();
+            this._materialAlreadyCloned = true;
+        }
+        this._mesh.material.side = (doubleSided)
+            ? THREE.DoubleSide
+            : THREE.FrontSide;
+        this._doubleSided = doubleSided;
+    }
+
+    static assetType = AssetTypes.IMAGE;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class ImagesHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.IMAGE_ADDED, PubSubTopics.IMAGE_DELETED,
+            AssetTypes.IMAGE);
+    }
+
+    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+        let asset = new ClampedTexturePlane(params || { assetId: assetId });
+        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        return asset;
+    }
+
+    load(assets, isDiff) {
+        if(!assets) return;
+        if(isDiff) {
+            let assetsToDelete = [];
+            for(let id in this._assets) {
+                let asset = this._assets[id];
+                let assetId = asset.getAssetId();
+                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+                    assetsToDelete.push(asset);
+            }
+            for(let asset of assetsToDelete) {
+                this.deleteAsset(asset, true, true);
+            }
+        }
+        for(let assetTypeId in assets) {
+            if(!(assetTypeId in libraryHandler.library)) {
+                console.error("Unrecognized asset found");
+                continue;
+            }
+            for(let params of assets[assetTypeId]) {
+                if(isDiff && this._assets[params.id]) {
+                    this._assets[params.id].updateFromParams(params);
+                } else {
+                    this.addNewAsset(assetTypeId, params, true, true);
+                }
+            }
+        }
+    }
+}
+
+new ImagesHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class LightsHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.LIGHT_ADDED, PubSubTopics.LIGHT_DELETED,
+            AssetTypes.LIGHT);
+    }
+}
+
+new LightsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class MaterialsHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.MATERIAL_ADDED, PubSubTopics.MATERIAL_DELETED,
+            AssetTypes.MATERIAL);
+    }
+
+    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        if(asset.editorHelper) asset.editorHelper.undoDispose();
+    }
+
+    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+        asset.dispose();
+        if(asset.editorHelper) asset.editorHelper.dispose();
+    }
+}
+
+let materialsHandler = new MaterialsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class GLTFAsset extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+        this._createMesh(params['assetId']);
+    }
+
+    _createMesh(assetId) {
+        this._mesh = libraryHandler.cloneMesh(assetId);
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return libraryHandler.getAssetName(this._assetId)
+            || super._getDefaultName();
+    }
+
+    static assetType = AssetTypes.MODEL;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class ModelsHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.MODEL_ADDED, PubSubTopics.MODEL_DELETED,
+            AssetTypes.MODEL);
+    }
+
+    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+        let asset = new GLTFAsset(params || { assetId: assetId });
+        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        return asset;
+    }
+
+    load(assets, isDiff) {
+        if(!assets) return;
+        if(isDiff) {
+            let assetsToDelete = [];
+            for(let id in this._assets) {
+                let asset = this._assets[id];
+                let assetId = asset.getAssetId();
+                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+                    assetsToDelete.push(asset);
+            }
+            for(let asset of assetsToDelete) {
+                this.deleteAsset(asset, true, true);
+            }
+        }
+        for(let assetTypeId in assets) {
+            if(!(assetTypeId in libraryHandler.library)) {
+                console.error("Unrecognized asset found");
+                continue;
+            }
+            for(let params of assets[assetTypeId]) {
+                if(isDiff && this._assets[params.id]) {
+                    this._assets[params.id].updateFromParams(params);
+                } else {
+                    this.addNewAsset(assetTypeId, params, true, true);
+                }
+            }
+        }
+    }
+}
+
+new ModelsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class ShapesHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.SHAPE_ADDED, PubSubTopics.SHAPE_DELETED,
+            AssetTypes.SHAPE);
+    }
+}
+
+new ShapesHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class SystemsHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.SYSTEM_ADDED, PubSubTopics.SYSTEM_DELETED,
+            AssetTypes.SYSTEM);
+    }
+}
+
+new SystemsHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class TexturesHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.TEXTURE_ADDED, PubSubTopics.TEXTURE_DELETED,
+            AssetTypes.TEXTURE);
+    }
+
+    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+        asset.dispose();
+    }
+
+    getTextureType(id) {
+        return this._assets[id].getTextureType();
+    }
+
+    getTexturesAssetIds() {
+        let assetIds = new Set();
+        for(let id in this._assets) {
+            let texture = this._assets[id];
+            let textureAssetIds = texture.getAssetIds();
+            for(let assetId of textureAssetIds) {
+                assetIds.add(assetId);
+            }
+        }
+        return assetIds;
+    }
+}
+
+let texturesHandler = new TexturesHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class Light extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+        this._color = numberOr(params['color'], 0xffffff);
+        this._intensity = numberOr(params['intensity'], 1);
+    }
+
+    _getDefaultName() {
+        return 'Light';
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['color'] = this._light.color.getHex();
+        params['intensity'] = this._intensity;
+        return params;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getIntensity() {
+        return this._intensity;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._light.color.setHex(color);
+    }
+
+    setIntensity(intensity) {
+        if(this._intensity == intensity) return;
+        this._intensity = intensity;
+        this._light.intensity = intensity;
+    }
+
+    static assetType = AssetTypes.LIGHT;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class Entity {
+    constructor() {
+        this._id = uuidv4();
+        this._object = new Object3D();
+    }
+    
+    getId() {
+        return this._id;
+    }
+
+    getObject() {
+        return this._object;
+    }
+
+    addToScene(scene) {
+        if(scene) {
+            scene.add(this._object);
+        }
+    }
+
+    removeFromScene() {
+        if(this._object.parent) { 
+            this._object.parent.remove(this._object);
+            fullDispose(this._object);
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class PointerInteractableEntity extends Entity {
+    constructor() {
+        super();
+        this._pointerInteractable = PointerInteractable.emptyGroup();
+    }
+    
+    setPointerInteractableParent(interactableParent) {
+        if(interactableParent) {
+            interactableParent.addChild(this._pointerInteractable);
+        }
+    }
+
+    removeParentInteractableParent() {
+        if(this._pointerInteractable.parent)
+            this._pointerInteractable.parent.removeChild(
+                this._pointerInteractable);
+    }
+
+    addToScene(scene, interactableParent) {
+        super.addToScene(scene);
+        this.setPointerInteractableParent(interactableParent);
+    }
+
+    removeFromScene() {
+        super.removeFromScene();
+        this.removeParentInteractableParent();
+    }
+}
+
+const MenuPages = {
+    ACKNOWLEDGEMENTS: "ACKNOWLEDGEMENTS",
+    ASSET: "ASSET",
+    ASSETS: "ASSETS",
+    ASSET_SELECT: "ASSET_SELECT",
+    COLOR_WHEEL: "COLOR_WHEEL",
+    COMPONENT: "COMPONENT",
+    COMPONENTS: "COMPONENTS",
+    EDIT_ACKNOWLEDGEMENTS: "EDIT_ACKNOWLEDGEMENTS",
+    EDITOR_SETTINGS: "EDITOR_SETTINGS",
+    HANDS: "HANDS",
+    HOST_PARTY: "HOST_PARTY",
+    JOIN_PARTY: "JOIN_PARTY",
+    LIBRARY: "LIBRARY",
+    LIBRARY_SEARCH: "LIBRARY_SEARCH",
+    LIST_COMPONENTS: "LIST_COMPONENTS",
+    LOAD_GDRIVE: "LOAD_GDRIVE",
+    MATERIAL: "MATERIAL",
+    MATERIALS: "MATERIALS",
+    NAVIGATION: "NAVIGATION",
+    NEW_COMPONENT: "NEW_COMPONENT",
+    NEW_MATERIAL: "NEW_MATERIAL",
+    NEW_TEXTURE: "NEW_TEXTURE",
+    NEW_SYSTEM: "NEW_SYSTEM",
+    PARTY: "PARTY",
+    PEER: "PEER",
+    PROJECT: "PROJECT",
+    SETTINGS: "SETTINGS",
+    SKETCHFAB_ASSET: "SKETCHFAB_ASSET",
+    SKETCHFAB_LOGIN: "SKETCHFAB_LOGIN",
+    SKETCHFAB_SEARCH: "SKETCHFAB_SEARCH",
+    SKYBOX: "SKYBOX",
+    SYSTEM: "SYSTEM",
+    SYSTEMS: "SYSTEMS",
+    TEXTURE: "TEXTURE",
+    TEXTURES: "TEXTURES",
+    TEXT_INPUT: "TEXT_INPUT",
+    TWO_BUTTON: "TWO_BUTTON",
+    UPLOAD: "UPLOAD",
+    USER_SETTINGS: "USER_SETTINGS",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const HEIGHT$c = 0.05;
+const WIDTH$c = 0.31;
+const TITLE_WIDTH$c = 0.14;
+const COLOR_BOX_WIDTH = 0.08;
+const COLOR_BOX_HEIGHT = 0.04;
+
+class ColorInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        let title = params['title'] || 'Missing Field Name...';
+        this._lastValue = numberOr(params['initialValue'], 0x2abbd5);
+        this._color = new THREE.Color(this._lastValue);
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._createInputs(title);
+    }
+
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$c,
+            'width': WIDTH$c,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$c,
+            'width': TITLE_WIDTH$c,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._colorBlock = ThreeMeshUIHelper.createColorBlock({
+            'height': COLOR_BOX_HEIGHT,
+            'width': COLOR_BOX_WIDTH,
+            'margin': 0,
+            'selectedColor': this._color,
+        });
+        this._object.add(titleBlock);
+        this._object.add(this._colorBlock);
+        let interactable = new PointerInteractable(this._colorBlock, true);
+        interactable.addAction(() => {
+            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
+            colorPage.setContent(this._id, this._color,
+                (color) => {
+                    this._color.setHex(color);
+                    if(this._onUpdate) this._onUpdate(color);
+                }, ()   => {
+                    if(colorPage.isDraggingCursors()) return;
+                    let oldColor = this._lastValue;
+                    let newColor = this._color.getHex();
+                    if(this._onBlur) this._onBlur(oldColor, newColor);
+                    this._lastValue = newColor;
+                    this._color.setHex(this._lastValue);
+                });
+            global$1.menuController.pushPage(MenuPages.COLOR_WHEEL);
+            pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+                'id': this._id,
+                'targetOnlyMenu': true,
+            });
+        });
+        this._pointerInteractable.addChild(interactable);
+    }
+
+    getWidth() {
+        return WIDTH$c;
+    }
+
+    getHeight() {
+        return HEIGHT$c;
+    }
+
+    deactivate() {
+        //Required method
+    }
+
+    updateFromSource() {
+        if(this._getFromSource) {
+            this._lastValue = this._getFromSource();
+            this._color.setHex(this._lastValue);
+            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
+            colorPage.updateColor(this._id, this._color);
+        }
+    }
+}
+
+const HandTools = {
+    ACTIVE: "EDIT",
+    COPY_PASTE: "COPY_PASTE",
+    DELETE: "DELETE",
+    EDIT: "EDIT",
+    ROTATE: "ROTATE",
+    SCALE: "SCALE",
+    TRANSLATE: "TRANSLATE",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class MenuGripInteractable extends GripInteractable {
+    constructor(threeObj, border) {
+        super(threeObj);
+        if(threeObj) threeObj.gripInteractable = this;
+        this._border = border;
+    }
+
+    _createBoundingObject() {
+        this._boundingPlane = new THREE.Plane();
+    }
+
+    _getBoundingObject() {
+        this._threeObj.getWorldPosition(vector3s[0]);
+        this._threeObj.getWorldQuaternion(quaternion);
+        vector3s[1].set(0,0,1).applyQuaternion(quaternion);
+        this._boundingPlane.setFromNormalAndCoplanarPoint(vector3s[1],
+            vector3s[0]);
+        return this._boundingPlane;
+    }
+
+    _displayBoundingObject() {
+        this._threeObj.add(this._border);
+    }
+
+    _hideBoundingObject() {
+        this._threeObj.remove(this._border);
+    }
+
+    intersectsSphere(sphere) {
+        let boundingPlane = this._getBoundingObject();
+        let intersects;
+        if(boundingPlane) {
+            //We already have threeObj's world position in vector3s[0]
+            intersects = sphere.intersectsPlane(boundingPlane)
+                && sphere.distanceToPoint(vector3s[0]) < 0.45;
+        } else {
+            intersects = false;
+        }
+        return intersects;
+    }
+
+    // Assumes intersectsSphere(sphere) is called first so we don't update the
+    // bounding plane by calling _getBoundingObject()
+    distanceToSphere(sphere) {
+        return this._boundingPlane.distanceToPoint(sphere.center);
+    }
+
+    static emptyGroup() {
+        return new MenuGripInteractable();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
 class InteractableHandler {
     constructor() {
         this._id = uuidv4();
         this._interactables = new Set();
         this._hoveredInteractables = {};
         this._selectedInteractables = {};
-        this._handTool = HandTools.EDIT;
+        this._tool = null;
+        this._toolHandlers = {};
         this._addInteractable = this.addInteractable;
         this._addInteractables = this.addInteractables;
         this._removeInteractable = this.removeInteractable;
@@ -10415,9 +14613,29 @@ class InteractableHandler {
         this.removeInteractables = () => {};
     }
 
+    _setupXRSubscription() {
+        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
+            this._tool = tool;
+            for(let option in this._hoveredInteractables) {
+                let interactable = this._hoveredInteractables[option];
+                if(!interactable) return;
+                if(interactable instanceof MenuGripInteractable) continue;
+                interactable.removeHoveredBy(option);
+                delete this._hoveredInteractables[option];
+            }
+            for(let option in this._selectedInteractables) {
+                let interactable = this._selectedInteractables[option];
+                if(!interactable) return;
+                if(interactable instanceof MenuGripInteractable) continue;
+                interactable.removeSelectedBy(option);
+                delete this._selectedInteractables[option];
+            }
+        });
+    }
+
     init() {
         if(global$1.deviceType == "XR") {
-            this.update = this._updateForXREdit;
+            this.update = this._updateForXR;
             this._setupXRSubscription();
         } else if(global$1.deviceType == "POINTER") {
             this.update = this._updateForPointer;
@@ -10428,6 +14646,10 @@ class InteractableHandler {
         this.addInteractables = this._addInteractables;
         this.removeInteractable = this._removeInteractable;
         this.removeInteractables = this._removeInteractables;
+    }
+
+    registerToolHandler(tool, handler) {
+        this._toolHandlers[tool] = handler;
     }
 
     addInteractable(interactable) {
@@ -10460,6 +14682,3209 @@ class InteractableHandler {
     }
 
 }
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class PointerInteractableHandler extends InteractableHandler {
+    constructor() {
+        super();
+        this._wasPressed = {};
+    }
+
+    init() {
+        super.init();
+        this._cursors = {};
+        this.addInteractable(scene.getPointerInteractable());
+    }
+
+    _getXRCursor(hand) {
+        if(this._cursors[hand]) return this._cursors[hand];
+        let canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        let ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.arc(32, 32, 29, 0, 2 * Math.PI);
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.fillStyle = "white";
+        ctx.fill();
+        let spriteMaterial = new THREE.SpriteMaterial({
+            map: new THREE.CanvasTexture(canvas),
+            depthTest: false,
+            sizeAttenuation: false,
+        });
+        for(let handedness in Handedness) {
+            let cursor = new THREE.Sprite(spriteMaterial);
+            cursor.scale.set(0.015,0.015,0.015);
+            cursor.visible = false;
+            cursor.renderOrder = Infinity;
+            this._cursors[handedness] = cursor;
+            scene.getObject().add(cursor);
+        }
+        return this._cursors[hand];
+    }
+
+    _getRaycaster(option) {
+        if(option == "POINTER") {
+            let position = inputHandler.getPointerPosition();
+            let raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(position, global$1.camera);
+            return raycaster;
+        } else if(option == "MOBILE") {
+            let position = inputHandler.getPointerPosition();
+            let raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(position, global$1.camera);
+            return raycaster;
+        }
+    }
+
+    _isControllerPressed(option) {
+        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
+            let gamepad = inputHandler.getXRGamepad(option);
+            return gamepad != null && gamepad.buttons[0].pressed;
+        } else if(option == "POINTER") {
+            return inputHandler.isPointerPressed();
+        } else if(option == "MOBILE") {
+            return inputHandler.isScreenTouched();
+        }
+    }
+
+    _squashInteractables(option, interactables, objects) {
+        for(let interactable of interactables) {
+            if(!interactable.supportsOwner(option)) continue;
+            let object = interactable.getThreeObj();
+            if(object && !interactable.isOnlyGroup()) objects.push(object);
+            if(interactable.children.size != 0) {
+                this._squashInteractables(option, interactable.children,
+                    objects);
+            }
+        }
+    }
+
+    _getObjectInteractable(object) {
+        while(object != null) {
+            if(object.pointerInteractable) return object.pointerInteractable;
+            object = object.parent;
+        }
+    }
+
+    _raycastInteractables(controller, interactables) {
+        let raycaster = controller['raycaster'];
+        if(!raycaster) return;
+        raycaster.firstHitOnly = true;
+        raycaster.params.Line.threshold = 0.01;
+        let objects = [];
+        this._squashInteractables(controller.option, interactables, objects);
+        let intersections = raycaster.intersectObjects(objects);
+        for(let intersection of intersections) {
+            let interactable = this._getObjectInteractable(intersection.object);
+            if(!interactable) continue;
+            let distance = intersection.distance;
+            let userDistance = distance;
+            if(global$1.deviceType != 'XR') {
+                global$1.cameraFocus.getWorldPosition(vector3s[0]);
+                userDistance = intersection.point
+                    .distanceTo(vector3s[0]);
+            }   
+            if(!interactable.isWithinReach(userDistance)) continue;
+            controller['closestPointDistance'] = distance;
+            controller['closestPoint'] = intersection.point;
+            controller['closestInteractable'] = interactable;
+            controller['userDistance'] = userDistance;
+            return;
+        }
+    }
+
+    _updateInteractables(controller) {
+        let option = controller['option'];
+        let isPressed = controller['isPressed'];
+        let hoveredInteractable = this._hoveredInteractables[option];
+        let selectedInteractable = this._selectedInteractables[option];
+        let closestInteractable = controller['closestInteractable'];
+        let userDistance = controller['userDistance'];
+        if(closestInteractable && !closestInteractable.isOnlyGroup()) {
+            if(isPressed) {
+                if(selectedInteractable) {
+                    if(selectedInteractable == closestInteractable) {
+                        selectedInteractable.triggerDraggableActions(option,
+                            controller['closestPoint'], userDistance);
+                    }
+                } else if(hoveredInteractable == closestInteractable) {
+                    closestInteractable.addSelectedBy(option,
+                        controller['closestPoint'], userDistance);
+                    this._selectedInteractables[option] = closestInteractable;
+                    closestInteractable.removeHoveredBy(option);
+                    this._hoveredInteractables[option] = null;
+                }
+            } else {
+                if(hoveredInteractable != closestInteractable) {
+                    if(hoveredInteractable) {
+                        hoveredInteractable.removeHoveredBy(option);
+                    }
+                    closestInteractable.addHoveredBy(option,
+                        controller['closestPoint'], userDistance);
+                    this._hoveredInteractables[option] = closestInteractable;
+                    //I can probably remove the below 2 lines
+                //} else if(selectedInteractable) {
+                //    selectedInteractable.releaseDraggedActions();
+                }
+                if(selectedInteractable) {
+                    selectedInteractable.removeSelectedBy(option);
+                    this._selectedInteractables[option] = null;
+                }
+            }
+        } else if(!isPressed) {
+            if(this._wasPressed[option] && !hoveredInteractable
+                    && !selectedInteractable) {
+                pubSub.publish(this._id, PubSubTopics.EMPTY_CLICK);
+            }
+            if(selectedInteractable) {
+                selectedInteractable.removeSelectedBy(option);
+                this._selectedInteractables[option] = null;
+            }
+            if(hoveredInteractable) {
+                hoveredInteractable.removeHoveredBy(option);
+                this._hoveredInteractables[option] = null;
+            }
+        }
+        this._wasPressed[option] = isPressed;
+    }
+
+    _updateInteractablesMobile(controller) {
+        let option = controller['option'];
+        let isPressed = controller['isPressed'];
+        let selectedInteractable = this._selectedInteractables[option];
+        if(this._mobileWasTouched) {
+            if(!selectedInteractable) {
+                this._mobileWasTouched = isPressed;
+                return;
+            }
+
+            this._raycastInteractables(controller, this._interactables);
+            let userDistance = controller['userDistance'];
+            let closestInteractable = controller['closestInteractable'];
+            if(!isPressed) {
+                this._mobileWasTouched = false;
+                if(closestInteractable == selectedInteractable) {
+                    selectedInteractable.triggerActions(option,
+                        controller['closestPoint'], userDistance);
+                }
+                selectedInteractable.removeSelectedBy(option);
+            } else if(selectedInteractable == closestInteractable) {
+                selectedInteractable.triggerDraggableActions(option,
+                    controller['closestPoint'], userDistance);
+            }
+        } else if(isPressed) {
+            this._mobileWasTouched = true;
+            this._raycastInteractables(controller, this._interactables);
+            let userDistance = controller['userDistance'];
+            let closestInteractable = controller['closestInteractable'];
+            if(closestInteractable) {
+                closestInteractable.addSelectedBy(option,
+                    controller['closestPoint'], userDistance);
+                this._selectedInteractables[option] = closestInteractable;
+            }
+        }
+    }
+
+    _updateCursor(controller) {
+        let cursor = controller.cursor;
+        if(!cursor) return;
+        if(controller['closestPoint'] != null) {
+            cursor.position.copy(controller['closestPoint']);
+            if(!cursor.visible) {
+                cursor.visible = true;
+            }
+        } else {
+            if(cursor.visible) {
+                cursor.visible = false;
+            }
+        }
+    }
+
+    _updateForXR() {
+        if(!global$1.sessionActive) return;
+
+        for(let handedness in Handedness) {
+            let controllerExists = false;
+            for(let type of ['getController', 'getHand']) {
+                let xrDevice = global$1.userController[type](handedness);
+                if(!xrDevice) continue;
+                let active = xrDevice.isInScene();
+                if(active) {
+                    if(type == 'getController') {
+                        controllerExists = true;
+                    } else if(controllerExists) {
+                        active = false;
+                    }
+                }
+                let controller = {
+                    option: xrDevice.getId(),
+                    raycaster: (active) ? xrDevice.getRaycaster() : null,
+                    isPressed: (active) ? xrDevice.isButtonPressed(0) : false,
+                    closestPoint: null,
+                    closestPointDistance: Number.MAX_SAFE_INTEGER,
+                    cursor: (active) ? this._getXRCursor(handedness) : null,
+                    userDistance: Number.MAX_SAFE_INTEGER,
+                };
+                let skipUpdate = false;
+                if(this._toolHandlers[this._tool]) {
+                    skipUpdate = this._toolHandlers[this._tool](controller);
+                }
+                if(!skipUpdate) {
+                    this._raycastInteractables(controller, this._interactables);
+                    this._updateInteractables(controller);
+                }
+                this._updateCursor(controller);
+            }
+        }
+    }
+
+    _updateForPointer() {
+        if(!global$1.sessionActive) return;
+
+        let controller = {
+            option: "POINTER",
+            raycaster: this._getRaycaster("POINTER"),
+            isPressed: this._isControllerPressed("POINTER"),
+            closestPoint: null,
+            closestPointDistance: Number.MAX_SAFE_INTEGER,
+            userDistance: Number.MAX_SAFE_INTEGER,
+        };
+        if(this._toolHandlers[this._tool]) {
+            this._toolHandlers[this._tool](controller);
+        }
+        {
+            this._raycastInteractables(controller, this._interactables);
+            this._updateInteractables(controller);
+        }
+        let style = global$1.renderer.domElement.style;
+        if(this._hoveredInteractables['POINTER']) {
+            if(!style.cursor) style.cursor = 'pointer';
+        } else if(style.cursor == 'pointer') {
+            style.cursor = '';
+        }
+    }
+
+    _updateForMobile() {
+        if(!global$1.sessionActive) return;
+
+        let controller = {
+            option: "MOBILE",
+            raycaster: this._getRaycaster("MOBILE"),
+            isPressed: this._isControllerPressed("MOBILE"),
+            closestPoint: null,
+            closestPointDistance: Number.MAX_SAFE_INTEGER,
+            userDistance: Number.MAX_SAFE_INTEGER,
+        };
+        if(this._toolHandlers[this._tool]) {
+            let skipUpdate = this._toolHandlers[this._tool](controller);
+            if(skipUpdate) return;
+        }
+        this._updateInteractablesMobile(controller);
+    }
+}
+
+let pointerInteractableHandler = new PointerInteractableHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const KEYBOARD_SCALE = 0.6;
+const KEYBOARD_VERTICAL_OFFSET = -0.275;
+
+class Keyboard {
+    constructor() {
+        this._id = uuidv4();
+        this._pivotPoint = new Object3D();
+        this._interactables = [];
+        this._pageInteractables = [[],[]];
+        this._keyboardPage = 0;
+        this._owner = null;
+        this._keysPressed = new Set();
+    }
+
+    init(scene) {
+        this._scene = scene;
+        this._setupKeyboard();
+    }
+
+    _setupKeyboard() {
+        this._keyboard = new ThreeMeshUI.Keyboard({
+            language: 'English',
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+            fontSize: 0.035, // fontSize will propagate to the keys blocks
+            backgroundColor: Colors.keyboard,
+            backgroundOpacity: 1,
+            backspaceTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDoyNTJDRDY5NkEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyNTJDRDY5NUEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6RUVFQjQyNUZBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6RUVFQjQyNjBBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+rrf2SgAADoVJREFUeNrs3QuQ1VUBx/Gz7LI8ZtTJ0VFBCAhDBR+h+SCjgikqbVIIMQUFRQgFfAT2MOXhA8g3Q2iRRsSjEBDIB2Cv6TU1PNJpLJqmoZIZkB6Ay0tYdju/OecSMAvce/eee/97zvczcwajZXf//3PP73/O+Z//+Vc1NjYaAGlqxSkACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQAkrqbSv0BDQ4Np1SrNHGpsbDx53bp1o7Zt29a7tra2yv7vBj6S8Tpw4EDrdu3a7evTp8+Ctm3brt60aZPp2rVr2gGQsFOqqqqe7t2793CFoP1vBQJnJXKq5+rq6n72P0fZP19NvgeQqO62fNeWj9kPgT4QnJG0dLRl1q5du/raPzczB5AWpf/ravyciqR1raur61/pX4IAKK8xtiy3pQunAjU1NV0IgDSojz/Dltm2nMTpgFfxSR/mAMI7w5ZnbbmOU4GjNBAAcbvElhdsuZBTgSxiCBDOQFtW0fhBAKTnXlsW2XIapwJZxhCgtNrZ8pQtozkVIADSojWdz9vyCU4FGAKk5aO2vErjBwGQnhtsWWzLuZwKEABpedCWubacyakAcwDpONWWZ2wZyqkAPYC09PJdfho/CIDEDDDu/n5/TgUIgLR8yTf+XpEcz35bDkRwHHv5aDIHEFKtLZNs+Xokx7PLuInLNbZU+d6MFi61aWHH8XtbnrNlq3FrMIbbchkfVwKglDrZ8k3jbvXF4E+23OMbf85KW9baMsuWU1rIcagnpr0Vdh72d0ttediW2/nYEgCl0NuWb9lyRSTH809/lVzbxP8335Z9/s+s9wR+aMtIW/Yc9ffbbBnrhzZ38vFlDqA5rvFXxlga/zvGPZ249jhfs8SWm/wQIasW2jKqicafs9/3cL7NR5gAKNYdvjvZMZLj0Rj5WlvW5/G1S30I7Mxot/82W+pO8HUHfA9gPh9lAqAQ7Y1b3KNuf20kx7TFlmG2/K6Af7PSDxXqMnQcuvLf7Icp+Tjoj2EhH2sCIB+62mtxz/iIjmm3Lbfa8pMi/q02Lh3hu9RZGPOr219f4L9TCIymJ0AAnIh27Flty9URHdMe8/8diYql4cDgCvcE5vvGv7vIf6/5DN0tWMbHnABoyiB/hewZ0THpQ69lymtK8L1W+hDYUYHjWGDcLb26EpyPW4x7XBsEwCEP+G7/6REdk7q999nyUgm/52o/j1DOnsA832j3lej75UJxPU2eANC2XXNsmRrh8f/Flh8F+L4vGzep9l6ZGv8YH2altN24uQ0kHAB6J98rxi0kidG/AzScnGVlmBOYa9xinj0Bzw8SDQCtedc7+WLetqt74CHNj20ZEmhO4Af+yh8yYNi1KdEA0EyyJrS6RH6cHWy537hXkYXymin9OoHvG3fbcV/A3/vTxq0lQEIBoON71LinxtonUqdqnE8E/hkrjFuVV4o5AV357ww4dBEt6da8z/to8keK+WGg033DH5hgvd5l3JLYiQF/xovGLc7RuP3kIr+HJvzGmeLv8+dDD3VpGfHZNPd0egB6J9+qRBt/zgRbHglcx7rdOLTIOQFd+bXJyruBr/wpDP0IgMPoLbzLfPKnTpuYTAv8MzQxqCXHOwts/Po3IXfzudL3UjryMUgnAPQoqN7G25mqPUQLg6YG/hnqCejWaj6TeAv9lb8+4O9zkR+a0O1PZA5Am1jonXxjqNImadWjJtmmBPwZS/yfCuCTjvE1WtuvCb89AX+Pnv7Kfw7VnkYPoLP/8NH4j2+yCb+voeph2DHmBHTlvz3wmP9i41b70fgTCYCP+wq/hqrMiyYFJwX+GSv8+P7whq4He0q5tr8pvf2VvzvVnMYQ4HpbnrblLKqx4J5AvQ+DkHMCGpZpc5VfG/dcfsgx//nG3VKk8ScSALrFpQU+ranCojzsG+SMgD9DG3n81ZZNJux9/u5+6HEe1Rp/AJzqG/5oqq7ZptvSaNy256GEfvz2Qt/4GfMnEABK+Nl+3I/SmOG76g+1wN9dt/q03qMb1Vi8ljIJ2Ne4Lapo/KWnNQITW9jv3MO4iUUafwIBoCe4ljPGC0rDgAkt5Hft5q/8Pam2uAOg1o9T9agoT3GF91gLCAE9z69nPM6nuuKeA9Bz7brFN5gqKnsIVPk/s0aNnhV+CQSAXr+tVzv1oXoqNhzQsuEnM/Q7dTFuGTFX/siHAHqF1Qoaf8VpQ5G7M/K76Gk+LSz6ENUSdwDoST6tF2dmNxvUA6j08xVa5KPn+S+mOuIOgCn+A9eOKskMzQVo3cVdFWz8Wk3Ivg4xB0B9ff0A+8eDVEVmaTL2jgp0+79n3M5OiDkAqqqqBlENmTfTuFuE5fi8aKJPLyK5itOexhCgPdWQedVlHIdrDugiTnk6AbCSasi8BX4Y0FCGn6WXeGr9x05OexoBoGW+L1IVmaV3Derpy3fL9PMUMnruQ7sHvcfpjz8A9tsy3jTvXfYId+VX499dgZ+ti4K2HK+jGuIOANlq3B7+z1Ilmbry31bhrrie9b/RhHkXIUy2FgLt9eNM7Rq7i6qp+JV/aEa64LlXk9MTiDwAcrT45CZbtlA9FbHIhN/Dr1C5jUb3Uz3xB4DozsBnbFlHFZXV/AqO+fMZDgyiJ5BGAMibtnzKuOcDEJ7O88iMNzANB4YwJ5BGAMh2PxadQlUFpS21bzYt47bba8wJpBMAop1rJ/sxIJVeenpRp576O9iCfucVPgRYJ5BAAOTo4RC9AejPVFvJaLu1sSbsu/pC0b6Ag7kopBMA8ks/L8CiodJ0+/WW3pAr/EI/3q1Xk+uOEcuGEwkA2WzcoqHvUH3NavwaUoV8V18P30C/VoYQuMWUb6kyAZABWjSk21V622091ViQ3Cu6Q4759b7G523pb9ybnMaWYU7gVuYE0gmAnGm2fMGWbVRlXub6xhhypWUH3yA/ctjfzfTDjZD0ANGNzAmkFQC59P+sLW9QnSe88o8JPF4+x9fHh4/6e20vpjcFjwp8jJoYHGbLf6nudAJA1vt5geVUaZN0q29EGcb8Wkx06XE+a9ru/Z4yXBAq/RATAVABeg21JoOeolqPsMB3v0POlXQx7pbipXl87ZNlmBNY7nsbzAkkFACimeB7/VVmH9V7qNsf8j5/Jz/+vryAfzPThN9yfLEfDnB3IKEAyNFOttfb8o+E61ZP9WlXnZCTYnphqx7cKnTr7tyW4+MCn4PcpiLbaeppBYDo/vB1tvw8wXpd6K9+IXtBvfxVtjmbhc70PbbQnwM95LSb5p5WAMgfjLs1tDihOv2VcRurhLzPr5d2zPMh0FxPmPATg8v8z2A/gcQCQLb6EHg0gWPd4a+oIWfAu/oGVcp39Wli8CuBz80c4yZEkVgAGH81vN+420P/ivg437LlbwG/v/brf92WCwJ87+m23Bf4/KynyacZADkvGLerzFuRHl+bgF1/TfTpLb0fCPj7z7DlgYDfv4Ymn3YA5MbInzdxTg7qtVp9A3xfjfUX+u5/aFNtmRTg++rOwydp8gSA8d3kgb5HEBO9Zu05c+Q6/OY6z4/5e5TxOCaXOARaG7dQ6WqaPAGQs8PPCUw0cc0O6826Wgl3eQm+l7r9q41b419uuRCobub3qTVuzcEwmjsB0JTHjVssEtM25KeZwlfnHe1K4xb5dKrgcSgEHmnmmF/1O5KPOQFwPFoxpseK/xhZT0BDnGIW6lxi3DLijhk4Dt0eLPYWrtYYjOPjTQDk47fGrRx8OaJj0qTgogLH7woMLZzqlqHj0K5C04vo2Y3nY00AFEKTg1+0ZVZEx3SunxP4YB5fe4Utr2Ss8R/eE5iW55yAhg5f5uNMABRjl+823m3c1mOxhMDCE4TAVX7eoEOGj+OrefQEvmHC3EYkABLzjHEzx5sjOR6N67VPX88m/j9NFs7LeOPPmWDLY030BGp843+Ij27+WBl1fLoiaqMRvbb8sgiOR1f5l3y4/dS4xTH9fff67BZ0HAqBM427vfeOcRuS6AGoQXxkCYBS22DcC0m0p93gCI5H9/Q1x7HF9wDPaKHHMdTXx1YfBm34qDIECEUPEN1g3Fr1WJzVght/jhr9+2n8BEA5NBg3CaW95vZyOkAApGmOHxJs4lSAAEjTz2zpZ9LcbgwEAKy/2/I53yMACIAE7fZzAtptqJHTAQIgTXpYRduQ/4dTAQIgTUuM23HmTU4FCIA0aRvyAcbtRQ8QAAnS0tQhJq4nCkEAoABaKKQnCvUyCl5QCQIgUXpH4bUm7XcUggBI2irj1gv8hlOBo1QRAGnQXoPaaWgppwKHqSEA0vG2LcNN83a5RVy2EwBp0XZj2rVG21Tv5HQkTfX/i+S7IInS1lxvHzx48HFbLuB0pKVVq1ampqZGexu+QQCka82GDRtGbNy4cXRtba027eTd9fGr3Wt17tx5db9+/WZXV1dX/BeqamzkGRYg2d4IpwAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAA4pv8JMAAdr12nbQhkBgAAAABJRU5ErkJggg==',
+            shiftTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo0NzY4M0Y0M0EzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo0NzY4M0Y0MkEzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MDYyMjJFRUJBM0UyMTFFQUE1QjVGOThGNjlDRTRBQzgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MDYyMjJFRUNBM0UyMTFFQUE1QjVGOThGNjlDRTRBQzgiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+MDNebAAACdBJREFUeNrs3X2slmUdB/DrdEDARMyDhLiTc7Oi5rKIOkZvaOl60aikyNLIsiSDZb62MqaVIhCt9aeL+qOXsdGqZWPTJRpGgIt0vdu0nFQUVhuOdQKy0/XzfnC8ezjnec5zv3w+2286FDjP776v77mu81zPdfcMDQ0loJmeowUgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAUF3jtKB5NmzYcNLKlSvPmzZt2sCOHTv+MH/+/HsXLlz4R50RADRAX1/fywYGBuZOmTJl1s6dO6f39/fvzr8sABqoZ2hoSBea5bJcq3ONP+jXv5rr6lxuCAFATb0q16ZcvUf47x/N9TVtEgDU8FrnWp9r7lH+n7/mek2ux7WrGbwL0ByLn2Xwhxm5btcqMwDq5YxcW3M9b5j//8W5vqdtZgDUw7JjGPypNQs4RdsEANX3jlwLjvH3vDDXDVpnCUC1nZRrS64XjeD3/ifXG3M9oI1mAFTTrSMc/GFiri/nmqSNAoDqOTfXVaP8M16bis1BWAJQpeua62e5zmnDn/WvXHNyPaytZgBUwzVtGvzh5FzLW6GCGQAl99JUbPc9sc1/7gdzfVN7BQDldmeuCzvw527LNZBruxZbAlBOCzs0+EN/rs9qsRkA5RQ79x7MdVoH/47/5np7rru12wyAclne4cEf4gCZVan9P19AADAK5+e6fIz+rrNyXafllgCUw3Nzbcg1awz/zidTsU34Ie03A6C7rh/jwZ9aS4CV7h8zALorjvj6Serefv0rc93hMggAuuO+1lS8W55IxRFij7oUlgCMrUVdHvwh3nr8vEthBsDYik058Tn96SX4WuIGeneuH7gsZgCMjRUlGfxPfxNpfT1TXRYBQOfFgZ3vK9nXFEeI3eTSWALQWfHR3I25Zpbwa3sq1+tybXaZzADojJtKOvhDb2spMN5lEgC0X3x3XVzyr/H1uT7lUlkC0F5xQGds+Hl1Bb7W2CYcZwn+2mUzA6A9rqrI4A+xTfiLLpkZAO0Rx3rHAZ99Ffu6L8m1xuUTAIxuhvb9VDzdp2riScOzkyPELAEYsYUVHfwhnjS81CU0A2BkpqViu+/pFX4NcYTYW3Ld43KaAXBsbqv44A/7jhA7weUUAAzfBbk+VJPXcnauG11SSwCGZ3Ku+1sDpy72pOJJRQ+6vGYAHN3VNRv84bhcy1xaMwCO7pWpOOWnrmvmK3KtdpkFAIeKD9Osz/WGGr/Gv7eWAo+53JYAHOjjNR/84fmpeIAJZgDsJ97ui+2+Mxryet+VHCFmBsAzbm3Q4E+tWcBkl10AkNK8XB9o2GuODzg5QswSoPFiu28c8XVmA1/7/1JxyMkmt4EZQFN9pqGDf9+9F0uBXreBAGiieKLOlQ3vgSPELAEaKZ7oG5+QG9CKp48Qi9OOHtYKM4CmWGLwP2Pfk4YxA2iEeIhGnJ1/slYc4L251mqDAKi7OOLrndpwiD+1lgL/0ApLgLq63OA/ojNyfUEbzADqKnb6xRFfp2nFUcURYndpgxlA3XzO4B+WOArN3gABUCtxxNcV2jAss5JtwpYANRJvc8V237O0Ytj+nYpzA36lFWYAVXeNwX/Mjk/FacKWAmYAlZ/O3pd89HWkPpzrG9ogAKoovnvdnes8rRixeKxY7A34s1ZYAlTNIoN/1E7NtUIbzACqJj7iG9t9+7SiLRwhZgZQKTcb/G0VewP8HEUAVMJFqXlHfHXaS1JxeAqWAKU2NddPc71YK9pud665raUVZgCltNTg75gJqTg3YIJWCIAyigMuP6YNHe/xJ7TBEqCM353uTcU5f3TWP1OxTfgRrTADKIslBv+YiXdXVmmDGUBZxE+o43P+J2jFmIp3Wr6jDQKg276b62JtGHOPtGZdjhCzBOiahQZ/18Ruy5u1wQygW+J0ny3JKT/dFI8Xe1tyhJgZQBfcYvCX4v6Nx4tN0goBMJbOTcVn1em+s3Ndqw2WAGMlvttsat14lMPOVDxn0BFiZgAdd4PBXzpTcn0pOULMDKDDZue6P9dErSileNryHdogADrlx7nepA2l9Zdcc3I9rhWWAJ347mLwl1u8K3ObNpgBtNsLcv0iOeWnCuKGjucv/lArzADaZZnBX51vaqnYG+B6CYC2uDDX+7WhUmbmul4bLAFGK95e2ty6oaiWwVQcIfaAVpgBjNQtBn9lxYatVck2YQEwQrGzbLE2VFocIbZEGywBjrkvqTjdd45WVN4TqTg34FGtMAMYrk8a/LVxSireFcAMYFjiWO/4wdGJWlErl+b6tjYIgGcTz6Cbpw21E9uDB3L9TSssAY7kEoO/tmI356e1wQzgSOKxXrHdt18ramtPrrfmWq8VZgAHW27w195xqdgb4EnDAuAA8Sk/R3w1w8tzXacNlgD7xE6xDak47INmeDIVG71+aQbAtQZ/48RbvCvc/2YAs1JxxNfxxkQjfSTX1wVAc8UTfecaB421PRU7Ph+zBGieRQZ/452aik98mgE0zIxcW3NNNwYaLx4vFkeI3WkGUHNr165Ne/fujX+93eBnvzGwMlffxo0bBUCdrVu3LgIg0v4y9z37iQ+A3bh161YBUGd9fX2n9/T0LHW/cxhLJk+ePFsA1Ns5uV7hXucw4mlPFwiAenM+HEczQQDU2K5du34/NDS0033O4QwODv5GANTYzJkzN/f29n7Frc5hrOvv7/9R0150E/cBxEdC423Ai3Kd6b5vvDghaEsqTg/eJgCao78VAONzPdXlryX+/vg4chPennwolePjuD2tf8YThX/X1EEwrsHJv61kiT/QkL7vyHWPiYefAXCgppxCPNGlFgCAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAHgWtRTr0vtpuNQ49xzuBjN9fOGvM4tLnV59AwNDelCORyX61u53lPj1/jbXG/Otd3lFgAcZM+ePZPWrFlz6eDg4Lze3t5p8Us1eFnjcw3u3r37rgULFqyeOnXqDldaAAB+BgAIAEAAAAIAEACAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQACAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAEAjMb/BRgAdeTDT5k20RsAAAAASUVORK5CYII=',
+            enterTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozOEE3NEZCM0EzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozOEE3NEZCMkEzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6Rjg2REZFNTNBM0UxMTFFQUEyRjRDNThCOUZCMENEMDIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6Rjg2REZFNTRBM0UxMTFFQUEyRjRDNThCOUZCMENEMDIiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+kfI9DgAACRJJREFUeNrs3X2slmUdwPHreOQtOkovI4RiKtDQXv5omb2MRkkGJWSRBhW9TLJFZmkmRi+Sc9WqtbbW3JTcaoRtZa2yRi9jtLWk/ihWttoysIkUURAI8tI5nn6/ruf808wdgTjnea7PZ/vNprQ957rP+fKc+7nv6+4bHh4uQJv6BAAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQABEAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEAuiIAGzZsKHPnzi0LFy50RDgpO3bsmL9ly5YL+/v7pwwODg6Nmx+0vr7+CRMmHFixYsWvJ02a9NDGjRvL0aNHy+rVq8f0dZ3pW4Ye8vqZM2euXLRo0cXxQzZhaGhoOH7wxvxF5V+yfVmA/v7DEYEfx7+6PWb7eFgwAaBXrMo3k5MnT5547rnnjufXOTdmcczlMTtjHh7LF3OG7xt6wAUxn4yZ2CWv97yY9+c7Fu8A4ORdFPPMLnvN82L2jPWL8A6AXjDUpa95SADg1PwwDXfha35UAAABAAQAEABAAAABAAQAEABAAAABAAQAEADgiXA7cPcfvxfHvCTmyTGbY+61LAhA78sf+ptLvRf+qZ1/tybmjpiPlnFwpxkCwKn39JhrYj4Qc/Zj/LcPx9wXs8lS4RxAb1kac3fnb/6zH+fPLbNUeAfQO3K7q7UxV8VMGcWf77NkCED3yx/kK2LWl7rx5Wgdt3QIQHd7bszHYq48wXCAAHSh3Nr66pjrS90+GgSgES+IuSXmtZYCAWjH5JgPxXywPP7ZfRCAHrOk1M/uF1gKBKAd53R+8PPxsFMsBwLQjuWlPsvu2ZYCAWjH/Jh1pT7JFgSgEXmS792dH/7plgMBaEfervvxUk/2gQA04qxSP9p7b8xTLAcC0I5LY24t9V59EIBGnF/qJbz50d4ky4EAtGNV5y3/8ywFAtCOOaWe5HubpUAA2pFv8d8Vc2PMsywHAtCOl8XcFHOZpUAA2pF36l1b6kd7z7AcCEA78m/73KHnRZYCAWhHbsh5XedvfuuFADTknTE3xFxoKRCAduQOvLn3/pu69PW3timoTVAF4JToL/Wuvfxcv5tP8h1p7LgdihkWAgE4GXnXXl6/f0kPfC35iLC8LDl3GO7lpz8Nd2I3x7evAJyoqaVezJPP2jurR76mxTEv7Pzw93oABmMGisfcCcAJyO2385FbvbYhZ16lOMu3NwLw2PL3+4+U+pRdvzciAA3JM/t5ks9HewhAQ1/r80u9fn+lww7tBCDPhOcGHev8XgxtBWBB5wd/sUMN7QTgaaV+rPe+4ll70FQA8q69fOTWSx1eaCcAeeVbPl337aVe3AM0EoA3l3qv/nyHFNoJwHNKvZLPs/agoQDkpa5rOm/5fbQHDQXgos7b/aUOH7QTgLzjKx+8kR/tTXPooJ0AvKbU6/cvdsignQDkAzdyT773xExwuKCdALy11Mt4L3CYoJ0A5Gf560v3bsgJAnCC8ok7uVHHOQ4NtBOA82Iuj/m8QwKnz3jZSPHlxdV80GwA8my/z/ahxQBMnDhxx+Dg4B6HAxo8BzAwMLB59uzZGaO80McuvdDSO4Dp06fvmzp16sZSPwV40GGBhgJw7NixMjQ0lP/ztlIv+73LoYFGAvBf7it1g4+3xPzWIYK2AjBiU8ySmM/FHHCooK0ApIdKvQX4jTE/d7igrQCM+EmpD/LMjUD2OmzQVgDSP2NujVkU802HDtoKwIjfxFxR6uO+djqE0FYARny582tB/nPYoYS2ApB+33knkCcJfWQIjQVgxLdiXhnzhZjDDiu0FYD095jrYl4Vs8WhhbYCMOLezrmBfEDoPxxiaCsA6WjMp0v9yPAbDjO0FYAR22OuLHWH4fsdbmgrACO+FvOKmC/FHHLYGSc/e2cIwOmzK+aamJUxP/P9x1jq6+vrF4CxcU/MZTG3xDzsW5GxcPz48d0DAwN/FoCxkbcX3xxzacwPfDtymv11zpw5t8e7gO+M9Qs5s/EDsa3U5xFcHXN9zPk98nUd7vzKk4G3x+I4edcfMzHmj/nuc968eT+dNWtWEYCx969STw5ujbmp1E8Mul1eCHVjzKSYfod4XBg56Zc3sO09cuRIOXjwoACMI7+LeUfM9zu/Hszv4q8lt1j/g0OKcwBPTO5M+vVS7yv4YsyxLv06nuRQIgAn7i8x18a8oXTnfQVuj0YAToH8hGB5zLqY/ZYDAWhPbkX2qVLvK/ih5UAA2vSrmMWlnii0FRkC0KivlHqS8A6/ayMAbXqg1IuHlnfeGYAANOjbnXcDuV35EcuBALQn7yvIB5bkfQVbLQcC0Ka8xTi3IstLcHdbDgSgPY/EfDbm1TF3Ww4EoE35iPN8VsGqmD9ZDgSgTRtjLom5Lea45UAA2pO7vqzpvCP4heVAANr0vZjXlXqrsecVIAANyvv0cy/C3JPwR5YDAWhTbkW2rNRdip0kRAAalJuN5FZkS2LujHnUkiAA7clNIvMR5/mRoW28EIAG5V2Fm0r9yPAzpT7bEASgMXkJ8dpSLyneajkQgDblPoR5kvATMfssBwLQnnxs2fpSTxLeYzkQgDb9MmZpqRuQPDDK/88Ey4YA9Jbcgiw3H7lzFH/2sOVCAHpPbkZ6VamXFG//H3/mUMxXLRUC0Lu+W+oORPmR4d92795djh37z0OMHoy5ofgEgVHybMDutTdm7cGDB+/atm3bsqGhoX0LFizYPGPGjPstDQLQiP3792+fNm3agZ07dz6ya9euPREAi8Ko9Q0P29oeBAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEAAbAKIACAAAACAAgAIACAAAACAAgAIACAAAACAAgAIACAAAACAAgAIACAAAACAAgAIACAAAACAPx//FuAAQDSBME/mc3EEgAAAABJRU5ErkJggg==',
+        });
+        this._keyboard.scale.set(KEYBOARD_SCALE,KEYBOARD_SCALE,KEYBOARD_SCALE);
+        for(let i = 0; i < this._keyboard.keys.length; i++) {
+            this._setupKey(i);
+        }
+        this._pivotPoint.position.setY(KEYBOARD_VERTICAL_OFFSET);
+        this._pivotPoint.add(this._keyboard);
+    }
+
+    _setupKey(index) {
+        let key = this._keyboard.keys[index];
+        key.setupState({
+            state: InteractableStates.IDLE,
+            attributes: {
+                offset: 0,
+                backgroundColor: Colors.keyboardButtonIdle,
+                backgroundOpacity: 1,
+            },
+            onSet: () => {
+                this._keysPressed.delete(key);
+            },
+        });
+        key.setupState({
+            state: InteractableStates.HOVERED,
+            attributes: {
+                offset: 0,
+                backgroundColor: Colors.keyboardButtonHovered,
+                backgroundOpacity: 1,
+            },
+            onSet: () => {
+                this._keysPressed.delete(key);
+            },
+        });
+        key.setupState({
+            state: InteractableStates.SELECTED,
+            attributes: {
+                offset: 0,
+                backgroundColor: Colors.keyboardButtonSelected,
+                backgroundOpacity: 1,
+            },
+            onSet: () => {
+                this._keysPressed.add(key);
+                if(key.info.command) {
+                    switch(key.info.command) {
+
+						// switch between panel charsets (eg: russian/english)
+						case 'switch-set' :
+							this._keyboard.setNextCharset();
+							break;
+
+						case 'enter' :
+                            this._owner.handleKey('Enter');
+							break;
+
+						case 'space' :
+                            this._owner.handleKey(' ');
+							break;
+
+						case 'backspace' :
+                            this._owner.handleKey('Backspace');
+							break;
+
+						case 'shift' :
+							this._keyboard.toggleCase();
+							break;
+
+					}                } else if(key.info.input) {
+                    this._owner.handleKey(key.info.input);
+                }
+            },
+        });
+        let interactable;
+        // Need to make switch run on release otherwise _keysPressed prematurely
+        // becomes empty
+        let emptyFunction = () => {};
+        if(key.info.command == 'switch') {
+            // switch between panels
+            interactable = new PointerInteractable(key);
+            interactable.addAction(() => { this._switchPanel(); });
+        } else {
+            interactable = new PointerInteractable(key);
+            interactable.addAction(emptyFunction);
+        }
+        if(index <= 32) {
+            this._pageInteractables[0].push(interactable);
+        } else {
+            this._pageInteractables[1].push(interactable);
+        }
+        this._interactables.push(interactable);
+    }
+
+    _switchPanel() {
+        this._keyboard.setNextPanel();
+        if(this._owner) {
+            pointerInteractableHandler.removeInteractables(
+                this._pageInteractables[this._keyboardPage]);
+            this._keyboardPage = (this._keyboardPage + 1) % 2;
+            pointerInteractableHandler.addInteractables(
+                this._pageInteractables[this._keyboardPage]);
+        }
+    }
+
+    isKeyPressed() {
+        return this._keysPressed.size != 0;
+    }
+
+    setOwner(owner) {
+        this._owner = owner;
+        this._scene.add(this._pivotPoint);
+        pointerInteractableHandler.addInteractables(this._pageInteractables[this._keyboardPage]);
+        undoRedoHandler.disable(this._id);
+    }
+
+    removeOwner(owner) {
+        if(this._owner == owner && this._pivotPoint.parent) {
+            this._owner = null;
+            this._pivotPoint.parent.remove(this._pivotPoint);
+            pointerInteractableHandler.removeInteractables(this._interactables);
+            undoRedoHandler.enable(this._id);
+        }
+    }
+}
+
+let keyboard = new Keyboard();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class TextField extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'] || null;
+        this._onEnter = params['onEnter'] || null;
+        this._onUpdate = params['onUpdate'] || null;
+        this._defaultContent = params['text'] || "";
+        this._initialContent = params['initialText'] || "";
+        this._maxLength = params['maxLength'] || null;
+        this.content = "";
+        if(global$1.deviceType == "POINTER") this._setupEventListeners();
+        this._object = ThreeMeshUIHelper.createInputBlock(params);
+        this._pointerInteractable = new PointerInteractable(this._object, true);
+        this._pointerInteractable.addAction(() => { this._activate(); });
+        this._active = false;
+
+        if(this._initialContent) this.setContent(this._initialContent);
+    }
+
+    _setupEventListeners() {
+        this._keyListener = (event) => { this.handleKey(event.key); };
+        this._clickListener = (event) => {
+            if(!keyboard.isKeyPressed() && this._pointerInteractable.getState()
+                != InteractableStates.SELECTED)
+            {
+                this.deactivate();
+            }
+        };
+        this._pasteListener = (event) => { this._handlePaste(event); };
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
+            if(this._id != message.id) this.deactivate();
+        });
+        pubSub.subscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED, () => {
+            this.deactivate();
+        });
+        if(global$1.deviceType == "XR") {
+            pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, () => {
+                this.deactivate();
+            });
+        }
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED);
+        pubSub.unsubscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED);
+        if(global$1.deviceType == "XR")
+            pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
+    }
+
+    _handlePaste(e) {
+        if(e.clipboardData.types.indexOf('text/plain') < 0) return;
+        let data = e.clipboardData.getData('text/plain');
+        let valid = true;
+        for(let key of data) {
+            if(!ValidKeys.has(key)) valid = false;
+        }
+        if(valid) {
+            this.appendToContent(data);
+            e.preventDefault();
+        }
+    }
+
+    handleKey(key) {
+        if(inputHandler.isKeyCodePressed("ControlLeft")) {
+            return;
+        } else if(inputHandler.isKeyCodePressed("MetaLeft")) {
+            return;
+        } else if(ValidKeys.has(key)) {
+            this.appendToContent(key);
+            if(this._onUpdate) this._onUpdate();
+        } else if(key == "Backspace") {
+            this._removeFromEndOfContent();
+            if(this._onUpdate) this._onUpdate();
+        } else if(key == "Enter") {
+            this.deactivate();
+            if(this._onEnter) this._onEnter();
+        }
+    }
+
+    appendToContent(str) {
+        this.content += str;
+        this._updateDisplayedContentWithCursor();
+    }
+
+    _removeFromEndOfContent() {
+        if(this.content.length > 0) {
+            this.content = this.content.slice(0, -1);
+            this._updateDisplayedContentWithCursor();
+        }
+    }
+
+    _updateDisplayedContentWithCursor() {
+        this._updateDisplayedContent(true);
+    }
+
+    _updateDisplayedContentWithoutCursor() {
+        this._updateDisplayedContent(false);
+    }
+
+    _updateDisplayedContent(addPipe) {
+        let newContent = this.content;
+        let textComponent = this._object.children[1];
+        if(this._maxLength && newContent.length > this._maxLength) {
+            newContent = "..." + newContent.substring(
+                newContent.length - this._maxLength);
+        }
+        if(addPipe) newContent += "|";
+        textComponent.set({ content: newContent });
+    }
+
+    _activate() {
+        if(global$1.deviceType == "XR") {
+            if(this._active) return;
+            this._active = true;
+
+            this._updateDisplayedContentWithCursor();
+            keyboard.setOwner(this);
+            this._addSubscriptions();
+        } else if(global$1.deviceType == "POINTER") {
+            if(this._active) return;
+            this._active = true;
+
+            this._updateDisplayedContentWithCursor();
+            document.addEventListener("keydown", this._keyListener);
+            document.addEventListener("click", this._clickListener);
+            document.addEventListener("paste", this._pasteListener);
+            global$1.keyboardLock = true;
+        } else if (global$1.deviceType == "MOBILE") {
+            let content = prompt("Enter Value", this.content);
+            if(content || content == '') {
+                this.setContent(content);
+                if(this._onBlur) this._onBlur();
+                if(this._onEnter) this._onEnter();
+            }
+        }
+        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+            'id': this._id, 'targetOnlyMenu': false });
+    }
+
+    deactivate() {
+        if(!this._active) return;
+        this._active = false;
+
+        if(global$1.deviceType == "XR") {
+            keyboard.removeOwner(this);
+            this._updateDisplayedContentWithoutCursor();
+            ThreeMeshUI.update();
+            this._removeSubscriptions();
+        } else if(global$1.deviceType == "POINTER") {
+            document.removeEventListener("keydown", this._keyListener);
+            document.removeEventListener("click", this._clickListener);
+            document.removeEventListener("paste", this._pasteListener);
+            global$1.keyboardLock = false;
+            this._updateDisplayedContentWithoutCursor();
+            ThreeMeshUI.update();
+        }
+        if(this._onBlur) this._onBlur();
+    }
+
+    setContent(content) {
+        this.content = content;
+        let textComponent = this._object.children[1];
+        let oldContent = textComponent.content;
+        if(oldContent == content) return;
+        if(oldContent.length > 0 && oldContent.endsWith("|")) {
+            this._updateDisplayedContentWithCursor();
+        } else {
+            this._updateDisplayedContentWithoutCursor();
+        }
+    }
+
+    setDefaultContent(defaultContent) {
+        this._defaultContent = defaultContent;
+    }
+
+    isBlank() {
+        return this.content == "";
+    }
+
+    reset() {
+        if(this._initialContent) {
+            this.setContent(this._initialContent);
+        } else {
+            this.content = "";
+            let textComponent = this._object.children[1];
+            textComponent.set({ content: this._defaultContent });
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class NumberField extends TextField {
+    constructor(params) {
+        super(params);
+        this._lastValidNumber = params['initialText'];
+        this._minValue = numberOr(params['minValue'], -Infinity);
+        this._maxValue = numberOr(params['maxValue'], Infinity);
+    }
+
+    handleKey(key) {
+        if(isFinite(key) || key == '-' || key == '.') {
+            this.appendToContent(key);
+            this._update();
+        } else if(key == "Backspace") {
+            this._removeFromEndOfContent();
+            this._update();
+        } else if(key == "Enter") {
+            this.deactivate();
+            if(this._onEnter) this._onEnter();
+        }
+    }
+
+    _update() {
+        let number = Number.parseFloat(this.content);
+        if(!isNaN(number)) {
+            if(number != this.content) {
+                this.setContent(String(number));
+            }
+            if(number >= this._minValue && number <= this._maxValue) {
+                this._lastValidNumber = String(number);
+            }
+        }
+        if(this._onUpdate) this._onUpdate();
+    }
+
+    _updateDisplayedContentWithoutCursor() {
+        let number = Number.parseFloat(this.content);
+        if(Number.isNaN(number)) {
+            this.content = String(this._lastValidNumber);
+        } else if(number < this._minValue) {
+            this.content = String(this._minValue);
+        } else if(number > this._maxValue) {
+            this.content = String(this._maxValue);
+        } else {
+            this._lastValidNumber = String(number);
+        }
+        this._updateDisplayedContent(false);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const HEIGHT$b = 0.05;
+const WIDTH$b = 0.31;
+const TITLE_WIDTH$b = 0.13;
+const FIELD_HEIGHT$9 = 0.03;
+const FIELD_WIDTH$9 = 0.17;
+const FIELD_MARGIN$9 = 0.01;
+const FIELD_MAX_LENGTH$d = 13;
+
+class NumberInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._minValue = numberOr(params['minValue'], -Infinity);
+        this._maxValue = numberOr(params['maxValue'], Infinity);
+        this._lastValue = params['initialValue'] || 0;
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInput(title);
+    }
+
+    _createInput(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$b,
+            'width': WIDTH$b,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$b,
+            'width': TITLE_WIDTH$b,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._numberField = new NumberField({
+            'initialText': String(this._lastValue),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$9,
+            'width': FIELD_WIDTH$9,
+            'margin': FIELD_MARGIN$9,
+            'maxLength': FIELD_MAX_LENGTH$d,
+            'minValue': this._minValue,
+            'maxValue': this._maxValue,
+            'onBlur': () => { this._blur(); },
+            'onUpdate': () => { this._update(); },
+        });
+        this._object.add(titleBlock);
+        this._numberField.addToScene(this._object, this._pointerInteractable);
+    }
+
+    _update() {
+        if(this._onUpdate && this._validate()) {
+            this._onUpdate(this.getValue());
+        }
+    }
+
+    _blur() {
+        let newValue = this.getValue();
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
+    }
+
+    _validate() {
+        let number = this.getValue();
+        return !isNaN(number) && number <= this._maxValue
+            && number >= this._minValue;
+    }
+
+    getValue() {
+        return Number.parseFloat(this._numberField.content);
+    }
+
+    getWidth() {
+        return WIDTH$b;
+    }
+
+    getHeight() {
+        return HEIGHT$b;
+    }
+
+    deactivate() {
+        this._numberField.deactivate();
+    }
+
+    reset() {
+        this._numberField.reset();
+    }
+
+    updateFromSource() {
+        if(this._getFromSource) {
+            this._lastValue = this._getFromSource();
+            this._numberField.setContent(String(this._lastValue));
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class AmbientLight extends Light {
+    constructor(params = {}) {
+        params['assetId'] = AmbientLight.assetId;
+        super(params);
+        this._createLight();
+    }
+
+    _createLight() {
+        this._light = new THREE.AmbientLight(this._color, this._intensity);
+        this._object.add(this._light);
+    }
+
+    _getDefaultName() {
+        return AmbientLight.assetName;
+    }
+
+    static assetId = '7605bff2-8ca3-4a47-b6f7-311d745507de';
+    static assetName = 'Ambient Light';
+}
+
+projectHandler.registerAsset(AmbientLight);
+libraryHandler.loadBuiltIn(AmbientLight);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class Shape extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+        this._material = params['material'];
+    }
+
+    _updateGeometry() {
+        console.error("Shape._updateGeometry() should be overridden");
+    }
+
+    _getMaterial() {
+        let material = projectHandler.getAsset(this._material);
+        if(material) {
+            return material.getMaterial();
+        } else {
+            return Materials.defaultMeshMaterial;
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['material'] = this._material;
+        return params;
+    }
+
+    getMaterial() {
+        return this._material;
+    }
+
+    getMesh() {
+        return this._mesh;
+    }
+
+    setMaterial(newValue) {
+        this._material = newValue;
+        let oldMaterial = this._mesh.material;
+        let material = this._getMaterial();
+        this._mesh.material = material;
+        oldMaterial.dispose();
+    }
+
+    static assetType = AssetTypes.SHAPE;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class BoxShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = BoxShape.assetId;
+        super(params);
+        this._width = numberOr(params['width'], 0.1);
+        this._height = numberOr(params['height'], 0.1);
+        this._depth = numberOr(params['depth'], 0.1);
+        this._widthSegments = params['widthSegments'] || 1;
+        this._heightSegments = params['heightSegments'] || 1;
+        this._depthSegments = params['depthSegments'] || 1;
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let geometry = new THREE.BoxGeometry(this._width, this._height,
+            this._depth, this._widthSegments, this._heightSegments,
+            this._depthSegments);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return BoxShape.assetName;
+    }
+
+    _updateGeometry() {
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.BoxGeometry(this._width, this._height,
+            this._depth, this._widthSegments, this._heightSegments,
+            this._depthSegments);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['width'] = this._width;
+        params['height'] = this._height;
+        params['depth'] = this._depth;
+        params['widthSegments'] = this._widthSegments;
+        params['heightSegments'] = this._heightSegments;
+        params['depthSegments'] = this._depthSegments;
+        return params;
+    }
+
+    getDepth() {
+        return this._depth;
+    }
+
+    getHeight() {
+        return this._height;
+    }
+
+    getWidth() {
+        return this._width;
+    }
+
+    getDepthSegments() {
+        return this._depthSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getWidthSegments() {
+        return this._widthSegments;
+    }
+
+    setDepth(depth) {
+        if(this._depth == depth) return;
+        this._depth = depth;
+        this._updateGeometry();
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setWidth(width) {
+        if(this._width == width) return;
+        this._width = width;
+        this._updateGeometry();
+    }
+
+    setDepthSegments(depthSegments) {
+        if(this._depthSegments == depthSegments) return;
+        this._depthSegments = depthSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
+
+    static assetId = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
+    static assetName = 'Box';
+}
+
+projectHandler.registerAsset(BoxShape);
+libraryHandler.loadBuiltIn(BoxShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class CircleShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = CircleShape.assetId;
+        super(params);
+        this._radius = numberOr(params['radius'], 0.1);
+        this._segments = params['segments'] || 32;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let geometry = new THREE.CircleGeometry(this._radius, this._segments, 0,
+            thetaLength);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return CircleShape.assetName;
+    }
+
+    _updateGeometry() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.CircleGeometry(this._radius, this._segments, 0,
+            thetaLength);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['radius'] = this._radius;
+        params['segments'] = this._segments;
+        params['thetaLength'] = this._thetaLength;
+        return params;
+    }
+
+    getRadius() {
+        return this._radius;
+    }
+
+    getSegments() {
+        return this._segments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setSegments(segments) {
+        if(this._segments == segments) return;
+        this._segments = segments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    static assetId = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
+    static assetName = 'Circle';
+}
+
+projectHandler.registerAsset(CircleShape);
+libraryHandler.loadBuiltIn(CircleShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class ConeShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = ConeShape.assetId;
+        super(params);
+        this._height = numberOr(params['height'], 0.2);
+        this._radius = numberOr(params['radius'], 0.1);
+        this._radialSegments = params['radialSegments'] || 32;
+        this._heightSegments = params['heightSegments'] || 1;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
+        this._openEnded = params['openEnded'] || false;
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let geometry = new THREE.ConeGeometry(this._radius, this._height,
+            this._radialSegments, this._heightSegments, this._openEnded, 0,
+            thetaLength);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return ConeShape.assetName;
+    }
+
+    _updateGeometry() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.ConeGeometry(this._radius, this._height,
+            this._radialSegments, this._heightSegments, this._openEnded, 0,
+            thetaLength);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['height'] = this._height;
+        params['radius'] = this._radius;
+        params['radialSegments'] = this._radialSegments;
+        params['heightSegments'] = this._heightSegments;
+        params['thetaLength'] = this._thetaLength;
+        params['openEnded'] = this._openEnded;
+        return params;
+    }
+
+    getHeight() {
+        return this._height;
+    }
+
+    getRadius() {
+        return this._radius;
+    }
+
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    getOpenEnded() {
+        return this._openEnded;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    setOpenEnded(openEnded) {
+        if(this._openEnded == openEnded) return;
+        this._openEnded = openEnded;
+        this._updateGeometry();
+    }
+
+    static assetId = '42779f01-e2cc-495a-a4b3-b286197fa762';
+    static assetName = 'Cone';
+}
+
+projectHandler.registerAsset(ConeShape);
+libraryHandler.loadBuiltIn(ConeShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class CylinderShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = CylinderShape.assetId;
+        super(params);
+        this._height = numberOr(params['height'], 0.2);
+        this._radiusTop = numberOr(params['radiusTop'], 0.1);
+        this._radiusBottom = numberOr(params['radiusBottom'], 0.1);
+        this._radialSegments = params['radialSegments'] || 32;
+        this._heightSegments = params['heightSegments'] || 1;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
+        this._openEnded = params['openEnded'] || false;
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let geometry = new THREE.CylinderGeometry(this._radiusTop,
+            this._radiusBottom, this._height, this._radialSegments,
+            this._heightSegments, this._openEnded, 0, thetaLength);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return CylinderShape.assetName;
+    }
+
+    _updateGeometry() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.CylinderGeometry(this._radiusTop,
+            this._radiusBottom, this._height, this._radialSegments,
+            this._heightSegments, this._openEnded, 0, thetaLength);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['height'] = this._height;
+        params['radiusTop'] = this._radiusTop;
+        params['radiusBottom'] = this._radiusBottom;
+        params['radialSegments'] = this._radialSegments;
+        params['heightSegments'] = this._heightSegments;
+        params['thetaLength'] = this._thetaLength;
+        params['openEnded'] = this._openEnded;
+        return params;
+    }
+
+    getHeight() {
+        return this._height;
+    }
+
+    getRadiusTop() {
+        return this._radiusTop;
+    }
+
+    getRadiusBottom() {
+        return this._radiusBottom;
+    }
+
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    getOpenEnded() {
+        return this._openEnded;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setRadiusTop(radiusTop) {
+        if(this._radiusTop == radiusTop) return;
+        this._radiusTop = radiusTop;
+        this._updateGeometry();
+    }
+
+    setRadiusBottom(radiusBottom) {
+        if(this._radiusBottom == radiusBottom) return;
+        this._radiusBottom = radiusBottom;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    setOpenEnded(openEnded) {
+        if(this._openEnded == openEnded) return;
+        this._openEnded = openEnded;
+        this._updateGeometry();
+    }
+
+
+    static assetId = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
+    static assetName = 'Cylinder';
+}
+
+projectHandler.registerAsset(CylinderShape);
+libraryHandler.loadBuiltIn(CylinderShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class PlaneShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = PlaneShape.assetId;
+        super(params);
+        this._width = numberOr(params['width'], 0.1);
+        this._height = numberOr(params['height'], 0.1);
+        this._widthSegments = params['widthSegments'] || 1;
+        this._heightSegments = params['heightSegments'] || 1;
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let geometry = new THREE.PlaneGeometry(this._width, this._height,
+            this._widthSegments, this._heightSegments);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return PlaneShape.assetName;
+    }
+
+    _updateGeometry() {
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.PlaneGeometry(this._width, this._height,
+            this._widthSegments, this._heightSegments);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['width'] = this._width;
+        params['height'] = this._height;
+        params['widthSegments'] = this._widthSegments;
+        params['heightSegments'] = this._heightSegments;
+        return params;
+    }
+
+    getHeight() {
+        return this._height;
+    }
+
+    getWidth() {
+        return this._width;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getWidthSegments() {
+        return this._widthSegments;
+    }
+
+    setHeight(height) {
+        if(this._height == height) return;
+        this._height = height;
+        this._updateGeometry();
+    }
+
+    setWidth(width) {
+        if(this._width == width) return;
+        this._width = width;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
+
+    static assetId = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
+    static assetName = 'Plane';
+}
+
+projectHandler.registerAsset(PlaneShape);
+libraryHandler.loadBuiltIn(PlaneShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class PointLight extends Light {
+    constructor(params = {}) {
+        params['assetId'] = PointLight.assetId;
+        super(params);
+        this._distance = numberOr(params['distance'], 0);
+        this._decay = numberOr(params['decay'], 2);
+        this._createLight();
+    }
+
+    _createLight() {
+        this._light = new THREE.PointLight(this._color, this._intensity,
+            this._distance, this._decay);
+        this._object.add(this._light);
+    }
+
+    _getDefaultName() {
+        return PointLight.assetName;
+    }
+
+    _updateLight() {
+        super._updateLight();
+        this._light.distance = this._distance;
+        this._light.decay = this._decay;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['distance'] = this._distance;
+        params['decay'] = this._decay;
+        return params;
+    }
+
+    getDistance() {
+        return this._distance;
+    }
+
+    getDecay() {
+        return this._decay;
+    }
+
+    setDistance(distance) {
+        if(this._distance == distance) return;
+        this._distance = distance;
+        this._light.distance = distance;
+    }
+
+    setDecay(decay) {
+        if(this._decay == decay) return;
+        this._decay = decay;
+        this._light.decay = decay;
+    }
+
+    static assetId = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
+    static assetName = 'Basic Light';
+}
+
+projectHandler.registerAsset(PointLight);
+libraryHandler.loadBuiltIn(PointLight);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class RingShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = RingShape.assetId;
+        super(params);
+        this._innerRadius = numberOr(params['innerRadius'], 0.05);
+        this._outerRadius = numberOr(params['outerRadius'], 0.1);
+        this._thetaSegments = params['thetaSegments'] || 32;
+        this._phiSegments = params['phiSegments'] || 1;
+        this._thetaLength = numberOr(params['thetaLength'], 360);
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let geometry = new THREE.RingGeometry(this._innerRadius,
+            this._outerRadius, this._thetaSegments, this._phiSegments, 0,
+            thetaLength);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return RingShape.assetName;
+    }
+
+    _updateGeometry() {
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.RingGeometry(this._innerRadius,
+            this._outerRadius, this._thetaSegments, this._phiSegments, 0,
+            thetaLength);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['innerRadius'] = this._innerRadius;
+        params['outerRadius'] = this._outerRadius;
+        params['thetaSegments'] = this._thetaSegments;
+        params['phiSegments'] = this._phiSegments;
+        params['thetaLength'] = this._thetaLength;
+        return params;
+    }
+
+    getInnerRadius() {
+        return this._innerRadius;
+    }
+
+    getOuterRadius() {
+        return this._outerRadius;
+    }
+
+    getThetaSegments() {
+        return this._thetaSegments;
+    }
+
+    getPhiSegments() {
+        return this._phiSegments;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setInnerRadius(innerRadius) {
+        if(this._innerRadius == innerRadius) return;
+        this._innerRadius = innerRadius;
+        this._updateGeometry();
+    }
+
+    setOuterRadius(outerRadius) {
+        if(this._outerRadius == outerRadius) return;
+        this._outerRadius = outerRadius;
+        this._updateGeometry();
+    }
+
+    setThetaSegments(thetaSegments) {
+        if(this._thetaSegments == thetaSegments) return;
+        this._thetaSegments = thetaSegments;
+        this._updateGeometry();
+    }
+
+    setPhiSegments(phiSegments) {
+        if(this._phiSegments == phiSegments) return;
+        this._phiSegments = phiSegments;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    static assetId = '534f29c3-1e85-4510-bb84-459011de6722';
+    static assetName = 'Ring';
+}
+
+projectHandler.registerAsset(RingShape);
+libraryHandler.loadBuiltIn(RingShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class SphereShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = SphereShape.assetId;
+        super(params);
+        this._radius = numberOr(params['radius'], 0.1);
+        this._widthSegments = params['widthSegments'] || 32;
+        this._heightSegments = params['heightSegments'] || 16;
+        this._phiLength = numberOr(params['phiLength'], 360);
+        this._thetaLength = numberOr(params['thetaLength'], 180);
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let phiLength = this._phiLength * Math.PI / 180;
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let geometry = new THREE.SphereGeometry(this._radius,
+            this._widthSegments, this._heightSegments, 0, phiLength, 0,
+            thetaLength);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return SphereShape.assetName;
+    }
+
+    _updateGeometry() {
+        let phiLength = this._phiLength * Math.PI / 180;
+        let thetaLength = this._thetaLength * Math.PI / 180;
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.SphereGeometry(this._radius,
+            this._widthSegments, this._heightSegments, 0, phiLength, 0,
+            thetaLength);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['radius'] = this._radius;
+        params['widthSegments'] = this._widthSegments;
+        params['heightSegments'] = this._heightSegments;
+        params['phiLength'] = this._phiLength;
+        params['thetaLength'] = this._thetaLength;
+        return params;
+    }
+
+    getRadius() {
+        return this._radius;
+    }
+
+    getWidthSegments() {
+        return this._widthSegments;
+    }
+
+    getHeightSegments() {
+        return this._heightSegments;
+    }
+
+    getPhiLength() {
+        return this._phiLength;
+    }
+
+    getThetaLength() {
+        return this._thetaLength;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setWidthSegments(widthSegments) {
+        if(this._widthSegments == widthSegments) return;
+        this._widthSegments = widthSegments;
+        this._updateGeometry();
+    }
+
+    setHeightSegments(heightSegments) {
+        if(this._heightSegments == heightSegments) return;
+        this._heightSegments = heightSegments;
+        this._updateGeometry();
+    }
+
+    setPhiLength(phiLength) {
+        if(this._phiLength == phiLength) return;
+        this._phiLength = phiLength;
+        this._updateGeometry();
+    }
+
+    setThetaLength(thetaLength) {
+        if(this._thetaLength == thetaLength) return;
+        this._thetaLength = thetaLength;
+        this._updateGeometry();
+    }
+
+    static assetId = '423c9506-52f4-4725-b848-69913cce2b00';
+    static assetName = 'Sphere';
+}
+
+projectHandler.registerAsset(SphereShape);
+libraryHandler.loadBuiltIn(SphereShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class TorusShape extends Shape {
+    constructor(params = {}) {
+        params['assetId'] = TorusShape.assetId;
+        super(params);
+        this._radius = numberOr(params['radius'], 0.1);
+        this._tube = numberOr(params['tube'], 0.05);
+        this._radialSegments = params['radialSegments'] || 16;
+        this._tubularSegments = params['tubularSegments'] || 32;
+        this._arc = numberOr(params['arc'], 360);
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let arc = this._arc * Math.PI / 180;
+        let geometry = new THREE.TorusGeometry(this._radius, this._tube,
+            this._radialSegments, this._tubularSegments, arc);
+        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
+        this._object.add(this._mesh);
+    }
+
+    _getDefaultName() {
+        return TorusShape.assetName;
+    }
+
+    _updateGeometry() {
+        let arc = this._arc * Math.PI / 180;
+        let oldGeometry = this._mesh.geometry;
+        let geometry = new THREE.TorusGeometry(this._radius, this._tube,
+            this._radialSegments, this._tubularSegments, arc);
+        this._mesh.geometry = geometry;
+        oldGeometry.dispose();
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['radius'] = this._radius;
+        params['tube'] = this._tube;
+        params['radialSegments'] = this._radialSegments;
+        params['tubularSegments'] = this._tubularSegments;
+        params['arc'] = this._arc;
+        return params;
+    }
+
+    getRadius() {
+        return this._radius;
+    }
+
+    getTube() {
+        return this._tube;
+    }
+
+    getRadialSegments() {
+        return this._radialSegments;
+    }
+
+    getTubularSegments() {
+        return this._tubularSegments;
+    }
+
+    getArc() {
+        return this._arc;
+    }
+
+    setRadius(radius) {
+        if(this._radius == radius) return;
+        this._radius = radius;
+        this._updateGeometry();
+    }
+
+    setTube(tube) {
+        if(this._tube == tube) return;
+        this._tube = tube;
+        this._updateGeometry();
+    }
+
+    setRadialSegments(radialSegments) {
+        if(this._radialSegments == radialSegments) return;
+        this._radialSegments = radialSegments;
+        this._updateGeometry();
+    }
+
+    setTubularSegments(tubularSegments) {
+        if(this._tubularSegments == tubularSegments) return;
+        this._tubularSegments = tubularSegments;
+        this._updateGeometry();
+    }
+
+    setArc(arc) {
+        if(this._arc == arc) return;
+        this._arc = arc;
+        this._updateGeometry();
+    }
+
+
+    static assetId = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
+    static assetName = 'Torus';
+}
+
+projectHandler.registerAsset(TorusShape);
+libraryHandler.loadBuiltIn(TorusShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class Material extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._opacity = numberOr(params['opacity'], 1);
+        this._side = params['side'] || THREE.FrontSide;
+        this._transparent = params['transparent'] || false;
+    }
+
+    _getDefaultName() {
+        return 'Material';
+    }
+
+    _createMaterial() {
+        console.error("Material._createMaterial() should be overridden");
+        return;
+    }
+
+    _setTexture(param, newValue) {
+        this['_' + param] = newValue;
+        let texture = projectHandler.getAsset(newValue);
+        this._material[param] = (texture)
+            ? texture.getTexture()
+            : null;
+        this._material.needsUpdate = true;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['opacity'] = this._material.opacity;
+        params['side'] = this._material.side;
+        params['transparent'] = this._material.transparent;
+        return params;
+    }
+
+    _updateMaterialParamsWithMaps(params, maps) {
+        for(let map of maps) {
+            if(this['_' + map]) {
+                let texture = projectHandler.getAsset(this['_' + map]);
+                if(texture) params[map] = texture.getTexture();
+            }
+        }
+    }
+
+    dispose() {
+        disposeMaterial(this._material);
+    }
+
+    getMaps() {
+        return [];
+    }
+
+    getMaterial() {
+        return this._material;
+    }
+
+    getSampleTexture() {
+        return null;
+    }
+
+    getOpacity() {
+        return this._opacity;
+    }
+
+    getSide() {
+        return this._side;
+    }
+
+    getTransparent() {
+        return this._transparent;
+    }
+
+    setOpacity(opacity) {
+        if(this._opacity == opacity) return;
+        this._opacity = opacity;
+        this._material.opacity = opacity;
+    }
+
+    setSide(side) {
+        if(this._side == side) return;
+        this._side = side;
+        this._material.side = side;
+        this._material.needsUpdate = true;
+    }
+
+    setTransparent(transparent) {
+        if(this._transparent == transparent) return;
+        this._transparent = transparent;
+        this._material.transparent = transparent;
+        this._material.needsUpdate = true;
+    }
+
+    static assetType = AssetTypes.MATERIAL;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const MAPS$2 = ["map", "alphaMap", "envMap"];
+
+class BasicMaterial extends Material {
+    constructor(params = {}) {
+        params['assetId'] = BasicMaterial.assetId;
+        super(params);
+        this._alphaMap = params['alphaMap'];
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._combine = params['combine'] || THREE.MultiplyOperation;
+        this._envMap = params['envMap'];
+        this._map = params['map'];
+        this._reflectivity = numberOr(params['reflectivity'], 1);
+        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _getDefaultName() {
+        return BasicMaterial.assetName;
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "color": this._color,
+            "combine": this._combine,
+            "reflectivity": this._reflectivity,
+            "refractionRatio": this._refractionRatio,
+            "side": this._side,
+            "transparent": this._transparent,
+            "opacity": this._opacity,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS$2);
+        this._material = new THREE.MeshBasicMaterial(materialParams);
+    }
+
+    getMaps() {
+        return MAPS$2;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['color'] = this._color;
+        params['combine'] = this._combine;
+        params['envMap'] = this._envMap;
+        params['map'] = this._map;
+        params['reflectivity'] = this._reflectivity;
+        params['refractionRatio'] = this._refractionRatio;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getCombine() {
+        return this._combine;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getReflectivity() {
+        return this._reflectivity;
+    }
+
+    getRefractionRatio() {
+        return this._refractionRatio;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setCombine(combine) {
+        if(this._combine == combine) return;
+        this._combine = combine;
+        this._material.combine = combine;
+        this._material.needsUpdate = true;
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setReflectivity(reflectivity) {
+        if(this._reflectivity == reflectivity) return;
+        this._reflectivity = reflectivity;
+        this._material.reflectivity = reflectivity;
+    }
+
+    setRefractionRatio(refractionRatio) {
+        if(this._refractionRatio == refractionRatio) return;
+        this._refractionRatio = refractionRatio;
+        this._material.refractionRatio = refractionRatio;
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+
+    static assetId = '943b7a57-7e8f-4717-9bc6-0ba2637d9e3b';
+    static assetName = 'Basic Material';
+}
+
+projectHandler.registerAsset(BasicMaterial);
+libraryHandler.loadBuiltIn(BasicMaterial);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const MAPS$1 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "metalnessMap", "normalMap", "roughnessMap"];
+
+class StandardMaterial extends Material {
+    constructor(params = {}) {
+        params['assetId'] = StandardMaterial.assetId;
+        super(params);
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._alphaMap = params['alphaMap'];
+        this._bumpMap = params['bumpMap'];
+        this._bumpScale = numberOr(params['bumpScale'], 1);
+        this._displacementMap = params['displacementMap'];
+        this._displacementScale = numberOr(params['displacementScale'], 1);
+        this._displacementBias = numberOr(params['displacementBias'], 0);
+        this._emissive = params['emissive'] || 0x000000;
+        this._emissiveMap = params['emissiveMap'];
+        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
+        this._envMap = params['envMap'];
+        this._envMapIntensity = numberOr(params['envMapIntensity'], 1);
+        this._flatShading = params['flatShading'] || false;
+        this._map = params['map'];
+        this._metalness = numberOr(params['metalness'], 0);
+        this._metalnessMap = params['metalnessMap'];
+        this._normalMap = params['normalMap'];
+        this._normalMapType = params['normalMapType']
+            || THREE.TangentSpaceNormalMap;
+        this._normalScale = params['normalScale'] || [1,1];
+        this._roughness = numberOr(params['roughness'], 1);
+        this._roughnessMap = params['roughnessMap'];
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _getDefaultName() {
+        return StandardMaterial.assetName;
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "color": this._color,
+            "bumpScale": this._bumpScale,
+            "displacementScale": this._displacementScale,
+            "displacementBias": this._displacementBias,
+            "emissive": this._emissive,
+            "emissiveIntensity": this._emissiveIntensity,
+            "envMapIntensity": this._envMapIntensity,
+            "flatShading": this._flatShading,
+            "metalness": this._metalness,
+            "normalMapType": this._normalMapType,
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
+            "roughness": this._roughness,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS$1);
+        this._material = new THREE.MeshStandardMaterial(materialParams);
+        this._material.normalScale.fromArray(this._normalScale);
+    }
+
+    getMaps() {
+        return MAPS$1;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['bumpMap'] = this._bumpMap;
+        params['bumpScale'] = this._bumpScale;
+        params['color'] = this._material.color.getHex();
+        params['displacementMap'] = this._displacementMap;
+        params['displacementScale'] = this._displacementScale;
+        params['displacementBias'] = this._displacementBias;
+        params['emissive'] = this._material.emissive.getHex();
+        params['emissiveMap'] = this._emissiveMap;
+        params['emissiveIntensity'] = this._emissiveIntensity;
+        params['envMap'] = this._envMap;
+        params['envMapIntensity'] = this._envMapIntensity;
+        params['flatShading'] = this._flatShading;
+        params['map'] = this._map;
+        params['metalness'] = this._metalness;
+        params['metalnessMap'] = this._metalnessMap;
+        params['normalMap'] = this._normalMap;
+        params['normalMapType'] = this._normalMapType;
+        params['normalScale'] = this._normalScale;
+        params['roughness'] = this._roughness;
+        params['roughnessMap'] = this._roughnessMap;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getEnvMap() {
+        return this._envMap;
+    }
+
+    getEnvMapIntensity() {
+        return this._envMapIntensity;
+    }
+
+    getFlatShading() {
+        return this._flatShading;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getMetalness() {
+        return this._metalness;
+    }
+
+    getMetalnessMap() {
+        return this._metalnessMap;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getRoughness() {
+        return this._roughness;
+    }
+
+    getRoughnessMap() {
+        return this._roughnessMap;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setEnvMap(envMap) {
+        if(this._envMap == envMap) return;
+        this._setTexture('envMap', envMap);
+    }
+
+    setEnvMapIntensity(envMapIntensity) {
+        if(this._envMapIntensity == envMapIntensity) return;
+        this._envMapIntensity = envMapIntensity;
+        this._material.envMapIntensity = envMapIntensity;
+    }
+
+    setFlatShading(flatShading) {
+        if(this._flatShading == flatShading) return;
+        this._flatShading = flatShading;
+        this._material.flatShading = flatShading;
+        this._material.needsUpdate = true;
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setMetalness(metalness) {
+        if(this._metalness == metalness) return;
+        this._metalness = metalness;
+        this._material.metalness = metalness;
+    }
+
+    setMetalnessMap(metalnessMap) {
+        if(this._metalnessMap == metalnessMap) return;
+        this._setTexture('metalnessMap', metalnessMap);
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        this._normalScale = normalScale;
+        this._material.normalScale.fromArray(normalScale);
+    }
+
+    setRoughness(roughness) {
+        if(this._roughness == roughness) return;
+        this._roughness = roughness;
+        this._material.roughness = roughness;
+    }
+
+    setRoughnessMap(roughnessMap) {
+        if(this._roughnessMap == roughnessMap) return;
+        this._setTexture('roughnessMap', roughnessMap);
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+
+    static assetId = 'a6a1aa81-50a6-4773-aaf5-446d418c9817';
+    static assetName = 'Standard Material';
+}
+
+projectHandler.registerAsset(StandardMaterial);
+libraryHandler.loadBuiltIn(StandardMaterial);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
+
+class ToonMaterial extends Material {
+    constructor(params = {}) {
+        params['assetId'] = ToonMaterial.assetId;
+        super(params);
+        this._alphaMap = params['alphaMap'];
+        this._color = numberOr(params['color'], 0x3d9970);
+        this._bumpMap = params['bumpMap'];
+        this._bumpScale = numberOr(params['bumpScale'], 1);
+        this._displacementMap = params['displacementMap'];
+        this._displacementScale = numberOr(params['displacementScale'], 1);
+        this._displacementBias = numberOr(params['displacementBias'], 0);
+        this._emissive = params['emissive'] || 0x000000;
+        this._emissiveMap = params['emissiveMap'];
+        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
+        this._map = params['map'];
+        this._normalMap = params['normalMap'];
+        this._normalMapType = params['normalMapType']
+            || THREE.TangentSpaceNormalMap;
+        this._normalScale = params['normalScale'] || [1,1];
+        this._wireframe = params['wireframe'] || false;
+        this._createMaterial();
+    }
+
+    _getDefaultName() {
+        return ToonMaterial.assetName;
+    }
+
+    _createMaterial() {
+        let materialParams = {
+            "bumpScale": this._bumpScale,
+            "color": this._color,
+            "displacementScale": this._displacementScale,
+            "displacementBias": this._displacementBias,
+            "emissive": this._emissive,
+            "emissiveIntensity": this._emissiveIntensity,
+            "normalMapType": this._normalMapType,
+            "opacity": this._opacity,
+            "side": this._side,
+            "transparent": this._transparent,
+            "wireframe": this._wireframe,
+        };
+        this._updateMaterialParamsWithMaps(materialParams, MAPS);
+        this._material = new THREE.MeshToonMaterial(materialParams);
+        this._material.normalScale.fromArray(this._normalScale);
+    }
+
+    getMaps() {
+        return MAPS;
+    }
+
+    getSampleTexture() {
+        return this._material.map;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['alphaMap'] = this._alphaMap;
+        params['bumpMap'] = this._bumpMap;
+        params['bumpScale'] = this._bumpScale;
+        params['color'] = this._material.color.getHex();
+        params['displacementMap'] = this._displacementMap;
+        params['displacementScale'] = this._displacementScale;
+        params['displacementBias'] = this._displacementBias;
+        params['emissive'] = this._material.emissive.getHex();
+        params['emissiveMap'] = this._emissiveMap;
+        params['emissiveIntensity'] = this._emissiveIntensity;
+        params['map'] = this._map;
+        params['normalMap'] = this._normalMap;
+        params['normalMapType'] = this._normalMapType;
+        params['normalScale'] = this._normalScale;
+        params['wireframe'] = this._wireframe;
+        return params;
+    }
+
+    getAlphaMap() {
+        return this._alphaMap;
+    }
+
+    getBumpMap() {
+        return this._bumpMap;
+    }
+
+    getBumpScale() {
+        return this._bumpScale;
+    }
+
+    getColor() {
+        return this._color;
+    }
+
+    getDisplacementBias() {
+        return this._displacementBias;
+    }
+
+    getDisplacementMap() {
+        return this._displacementMap;
+    }
+
+    getDisplacementScale() {
+        return this._displacementScale;
+    }
+
+    getEmissive() {
+        return this._emissive;
+    }
+
+    getEmissiveIntensity() {
+        return this._emissiveIntensity;
+    }
+
+    getEmissiveMap() {
+        return this._emissiveMap;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getNormalMap() {
+        return this._normalMap;
+    }
+
+    getNormalMapType() {
+        return this._normalMapType;
+    }
+
+    getNormalScale() {
+        return this._normalScale;
+    }
+
+    getWireframe() {
+        return this._wireframe;
+    }
+
+    setAlphaMap(alphaMap) {
+        if(this._alphaMap == alphaMap) return;
+        this._setTexture('alphaMap', alphaMap);
+    }
+
+    setBumpMap(bumpMap) {
+        if(this._bumpMap == bumpMap) return;
+        this._setTexture('bumpMap', bumpMap);
+    }
+
+    setBumpScale(bumpScale) {
+        if(this._bumpScale == bumpScale) return;
+        this._bumpScale = bumpScale;
+        this._material.bumpScale = bumpScale;
+    }
+
+    setColor(color) {
+        if(this._color == color) return;
+        this._color = color;
+        this._material.color.setHex(color);
+    }
+
+    setDisplacementBias(displacementBias) {
+        if(this._displacementBias == displacementBias) return;
+        this._displacementBias = displacementBias;
+        this._material.displacementBias = displacementBias;
+    }
+
+    setDisplacementMap(displacementMap) {
+        if(this._displacementMap == displacementMap) return;
+        this._setTexture('displacementMap', displacementMap);
+    }
+
+    setDisplacementScale(displacementScale) {
+        if(this._displacementScale == displacementScale) return;
+        this._displacementScale = displacementScale;
+        this._material.displacementScale = displacementScale;
+    }
+
+    setEmissive(emissive) {
+        if(this._emissive == emissive) return;
+        this._emissive = emissive;
+        this._material.emissive.setHex(emissive);
+    }
+
+    setEmissiveIntensity(emissiveIntensity) {
+        if(this._emissiveIntensity == emissiveIntensity) return;
+        this._emissiveIntensity = emissiveIntensity;
+        this._material.emissiveIntensity = emissiveIntensity;
+    }
+
+    setEmissiveMap(emissiveMap) {
+        if(this._emissiveMap == emissiveMap) return;
+        this._setTexture('emissiveMap', emissiveMap);
+    }
+
+    setMap(map) {
+        if(this._map == map) return;
+        this._setTexture('map', map);
+    }
+
+    setNormalMap(normalMap) {
+        if(this._normalMap == normalMap) return;
+        this._setTexture('normalMap', normalMap);
+    }
+
+    setNormalMapType(normalMapType) {
+        if(this._normalMapType == normalMapType) return;
+        this._normalMapType = normalMapType;
+        this._material.normalMapType = normalMapType;
+        this._material.needsUpdate = true;
+    }
+
+    setNormalScale(normalScale) {
+        this._normalScale = normalScale;
+        this._material.normalScale.fromArray(normalScale);
+    }
+
+    setWireframe(wireframe) {
+        if(this._wireframe == wireframe) return;
+        this._wireframe = wireframe;
+        this._material.wireframe = wireframe;
+        this._material.needsUpdate = true;
+    }
+
+    static assetId = 'be461019-0fc2-4c88-bee4-290ee3a585eb';
+    static assetName = 'Toon Material';
+}
+
+projectHandler.registerAsset(ToonMaterial);
+libraryHandler.loadBuiltIn(ToonMaterial);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class Texture extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._colorSpace = stringOr(params['colorSpace'], THREE.SRGBColorSpace);
+    }
+
+    _getDefaultName() {
+        return 'Texture';
+    }
+
+    _createTexture() {
+        console.error("Texture._createTexture() should be overridden");
+        return;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['colorSpace'] = this._colorSpace;
+        return params;
+    }
+
+    _updateTexture() {
+        let oldTexture = this._texture;
+        this._createTexture();
+        setTimeout(() => {
+            oldTexture.dispose();
+        }, 20);
+    }
+
+    dispose() {
+        setTimeout(() => {
+            this._texture.dispose();
+        }, 20);
+    }
+
+    getColorSpace() {
+        return this._colorSpace;
+    }
+
+    getTexture() {
+        return this._texture;
+    }
+
+    getPreviewTexture() {
+        return this._texture;
+    }
+
+    getAssetIds() {
+        console.error("Texture.getAssetIds() should be overridden");
+        return;
+    }
+
+    getTextureType() {
+        console.error("Texture.getTextureType() should be overridden");
+        return;
+    }
+
+    setColorSpace(colorSpace) {
+        this._colorSpace = colorSpace;
+        this._texture.colorSpace = colorSpace;
+        this._updateTexture();
+    }
+
+    static assetType = AssetTypes.TEXTURE;
+}
+
+const TextureTypes = {
+    BASIC: "BASIC",
+    CUBE: "CUBE",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class BasicTexture extends Texture {
+    constructor(params = {}) {
+        params['assetId'] = BasicTexture.assetId;
+        super(params);
+        this._image = params['image'];
+        this._wrapS = params['wrapS'] || THREE.ClampToEdgeWrapping;
+        this._wrapT = params['wrapT'] || THREE.ClampToEdgeWrapping;
+        this._repeat = params['repeat'] || [1, 1];
+        this._offset = params['offset'] || [0, 0];
+        this._createTexture();
+    }
+
+    _getDefaultName() {
+        return BasicTexture.assetName;
+    }
+
+    _createTexture() {
+        if(this._image) {
+            this._texture = libraryHandler.cloneTexture(this._image);
+        } else {
+            this._texture = Textures.blackPixel.clone();
+        }
+        this._texture.wrapS = this._wrapS;
+        this._texture.wrapT = this._wrapT;
+        this._texture.repeat.fromArray(this._repeat);
+        this._texture.offset.fromArray(this._offset);
+        this._texture.needsUpdate = true;
+        this._texture.colorSpace = this._colorSpace;
+    }
+
+    getAssetIds() {
+        if(this._image) return [this._image];
+        return [];
+    }
+
+    getTextureType() {
+        return BasicTexture.textureType;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['image'] = this._image;
+        params['wrapS'] = this._texture.wrapS;
+        params['wrapT'] = this._texture.wrapT;
+        params['repeat'] = this._texture.repeat.toArray();
+        params['offset'] = this._offset;
+        return params;
+    }
+
+    getImage() {
+        return this._image;
+    }
+
+    getOffset() {
+        return this._offset;
+    }
+
+    getRepeat() {
+        return this._repeat;
+    }
+
+    getWrapS() {
+        return this._wrapS;
+    }
+
+    getWrapT() {
+        return this._wrapT;
+    }
+
+    setImage(image) {
+        if(this._image == image) return;
+        this._image = image;
+        this._updateTexture();
+    }
+
+    setOffset(offset) {
+        this._offset = offset;
+        this._texture.offset.fromArray(offset);
+    }
+
+    setRepeat(repeat) {
+        this._repeat = repeat;
+        this._texture.repeat.fromArray(repeat);
+    }
+
+    setWrapS(wrapS) {
+        if(this._wrapS == wrapS) return;
+        this._wrapS = wrapS;
+        this._updateTexture();
+    }
+
+    setWrapT(wrapT) {
+        if(this._wrapT == wrapT) return;
+        this._wrapT = wrapT;
+        this._updateTexture();
+    }
+
+    static assetId = '95f63d4b-06d1-4211-912b-556b6ce7bf5f';
+    static assetName = 'Basic Texture';
+    static textureType = TextureTypes.BASIC;
+}
+
+projectHandler.registerAsset(BasicTexture);
+libraryHandler.loadBuiltIn(BasicTexture);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class CubeTexture extends Texture {
+    constructor(params = {}) {
+        params['assetId'] = CubeTexture.assetId;
+        super(params);
+        this._images = params['images'] || {};
+        this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
+        this._createTexture();
+    }
+
+    _getDefaultName() {
+        return CubeTexture.assetName;
+    }
+
+    _createTexture() {
+        let images = [
+            this._getImageFromSide(CubeSides.RIGHT),
+            this._getImageFromSide(CubeSides.LEFT),
+            this._getImageFromSide(CubeSides.TOP),
+            this._getImageFromSide(CubeSides.BOTTOM),
+            this._getImageFromSide(CubeSides.FRONT),
+            this._getImageFromSide(CubeSides.BACK),
+        ];
+        //textures must be square, same size, and power of 2, otherwise
+        //use no images
+        if(!this._validateImageList(images))
+            images = Array(6).fill(Textures.blackPixel.image);
+        this._texture = new THREE.CubeTexture(images, this._mapping);
+        this._texture.needsUpdate = true;
+        this._texture.colorSpace = this._colorSpace;
+    }
+
+    _getImageFromSide(side) {
+        if(this._images[side]) {
+            return libraryHandler.getImage(this._images[side]);
+        }
+        return Textures.blackPixel.image;
+    }
+
+    _validateImageList(images) {
+        let width;
+        let isValid = true;
+        for(let image of images) {
+            if(image == Textures.blackPixel.image) {
+                isValid = false;
+                continue;
+            } else if(image.width != image.height) {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'Images must be of same width and height',
+                    sustainTime: 3,
+                });
+                return false;
+            } else if(!powerOf2(image.width)) {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'Image lengths must be a power of 2',
+                    sustainTime: 3,
+                });
+                return false;
+            } else if(width && image.width != width) {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'All images must be the same size',
+                    sustainTime: 3,
+                });
+                return false;
+            }
+            width = image.width;
+        }
+        return isValid;
+    }
+
+    getPreviewTexture() {
+        let imageId = this._images[CubeSides.FRONT];
+        if(imageId) return libraryHandler.getTexture(imageId);
+        return Textures.blackPixel;
+    }
+
+    getAssetIds() {
+        let assetIds = [];
+        for(let side in CubeSides) {
+            if(this._images[side]) assetIds.push(this._images[side]);
+        }
+        return assetIds;
+    }
+
+    getTextureType() {
+        return CubeTexture.textureType;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['images'] = this._images;
+        params['mapping'] = this._texture.mapping;
+        return params;
+    }
+
+    getImages() {
+        return this._images;
+    }
+
+    getMapping() {
+        return this._mapping;
+    }
+
+    setImages(images, side) {
+        if(side) {
+            if(this._images[side] == images) return;
+            this._images[side] = images;
+            this._updateTexture();
+        } else {
+            let hasDiff = false;
+            for(let s in this._images) {
+                if(this._images[s] != images[s]) {
+                    this._images[s] = images[s];
+                    hasDiff = true;
+                }
+            }
+            if(hasDiff) this._updateTexture();
+        }
+    }
+
+    setMapping(mapping) {
+        if(this._mapping == mapping) return;
+        this._mapping = mapping;
+        this._updateTexture();
+    }
+
+    static assetId = '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2';
+    static assetName = 'Cube Texture';
+    static textureType = TextureTypes.CUBE;
+}
+
+//https://stackoverflow.com/a/30924333
+function powerOf2(v) {
+    return v && !(v & (v - 1));
+}
+
+projectHandler.registerAsset(CubeTexture);
+libraryHandler.loadBuiltIn(CubeTexture);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class GripInteractableHandler extends InteractableHandler {
+    constructor() {
+        super();
+    }
+
+    init() {
+        super.init();
+        this._sphere = new THREE.Sphere();
+        this._box3 = new THREE.Box3();
+        this.addInteractable(scene.getGripInteractable());
+    }
+
+    _getBoundingSphere(xrController) {
+        if(!xrController) return null;
+        let modelObject = xrController.getModelObject()
+            || xrController.getObject();
+        this._box3.setFromObject(modelObject).getBoundingSphere(this._sphere);
+        return this._sphere;
+    }
+
+    _scopeInteractables(controller, interactables) {
+        let boundingSphere = controller['boundingSphere'];
+        if(boundingSphere == null) return;
+        for(let interactable of interactables) {
+            if(interactable.children.size != 0)
+                this._scopeInteractables(controller, interactable.children);
+            let threeObj = interactable.getThreeObj();
+            if(threeObj == null || interactable.isOnlyGroup()
+                    || !interactable.supportsOwner(controller.option)) {
+                continue;
+            }
+            let intersects = interactable.intersectsSphere(boundingSphere);
+            if(intersects) {
+                let distance = interactable.distanceToSphere(boundingSphere);
+                if(distance < controller['closestPointDistance']) {
+                    controller['closestPointDistance'] = distance;
+                    controller['closestInteractable'] = interactable;
+                }
+            }
+        }
+    }
+
+    _updateInteractables(controller) {
+        let option = controller.option;
+        let isPressed = controller['isPressed'];
+        this._scopeInteractables(controller, this._interactables);
+        let hoveredInteractable = this._hoveredInteractables[option];
+        let selectedInteractable = this._selectedInteractables[option];
+        let closestInteractable = controller['closestInteractable'];
+        if(closestInteractable) {
+            if(isPressed) {
+                if(!selectedInteractable 
+                        && hoveredInteractable == closestInteractable)
+                {
+                    closestInteractable.addSelectedBy(option);
+                    this._selectedInteractables[option] = closestInteractable;
+                    closestInteractable.removeHoveredBy(option);
+                    this._hoveredInteractables[option] = null;
+                }
+            } else {
+                if(hoveredInteractable != closestInteractable) {
+                    if(hoveredInteractable) {
+                        hoveredInteractable.removeHoveredBy(option);
+                    }
+                    closestInteractable.addHoveredBy(option);
+                    this._hoveredInteractables[option] = closestInteractable;
+                }
+                if(selectedInteractable) {
+                    selectedInteractable.removeSelectedBy(option);
+                    this._selectedInteractables[option] = null;
+                }
+            }
+        } else if(!isPressed) {
+            if(hoveredInteractable) {
+                hoveredInteractable.removeHoveredBy(option);
+                this._hoveredInteractables[option] = null;
+            }
+            if(selectedInteractable) {
+                selectedInteractable.removeSelectedBy(option);
+                this._selectedInteractables[option] = null;
+            }
+        }
+    }
+
+    _updateForXR() {
+        if(!global$1.sessionActive) return;
+        for(let handedness in Handedness) {
+            let controllerExists = false;
+            for(let type of ['getController', 'getHand']) {
+                let xrDevice = global$1.userController[type](handedness);
+                if(!xrDevice) continue;
+                let active = xrDevice.isInScene();
+                if(active) {
+                    if(type == 'getController') {
+                        controllerExists = true;
+                    } else if(controllerExists) {
+                        active = false;
+                    }
+                }
+                let controller = {
+                    option: xrDevice.getId(),
+                    boundingSphere: (active)
+                        ? this._getBoundingSphere(xrDevice)
+                        : null,
+                    isPressed: (active) ? xrDevice.isButtonPressed(1) : false,
+                    closestPointDistance: Number.MAX_SAFE_INTEGER,
+                };
+                let skipUpdate = false;
+                if(this._toolHandlers[this._tool]) {
+                    skipUpdate = this._toolHandlers[this._tool](controller);
+                }
+                if(!skipUpdate) this._updateInteractables(controller);
+            }
+        }
+    }
+
+    _updateForPointer() {
+        return;
+    }
+
+    _updateForMobile() {
+        return;
+    }
+
+}
+
+let gripInteractableHandler = new GripInteractableHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class CopyPasteControlsHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._assetAlreadyPastedByTrigger = false;
+        this._assetAlreadyPastedByGrip = false;
+        this._copiedAssets = {};
+        this._previewAssets = {};
+        gripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
+            (controller) => { return this._toolHandler(controller); });
+        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
+            if(Object.keys(this._copiedAssets).length > 0) this._clear();
+            this._assetAlreadyPastedByTrigger = false;
+            this._assetAlreadyPastedByGrip = false;
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+            if(Object.keys(this._copiedAssets).length > 0) this._clear();
+            this._assetAlreadyPastedByTrigger = false;
+            this._assetAlreadyPastedByGrip = false;
+        });
+    }
+
+    copy(ownerId, asset) {
+        if(this._previewAssets[ownerId])
+            this._previewAssets[ownerId].removeFromScene();
+        this._copiedAssets[ownerId] = asset;
+        this._previewAssets[ownerId] = asset.editorHelper.preview();
+        projectHandler.getAsset(ownerId).getObject().attach(
+            this._previewAssets[ownerId].getObject());
+    }
+
+    _paste(ownerId) {
+        this._previewAssets[ownerId].clone(
+            this._copiedAssets[ownerId].visualEdit);
+        this._assetAlreadyPastedByGrip = true;
+    }
+
+    _toolHandler(controller) {
+        let ownerId = controller.option;
+        if(!this._copiedAssets[ownerId]) return false;
+        if(controller.isPressed != this._assetAlreadyPastedByGrip) {
+            if(controller.isPressed) this._paste(ownerId);
+            else this._assetAlreadyPastedByGrip = false;
+        }
+        return true;
+    }
+
+    _clear() {
+        for(let ownerId in this._previewAssets) {
+            this._previewAssets[ownerId].removeFromScene();
+        }
+        this._copiedAssets = {};
+        this._previewAssets = {};
+    }
+}
+
+let copyPasteControlsHandler = new CopyPasteControlsHandler();
 
 const AssetEntityTypes = {
     AUDIO: "AUDIO",
@@ -10494,6 +17919,7 @@ const FileTypes = {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class UploadHandler {
     constructor() {
@@ -12205,6 +19631,7 @@ class TransformControlsPlane extends Mesh {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const MODES = ['translate', 'rotate', 'scale'];
 
 class TransformControlsHandler {
@@ -12213,9 +19640,14 @@ class TransformControlsHandler {
         this._transformControls = new TransformControls(camera, this._canvas);
         this._transformControls.setSize(1.25);
         this._attachedAssets = {};
+        this._peerAttachedAssets = {};
         this._placingObject = {};
         this._preTransformStates = {};
         this._id = uuidv4();
+        let tool = (global$1.deviceType == 'XR') ? HandTools.EDIT : null;
+        pointerInteractableHandler.registerToolHandler(tool, (controller) => {
+            return this._toolHandler(controller);
+        });
         if(global$1.deviceType != 'XR') {
             scene.add(this._transformControls);
             this._addEventListeners();
@@ -12240,12 +19672,38 @@ class TransformControlsHandler {
                     }
                 }
             });
+            pubSub.subscribe(this._id, PubSubTopics.SANITIZE_INTERNALS, () => {
+                for(let option in this._attachedAssets) {
+                    let asset = this._attachedAssets[option];
+                    if(!asset) continue;
+                    let parentAsset = asset.getObject().parent.asset;
+                    if(parentAsset.constructor.assetType ==AssetTypes.INTERNAL){
+                        this.detach(option);
+                    }
+                }
+                for(let option in this._peerAttachedAssets) {
+                    let asset = this._peerAttachedAssets[option]['asset'];
+                    let peer = this._peerAttachedAssets[option]['peer'];
+                    this.detachFromPeer(peer, asset, { option: option });
+                }
+            });
+            pubSub.subscribe(this._id, assetType + '_UPDATED', (e) => {
+                for(let option in this._attachedAssets) {
+                    if(this._attachedAssets[option] == e.asset) {
+                        if(e.fields.includes('visualEdit'))
+                            this._detachDeleted(option);
+                    }
+                }
+            });
         }
         pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let option in this._attachedAssets) {
                 this._detachDeleted(option);
             }
         });
+        //This should be in _addEventListeners, but convenient to allow XR users
+        //when testing via emulator
+        window.addEventListener('paste', (event) => { this._paste(event); });
     }
 
     _addEventListeners() {
@@ -12313,7 +19771,6 @@ class TransformControlsHandler {
         }
 
         window.addEventListener('copy', (event) => { this._copy(event); });
-        window.addEventListener('paste', (event) => { this._paste(event); });
         this._canvas.addEventListener('keydown', (event) => {
             if(event.code == "Backspace") {
                 this._delete();
@@ -12410,58 +19867,71 @@ class TransformControlsHandler {
         }
     }
 
-    checkPlacement(controllers) {
-        for(let option in controllers) {
-            let controller = controllers[option];
-            let raycaster = controller['raycaster'];
-            raycaster.firstHitOnly = true;
-            raycaster.far = Infinity;
-            let isPressed = controller['isPressed'];
-            let intersections = (global$1.deviceType == 'XR')
-                ? this._intersectRelevantObjects(raycaster, option)
-                : raycaster.intersectObjects(projectHandler.getObjects(), true);
-            let attachedAsset = this._attachedAssets[option];
-            if(intersections.length > 0) {
-                controller['closestPoint'] = intersections[0].point;
-                if(isPressed) {
-                    if(global$1.deviceType == 'XR') {
-                        UserController$1.hands[option]
-                            .remove(attachedAsset.getObject());
-                    } else {
-                        $("#transform-controls > button")
-                            .removeClass("selected");
-                        $('#' + this._transformControls.mode + "-button")
-                            .addClass("selected");
-                        this._transformControls.attach(
-                            attachedAsset.getObject());
-                        this._placingObject[option] = false;
-                    }
-                    let assetHelper = attachedAsset.editorHelper;
-                    let preState = assetHelper.getObjectTransformation();
-                    assetHelper.place(intersections[0]);
-                    if(global$1.deviceType == 'XR') {
-                        this.detach(option);
-                        return;
-                    }
-                    assetHelper.roundAttributes(true);
-                    let postState = assetHelper.getObjectTransformation();
-                    assetHelper.setObjectTransformation(preState, postState);
+    _checkPlacement(controller) {
+        let option = controller.option;
+        let raycaster = controller['raycaster'];
+        raycaster.firstHitOnly = true;
+        raycaster.far = Infinity;
+        let isPressed = controller['isPressed'];
+        let intersections = (global$1.deviceType == 'XR')
+            ? this._intersectRelevantObjects(raycaster, option)
+            : raycaster.intersectObjects(projectHandler.getObjects(), true);
+        let attachedAsset = this._attachedAssets[option];
+        if(intersections.length > 0) {
+            controller['closestPoint'] = intersections[0].point;
+            if(isPressed) {
+                if(global$1.deviceType == 'XR') {
+                    attachedAsset.attachTo(attachedAsset.parent, true);
+                } else {
+                    $("#transform-controls > button")
+                        .removeClass("selected");
+                    $('#' + this._transformControls.mode + "-button")
+                        .addClass("selected");
+                    this._transformControls.attach(
+                        attachedAsset.getObject());
+                    this._placingObject[option] = false;
                 }
+                let assetHelper = attachedAsset.editorHelper;
+                let preState = assetHelper.getObjectTransformation();
+                assetHelper.place(intersections[0]);
+                if(global$1.deviceType == 'XR') {
+                    this.detach(option);
+                    return;
+                }
+                assetHelper.roundAttributes(true);
+                let postState = assetHelper.getObjectTransformation();
+                assetHelper.setObjectTransformation(preState, postState);
             }
         }
     }
 
-    scaleWithTwoHands() {
-        let distance = UserController$1.getDistanceBetweenHands();
+    _scaleWithTwoHands() {
+        let distance = global$1.userController.getDistanceBetweenHands();
         let factor = distance / this._initialScalingDistance;
-        this._attachedAssets[Hands.LEFT].getObject().scale.set(
+        let asset;
+        for(let ownerId in this._attachedAssets) {
+            asset = this._attachedAssets[ownerId];
+            break;
+        }
+        asset.getObject().scale.set(
             factor * this._initialScalingValues.x,
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
 
         if(global$1.renderer.info.render.frame % 6 == 0)
-            this._attachedAssets[Hands.LEFT].editorHelper
-                ._publish(['scale']);
+            asset.editorHelper._publish(['scale']);
+    }
+
+    _toolHandler(controller) {
+        if(this._twoHandScaling) {
+            this._scaleWithTwoHands();
+            return true;
+        } else if(global$1.deviceType != 'XR'
+                && this._placingObject[controller.option]) {
+            this._checkPlacement(controller);
+            return true;
+        }
+        return false;
     }
 
     //Slightly modified version of Raycaster::intersectObjects
@@ -12478,34 +19948,42 @@ class TransformControlsHandler {
 		return intersects;
     }
 
-    _getOtherHand(hand) {
-        if(hand == Hands.RIGHT) {
-            return Hands.LEFT;
-        } else if(hand == Hands.LEFT) {
-            return Hands.RIGHT;
-        }
+    _otherOption(userController, ownerId) {
+        let asset = projectHandler.getAsset(ownerId);
+        let handedness = asset.getHandedness();
+        let otherHand = Handedness.otherHand(handedness);
+        let otherAsset = (asset.constructor.name == 'XRHand')
+            ? userController.getHand(otherHand)
+            : userController.getController(otherHand);
+        if(otherAsset) return otherAsset.getId();
         return null;
     }
 
     attach(asset, option) {
         option = option || global$1.deviceType;
         let publishMessage = { instance: asset, option: option };
+        //Don't allow more than 2 controllers/hands to grab objects for now
+        //Almost no benefit allowing user to grab with hands and controllers
+        //simultaineously as they'd be holding the controllers in their hands
+        if(Object.keys(this._attachedAssets).length > 1) return;
         this._attachedAssets[option] = asset;
         if(global$1.deviceType == 'XR') {
             this._placingObject[option] = true;
-            let otherOption = this._getOtherHand(option);
+            let otherOption = this._otherOption(global$1.userController, option);
             if(asset == this._attachedAssets[otherOption]) {
-                UserController$1.hands[option].remove(asset.getObject());
-                UserController$1.hands[otherOption].remove(asset.getObject());
+                asset.attachTo(asset.parent, true);
                 publishMessage.twoHandScaling = true;
                 this._twoHandScaling = true;
                 this._initialScalingDistance =
-                    UserController$1.getDistanceBetweenHands();
+                    global$1.userController.getDistanceBetweenHands();
                 this._initialScalingValues = asset.getObject().scale.clone();
             } else {
                 this._preTransformStates[asset.getId()]
                     = asset.editorHelper.getObjectTransformation();
-                UserController$1.hands[option].attach(asset.getObject());
+                //We CANNOT use asset.attach because we need to know who the
+                //actual parent is
+                projectHandler.getAsset(option).getObject().attach(
+                    asset.getObject());
                 asset.editorHelper.makeTranslucent();
             }
             publishMessage.position = asset.getPosition();
@@ -12521,6 +19999,23 @@ class TransformControlsHandler {
         pubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED,publishMessage);
     }
 
+    attachToPeer(peer, asset, message) {
+        this._peerAttachedAssets[message.option] = {
+            asset: asset,
+            peer: peer,
+        };
+        if(message.twoHandScaling) {
+            asset.attachTo(asset.parent, true);
+            asset.setPosition(message.position);
+            asset.setRotation(message.rotation);
+        } else {
+            projectHandler.getAsset(message.option).getObject().attach(
+                asset.getObject());
+            asset.setPosition(message.position);
+            asset.setRotation(message.rotation);
+        }
+    }
+
     detach(option) {
         option = option || global$1.deviceType;
         let assetHelper, preState, postState;
@@ -12528,10 +20023,11 @@ class TransformControlsHandler {
         if(!asset) return;
         let publishMessage = { instance: asset, option: option };
         if(global$1.deviceType == 'XR') {
-            UserController$1.hands[option].remove(asset.getObject());
-            let otherOption = this._getOtherHand(option);
+            asset.attachTo(asset.parent, true);
+            let otherOption = this._otherOption(global$1.userController, option);
             if(this._attachedAssets[otherOption] == asset) {
-                UserController$1.hands[otherOption].attach(asset.getObject());
+                projectHandler.getAsset(otherOption).getObject().attach(
+                    asset.getObject());
                 publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {
@@ -12555,14 +20051,30 @@ class TransformControlsHandler {
             assetHelper.setObjectTransformation(preState, postState);
     }
 
+    detachFromPeer(peer, asset, message) {
+        delete this._peerAttachedAssets[message.option];
+        if(message.twoHandScaling) {
+            let otherOption = this._otherOption(peer.controller,message.option);
+            projectHandler.getAsset(otherOption).getObject().attach(
+                asset.getObject());
+            asset.setPosition(message.position);
+            asset.setRotation(message.rotation);
+        } else {
+            asset.attachTo(asset.parent, true);
+            if(message.position) asset.setPosition(message.position);
+            if(message.rotation) asset.setRotation(message.rotation);
+        }
+    }
+
     _detachDeleted(option) {
         let asset = this._attachedAssets[option];
         if(!asset) return;
         if(global$1.deviceType == 'XR') {
-            let otherOption = this._getOtherHand(option);
+            let otherOption = this._otherOption(global$1.userController, option);
             if(this._attachedAssets[otherOption] == asset) {
                 this._twoHandScaling = false;
             } else {
+                asset.attachTo(asset.parent);
                 asset.editorHelper.returnTransparency();
                 let preState = this._preTransformStates[asset.getId()];
                 let assetHelper = asset.editorHelper;
@@ -12609,15 +20121,6 @@ class TransformControlsHandler {
     getObject() {
         return this._transformControls.object;
     }
-
-    isPlacingObject(option) {
-        return this._placingObject[option || global$1.deviceType];
-    }
-
-    isTwoHandScaling() {
-        return this._twoHandScaling;
-    }
-
 }
 
 //Copied from Raycaster.js
@@ -12646,6562 +20149,6 @@ let transformControlsHandler = new TransformControlsHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class PointerInteractableHandler extends InteractableHandler {
-    constructor() {
-        super();
-        this._wasPressed = {};
-    }
-
-    init() {
-        super.init();
-        this._cursors = {};
-    }
-
-    _setupXRSubscription() {
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
-            if(tool == HandTools.EDIT) {
-                this.update = this._updateForXREdit;
-            } else if(tool == HandTools.COPY_PASTE) {
-                this.update = this._updateForXRCopyPaste;
-            } else if(tool == HandTools.DELETE) {
-                this.update = this._updateForXRDelete;
-            } else {
-                this.update = this._updateForXR;
-            }
-        });
-    }
-
-    createXRCursor(hand) {
-        if(this._cursors[hand]) return this._cursors[hand];
-        let canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        let ctx = canvas.getContext("2d");
-        ctx.beginPath();
-        ctx.arc(32, 32, 29, 0, 2 * Math.PI);
-        ctx.lineWidth = 5;
-        ctx.stroke();
-        ctx.fillStyle = "white";
-        ctx.fill();
-        let spriteMaterial = new THREE.SpriteMaterial({
-            map: new THREE.CanvasTexture(canvas),
-            depthTest: false,
-            sizeAttenuation: false,
-        });
-        for(let h in Hands) {
-            let cursor = new THREE.Sprite(spriteMaterial);
-            cursor.scale.set(0.015,0.015,0.015);
-            cursor.visible = false;
-            cursor.renderOrder = Infinity;
-            this._cursors[h] = cursor;
-        }
-        return this._cursors[hand];
-    }
-
-    _getRaycaster(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
-            let position = new THREE.Vector3();
-            let direction = new THREE.Vector3();
-            let xrController = inputHandler.getXRController(option,
-                "targetRay");
-            xrController.getWorldPosition(position);
-            xrController.getWorldDirection(direction).negate().normalize();
-            return new THREE.Raycaster(position, direction, 0.01, 50);
-        } else if(option == "POINTER") {
-            let position = inputHandler.getPointerPosition();
-            let raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(position, global$1.camera);
-            return raycaster;
-        } else if(option == "MOBILE") {
-            let position = inputHandler.getPointerPosition();
-            let raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(position, global$1.camera);
-            return raycaster;
-        }
-    }
-
-    _isControllerPressed(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
-            let gamepad = inputHandler.getXRGamepad(option);
-            return gamepad != null && gamepad.buttons[0].pressed;
-        } else if(option == "POINTER") {
-            return inputHandler.isPointerPressed();
-        } else if(option == "MOBILE") {
-            return inputHandler.isScreenTouched();
-        }
-    }
-
-    _squashInteractables(option, interactables, objects) {
-        for(let interactable of interactables) {
-            if(!interactable.supportsOwner(option)) continue;
-            let object = interactable.getThreeObj();
-            if(object) objects.push(object);
-            if(interactable.children.size != 0) {
-                this._squashInteractables(option, interactable.children,
-                    objects);
-            }
-        }
-    }
-
-    _getObjectInteractable(object) {
-        while(object != null) {
-            if(object.pointerInteractable) return object.pointerInteractable;
-            object = object.parent;
-        }
-    }
-
-    _raycastInteractables(controller, interactables) {
-        let raycaster = controller['raycaster'];
-        if(!raycaster) return;
-        raycaster.firstHitOnly = true;
-        let objects = [];
-        this._squashInteractables(controller.option, interactables, objects);
-        let intersections = raycaster.intersectObjects(objects);
-        for(let intersection of intersections) {
-            let interactable = this._getObjectInteractable(intersection.object);
-            if(!interactable) continue;
-            let distance = intersection.distance;
-            let userDistance = distance;
-            if(global$1.deviceType != 'XR') {
-                global$1.cameraFocus.getWorldPosition(vector3s[0]);
-                userDistance = intersection.point
-                    .distanceTo(vector3s[0]);
-            }   
-            if(!interactable.isWithinReach(userDistance)) continue;
-            controller['closestPointDistance'] = distance;
-            controller['closestPoint'] = intersection.point;
-            controller['closestInteractable'] = interactable;
-            controller['userDistance'] = userDistance;
-            return;
-        }
-    }
-
-    _updateInteractables(controllers) {
-        for(let option in controllers) {
-            let controller = controllers[option];
-            let isPressed = controller['isPressed'];
-            let hoveredInteractable = this._hoveredInteractables[option];
-            let selectedInteractable = this._selectedInteractables[option];
-            let closestInteractable = controller['closestInteractable'];
-            let userDistance = controller['userDistance'];
-            if(closestInteractable && !closestInteractable.isOnlyGroup()) {
-                if(isPressed) {
-                    if(selectedInteractable) {
-                        if(selectedInteractable == closestInteractable) {
-                            selectedInteractable.triggerDraggableActions(option,
-                                controller['closestPoint'], userDistance);
-                        }
-                    } else if(hoveredInteractable == closestInteractable) {
-                        closestInteractable.addSelectedBy(option,
-                            controller['closestPoint'], userDistance);
-                        this._selectedInteractables[option] = closestInteractable;
-                        closestInteractable.removeHoveredBy(option);
-                        this._hoveredInteractables[option] = null;
-                    }
-                } else {
-                    if(hoveredInteractable != closestInteractable) {
-                        if(hoveredInteractable) {
-                            hoveredInteractable.removeHoveredBy(option);
-                        }
-                        closestInteractable.addHoveredBy(option,
-                            controller['closestPoint'], userDistance);
-                        this._hoveredInteractables[option] =closestInteractable;
-                        //I can probably remove the below 2 lines
-                    //} else if(selectedInteractable) {
-                    //    selectedInteractable.releaseDraggedActions();
-                    }
-                    if(selectedInteractable) {
-                        selectedInteractable.removeSelectedBy(option);
-                        this._selectedInteractables[option] = null;
-                    }
-                }
-            } else if(!isPressed) {
-                if(this._wasPressed[option] && !hoveredInteractable
-                        && !selectedInteractable) {
-                    pubSub.publish(this._id, PubSubTopics.EMPTY_CLICK);
-                }
-                if(selectedInteractable) {
-                    selectedInteractable.removeSelectedBy(option);
-                    this._selectedInteractables[option] = null;
-                }
-                if(hoveredInteractable) {
-                    hoveredInteractable.removeHoveredBy(option);
-                    this._hoveredInteractables[option] = null;
-                }
-            }
-            this._wasPressed[option] = isPressed;
-        }
-    }
-
-    _updateInteractablesMobile(controllers) {
-        for(let option in controllers) {
-            let controller = controllers[option];
-            let isPressed = controller['isPressed'];
-            let selectedInteractable = this._selectedInteractables[option];
-            let userDistance = controller['userDistance'];
-            if(this._mobileWasTouched) {
-                if(!selectedInteractable) {
-                    this._mobileWasTouched = isPressed;
-                    return;
-                }
-
-                this._raycastInteractables(controller, this._interactables);
-                let closestInteractable = controller['closestInteractable'];
-                if(!isPressed) {
-                    this._mobileWasTouched = false;
-                    if(closestInteractable == selectedInteractable) {
-                        selectedInteractable.triggerActions(option,
-                            controller['closestPoint'], userDistance);
-                    }
-                    selectedInteractable.removeSelectedBy(option);
-                } else if(selectedInteractable == closestInteractable) {
-                    selectedInteractable.triggerDraggableActions(option,
-                        controller['closestPoint'], userDistance);
-                }
-            } else if(isPressed) {
-                this._mobileWasTouched = true;
-                this._raycastInteractables(controller, this._interactables);
-                let closestInteractable = controller['closestInteractable'];
-                if(closestInteractable) {
-                    closestInteractable.addSelectedBy(option,
-                        controller['closestPoint'], userDistance);
-                    this._selectedInteractables[option] = closestInteractable;
-                }
-            }
-        }
-    }
-
-    _updateCursor(controller) {
-        let cursor = controller.cursor;
-        if(!cursor) return;
-        if(controller['closestPoint'] != null) {
-            cursor.position.copy(controller['closestPoint']);
-            if(!cursor.visible) {
-                cursor.visible = true;
-            }
-        } else {
-            if(cursor.visible) {
-                cursor.visible = false;
-            }
-        }
-    }
-
-    _updateForXREdit() {
-        if(!global$1.sessionActive) return;
-        if(transformControlsHandler.isTwoHandScaling()) {
-            transformControlsHandler.scaleWithTwoHands();
-            return;
-        }
-        let controllersForPointerInteractables = {};
-        let controllersForPlacement = {};
-        let controllers = [];
-        for(let option in Hands) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            if(transformControlsHandler.isPlacingObject(option)) {
-                controllersForPlacement[option] = controller;
-            } else {
-                controllersForPointerInteractables[option] = controller;
-                this._raycastInteractables(controller, this._interactables);
-            }
-            controllers.push(controller);
-        }
-
-        this._updateInteractables(controllersForPointerInteractables);
-        transformControlsHandler.checkPlacement(controllersForPlacement);
-        for(let controller of controllers) {
-            this._updateCursor(controller);
-        }
-    }
-
-    _updateForXRCopyPaste() {
-        if(!global$1.sessionActive) return;
-        let controllers = {};
-        for(let option in Hands) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            controllers[option] = controller;
-            this._raycastInteractables(controller, this._interactables);
-        }
-
-        this._updateInteractables(controllers);
-        if(controllers[Hands.RIGHT].closestPoint == null)
-            CopyPasteControlsHandler$1.checkPlacement(controllers[Hands.RIGHT]);
-        for(let option in controllers) {
-            this._updateCursor(controllers[option]);
-        }
-    }
-
-    _updateForXRDelete() {
-        if(!global$1.sessionActive) return;
-        let controllers = {};
-        for(let option in Hands) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            controllers[option] = controller;
-            this._raycastInteractables(controller, this._interactables);
-        }
-
-        this._updateInteractables(controllers);
-        for(let option in controllers) {
-            this._updateCursor(controllers[option]);
-        }
-    }
-
-    _updateForXR() {
-        if(!global$1.sessionActive) return;
-        let controllers = {};
-        for(let option in Hands) {
-            let controller = {
-                option: option,
-                raycaster: this._getRaycaster(option),
-                isPressed: this._isControllerPressed(option),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                cursor: this._cursors[option],
-                userDistance: Number.MAX_SAFE_INTEGER,
-            };
-            controllers[option] = controller;
-            this._raycastInteractables(controller, this._interactables);
-        }
-
-        this._updateInteractables(controllers);
-        for(let option in controllers) {
-            this._updateCursor(controllers[option]);
-        }
-    }
-
-    _updateForPointer() {
-        if(!global$1.sessionActive)
-            return;
-
-        let controllers = {
-            "POINTER": {
-                option: "POINTER",
-                raycaster: this._getRaycaster("POINTER"),
-                isPressed: this._isControllerPressed("POINTER"),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                userDistance: Number.MAX_SAFE_INTEGER,
-            }
-        };
-
-        if(transformControlsHandler.isPlacingObject()) {
-            transformControlsHandler.checkPlacement(controllers);
-            return;
-        }
-        this._raycastInteractables(controllers['POINTER'], this._interactables);
-        this._updateInteractables(controllers);
-        let style = global$1.renderer.domElement.style;
-        if(this._hoveredInteractables['POINTER']) {
-            if(!style.cursor) style.cursor = 'pointer';
-        } else if(style.cursor == 'pointer') {
-            style.cursor = '';
-        }
-    }
-
-    _updateForMobile() {
-        if(!global$1.sessionActive)
-            return;
-        let controllers = {
-            "MOBILE": {
-                option: "MOBILE",
-                raycaster: this._getRaycaster("MOBILE"),
-                isPressed: this._isControllerPressed("MOBILE"),
-                closestPoint: null,
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-                userDistance: Number.MAX_SAFE_INTEGER,
-            }
-        };
-
-        if(transformControlsHandler.isPlacingObject()) {
-            transformControlsHandler.checkPlacement(controllers);
-            return;
-        }
-        this._updateInteractablesMobile(controllers);
-    }
-
-}
-
-let pointerInteractableHandler = new PointerInteractableHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class UserHand {
-    constructor(hand) {
-        if(!hand in Hands) {
-            throw new Error("constructor for UserXRInputSource must be LEFT or RIGHT");
-        } else if(global$1.deviceType != "XR") {
-            throw new Error("UserXRInputSource is for XR only");
-        }
-        this._hand = hand;
-        this._vector3 = new Vector3();
-        this._euler = new Euler();
-        this._quaternion = new Quaternion();
-
-        this._setup();
-    }
-
-    _setup() {
-        this._controller = inputHandler.getXRController(this._hand, 'grip');
-        this._controllerModel = inputHandler.getXRControllerModel(this._hand);
-        this._cursor = pointerInteractableHandler.createXRCursor(this._hand);
-    }
-
-    isInScene() {
-        return this._controller.parent != null;
-    }
-
-    getWorldPosition() {
-        this._controller.getWorldPosition(this._vector3);
-        return this._vector3;
-    }
-
-    getWorldRotation() {
-        this._controller.getWorldQuaternion(this._quaternion);
-        this._quaternion.normalize();
-        this._euler.setFromQuaternion(this._quaternion);
-        return this._euler;
-    }
-
-    getWorldQuaternion() {
-        this._controller.getWorldQuaternion(this._quaternion);
-        return this._quaternion;
-    }
-
-    add(threeObj) {
-        this._controller.add(threeObj);
-    }
-
-    attach(threeObj) {
-        this._controller.attach(threeObj);
-    }
-
-    hasChild(threeObj) {
-        return threeObj.parent == this._controller;
-    }
-
-    remove(threeObj) {
-        if(threeObj.parent == this._controller) {
-            global$1.scene.attach(threeObj);
-            return true;
-        }
-        return false;
-    }
-
-    addToScene(scene) {
-        this._controller.add(this._controllerModel);
-        global$1.scene.add(this._cursor);
-    }
-
-    removeFromScene() {
-        this._controller.remove(this._controllerModel);
-        global$1.scene.remove(this._cursor);
-    }
-}
-
-const UserMessageCodes = {
-    AVATAR: 1,
-    LEFT_HAND: 2,
-    RIGHT_HAND: 4,
-    USER_VELOCITY: 8,
-    USER_POSITION: 16,
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const AVATAR_KEY = "DigitalBacon:Avatar";
-const FADE_START = 0.6;
-const FADE_END = 0.2;
-//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
-const FADE_RANGE = FADE_START - FADE_END;
-const EPSILON = 0.00000000001;
-  
-class UserController {
-    init(params) {
-        if(params == null) {
-            params = {};
-        }
-        this._id = uuidv4();
-        this._dynamicAssets = [];
-        this._userObj = params['User Object'];
-        this._flightEnabled = params['Flight Enabled'] || false;
-        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
-            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-        this._avatarFadeUpdateNumber = 0;
-
-        this._setup();
-        this._addSubscriptions();
-    }
-
-    _setup() {
-        if(global$1.deviceType != "XR") {
-            this._avatar = new Avatar({
-                'Focus Camera': true,
-                'URL': this._avatarUrl,
-            });
-            audioHandler.setListenerParent(this._avatar.getObject());
-        } else {
-            this.hands = {};
-            for(let hand of [Hands.RIGHT, Hands.LEFT]) {
-                let userHand = new UserHand(hand);
-                this.hands[hand] = userHand;
-            }
-        }
-        this._basicMovement = new BasicMovement({
-            'User Object': this._userObj,
-            'Avatar': this._avatar,
-        });
-        this._dynamicAssets.push(this._basicMovement);
-    }
-
-    _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.USER_SCALE_UPDATED, (scale) => {
-            this._userObj.scale.set(scale, scale, scale);
-        });
-    }
-
-    getId() {
-        return this._id;
-    }
-
-    getAvatar() {
-        return this._avatar;
-    }
-
-    getAvatarUrl() {
-        return this._avatarUrl;
-    }
-
-    updateAvatar(url) {
-        localStorage.setItem(AVATAR_KEY, url);
-        this._avatarUrl = url;
-        if(global$1.deviceType != "XR") this._avatar.updateSourceUrl(url);
-        pubSub.publish(this._id, PubSubTopics.AVATAR_UPDATED, this._avatarUrl);
-    }
-
-    getHand(hand) {
-        return this.hands[hand];
-    }
-
-    getDistanceBetweenHands() {
-        if(global$1.deviceType != 'XR') return;
-        let leftPosition = this.hands[Hands.LEFT].getWorldPosition();
-        let rightPosition = this.hands[Hands.RIGHT].getWorldPosition();
-        return leftPosition.distanceTo(rightPosition);
-    }
-
-    getDataForRTC() {
-        let codes = 0;
-        let data = [];
-        if(global$1.deviceType == "XR") {
-            codes += this._pushAvatarDataForRTC(data);
-            codes += this._pushHandsDataForRTC(data);
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            codes += this._pushAvatarDataForRTC(data);
-        }
-        let worldVelocity = this._basicMovement.getWorldVelocity();
-        if(worldVelocity.length() >= 0.00001) {
-            data.push(...this._basicMovement.getWorldVelocity().toArray());
-            codes += UserMessageCodes.USER_VELOCITY;
-        }
-        if(global$1.renderer.info.render.frame % 300 == 0) {
-            this._userObj.getWorldPosition(vector3s[0]);
-            data.push(...vector3s[0].toArray());
-            codes += UserMessageCodes.USER_POSITION;
-        }
-        let codesArray = new Uint8Array([codes]);
-        return [codesArray.buffer, Float32Array.from(data).buffer];
-    }
-
-    _pushAvatarDataForRTC(data) {
-        let userScale = settingsHandler.getUserScale();
-        global$1.camera.getWorldPosition(vector3s[0]);
-        this._userObj.getWorldPosition(vector3s[1]);
-        let position = vector3s[0].sub(vector3s[1]).divideScalar(userScale)
-            .toArray();
-
-        global$1.camera.getWorldQuaternion(quaternion);
-        quaternion.normalize();
-        euler.setFromQuaternion(quaternion);
-        let rotation = euler.toArray();
-        rotation.pop();
-
-        data.push(...position);
-        data.push(...rotation);
-        return UserMessageCodes.AVATAR;
-    }
-
-    _pushHandsDataForRTC(data) {
-        let codes = 0;
-        let userScale = settingsHandler.getUserScale();
-        for(let hand of [Hands.LEFT, Hands.RIGHT]) {
-            let userHand = this.hands[hand];
-            if(userHand.isInScene()) {
-                //Assumes userObj.getWorldPosition() already in vector3s[1]
-                let position = userHand.getWorldPosition().sub(vector3s[1])
-                    .divideScalar(userScale);
-                let rotation = userHand.getWorldRotation().toArray();
-                rotation.pop();
-                data.push(...position.toArray());
-                data.push(...rotation);
-                codes += UserMessageCodes[hand + '_HAND'];
-            }
-        }
-        return codes;
-    }
-
-    attach(object) {
-        this._userObj.attach(object);
-    }
-
-    remove(object) {
-        if(object.parent == this._userObj) {
-            this._userObj.parent.attach(object);
-            return true;
-        }
-        return false;
-    }
-
-    hasChild(object) {
-        return object.parent == this._userObj;
-    }
-
-    setPosition(position) {
-        this._userObj.position.fromArray(position);
-    }
-
-    addToScene(scene) {
-        if(global$1.deviceType != "XR") {
-            this._avatar.addToScene(global$1.cameraFocus);
-        } else {
-            this.hands[Hands.RIGHT].addToScene(scene);
-            this.hands[Hands.LEFT].addToScene(scene);
-        }
-    }
-
-    removeFromScene() {
-        if(global$1.deviceType != "XR") {
-            this._avatar.removeFromScene();
-        } else {
-            this.hands[Hands.RIGHT].removeFromScene();
-            this.hands[Hands.LEFT].removeFromScene();
-        }
-    }
-
-    _updateAvatar() {
-        if(!this._avatar.isDisplayingAvatar()) {
-            let data = [];
-            this._pushAvatarDataForRTC(data);
-            let rotation = data.slice(3, 6);
-            this._avatar.getObject().rotation.fromArray(rotation);
-        }
-        let updateNumber = sessionHandler.getControlsUpdateNumber();
-        if(this._avatarFadeUpdateNumber == updateNumber) return;
-        this._avatarFadeUpdateNumber = updateNumber;
-        let cameraDistance = sessionHandler.getCameraDistance();
-        if(cameraDistance > FADE_START * 2) return;
-        let diff = cameraDistance - this._avatarFadeCameraDistance;
-        if(Math.abs(diff) < EPSILON) return;
-        //Fade Logic Start
-        this._avatarFadeCameraDistance = cameraDistance;
-        let fadePercent = Math.max(cameraDistance, FADE_END);
-        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
-        if(fadePercent == 0) {
-            if(this._avatar.isDisplayingAvatar()) {
-                this._basicMovement.setPerspective(1);
-                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
-                    1);
-                this._avatar.hideAvatar();
-            }
-            return;
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            this._basicMovement.setPerspective(3);
-            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
-            this._avatar.displayAvatar();
-        }
-        (fadePercent < 1)
-            ? this._avatar.fade(fadePercent)
-            : this._avatar.endFade();
-        //Fade Logic end
-
-        //Disappear Logic start
-        //let object = this._avatar.getObject();
-        //if(cameraDistance < FADE_MIDDLE) {
-        //    if(object.parent) this._avatar.removeFromScene();
-        //} else if(!object.parent) {
-        //    this._avatar.addToScene(global.cameraFocus);
-        //}
-        //Disappear Logic end
-    }
-
-    update(timeDelta) {
-        if(this._avatar) {
-            this._updateAvatar();
-        }
-        for(let i = 0; i < this._dynamicAssets.length; i++) {
-            this._dynamicAssets[i].update(timeDelta);
-        }
-    }
-}
-
-let userController = new UserController();
-var UserController$1 = userController;
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class CopyPasteControlsHandler {
-    constructor() {
-        this._id = uuidv4();
-        this._assetAlreadyPastedByTrigger = false;
-        this._assetAlreadyPastedByGrip = false;
-        this._copiedAsset;
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
-            if(this._copiedAsset) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
-        });
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
-            if(this._copiedAsset) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
-        });
-    }
-
-    copy(asset) {
-        if(this._copiedAsset) this._clear();
-        this._copiedAsset = asset;
-        this._previewAsset = asset.editorHelper.preview();
-        UserController$1.hands[Hands.LEFT].attach(this._previewAsset.getObject());
-        UserController$1.hands[Hands.RIGHT].add(this._previewAsset.getObject());
-    }
-
-    _paste() {
-        this._previewAsset.clone(
-            this._copiedAsset.visualEdit);
-        this._assetAlreadyPastedByGrip = true;
-    }
-
-    checkPlacement(controller) {
-        if(!this._copiedAsset) return;
-        let raycaster = controller['raycaster'];
-        raycaster.far = Infinity;
-        let isPressed = controller['isPressed'];
-        let intersections = raycaster.intersectObjects(projectHandler.getObjects(), true);
-        if(this._assetAlreadyPastedByTrigger) {
-            if(isPressed) return;
-            this._assetAlreadyPastedByTrigger = false;
-        }
-        if(intersections.length > 0) {
-            controller['closestPoint'] = intersections[0].point;
-            if(isPressed && this._copiedAsset) {
-                let clonedAsset = this._copiedAsset.clone();
-                clonedAsset.editorHelper.place(intersections[0]);
-                this._assetAlreadyPastedByTrigger = true;
-            }
-        }
-    }
-
-    checkGripPlacement(isControllerPressed) {
-        if(!this._copiedAsset) return;
-        if(isControllerPressed != this._assetAlreadyPastedByGrip) {
-            if(isControllerPressed) this._paste();
-            else this._assetAlreadyPastedByGrip = false;
-        }
-    }
-
-    _clear() {
-        this._previewAsset.removeFromScene();
-        this._copiedAsset = null;
-        this._previewAsset = null;
-    }
-
-    hasCopiedObject() {
-        return this._copiedAsset;
-    }
-
-}
-
-let copyPasteControlsHandler = new CopyPasteControlsHandler();
-var CopyPasteControlsHandler$1 = copyPasteControlsHandler;
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class GripInteractableHandler extends InteractableHandler {
-    constructor() {
-        super();
-    }
-
-    init() {
-        super.init();
-        this._spheres = {};
-        this._spheres[Hands.LEFT] = new THREE.Sphere();
-        this._spheres[Hands.RIGHT] = new THREE.Sphere();
-        this._box3 = new THREE.Box3();
-    }
-
-    _setupXRSubscription() {
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
-            let options = [Hands.LEFT, Hands.RIGHT];
-            for(let option of options) {
-                let hoveredInteractable = this._hoveredInteractables[option];
-                if(hoveredInteractable && 
-                        !this._interactables.has(hoveredInteractable)) {
-                    this._hoveredInteractables[option].removeHoveredBy(option);
-                    delete this._hoveredInteractables[option];
-                }
-                let selectedInteractable = this._selectedInteractables[option];
-                if(selectedInteractable &&
-                        !this._interactables.has(selectedInteractable)) {
-                    this._selectedInteractables[option]
-                        .removeSelectedBy(option);
-                    delete this._selectedInteractables[option];
-                }
-            }
-            if(tool == HandTools.COPY_PASTE) {
-                this.update = this._updateForXRCopyPaste;
-            } else {
-                this.update = this._updateForXREdit;
-            }
-        });
-    }
-
-    _getBoundingSphere(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
-            let xrController = inputHandler.getXRController(option, "grip");
-            this._box3.setFromObject(xrController)
-                .getBoundingSphere(this._spheres[option]);
-            return this._spheres[option];
-        }
-    }
-
-    _isControllerPressed(option) {
-        if(option == Hands.LEFT || option == Hands.RIGHT) {
-            let gamepad = inputHandler.getXRGamepad(option);
-            return gamepad != null
-                && gamepad.buttons.length > 1
-                && gamepad.buttons[1].pressed;
-        }
-    }
-
-    _scopeInteractables(controller, interactables) {
-        let boundingSphere = controller['boundingSphere'];
-        if(boundingSphere == null) return;
-        for(let interactable of interactables) {
-            let threeObj = interactable.getThreeObj();
-            if(threeObj == null) {
-                if(interactable.children.size != 0)
-                    this._scopeInteractables(controller, interactable.children);
-                continue;
-            }
-            if(!interactable.supportsOwner(controller.option)) continue;
-            let intersects = interactable.intersectsSphere(boundingSphere);
-            if(intersects) {
-                if(interactable.children.size != 0) {
-                    this._scopeInteractables(controller, Array.from(interactable.children));
-                }
-                let distance = interactable.distanceToSphere(boundingSphere);
-                if(!interactable.isOnlyGroup() && distance < controller['closestPointDistance']) {
-                    controller['closestPointDistance'] = distance;
-                    controller['closestInteractable'] = interactable;
-                }
-            }
-        }
-    }
-
-    _updateInteractables(controllers) {
-        for(let option in controllers) {
-            let controller = controllers[option];
-            let isPressed = controller['isPressed'];
-            this._scopeInteractables(controller, this._interactables);
-            let hoveredInteractable = this._hoveredInteractables[option];
-            let selectedInteractable = this._selectedInteractables[option];
-            let closestInteractable = controller['closestInteractable'];
-            if(closestInteractable) {
-                if(isPressed) {
-                    if(!selectedInteractable 
-                            && hoveredInteractable == closestInteractable)
-                    {
-                        closestInteractable.addSelectedBy(option);
-                        this._selectedInteractables[option] = closestInteractable;
-                        closestInteractable.removeHoveredBy(option);
-                        this._hoveredInteractables[option] = null;
-                    }
-                } else {
-                    if(hoveredInteractable != closestInteractable) {
-                        if(hoveredInteractable) {
-                            hoveredInteractable.removeHoveredBy(option);
-                        }
-                        closestInteractable.addHoveredBy(option);
-                        this._hoveredInteractables[option] = closestInteractable;
-                    }
-                    if(selectedInteractable) {
-                        selectedInteractable.removeSelectedBy(option);
-                        this._selectedInteractables[option] = null;
-                    }
-                }
-            } else if(!isPressed) {
-                if(hoveredInteractable) {
-                    hoveredInteractable.removeHoveredBy(option);
-                    this._hoveredInteractables[option] = null;
-                }
-                if(selectedInteractable) {
-                    selectedInteractable.removeSelectedBy(option);
-                    this._selectedInteractables[option] = null;
-                }
-            }
-        }
-    }
-
-    _updateForXRCopyPaste() {
-        if(!global$1.sessionActive) return;
-        let controllers = {};
-        controllers[Hands.LEFT] = {
-            option: Hands.LEFT,
-            boundingSphere: this._getBoundingSphere(Hands.LEFT),
-            isPressed: this._isControllerPressed(Hands.LEFT),
-            closestPointDistance: Number.MAX_SAFE_INTEGER,
-        };
-
-        if(CopyPasteControlsHandler$1.hasCopiedObject()) {
-            CopyPasteControlsHandler$1.checkGripPlacement(
-                this._isControllerPressed(Hands.RIGHT));
-        } else {
-            controllers[Hands.RIGHT] = {
-                option: Hands.RIGHT,
-                boundingSphere: this._getBoundingSphere(Hands.RIGHT),
-                isPressed: this._isControllerPressed(Hands.RIGHT),
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-            };
-        }
-
-        this._updateInteractables(controllers);
-    }
-
-    _updateForXREdit() {
-        if(!global$1.sessionActive) return;
-        let controllers = {};
-        let controllerOptions = [Hands.LEFT, Hands.RIGHT];
-        for(let i = 0; i < controllerOptions.length; i++) {
-            let option = controllerOptions[i];
-            controllers[option] = {
-                option: option,
-                boundingSphere: this._getBoundingSphere(option),
-                isPressed: this._isControllerPressed(option),
-                closestPointDistance: Number.MAX_SAFE_INTEGER,
-            };
-        }
-
-        this._updateInteractables(controllers);
-    }
-
-    _updateForPointer() {
-        return;
-    }
-
-    _updateForMobile() {
-        return;
-    }
-
-}
-
-let gripInteractableHandler = new GripInteractableHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Box3Helper extends LineSegments {
-
-	constructor(box) {
-		super(BoundingBox.geometry, BoundingBox.material);
-
-		this.box = box;
-
-		this.type = 'Box3Helper';
-
-		this.geometry.computeBoundingSphere();
-
-	}
-
-	updateMatrixWorld( force ) {
-
-		const box = this.box;
-
-		if ( box.isEmpty() ) return;
-
-		box.getCenter( this.position );
-
-		box.getSize( this.scale );
-
-		this.scale.multiplyScalar( 0.5 );
-
-		super.updateMatrixWorld( force );
-
-	}
-
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class GripInteractable extends Interactable {
-    constructor(threeObj) {
-        super(threeObj);
-        if(threeObj) threeObj.gripInteractable = this;
-        this._createBoundingObject();
-    }
-
-    addAction(selectedAction, releasedAction, tool, option) {
-        if(selectedAction && typeof selectedAction == 'object') {
-            this._actions.push(selectedAction);
-            return selectedAction;
-        }
-        let id = uuidv4();
-        let action = {
-            id: id,
-            selectedAction: selectedAction,
-            releasedAction: releasedAction,
-            selectedBy: new Set(),
-            tool: tool,
-            specificOption: option,
-            type: 'GRIP',
-        };
-        this._actions.push(action);
-        return action;
-    }
-
-    isOnlyGroup() {
-        return this._actions.length == 0;
-    }
-
-    supportsOwner(owner) {
-        //TODO: Should have a map that tracks how many actions for each tool as
-        //      we add + remove actions so we can respond to this function call
-        //      faster
-        for(let action of this._actions) {
-            if((!action.tool || action.tool == toolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner))
-                return true;
-        }
-        return this._actions.length == 0;
-    }
-
-    _createBoundingObject() {
-        this._boundingBox = new THREE.Box3();
-        this._boundingBoxObj = new Box3Helper(this._boundingBox);
-    }
-
-    _getBoundingObject() {
-        this._boundingBox.setFromObject(this._threeObj);
-        return this._boundingBox;
-    }
-
-    _displayBoundingObject() {
-        global$1.scene.add(this._boundingBoxObj);
-    }
-
-    _hideBoundingObject() {
-        global$1.scene.remove(this._boundingBoxObj);
-    }
-
-    intersectsSphere(sphere) {
-        let boundingBox = this._getBoundingObject();
-        let intersects;
-        if(boundingBox) {
-            intersects = sphere.intersectsBox(boundingBox);
-        } else {
-            intersects = false;
-        }
-        return intersects;
-    }
-
-    // Assumes intersectsSphere(sphere) is called first so we don't update the
-    // bounding box by calling _getBoundingObject()
-    distanceToSphere(sphere) {
-        return sphere.distanceToPoint(this._boundingBox.getCenter(vector3s[0]));
-    }
-
-    _determineAndSetState() {
-        if(this._selectedOwners.size > 0) {
-            this.setState(InteractableStates.SELECTED);
-            if(this._hoveredOwners.size >= this._selectedOwners.size) {
-                this._displayBoundingObject();
-            } else {
-                this._hideBoundingObject();
-            }
-        } else if(this._hoveredOwners.size > 0) {
-            this.setState(InteractableStates.HOVERED);
-            this._displayBoundingObject();
-        } else {
-            this.setState(InteractableStates.IDLE);
-            this._hideBoundingObject();
-        }
-    }
-
-    addHoveredBy(owner) {
-        if(this._hoveredOwners.has(owner)) {
-            return;
-        }
-        this._hoveredOwners.add(owner);
-        if(this._selectedOwners.size == 0) {
-            this.setState(InteractableStates.HOVERED);
-        }
-        this._displayBoundingObject();
-    }
-
-    removeHoveredBy(owner) {
-        this._hoveredOwners.delete(owner);
-        this._determineAndSetState();
-    }
-
-    addSelectedBy(owner) {
-        this._triggerSelected(owner);
-        this._selectedOwners.add(owner);
-        this.setState(InteractableStates.SELECTED);
-    }
-
-    removeSelectedBy(owner) {
-        this._triggerReleased(owner);
-        this._selectedOwners.delete(owner);
-        this._determineAndSetState();
-    }
-    
-    _triggerSelected(owner) {
-        for(let action of this._actions) {
-            if((!action.specificOption || action.specificOption == owner)
-                    && (!action.tool || action.tool == toolHandler.getTool()))
-            {
-                if(action.selectedAction) action.selectedAction(owner);
-                action.selectedBy.add(owner);
-            }
-        }
-    }
-
-    _triggerReleased(owner) {
-        for(let action of this._actions) {
-            if(action.selectedBy.has(owner)) {
-                if(action.releasedAction) action.releasedAction(owner);
-                action.selectedBy.delete(owner);
-            }
-        }
-    }
-
-    static emptyGroup() {
-        return new GripInteractable();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class AssetEntity extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._object = new THREE.Object3D();
-        let position = (params['position']) ? params['position'] : [0,0,0];
-        let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
-        let scale = (params['scale']) ? params['scale'] : [1,1,1];
-        this.visualEdit = params['visualEdit'] || false;
-        this._object.position.fromArray(position);
-        this._object.rotation.fromArray(rotation);
-        this._object.scale.fromArray(scale);
-        this._gripInteractable = new GripInteractable(this._object);
-        this._pointerInteractable = new PointerInteractable(this._object);
-    }
-
-    _getDefaultName() {
-        return 'Object';
-    }
-
-    _fetchCloneParams(visualEditOverride) {
-        let params = this.exportParams();
-        let visualEdit = (visualEditOverride != null)
-            ? visualEditOverride
-            : this.visualEdit;
-        let position = this._object.getWorldPosition(vector3s[0]).toArray();
-        let rotation = euler.setFromQuaternion(
-            this._object.getWorldQuaternion(quaternion)).toArray();
-        params['visualEdit'] = visualEdit;
-        params['position'] = position;
-        params['rotation'] = rotation;
-        delete params['id'];
-        return params;
-    }
-
-    preview() {
-        let params = this.exportParams();
-        params['visualEdit'] = false;
-        params['isPreview'] = true;
-        delete params['id'];
-        return new this.constructor(params);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['position'] = this.getPosition();
-        params['rotation'] = this.getRotation();
-        params['scale'] = this.getScale();
-        params['visualEdit'] = this.getVisualEdit();
-        return params;
-    }
-
-    addGripAction(selectedFunc, releasedFunc, tool, option){
-        let action = this._gripInteractable.addAction(selectedFunc,
-            releasedFunc, tool, option);
-        if(this._gripInteractable.getActionsLength()==1 && this._object.parent){
-            gripInteractableHandler.addInteractable(this._gripInteractable);
-        }
-        return action;
-    }
-
-    addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
-        let action = this._pointerInteractable.addAction(actionFunc,
-            draggableActionFunc, maxDistance, tool, option);
-        if(this._pointerInteractable.getActionsLength() == 1
-                && this._object.parent)
-        {
-            pointerInteractableHandler.addInteractable(
-                this._pointerInteractable);
-        }
-        return action;
-    }
-
-    removeGripAction(id) {
-        this._gripInteractable.removeAction(id);
-        if(this._gripInteractable.getActionsLength() == 0) {
-            gripInteractableHandler.removeInteractable(
-                this._gripInteractable);
-        }
-    }
-
-    removePointerAction(id) {
-        this._pointerInteractable.removeAction(id);
-        if(this._pointerInteractable.getActionsLength() == 0) {
-            pointerInteractableHandler.removeInteractable(
-                this._pointerInteractable);
-        }
-    }
-
-    getObject() {
-        return this._object;
-    }
-
-    getPosition() {
-        return this._object.position.toArray();
-    }
-
-    getRotation() {
-        return this._object.rotation.toArray();
-    }
-
-    getScale() {
-        return this._object.scale.toArray();
-    }
-
-    getVisualEdit() {
-        return this.visualEdit;
-    }
-
-    getWorldPosition(vector3) {
-        if(!vector3) vector3 = vector3s[0];
-        this._object.getWorldPosition(vector3);
-        return vector3;
-    }
-
-    getWorldQuaternion(quat) {
-        if(!quat) quat = quaternion;
-        this._object.getWorldQuaternion(quat);
-        return quat;
-    }
-
-    getWorldScale(vector3) {
-        if(!vector3) vector3 = vector3s[0];
-        this._object.getWorldScale(vector3);
-        return vector3;
-    }
-
-    setPosition(position) {
-        this._object.position.fromArray(position);
-    }
-
-    setRotation(rotation) {
-        this._object.rotation.fromArray(rotation);
-    }
-
-    setRotationFromQuaternion(quat) {
-        quaternion.fromArray(quat);
-        this._object.setRotationFromQuaternion(quaternion);
-    }
-
-    setScale(scale) {
-        this._object.scale.fromArray(scale);
-    }
-
-    setVisualEdit(visualEdit) {
-        this.visualEdit = visualEdit;
-    }
-
-    addToScene(scene) {
-        if(scene) scene.add(this._object);
-        if(this._gripInteractable.getActionsLength() > 0) {
-            gripInteractableHandler.addInteractable(
-                this._gripInteractable);
-        }
-        if(this._pointerInteractable.getActionsLength() > 0) {
-            pointerInteractableHandler.addInteractable(
-                this._pointerInteractable);
-        }
-    }
-
-    removeFromScene() {
-        if(this._object.parent) {
-            gripInteractableHandler.removeInteractable(
-                this._gripInteractable);
-            pointerInteractableHandler.removeInteractable(
-                this._pointerInteractable);
-            this._object.parent.remove(this._object);
-            fullDispose(this._object);
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Entity {
-    constructor() {
-        this._id = uuidv4();
-        this._object = new Object3D();
-    }
-    
-    getId() {
-        return this._id;
-    }
-
-    getObject() {
-        return this._object;
-    }
-
-    addToScene(scene) {
-        if(scene) {
-            scene.add(this._object);
-        }
-    }
-
-    removeFromScene() {
-        if(this._object.parent) { 
-            this._object.parent.remove(this._object);
-            fullDispose(this._object);
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class PeerHand extends Entity {
-    constructor(hand) {
-        super();
-        if(!hand in Hands) {
-            throw new Error("constructor for PeerHand must be LEFT or RIGHT");
-        }
-        this._hand = hand;
-        this._vector3 = new THREE.Vector3();
-        this._euler = new THREE.Euler();
-        this._quaternion = new THREE.Quaternion();
-
-        this._setup();
-    }
-
-    _setup() {
-        let geometry = new THREE.SphereGeometry(0.05);
-        let material = new THREE.MeshLambertMaterial({ color: 0xC68863 });
-        this._mesh = new THREE.Mesh(geometry, material);
-        this._object.add(this._mesh);
-    }
-
-    getWorldPosition() {
-        this._object.getWorldPosition(this._vector3);
-        return this._vector3;
-    }
-
-    getWorldRotation() {
-        this._object.getWorldQuaternion(this._quaternion);
-        this._quaternion.normalize();
-        this._euler.setFromQuaternion(this._quaternion);
-        return this._euler;
-    }
-
-    getWorldQuaternion() {
-        this._object.getWorldQuaternion(this._quaternion);
-        return this._quaternion;
-    }
-
-    add(threeObj) {
-        this._object.add(threeObj);
-    }
-
-    attach(threeObj) {
-        this._object.attach(threeObj);
-    }
-
-    hasChild(threeObj) {
-        return threeObj.parent == this._object;
-    }
-
-    remove(threeObj) {
-        if(threeObj.parent == this._object) {
-            global$1.scene.attach(threeObj);
-            return true;
-        }
-        return false;
-    }
-
-    removeFromScene() {
-        if(this._object.parent) {
-            for(let child of this._object.children) {
-                if(child != this._mesh) {
-                    global$1.scene.attach(child);
-                }
-            }
-        }
-        super.removeFromScene();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const ERROR_FIX_FRAMES = 30;
-const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
-
-class PeerController extends Entity {
-    constructor(username, displayingUsername) {
-        super();
-        this._velocity = new THREE.Vector3();
-        this._positionError = new THREE.Vector3();
-        this._errorFixFrame = ERROR_FIX_FRAMES;
-        this._username = username || '...';
-        this._displayingUsername = displayingUsername;
-        this._setup();
-    }
-
-    _setup(avatarUrl) {
-        this._avatar = new Avatar({ 'Vertical Offset': 1.7 });
-        this._avatar.addToScene(this._object);
-        let usernameParams = {
-            'text': this._username, 
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'fontSize': 0.06,
-            'height': 0.04,
-            'width': 0.5,
-            'offset': 0,
-            'margin': 0,
-        };
-        this._usernameBlock = new THREE.Object3D();
-        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
-        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
-        usernameFront.rotateY(Math.PI);
-        this._usernameBlock.position.setY(1.85);
-        this._usernameBlock.add(usernameFront);
-        this._usernameBlock.add(usernameBack);
-        if(this._displayingUsername) {
-            this._object.add(this._usernameBlock);
-        }
-    }
-
-    _updateAvatarData(float32Array, index) {
-        let object = this._avatar.getObject();
-        if(this._isXR) object.position.fromArray(float32Array, index);
-        let rotation = float32Array.slice(index + 3, index + 6);
-        object.rotation.fromArray(rotation);
-    }
-
-    _updateHandData(float32Array, index, hand) {
-        if(!this.hands) return;
-        let peerHand = this.hands[hand].getObject();
-        peerHand.position.fromArray(float32Array, index);
-        let rotation = float32Array.slice(index + 3, index + 6);
-        peerHand.rotation.fromArray(rotation);
-    }
-
-    _updateVelocity(float32Array, index, timeDelta) {
-        this._velocity.fromArray(float32Array, index);
-        this._object.position.addScaledVector(this._velocity, timeDelta);
-        if(!this._isXR && !this._firstPerson) {
-            let object = this._avatar.getObject();
-            vector3s[0].copy(this._velocity).setY(0);
-            if(vector3s[0].length() < 0.001) return;
-            vector3s[0].multiplyScalar(-1).add(this._object.position)
-                .add(object.position);
-            object.lookAt(vector3s[0]);
-        }
-    }
-
-    _updatePosition(float32Array, index) {
-        this._positionError.fromArray(float32Array, index)
-            .sub(this._object.position);
-        this._errorFixFrame = 0;
-    }
-
-    getAvatar() {
-        return this._avatar;
-    }
-
-    updateAvatar(url) {
-        this._avatar.updateSourceUrl(url);
-    }
-
-    getHand(hand) {
-        return this.hands[hand];
-    }
-
-    setDisplayingUsername(displayingUsername) {
-        if(this._displayingUsername == displayingUsername) return;
-        this._displayingUsername = !this._displayingUsername;
-        if(this._displayingUsername) {
-            this._object.add(this._usernameBlock);
-        } else {
-            this._object.remove(this._usernameBlock);
-        }
-    }
-
-    setFirstPerson(firstPerson) {
-        this._firstPerson = firstPerson;
-    }
-
-    configureAsXR() {
-        if(this._isXR) return;
-        this._isXR = true;
-        this.hands = {};
-        for(let hand of [Hands.RIGHT, Hands.LEFT]) {
-            let peerHand = new PeerHand(hand);
-            this.hands[hand] = peerHand;
-            peerHand.addToScene(this._object);
-        }
-    }
-
-    updateScale(scale) {
-        this._object.scale.set(scale, scale, scale);
-    }
-
-    updateUsername(username) {
-        if(this._username == username) return;
-        this._username = username;
-        let shortName = username = stringWithMaxLength(username || '...', 17);
-        this._usernameBlock.children.forEach((block) => {
-            block.children[1].set({ content: shortName });
-        });
-    }
-
-    update(timeDelta, message) {
-        if(message) {
-            this._updateWithMessage(timeDelta, message);
-        } else {
-            this._updateWithoutMessage(timeDelta);
-        }
-        if(this._errorFixFrame < ERROR_FIX_FRAMES) {
-            this._object.position.addScaledVector(this._positionError,
-                ERROR_FACTOR);
-            this._errorFixFrame++;
-        }
-    }
-
-    _updateWithMessage(timeDelta, message) {
-        let codes = new Uint8Array(message.slice(2, 3))[0];
-        let float32Array = new Float32Array(message.slice(3));
-        let index = 0;
-        if(UserMessageCodes.AVATAR & codes) {
-            this._updateAvatarData(float32Array, index);
-            index += 6;
-        }
-        if(UserMessageCodes.LEFT_HAND & codes) {
-            this._updateHandData(float32Array, index, Hands.LEFT);
-            index += 6;
-        }
-        if(UserMessageCodes.RIGHT_HAND & codes) {
-            this._updateHandData(float32Array, index, Hands.RIGHT);
-            index += 6;
-        }
-        if(UserMessageCodes.USER_VELOCITY & codes) {
-            this._updateVelocity(float32Array, index, timeDelta);
-            index += 3;
-        } else {
-            this._velocity.set(0, 0, 0);
-        }
-        if(UserMessageCodes.USER_POSITION & codes) {
-            this._updatePosition(float32Array, index);
-            index += 3;
-        }
-    }
-
-    _updateWithoutMessage(timeDelta, message) {
-        this._object.position.addScaledVector(this._velocity, timeDelta);
-    }
-
-    removeFromScene() {
-        if(this._avatar) this._avatar.removeFromScene();
-        if(this.hands) {
-            for(let side in this.hands) {
-                this.hands[side].removeFromScene();
-            }
-        }
-        super.removeFromScene();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const ICE_SERVER_URLS = [
-    'stun:stun1.l.google.com:19302',
-    'stun:stun2.l.google.com:19302',
-    'stun:stun3.l.google.com:19302',
-    'stun:stun4.l.google.com:19302'
-];
-const CONFIGURATION = { iceServers: [{ urls: ICE_SERVER_URLS }] };
-const SIXTY_FOUR_KB = 1024 * 64;
-const TIMEOUT = 20000; //20 Seconds
-
-class RTCPeer {
-    constructor(peerId, polite, socket, mediaStream, onTimeout) {
-        this._peerId = peerId;
-        this._polite = polite;
-        this._socket = socket;
-        this._onTimeout = onTimeout;
-        this._myAudioStream = mediaStream;
-        this._myAudioTrack = mediaStream.getAudioTracks()[0];
-        this._peerAudioTrack;
-        this._connection = new RTCPeerConnection(CONFIGURATION);
-        this._audio = createAudioElement$1();
-        this._makingOffer = false;
-        this._ignoreOffer = false;
-        this._isSettingRemoteAnswerPending = false;
-        this._hasConnected = false;
-        this._dataChannel = null;
-        if(!polite) this._timeoutId = setTimeout(() => this._timeout(),TIMEOUT);
-        this._setupConnection();
-        this._sendDataQueue = new Queue();
-        if(!this._polite) this._setupDataChannel();
-    }
-
-    _setupConnection() {
-        this._connection.ontrack = (e) => {
-            this._peerAudioTrack = e.track;
-            e.track.onunmute = () => {
-                if(this._audio.srcObject) return;
-                this._audio.srcObject = e.streams[0];
-            };
-        };
-        this._connection.onicecandidate = (e) => {
-            this._socket.send({
-                topic: "candidate",
-                to: this._peerId,
-                candidate: e.candidate,
-            });
-        };
-        this._connection.onnegotiationneeded = async () => {
-            try {
-                this._makingOffer = true;
-                await this._connection.setLocalDescription();
-                this._socket.send({
-                    topic: "description",
-                    to: this._peerId,
-                    description: this._connection.localDescription,
-                });
-            } catch(error) {
-                console.error(error);
-            } finally {
-                this._makingOffer = false;
-            }
-        };
-        this._connection.ondatachannel = (e) => {
-            if(!this._polite) return;
-            this._dataChannel = e.channel;
-            this._dataChannel.binaryType = "arraybuffer";
-            this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
-            this._dataChannel.onopen = (e) => {
-                if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
-            };
-            this._dataChannel.onclose = (e) => {
-                if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
-            };
-            this._dataChannel.onmessage = (message) => {
-                if(this._onMessage) this._onMessage(message.data);
-            };
-        };
-        this._connection.onconnectionstatechange = (e) => {
-            let state = this._connection.connectionState;
-            if(state == "connected" && !this._hasConnected) {
-                this._hasConnected = true;
-                if(this._myAudioTrack)
-                    this._addAudioTrack();
-                if(!this._polite) clearTimeout(this._timeoutId);
-            } else if(state == "disconnected" || state == "failed") {
-                if(!this._polite) {
-                    clearTimeout(this._timeoutId);
-                    if(!this._hasConnected && this._onFailedImpoliteConnect)
-                        this._onFailedImpoliteConnect();
-                }
-                if(this._onDisconnect) this._onDisconnect();
-            }
-        };
-    }
-
-    _setupDataChannel() {
-        this._dataChannel = this._connection.createDataChannel(
-            this._peerId);
-        this._dataChannel.binaryType = "arraybuffer";
-        this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
-        this._dataChannel.onopen = (e) => {
-            if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
-        };
-        this._dataChannel.onclose = (e) => {
-            if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
-        };
-        this._dataChannel.onmessage = (message) => {
-            if(this._onMessage) this._onMessage(message.data);
-        };
-    }
-
-    _timeout() {
-        if(this._onTimeout) {
-            this._onFailedImpoliteConnect = null;
-            this._onTimeout();
-        }
-    }
-
-    toggleMyselfMuted(muted) {
-        if(!this._myAudioTrack) return;
-        this._myAudioTrack.enabled = !muted;
-    }
-
-    togglePeerMuted(muted) {
-        if(!this._peerAudioTrack) return;
-        this._peerAudioTrack.enabled = !muted;
-    }
-
-    _addAudioTrack(track, srcObject) {
-        this._connection.addTrack(this._myAudioTrack, this._myAudioStream);
-    }
-
-    close() {
-        this._connection.close();
-        this._audio.srcObject = null;
-        if(this._audio.parentNode) document.body.removeChild(this._audio);
-        if(this._onDisconnect) this._onDisconnect();
-    }
-
-    getPeerId() {
-        return this._peerId;
-    }
-
-    setPeerId(peerId) {
-        this._peerId = peerId;
-    }
-
-    async handleCandidate(message) {
-        try {
-            await this._connection.addIceCandidate(message.candidate);
-        } catch(error) {
-            if(!this._ignoreOffer) console.error(error);
-        }
-    }
-
-    async handleDescription(message) {
-        let description = message.description;
-        try {
-            let readyForOffer = !this._makingOffer
-                && (this._connection.signalingState == "stable"
-                    || this._isSettingRemoteAnswerPending);
-            let offerCollision = description.type == "offer" && !readyForOffer;
-            this._ignoreOffer = !this._polite && offerCollision;
-            if(this._ignoreOffer) return;
-
-            this._isSettingRemoteAnswerPending = description.type == "answer";
-            await this._connection.setRemoteDescription(description);
-            this._isSettingRemoteAnswerPending = false;
-            if(description.type == "offer") {
-                await this._connection.setLocalDescription();
-                this._socket.send({
-                    topic: "description",
-                    to: this._peerId,
-                    description: this._connection.localDescription,
-                });
-            }
-        } catch(error) {
-            console.error(error);
-        }
-    }
-
-    isConnected() {
-        return this._hasConnected;
-    }
-
-    sendData(data) {
-        this._sendDataQueue.enqueue(data);
-        if(this._dataChannel.onbufferedamountlow) return;
-        if(this._sendDataQueue.length == 1) this._sendData();
-    }
-
-    _sendData() {
-        let channel = this._dataChannel;
-        while(channel.bufferedAmount <= channel.bufferedAmountLowThreshold) {
-            try {
-                channel.send(this._sendDataQueue.dequeue());
-            } catch(err) {
-                if(!err.message.includes("readyState is not 'open'")) throw err;
-            }
-            if(this._sendDataQueue.length == 0) return;
-        }
-        channel.onbufferedamountlow = () => {
-            channel.onbufferedamountlow = null;
-            this._sendData();
-        };
-    }
-
-    setOnDisconnect(f) {
-        this._onDisconnect = f;
-    }
-
-    setOnFailedImpoliteConnect(f) {
-        this._onFailedImpoliteConnect = f;
-    }
-
-    setOnMessage(f) {
-        this._onMessage = f;
-    }
-
-    setOnSendDataChannelOpen(f) {
-        this._onSendDataChannelOpen = f;
-    }
-
-    setOnSendDataChannelClose(f) {
-        this._onSendDataChannelClose = f;
-    }
-}
-
-function createAudioElement$1() {
-    let audioElement = document.createElement('audio');
-    audioElement.autoplay = true;
-    document.body.appendChild(audioElement);
-    return audioElement;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const CONSTRAINTS = { audio: true, video: false };
-const NINE_MINUTES = 60000 * 9;
-const FIFTY_MINUTES = 60000 * 50;
-
-class Party {
-    constructor() {
-        //this._id = uuidv4();
-        this._peers = {};
-        this._userAudio = createAudioElement();
-        this._userAudio.defaultMuted = true;
-        this._userAudio.muted = true;
-        this._pingIntervalId = null;
-        this._authIntervalId = null;
-    }
-
-    host(roomId, successCallback, errorCallback) {
-        this._fetchAuthToken(() => {
-            this.connect(true, roomId, successCallback, errorCallback);
-        }, errorCallback);
-    }
-
-    join(roomId, successCallback, errorCallback) {
-        this._fetchAuthToken(() => {
-            this.connect(false, roomId, successCallback, errorCallback);
-        }, errorCallback);
-    }
-
-    connect(isHost, roomId, successCallback, errorCallback) {
-        if(this._socket) this.disconnect();
-        this._isHost = isHost;
-        this._roomId = window.location.pathname + '_' + roomId;
-        this._successCallback = successCallback;
-        this._errorCallback = errorCallback;
-        if(this._userAudio.srcObject) {
-            this._setupWebSocket();
-        } else {
-            this._setupUserMedia();
-        }
-    }
-
-    disconnect() {
-        if(this._socket) this._socket.close();
-        if(this._replacementSocket) this._replacementSocket.close();
-        if(this._pingIntervalId) {
-            clearInterval(this._pingIntervalId);
-            this._pingIntervalId = null;
-        }
-        if(this._authIntervalId) {
-            clearInterval(this._authIntervalId);
-            this._authIntervalId = null;
-        }
-        this._socket = null;
-        this._isHost = false;
-        for(let peerId in this._peers) {
-            this._peers[peerId].close();
-        }
-        this._peers = {};
-        if(this._onDisconnect) this._onDisconnect();
-    }
-
-    bootPeer(peerId) {
-        this._socket.send({
-            topic: "boot-peer",
-            peerId: peerId,
-        });
-    }
-
-    designateHost(peerId) {
-        this._socket.send({
-            topic: "designate-host",
-            peerId: peerId,
-        });
-    }
-
-    setOnPeerIdUpdate(f) {
-        this._onPeerIdUpdate = f;
-    }
-
-    setOnSetupPeer(f) {
-        this._onSetupPeer = f;
-    }
-
-    setOnDisconnect(f) {
-        this._onDisconnect = f;
-    }
-
-    _fetchAuthToken(successCallback, errorCallback) {
-        fetch(global$1.authUrl, { cache: "no-store" })
-            .then((response) => response.json())
-            .then((body) => {
-                if(!body.authToken) {
-                    this.disconnect();
-                    if(errorCallback) errorCallback({ topic: 'bad-auth' });
-                    return;
-                }
-                this._authToken = body.authToken;
-                if(successCallback) successCallback();
-            })
-            .catch((error) => {
-                this.disconnect();
-                if(errorCallback) errorCallback({ topic: 'bad-auth' });
-            });
-    }
-
-    _initiateUpdateSocket() {
-        this._socket.send({
-            topic: "update-connection",
-            initiate: true,
-        });
-    }
-
-    _updateSocket(code) {
-        this._replacementSocket.send({
-            topic: "update-connection",
-            code: code,
-        });
-    }
-
-    _updateSocketSuccess() {
-        let oldSocket = this._socket;
-        this._socket = this._replacementSocket;
-        this._socket.send = (body) => {
-            body['authToken'] = this._authToken;
-            this._socket._send(JSON.stringify(body));
-        };
-        oldSocket.onclose = () => {};
-        oldSocket.close();
-        this._replacementSocket = null;
-    }
-
-    _replacePeerId(oldPeerId, newPeerId) {
-        this._peers[oldPeerId].setPeerId(newPeerId);
-        this._peers[newPeerId] = this._peers[oldPeerId];
-        delete this._peers[oldPeerId];
-        if(this._onPeerIdUpdate) this._onPeerIdUpdate(oldPeerId, newPeerId);
-    }
-
-    _setupUserMedia() {
-        navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
-            this._userAudio.srcObject = stream;
-            this._setupWebSocket();
-        }).catch((error) => {
-            this._userAudio.srcObject = new MediaStream();
-            this._setupWebSocket();
-        });
-    }
-
-    _setupWebSocket() {
-        this._socket = new WebSocket(global$1.socketUrl);
-        this._socket.onopen = (e) => { this._onSocketOpen(e); };
-        this._socket.onclose = (e) => { this._onSocketClose(e); };
-        this._socket.onmessage = (e) => { this._onSocketMessage(e); };
-        this._socket.onerror = (e) => { this._onSocketError(e); };
-        this._socket._send = this._socket.send;
-        this._socket.send = (body) => {
-            body['authToken'] = this._authToken;
-            this._socket._send(JSON.stringify(body));
-        };
-    }
-
-    _setupReplacementSocket() {
-        this._replacementSocket = new WebSocket(global$1.socketUrl);
-        this._replacementSocket.onopen = () => { this._initiateUpdateSocket();};
-        this._replacementSocket.onclose = this._socket.onclose;
-        this._replacementSocket.onmessage = this._socket.onmessage;
-        this._replacementSocket.onerror = this._socket.onerror;
-        this._replacementSocket._send = this._replacementSocket.send;
-        this._replacementSocket.send = (body) => {
-            body['authToken'] = this._authToken;
-            this._replacementSocket._send(JSON.stringify(body));
-        };
-    }
-
-    _onSocketOpen(e) {
-        this._socket.send({
-            topic: "identify",
-            //id: this._id,
-            roomId: this._roomId,
-            isHost: this._isHost,
-        });
-        this._pingIntervalId = setInterval(() => {
-            this._socket.send({ topic: "ping" });
-        }, NINE_MINUTES);
-        this._authIntervalId = setInterval(() => {
-            this._fetchAuthToken(() => { this._setupReplacementSocket(); },
-                () => {
-                    pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                        text: 'Could not authenticate with Server',
-                    });
-                });
-        }, FIFTY_MINUTES);
-    }
-
-    _onSocketClose(e) {
-        if(this._socket) this.disconnect();
-    }
-
-    _onSocketMessage(e) {
-        let message = JSON.parse(e.data);
-        let topic = message.topic;
-        if(topic == "initiate") {
-            this._setupRTCPeer(message);
-        } else if(topic == "candidate") {
-            this._peers[message.from].handleCandidate(message);
-        } else if(topic == "description") {
-            this._peers[message.from].handleDescription(message);
-        } else if(topic == "hosting") {
-            if(this._successCallback) this._successCallback();
-        } else if(topic == "update-connection-ready") {
-            this._updateSocket(message.code);
-        } else if(topic == "update-connection-success") {
-            this._updateSocketSuccess();
-        } else if(topic == "replace-connection") {
-            this._replacePeerId(message.oldPeerId, message.newPeerId);
-        } else if(topic == "designate-host") {
-            pubSub.publish(this._id, PubSubTopics.BECOME_PARTY_HOST);
-        } else if(topic == "boot-peer") {
-            pubSub.publish(this._id, PubSubTopics.BOOT_PEER, message.peerId);
-        } else if(topic == "disconnect") {
-            this.disconnect();
-        } else if(topic == "error" && message.requestTopic == "boot-peer") {
-            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                text: "Error: Couldn't kick out user",
-            });
-        } else if(topic == "error" && message.requestTopic == "designate-host"){
-            pubSub.publish(this._id, PubSubTopics.BECOME_PARTY_HOST);
-            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                text: "Error: Couldn't make user host",
-            });
-        } else if(topic == "error" && message.requestTopic == "update-connection"){
-            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                text: 'Could not reinitiate connection with Server',
-            });
-            this.disconnect();
-        } else {
-            this.disconnect();
-            if(this._errorCallback) this._errorCallback(message);
-        }
-    }
-
-    _onSocketError(e) {
-        this.disconnect();
-        if(this._errorCallback) this._errorCallback(e);
-    }
-
-    _onRTCTimeout() {
-        if(this._socket) this._onSocketError({ topic: "rtc-timeout" });
-    }
-
-    _setupRTCPeer(message) {
-        let peerId = message.peerId;
-        let polite = message.polite;
-        this._peers[peerId] = new RTCPeer(message.peerId, polite, this._socket,
-            this._userAudio.srcObject.clone(), () => this._onRTCTimeout());
-        if(this._onSetupPeer) this._onSetupPeer(this._peers[peerId]);
-    }
-}
-
-function createAudioElement() {
-    let audioElement = document.createElement('audio');
-    audioElement.autoplay = true;
-    document.body.appendChild(audioElement);
-    return audioElement;
-}
-
-let party = new Party();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const SIXTEEN_KB$1 = 1024 * 16;
-const BLOCKABLE_HANDLERS_MAP = {
-    component_attached: '_handleComponentAttached',
-    component_detached: '_handleComponentDetached',
-    instance_added: '_handleInstanceAdded',
-    instance_deleted: '_handleInstanceDeleted',
-    instance_updated: '_handleInstanceUpdated',
-    instance_attached: '_handleInstanceAttached',
-    instance_detached: '_handleInstanceDetached',
-    loaded_diff: '_handleLoadedDiff',
-    settings_updated: '_handleSettingsUpdated',
-};
-
-class PartyMessageHelper {
-    constructor() {
-        this._id = uuidv4();
-        this._handlingLocks = new Set();
-        this._handleQueue = new Queue();
-        this._publishQueue = new Queue();
-    }
-
-    init(PartyHandler) {
-        this._partyHandler = PartyHandler;
-        let handlers = {
-            avatar: (p, m) => { this._handleAvatar(p, m); },
-            asset_added: (p, m) => { this._handleAssetAdded(p, m); },
-            username: (p, m) => { this._handleUsername(p, m); },
-            user_perspective: (p, m) => { this._handleUserPerspective(p,m);},
-            user_scale: (p, m) => { this._handleUserScale(p,m);},
-        };
-        for(let topic in BLOCKABLE_HANDLERS_MAP) {
-            let handler = (p,m) => {this[BLOCKABLE_HANDLERS_MAP[topic]](p, m);};
-            handlers[topic] = (p, m) => { this._handleBlockable(handler,p,m); };
-        }
-        this._partyHandler.addMessageHandlers(handlers);
-    }
-
-    registerHandler(topic, handler) {
-        this._partyHandler.addMessageHandler(topic, handler);
-    }
-
-    registerBlockableHandler(topic, handler) {
-        let blockableHandler = (p, m) => { this._handleBlockable(handler,p,m);};
-        this._partyHandler.addMessageHandler(topic, blockableHandler);
-    }
-
-    publish(message) {
-        this._partyHandler.sendToAllPeers(message);
-    }
-
-    queuePublish(message) {
-        if(typeof message == 'function') {
-            this._publishQueue.enqueue(f);
-        } else {
-            this._publishQueue.enqueue(() => {
-                this._partyHandler.sendToAllPeers(message);
-                return Promise.resolve();
-            });
-        }
-    }
-
-    notifyDiffError() {
-        pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-            text: "An unexpected error occured when loading the host's state",
-        });
-    }
-
-    _handleAvatar(peer, message) {
-        peer.controller.updateAvatar(message.url);
-        if(message.isXR) peer.controller.configureAsXR();
-    }
-
-    _handleAssetAdded(peer, message) {
-        let lock = uuidv4();
-        this._handlingLocks.add(lock);
-        let partsLength = message.parts;
-        let assetId = message.assetId;
-        let name = message.name;
-        let type = message.type;
-        let parts = [];
-        this._partyHandler.setEventBufferHandler(peer, (peer, message) => {
-            parts.push(message);
-            if(parts.length == partsLength) {
-                this._partyHandler.setEventBufferHandler(peer);
-                let blob = new Blob(parts, { type: 'application/javascript' });
-                let assetDetails = {
-                    Name: name,
-                    Type: type,
-                };
-                libraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
-                    .then(() => {
-                        pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId);
-                        this._removeHandlingLock(lock);
-                    });
-            }
-        });
-    }
-
-    _handleBlockable(handler, peer, message) {
-        if(this._handlingLocks.size > 0) {
-            this._handleQueue.enqueue(() => {
-                handler(peer, message);
-            });
-            return;
-        }
-        handler(peer, message);
-    }
-
-    _handleComponentAttached(peer, message) {
-        let asset = projectHandler.getSessionAsset(message.id);
-        if(asset) {
-            if(asset.editorHelper) {
-                asset.editorHelper.addComponent(message.componentId, true,true);
-            } else {
-                asset.addComponent(message.componentId, true);
-            }
-            delete message['topic'];
-            pubSub.publish(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
-                + message.componentAssetId, message);
-        }
-    }
-
-    _handleComponentDetached(peer, message) {
-        let asset = projectHandler.getSessionAsset(message.id);
-        if(asset) {
-            if(asset.editorHelper) {
-                asset.editorHelper.removeComponent(message.componentId, true,
-                    true);
-            } else {
-                asset.removeComponent(message.componentId, true);
-            }
-            delete message['topic'];
-            pubSub.publish(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
-                + message.componentAssetId, message);
-        }
-    }
-
-    _handleInstanceAdded(peer, message) {
-        let asset = projectHandler.getSessionAsset(message.asset.id);
-        if(asset) {
-            projectHandler.addAsset(asset, true, true);
-        } else {
-            asset = projectHandler.addNewAsset(message.asset.assetId,
-                message.asset, true, true);
-        }
-        pubSub.publish(this._id, message.assetType + '_ADDED', asset);
-    }
-
-    _handleInstanceDeleted(peer, message) {
-        let asset = projectHandler.getAsset(message.id);
-        if(asset) {
-            projectHandler.deleteAsset(asset, true, true);
-            let topic = message.assetType + '_DELETED:' + message.id;
-            pubSub.publish(this._id, topic, { asset: asset });
-        } else {
-            console.error("Asset to delete does not exist");
-        }
-    }
-
-    _handleInstanceUpdated(peer, message) {
-        let asset = projectHandler.getSessionAsset(message.params.id);
-        if(asset) {
-            this._handleAssetUpdate(asset, message.params,
-                message.assetType + '_UPDATED');
-        }
-    }
-
-    _handleInstanceAttached(peer, message) {
-        let instance = projectHandler.getSessionAsset(message.id);
-        if(instance) {
-            let editorHelper = instance.editorHelper;
-            if(editorHelper) editorHelper.attachToPeer(peer, message);
-        }
-    }
-
-    _handleInstanceDetached(peer, message) {
-        let instance = projectHandler.getSessionAsset(message.id);
-        if(instance) {
-            let editorHelper = instance.editorHelper;
-            if(editorHelper) editorHelper.detachFromPeer(peer, message);
-        }
-    }
-
-    _handleLoadedDiff(peer, message) {
-        pubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
-    }
-
-    _handleSettingsUpdated(peer, message) {
-        let settings = message.settings;
-        for(let setting in settings) {
-            let handler;
-            if(setting == 'User Settings') {
-                handler = 'setUserSetting';
-            } else if(setting == 'Skybox') {
-                handler = 'setSkyboxSide';
-            } else {
-                console.error("Unknown setting updated: " + setting);
-                return;
-            }
-            for(let key in settings[setting]) {
-                settingsHandler[handler](key, settings[setting][key], true);
-            }
-        }
-        pubSub.publish(this._id, PubSubTopics.SETTINGS_UPDATED,
-            { settings: settings });
-    }
-
-    _handleAssetUpdate(asset, params, topic) {
-        let updatedParams = [];
-        for(let param in params) {
-            if(param == 'id') continue;
-            updatedParams.push(param);
-            let capitalizedParam = capitalizeFirstLetter(param);
-            if(('set' + capitalizedParam) in asset)
-                asset['set' + capitalizedParam](params[param]);
-            if(global$1.isEditor) asset.editorHelper.updateMenuField(param);
-        }
-        let message = {
-            asset: asset,
-            fields: updatedParams,
-        };
-        pubSub.publish(this._id, topic, message);
-    }
-
-    _handleUsername(peer, message) {
-        let username = message.username;
-        if(peer.username == username) return;
-        peer.username = username;
-        if(peer.controller) peer.controller.updateUsername(username);
-        pubSub.publish(this._id, PubSubTopics.PEER_USERNAME_UPDATED, {
-            peer: peer,
-        });
-    }
-
-    _handleUserPerspective(peer, message) {
-        let perspective = message.perspective;
-        if(peer.controller) peer.controller.setFirstPerson(perspective == 1);
-    }
-
-    _handleUserScale(peer, message) {
-        let scale = message.scale;
-        if(peer.controller) peer.controller.updateScale(scale);
-    }
-
-    handlePartyStarted() {
-        pubSub.publish(this._id, PubSubTopics.PARTY_STARTED);
-    }
-
-    handlePartyEnded() {
-        pubSub.publish(this._id, PubSubTopics.PARTY_ENDED);
-    }
-
-    handlePeerConnected(peer) {
-        pubSub.publish(this._id, PubSubTopics.PEER_CONNECTED, { peer: peer });
-    }
-
-    handlePeerDisconnected(peer) {
-        pubSub.publish(this._id, PubSubTopics.PEER_DISCONNECTED,{ peer: peer });
-    }
-
-    _removeHandlingLock(lock) {
-        this._handlingLocks.delete(lock);
-        while(this._handleQueue.length > 0 && this._handlingLocks.size == 0) {
-            this._handleQueue.dequeue()();
-        }
-    }
-
-    _publishAssetAdded(assetId) {
-        return new Promise((resolve) => {
-            let libraryDetails = libraryHandler.getLibrary()[assetId];
-            let blob = libraryDetails['Blob'];
-            blob.arrayBuffer().then((buffer) => {
-                let parts = [];
-                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB$1);
-                for(let i = 0; i < n; i++) {
-                    let chunkStart = i * SIXTEEN_KB$1;
-                    let chunkEnd = (i + 1) * SIXTEEN_KB$1;
-                    parts.push(buffer.slice(chunkStart, chunkEnd));
-                }
-                this._partyHandler.sendToAllPeers(JSON.stringify({
-                    topic: 'asset_added',
-                    assetId: assetId,
-                    name: libraryDetails['Name'],
-                    type: libraryDetails['Type'],
-                    parts: parts.length,
-                }));
-                for(let part of parts) {
-                    this._partyHandler.sendToAllPeers(part);
-                }
-                resolve();
-            });
-        });
-    }
-
-    _publishAvatarUpdated(url) {
-        this._partyHandler.sendToAllPeers(JSON.stringify({
-            "topic": "avatar",
-            "url": url,
-        }));
-        return Promise.resolve();
-    }
-
-    _publishComponentAttachedDetached(topic, message) {
-        let peerMessage = {
-            topic: topic,
-            id: message.id,
-            assetId: message.assetId,
-            assetType: message.assetType,
-            componentId: message.componentId,
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-        return Promise.resolve();
-    }
-
-    _publishInstanceAdded(asset, assetType) {
-        let message = {
-            topic: 'instance_added',
-            asset: asset.exportParams(),
-            assetType: assetType,
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishInstanceDeleted(asset, assetType) {
-        let message = {
-            topic: 'instance_deleted',
-            id: asset.getId(),
-            assetId: asset.getAssetId(),
-            assetType: assetType,
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishInstanceUpdated(updateMessage, assetType) {
-        let asset = {};
-        asset['id'] = updateMessage.asset.getId();
-        for(let param of updateMessage.fields) {
-            let capitalizedParam = capitalizeFirstLetter(param);
-            asset[param] = updateMessage.asset['get' + capitalizedParam]();
-        }
-        let peerMessage = {
-            topic: "instance_updated",
-            params: asset,
-            assetType: assetType,
-        };
-        this._partyHandler.sendToAllPeers(
-            JSON.stringify(peerMessage, (k, v) => v === undefined ? null : v));
-        return Promise.resolve();
-    }
-
-    _publishInstanceAttached(data) {
-        let message = {
-            topic: 'instance_attached',
-            id: data.instance.getId(),
-            assetId: data.instance.getAssetId(),
-            option: data.option,
-            type: data.type,
-        };
-        if(global$1.deviceType == 'XR') {
-            message['position'] = data.position;
-            message['rotation'] = data.rotation;
-            message['scale'] = data.scale;
-            message['twoHandScaling'] = data.twoHandScaling;
-            message['isXR'] = true;
-        }
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishInstanceDetached(data) {
-        let message = {
-            topic: 'instance_detached',
-            id: data.instance.getId(),
-            assetId: data.instance.getAssetId(),
-            option: data.option,
-            type: data.type,
-        };
-        if(global$1.deviceType == 'XR') {
-            message['position'] = data.position;
-            message['rotation'] = data.rotation;
-            message['scale'] = data.scale;
-            message['twoHandScaling'] = data.twoHandScaling;
-            message['isXR'] = true;
-        }
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishSettingsUpdate(updateMessage) {
-        let settings = updateMessage.settings;
-        let keys = updateMessage.keys;
-        let peerMessage = {
-            topic: 'settings_updated',
-            settings: {},
-        };
-        peerMessage.settings[keys[0]] = {};
-        peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
-        this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-        return Promise.resolve();
-    }
-
-    _publishUserPerspectiveChanged(perspective) {
-        let message = {
-            topic: 'user_perspective',
-            perspective: perspective,
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    _publishUserScaleUpdated(scale) {
-        let message = {
-            topic: 'user_scale',
-            scale: scale,
-        };
-        this._partyHandler.sendToAllPeers(JSON.stringify(message));
-        return Promise.resolve();
-    }
-
-    addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetAdded(assetId);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.AVATAR_UPDATED, (url) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAvatarUpdated(url);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.BECOME_PARTY_HOST, () => {
-            this._partyHandler.setIsHost(true);
-        });
-        pubSub.subscribe(this._id, PubSubTopics.BOOT_PEER, (peerId) => {
-            this._partyHandler.bootPeer(peerId);
-        });
-        pubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
-            this._publishQueue.enqueue(() => {
-                return this._publishComponentAttachedDetached(
-                    'component_attached', message);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED, (message)=>{
-            this._publishQueue.enqueue(() => {
-                return this._publishComponentAttachedDetached(
-                    'component_detached', message);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, (message) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishInstanceAttached(message);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.INSTANCE_DETACHED, (message) =>{
-            this._publishQueue.enqueue(() => {
-                return this._publishInstanceDetached(message);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishSettingsUpdate(message);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, (n)=>{
-            this._publishQueue.enqueue(() => {
-                return this._publishUserPerspectiveChanged(n);
-            });
-        });
-        pubSub.subscribe(this._id, PubSubTopics.USER_SCALE_UPDATED, (scale) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishUserScaleUpdated(scale);
-            });
-        });
-        for(let assetType in AssetTypes) {
-            let addedTopic = PubSubTopics[assetType + '_ADDED'];
-            let deletedTopic = PubSubTopics[assetType + '_DELETED'];
-            let updatedTopic = PubSubTopics[assetType + '_UPDATED'];
-            pubSub.subscribe(this._id, addedTopic, (asset) => {
-                this._publishQueue.enqueue(() => {
-                    return this._publishInstanceAdded(asset, assetType);
-                });
-            });
-                pubSub.subscribe(this._id, deletedTopic, (message) => {
-                this._publishQueue.enqueue(() => {
-                    return this._publishInstanceDeleted(message.asset,
-                        assetType);
-                });
-            });
-            pubSub.subscribe(this._id, updatedTopic, (message) => {
-                this._publishQueue.enqueue(() => {
-                    return this._publishInstanceUpdated(message,assetType);
-                });
-            });
-        }
-    }
-
-    removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.ASSET_ADDED);
-        pubSub.unsubscribe(this._id, PubSubTopics.AVATAR_UPDATED);
-        pubSub.unsubscribe(this._id, PubSubTopics.BECOME_PARTY_HOST);
-        pubSub.unsubscribe(this._id, PubSubTopics.BOOT_PEER);
-        pubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
-        pubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DETACHED);
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
-        pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
-        pubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
-        pubSub.unsubscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED);
-        pubSub.unsubscribe(this._id, PubSubTopics.USER_SCALE_UPDATED);
-        for(let assetType in AssetTypes) {
-            pubSub.unsubscribe(this._id, PubSubTopics[assetType + '_ADDED']);
-            pubSub.unsubscribe(this._id, PubSubTopics[assetType + '_DELETED']);
-            pubSub.unsubscribe(this._id, PubSubTopics[assetType + '_UPDATED']);
-        }
-    }
-
-    update() {
-        if(this._isPublishing || this._publishQueue.length == 0) return;
-        this._isPublishing = true;
-        this._publishQueue.dequeue()().then(() => this._isPublishing = false);
-    }
-}
-
-let partyMessageHelper = new PartyMessageHelper();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const SIXTEEN_KB = 1024 * 16;
-const TWO_BYTE_MOD = 2 ** 16;
-const JITTER_DELAY = 50;
-
-class PartyHandler {
-    constructor() {
-        this._peers = {};
-        this._partyActive = false;
-        this._displayingUsernames = false;
-        this._username = generateRandomUsername();
-        this._messageHandlers = {
-            project: (p, m) => { this._handleProject(p, m); },
-        };
-        partyMessageHelper.init(this);
-        party.setOnPeerIdUpdate((o, n) => { this._updatePeerId(o, n); });
-        party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
-        party.setOnDisconnect(() => { this._onDisconnect(); });
-    }
-
-    _onDisconnect() {
-        this._partyActive = false;
-        partyMessageHelper.removeSubscriptions();
-        for(let peerId in this._peers) {
-            let peer = this._peers[peerId];
-            if(peer.rtc) peer.rtc.close();
-            if(peer.controller) peer.controller.removeFromScene();
-        }
-        this._peers = {};
-        partyMessageHelper.handlePartyEnded();
-    }
-
-    _registerPeer(rtc) {
-        let peer = { id: rtc.getPeerId(), jitterBuffer: new Queue() };
-        this._peers[peer.id] = peer;
-        rtc.setOnSendDataChannelOpen(() => {
-            if(this._successCallback) this._successCallback();
-            peer.rtc = rtc;
-            peer.controller = new PeerController(peer.username,
-                this._displayingUsernames);
-            peer.controller.addToScene(global$1.scene);
-            rtc.sendData(JSON.stringify({
-                "topic": "avatar",
-                "url": UserController$1.getAvatarUrl(),
-                "isXR": global$1.deviceType == "XR",
-            }));
-            rtc.sendData(JSON.stringify({
-                topic: 'username',
-                username: this._username,
-            }));
-            rtc.sendData(JSON.stringify({
-                topic: 'user_scale',
-                scale: settingsHandler.getUserScale(),
-            }));
-            partyMessageHelper.handlePeerConnected(peer);
-            if(this._isHost) {
-                let zip = (global$1.isEditor)
-                    ? projectHandler.exportProject()
-                    : projectHandler.exportDiff();
-                this._sendProjectZip(zip, [rtc]);
-            }
-        });
-        rtc.setOnSendDataChannelClose(() => {
-            delete peer['rtc'];
-        });
-        rtc.setOnDisconnect(() => {
-            if(peer.controller) peer.controller.removeFromScene();
-            if(peer.id in this._peers) {
-                delete this._peers[peer.id];
-                partyMessageHelper.handlePeerDisconnected(peer);
-            }
-        });
-        rtc.setOnFailedImpoliteConnect(() => {
-            if(this._errorCallback)
-                this._errorCallback({ topic: 'could-not-connect' });
-            party.disconnect();
-        });
-        rtc.setOnMessage((message) => {
-            if(typeof message == "string") {
-                this._handleJSON(peer, JSON.parse(message));
-            } else {
-                this._handleArrayBuffer(peer, message);
-            }
-        });
-    }
-
-    _updatePeerId(oldPeerId, newPeerId) {
-        this._peers[oldPeerId].id = newPeerId;
-        this._peers[newPeerId] = this._peers[oldPeerId];
-        delete this._peers[oldPeerId];
-    }
-
-    _handleJSON(peer, message) {
-        if(message.topic in this._messageHandlers)
-            this._messageHandlers[message.topic](peer, message);
-    }
-
-    _handleArrayBuffer(peer, message) {
-        if(peer.handleEventArrayBuffer) {
-            peer.handleEventArrayBuffer(peer, message);
-            return;
-        }
-        peer.jitterBuffer.enqueue(message);
-    }
-
-    _getNextJitterBufferMessage(jitterBuffer, timestamp) {
-        let message = jitterBuffer.peek();
-        if(!message) return null;
-        let messageTimestamp = this._getMessageTimestamp(message);
-        let timestampDiff = timestamp - messageTimestamp;
-        timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
-            % TWO_BYTE_MOD;
-        if(timestampDiff <= JITTER_DELAY) return null;
-        let nextMessage;
-        do {
-            message = jitterBuffer.dequeue();
-            nextMessage = jitterBuffer.peek();
-            if(!nextMessage) return message;
-            messageTimestamp = this._getMessageTimestamp(nextMessage);
-            timestampDiff = timestamp - messageTimestamp;
-            timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
-                % TWO_BYTE_MOD;
-        } while(timestampDiff > JITTER_DELAY)
-        return message;
-    }
-
-    _getMessageTimestamp(message) {
-        let uint16array = new Uint16Array(message, 0, 1);
-        return uint16array[0];
-    }
-
-    _sendProjectZip(zip, rtcs) {
-        zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
-            let parts = [];
-            let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
-            for(let i = 0; i < n; i++) {
-                let chunkStart = i * SIXTEEN_KB;
-                let chunkEnd = (i + 1) * SIXTEEN_KB;
-                parts.push(buffer.slice(chunkStart, chunkEnd));
-            }
-            this._sendProjectParts(rtcs, parts);
-        });
-    }
-
-    _sendProjectParts(rtcs, parts) {
-        rtcs.forEach((rtc) => rtc.sendData(JSON.stringify({
-            "topic": "project",
-            "parts": parts.length,
-        })));
-        for(let part of parts) {
-            rtcs.forEach((rtc) => rtc.sendData(part));
-        }
-    }
-
-    _handleProject(peer, message) {
-        let partsLength = message.parts;
-        let parts = [];
-        peer.handleEventArrayBuffer = (peer, message) => {
-            parts.push(message);
-            if(parts.length == partsLength) {
-                peer.handleEventArrayBuffer = null;
-                let buffer = concatenateArrayBuffers(parts);
-                let zip = new JSZip();
-                zip.loadAsync(buffer).then((zip) => {
-                    if(global$1.isEditor) {
-                        projectHandler.loadZip(zip);
-                        this.sendToAllPeers(JSON.stringify({
-                            topic: 'loaded_diff',
-                        }));
-                    } else {
-                        projectHandler.loadDiffZip(zip, () => {
-                            this.sendToAllPeers(JSON.stringify({
-                                topic: 'loaded_diff',
-                            }));
-                        }, () => {
-                            party.disconnect();
-                            partyMessageHelper.notifyDiffError();
-                        });
-                    }
-                });
-            }
-        };
-    }
-
-    addMessageHandler(topic, messageHandler) {
-        this._messageHandlers[topic] = messageHandler;
-    }
-
-    addMessageHandlers(messageHandlers) {
-        for(let key in messageHandlers) {
-            this._messageHandlers[key] = messageHandlers[key];
-        }
-    }
-
-    bootPeer(peerId) {
-        let peer = this._peers[peerId];
-        if(peer && peer.rtc) {
-            peer.rtc.close();
-        } else {
-            console.warn("Warn: couldn't boot peer because peer's rtc connection does not exist. Likely a race condition where the peer disconnecting from their end already closed the connection");
-        }
-    }
-
-    getDisplayingUsernames() {
-        return this._displayingUsernames;
-    }
-
-    getPeer(peerId) {
-        return this._peers[peerId];
-    }
-
-    getPeers() {
-        return this._peers;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    sendProject() {
-        let rtcs = [];
-        for(let peerId in this._peers) {
-            if(this._peers[peerId].rtc) rtcs.push(this._peers[peerId].rtc);
-        }
-        let zip = projectHandler.exportProject();
-        this._sendProjectZip(zip, rtcs);
-    }
-
-    setDisplayingUsernames(displayingUsernames) {
-        if(this._displayingUsernames == displayingUsernames) return;
-        this._displayingUsernames = !this._displayingUsernames;
-        for(let peerId in this._peers) {
-            let controller = this._peers[peerId].controller;
-            if(controller)
-                controller.setDisplayingUsername(this._displayingUsernames);
-        }
-    }
-
-    setIsHost(isHost) {
-        this._isHost = isHost;
-    }
-
-    setUsername(username) {
-        this._username = username;
-        this.sendToAllPeers(JSON.stringify({
-            topic: 'username',
-            username: username,
-        }));
-    }
-
-    isHost() {
-        return this._isHost;
-    }
-
-    isPartyActive() {
-        return this._partyActive;
-    }
-
-    host(roomId, successCallback, errorCallback) {
-        this._isHost = true;
-        this._successCallback = successCallback;
-        this._errorCallback = errorCallback;
-        party.host(roomId, successCallback, errorCallback);
-        partyMessageHelper.addSubscriptions();
-        this._partyActive = true;
-        partyMessageHelper.handlePartyStarted();
-    }
-
-    join(roomId, successCallback, errorCallback) {
-        this._isHost = false;
-        this._successCallback = successCallback;
-        this._errorCallback = errorCallback;
-        party.join(roomId, successCallback, errorCallback);
-        partyMessageHelper.addSubscriptions();
-        this._partyActive = true;
-        partyMessageHelper.handlePartyStarted();
-    }
-
-    sendToAllPeers(data) {
-        for(let peerId in this._peers) {
-            let rtc = this._peers[peerId].rtc;
-            if(rtc) rtc.sendData(data);
-        }
-    }
-
-    setEventBufferHandler(peer, handler) {
-        peer.handleEventArrayBuffer = handler;
-    }
-
-    update(timeDelta) {
-        if(!this._partyActive) return;
-        let timestamp = new Date().getTime() % TWO_BYTE_MOD;
-        let buffer = new Uint16Array([timestamp]).buffer;
-        buffer = concatenateArrayBuffers(
-            [buffer, ...UserController$1.getDataForRTC()]);
-        for(let peerId in this._peers) {
-            let peer = this._peers[peerId];
-            if(peer.controller) {
-                let message = this._getNextJitterBufferMessage(
-                    peer.jitterBuffer, timestamp);
-                peer.controller.update(timeDelta, message);
-            }
-            if(peer.rtc) peer.rtc.sendData(buffer);
-        }
-        partyMessageHelper.update();
-    }
-}
-
-function generateRandomUsername() {
-    return String.fromCharCode(97+Math.floor(Math.random() * 26))
-            + Math.floor(Math.random() * 100);
-}
-
-let partyHandler = new PartyHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const PLAY_TOPIC_PREFIX = 'PLAY_AUDIO_ASSET:';
-
-class AudioAsset extends AssetEntity {
-    constructor(params = {}) {
-        super(params);
-        this._autoplay = params['autoplay'] || false;
-        this._coneInnerAngle = numberOr(params['coneInner'], 360);
-        this._coneOuterAngle = params['coneOuterAngle'] || 0;
-        this._coneOuterGain = params['coneOuterGain'] || 0;
-        this._distanceModel = params['distanceModel'] || 'inverse';
-        this._loop = params['loop'] || false;
-        this._maxDistance = numberOr(params['maxDistance'], 100);
-        this._refDistance = numberOr(params['refDistance'], 1);
-        this._rolloffFactor = numberOr(params['rolloffFactor'], 1);
-        this._volume = numberOr(params['volume'], 1);
-        this._createMesh(params['assetId']);
-        this.setPlayTopic(params['playTopic'] || '');
-        this.setPauseTopic(params['pauseTopic'] || '');
-        this.setStopTopic(params['stopTopic'] || '');
-        if(!global$1.isEditor) this._addPartySubscriptions();
-    }
-
-    _createMesh(assetId) {
-        let audioBuffer = libraryHandler.getBuffer(assetId);
-        this._audio = new THREE.PositionalAudio(audioHandler.getListener());
-        if(!global$1.isEditor) this._audio.autoplay = this._autoplay;
-        this._audio.autoplay = this._autoplay;
-        this._audio.setDirectionalCone(this._coneInnerAngle,
-            this._coneOuterAngle, this._coneOuterGain);
-        this._audio.setDistanceModel(this._distanceModel);
-        this._audio.setLoop(this._loop);
-        this._audio.setMaxDistance(this._maxDistance);
-        this._audio.setRefDistance(this._refDistance);
-        this._audio.setRolloffFactor(this._rolloffFactor);
-        this._audio.setVolume(this._volume);
-        this._audio.setBuffer(audioBuffer);
-        this._object.add(this._audio);
-    }
-
-    _getDefaultName() {
-        return libraryHandler.getAssetName(this._assetId)
-            || 'Audio';
-    }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addNewAsset(this._assetId, params);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['autoplay'] = this._autoplay;
-        params['coneInnerAngle'] = this._coneInnerAngle;
-        params['coneOuterAngle'] = this._coneOuterAngle;
-        params['coneOuterGain'] = this._coneOuterGain;
-        params['distanceModel'] = this._distanceModel;
-        params['loop'] = this._loop;
-        params['maxDistance'] = this._maxDistance;
-        params['pauseTopic'] = this._pauseTopic;
-        params['playTopic'] = this._playTopic;
-        params['refDistance'] = this._refDistance;
-        params['rolloffFactor'] = this._rolloffFactor;
-        params['stopTopic'] = this._stopTopic;
-        params['volume'] = this._volume;
-        return params;
-    }
-
-    getAudio() {
-        return this._audio;
-    }
-
-    getAutoplay(autoplay) {
-        return this._autoplay;
-    }
-
-    getConeInnerAngle(coneInnerAngle) {
-        return this._coneInnerAngle;
-    }
-
-    getConeOuterAngle(coneOuterAngle) {
-        return this._coneOuterAngle;
-    }
-
-    getConeOuterGain(coneOuterGain) {
-        return this._coneOuterGain;
-    }
-
-    getDistanceModel(distanceModel) {
-        return this._distanceModel;
-    }
-
-    getLoop(loop) {
-        return this._loop;
-    }
-
-    getMaxDistance(maxDistance) {
-        return this._maxDistance;
-    }
-
-    getPlayTopic(playTopic) {
-        return this._playTopic;
-    }
-
-    getPauseTopic(pauseTopic) {
-        return this._pauseTopic;
-    }
-
-    getRefDistance(refDistance) {
-        return this._refDistance;
-    }
-
-    getRolloffFactor(rolloffFactor) {
-        return this._rolloffFactor;
-    }
-
-    getStopTopic(stopTopic) {
-        return this._stopTopic;
-    }
-
-    getVolume(volume) {
-        return this._volume;
-    }
-
-    setAutoplay(autoplay) {
-        this._autoplay = autoplay;
-        if(!global$1.isEditor) this._audio.autoplay = autoplay;
-    }
-
-    setConeInnerAngle(coneInnerAngle) {
-        this._coneInnerAngle = coneInnerAngle;
-        this._audio.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
-            this._coneOuterGain);
-    }
-
-    setConeOuterAngle(coneOuterAngle) {
-        this._coneOuterAngle = coneOuterAngle;
-        this._audio.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
-            this._coneOuterGain);
-    }
-
-    setConeOuterGain(coneOuterGain) {
-        this._coneOuterGain = coneOuterGain;
-        this._audio.setDirectionalCone(this._coneInnerAngle,
-            this._coneOuterAngle, coneOuterGain);
-    }
-
-    setDistanceModel(distanceModel) {
-        this._distanceModel = distanceModel;
-        this._audio.setDistanceModel(distanceModel);
-    }
-
-    setLoop(loop) {
-        this._loop = loop;
-        this._audio.setLoop(loop);
-    }
-
-    setMaxDistance(maxDistance) {
-        this._maxDistance = maxDistance;
-        this._audio.setMaxDistance(maxDistance);
-    }
-
-    setPlayTopic(playTopic) {
-        if(this._playTopic) {
-            pubSub.unsubscribe(this._id, this._playTopic);
-        }
-        this._playTopic = playTopic;
-        if(this._playTopic) {
-            pubSub.subscribe(this._id, this._playTopic, (message) => {
-                if(!global$1.isEditor)
-                    this.play(null, message.userController == UserController$1);
-            });
-        }
-    }
-
-    setPauseTopic(pauseTopic) {
-        if(this._pauseTopic) {
-            pubSub.unsubscribe(this._id, this._pauseTopic);
-        }
-        this._pauseTopic = pauseTopic;
-        if(this._pauseTopic) {
-            pubSub.subscribe(this._id, this._pauseTopic, (message) => {
-                if(!global$1.isEditor) this._audio.pause();
-            });
-        }
-    }
-
-    setRefDistance(refDistance) {
-        this._refDistance = refDistance;
-        this._audio.setRefDistance(refDistance);
-    }
-
-    setRolloffFactor(rolloffFactor) {
-        this._rolloffFactor = rolloffFactor;
-        this._audio.setRolloffFactor(rolloffFactor);
-    }
-
-    setStopTopic(stopTopic) {
-        if(this._stopTopic) {
-            pubSub.unsubscribe(this._id, this._stopTopic);
-        }
-        this._stopTopic = stopTopic;
-        if(this._stopTopic) {
-            pubSub.subscribe(this._id, this._stopTopic, (message) => {
-                if(!global$1.isEditor) this._audio.stop();
-            });
-        }
-    }
-
-    setVolume(volume) {
-        this._volume = volume;
-        this._audio.setVolume(volume);
-    }
-
-    play(position, ignorePublish) {
-        this._audio.pause();//pause() update audio._progress
-        if(position != null) {
-            this._audio._progress = position || 0;
-        }
-        this._audio.play();
-        if(ignorePublish) return;
-        let message = {
-            topic: PLAY_TOPIC_PREFIX + this._id,
-            position: this._audio._progress,
-        };
-        partyMessageHelper.queuePublish(JSON.stringify(message));
-    }
-
-    _addPartySubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            this._onPeerReady(message.peer);
-        });
-        pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
-            this._onPartyStarted(partyHandler.isHost());
-        });
-        let playTopic = PLAY_TOPIC_PREFIX + this._id;
-        partyMessageHelper.registerBlockableHandler(playTopic, (p, m) => {
-            this.play(m.position, true);
-        });
-    }
-
-    _onPeerReady() {
-        if(!partyHandler.isHost()) return;
-        if(!this._audio.isPlaying) return;
-        this._audio.pause();//pause() update audio._progress
-        this._audio.play();
-        let message = {
-            topic: PLAY_TOPIC_PREFIX + this._id,
-            position: this._audio._progress,
-        };
-        partyMessageHelper.queuePublish(JSON.stringify(message));
-    }
-
-    _onPartyStarted(isHost) {
-        if(isHost) return;
-        this._audio.stop();
-    }
-
-    static assetType = AssetTypes.AUDIO;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class AudioHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.AUDIO_ADDED, PubSubTopics.AUDIO_DELETED,
-            AssetTypes.AUDIO);
-    }
-
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
-        let asset = new AudioAsset(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
-        return asset;
-    }
-
-    load(assets, isDiff) {
-        if(!assets) return;
-        if(isDiff) {
-            let assetsToDelete = [];
-            for(let id in this._assets) {
-                let asset = this._assets[id];
-                let assetId = asset.getAssetId();
-                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-                    assetsToDelete.push(asset);
-            }
-            for(let asset of assetsToDelete) {
-                this.deleteAsset(asset, true, true);
-            }
-        }
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in libraryHandler.library)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(isDiff && this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
-        }
-    }
-}
-
-new AudioHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class ClampedTexturePlane extends AssetEntity {
-    constructor(params = {}) {
-        super(params);
-        this._createMesh(params['assetId']);
-        this._doubleSided = !(params.doubleSided == false);
-        if(!this._doubleSided) this._updateDoubleSided(false);
-        this._transparent = params['transparent'] != false;
-        if(!this._transparent) this._updateTransparent(false);
-    }
-
-    _createMesh(assetId) {
-        this._mesh = libraryHandler.cloneMesh(assetId);
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return libraryHandler.getAssetName(this._assetId)
-            || super._getDefaultName();
-    }
-
-    _updateTransparent(isTransparent) {
-        if(!this._materialAlreadyCloned) {
-            this._mesh.material = this._mesh.material.clone();
-            this._materialAlreadyCloned = true;
-        }
-        this._mesh.material.transparent = isTransparent;
-        this._transparent = isTransparent;
-     }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addNewAsset(this._assetId, params);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['doubleSided'] = this._mesh.material.side == THREE.DoubleSide;
-        params['transparent'] = this._transparent;
-        return params;
-    }
-
-    getDoubleSided() {
-        return this._mesh.material.side == THREE.DoubleSide;
-    }
-
-    setDoubleSided(doubleSided) {
-        if(doubleSided == this._doubleSided) return;
-        if(!this._materialAlreadyCloned) {
-            this._mesh.material = this._mesh.material.clone();
-            this._materialAlreadyCloned = true;
-        }
-        this._mesh.material.side = (doubleSided)
-            ? THREE.DoubleSide
-            : THREE.FrontSide;
-        this._doubleSided = doubleSided;
-    }
-
-    static assetType = AssetTypes.IMAGE;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class ImagesHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.IMAGE_ADDED, PubSubTopics.IMAGE_DELETED,
-            AssetTypes.IMAGE);
-    }
-
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
-        let asset = new ClampedTexturePlane(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
-        return asset;
-    }
-
-    load(assets, isDiff) {
-        if(!assets) return;
-        if(isDiff) {
-            let assetsToDelete = [];
-            for(let id in this._assets) {
-                let asset = this._assets[id];
-                let assetId = asset.getAssetId();
-                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-                    assetsToDelete.push(asset);
-            }
-            for(let asset of assetsToDelete) {
-                this.deleteAsset(asset, true, true);
-            }
-        }
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in libraryHandler.library)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(isDiff && this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
-        }
-    }
-}
-
-new ImagesHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class LightsHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.LIGHT_ADDED, PubSubTopics.LIGHT_DELETED,
-            AssetTypes.LIGHT);
-    }
-}
-
-new LightsHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class MaterialsHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.MATERIAL_ADDED, PubSubTopics.MATERIAL_DELETED,
-            AssetTypes.MATERIAL);
-    }
-
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
-        if(asset.editorHelper) asset.editorHelper.undoDispose();
-    }
-
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
-        asset.dispose();
-        if(asset.editorHelper) asset.editorHelper.dispose();
-    }
-}
-
-let materialsHandler = new MaterialsHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class GLTFAsset extends AssetEntity {
-    constructor(params = {}) {
-        super(params);
-        this._createMesh(params['assetId']);
-    }
-
-    _createMesh(assetId) {
-        this._mesh = libraryHandler.cloneMesh(assetId);
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return libraryHandler.getAssetName(this._assetId)
-            || super._getDefaultName();
-    }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addNewAsset(this._assetId, params);
-    }
-
-    static assetType = AssetTypes.MODEL;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class ModelsHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.MODEL_ADDED, PubSubTopics.MODEL_DELETED,
-            AssetTypes.MODEL);
-    }
-
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
-        let asset = new GLTFAsset(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
-        return asset;
-    }
-
-    load(assets, isDiff) {
-        if(!assets) return;
-        if(isDiff) {
-            let assetsToDelete = [];
-            for(let id in this._assets) {
-                let asset = this._assets[id];
-                let assetId = asset.getAssetId();
-                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-                    assetsToDelete.push(asset);
-            }
-            for(let asset of assetsToDelete) {
-                this.deleteAsset(asset, true, true);
-            }
-        }
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in libraryHandler.library)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(isDiff && this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
-        }
-    }
-}
-
-new ModelsHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class ShapesHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.SHAPE_ADDED, PubSubTopics.SHAPE_DELETED,
-            AssetTypes.SHAPE);
-    }
-}
-
-new ShapesHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class SystemsHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.SYSTEM_ADDED, PubSubTopics.SYSTEM_DELETED,
-            AssetTypes.SYSTEM);
-    }
-}
-
-new SystemsHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class TexturesHandler extends AssetsHandler {
-    constructor() {
-        super(PubSubTopics.TEXTURE_ADDED, PubSubTopics.TEXTURE_DELETED,
-            AssetTypes.TEXTURE);
-    }
-
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
-        asset.dispose();
-    }
-
-    getTextureType(id) {
-        return this._assets[id].getTextureType();
-    }
-
-    getTexturesAssetIds() {
-        let assetIds = new Set();
-        for(let id in this._assets) {
-            let texture = this._assets[id];
-            let textureAssetIds = texture.getAssetIds();
-            for(let assetId of textureAssetIds) {
-                assetIds.add(assetId);
-            }
-        }
-        return assetIds;
-    }
-}
-
-let texturesHandler = new TexturesHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Light extends AssetEntity {
-    constructor(params = {}) {
-        super(params);
-        this._color = numberOr(params['color'], 0xffffff);
-        this._intensity = numberOr(params['intensity'], 1);
-    }
-
-    _getDefaultName() {
-        return 'Light';
-    }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addNewAsset(this._assetId, params);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['color'] = this._light.color.getHex();
-        params['intensity'] = this._intensity;
-        return params;
-    }
-
-    getColor() {
-        return this._color;
-    }
-
-    getIntensity() {
-        return this._intensity;
-    }
-
-    setColor(color) {
-        if(this._color == color) return;
-        this._color = color;
-        this._light.color.setHex(color);
-    }
-
-    setIntensity(intensity) {
-        if(this._intensity == intensity) return;
-        this._intensity = intensity;
-        this._light.intensity = intensity;
-    }
-
-    static assetType = AssetTypes.LIGHT;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class PointerInteractableEntity extends Entity {
-    constructor() {
-        super();
-        this._pointerInteractable = PointerInteractable.emptyGroup();
-    }
-    
-    setPointerInteractableParent(interactableParent) {
-        if(interactableParent) {
-            interactableParent.addChild(this._pointerInteractable);
-        }
-    }
-
-    removeParentInteractableParent() {
-        if(this._pointerInteractable.parent)
-            this._pointerInteractable.parent.removeChild(
-                this._pointerInteractable);
-    }
-
-    addToScene(scene, interactableParent) {
-        super.addToScene(scene);
-        this.setPointerInteractableParent(interactableParent);
-    }
-
-    removeFromScene() {
-        super.removeFromScene();
-        this.removeParentInteractableParent();
-    }
-}
-
-const MenuPages = {
-    ACKNOWLEDGEMENTS: "ACKNOWLEDGEMENTS",
-    ASSET: "ASSET",
-    ASSETS: "ASSETS",
-    ASSET_SELECT: "ASSET_SELECT",
-    COLOR_WHEEL: "COLOR_WHEEL",
-    COMPONENT: "COMPONENT",
-    COMPONENTS: "COMPONENTS",
-    EDIT_ACKNOWLEDGEMENTS: "EDIT_ACKNOWLEDGEMENTS",
-    EDITOR_SETTINGS: "EDITOR_SETTINGS",
-    HANDS: "HANDS",
-    HOST_PARTY: "HOST_PARTY",
-    JOIN_PARTY: "JOIN_PARTY",
-    LIBRARY: "LIBRARY",
-    LIBRARY_SEARCH: "LIBRARY_SEARCH",
-    LIST_COMPONENTS: "LIST_COMPONENTS",
-    LOAD_GDRIVE: "LOAD_GDRIVE",
-    MATERIAL: "MATERIAL",
-    MATERIALS: "MATERIALS",
-    NAVIGATION: "NAVIGATION",
-    NEW_COMPONENT: "NEW_COMPONENT",
-    NEW_MATERIAL: "NEW_MATERIAL",
-    NEW_TEXTURE: "NEW_TEXTURE",
-    NEW_SYSTEM: "NEW_SYSTEM",
-    PARTY: "PARTY",
-    PEER: "PEER",
-    PROJECT: "PROJECT",
-    SETTINGS: "SETTINGS",
-    SKETCHFAB_ASSET: "SKETCHFAB_ASSET",
-    SKETCHFAB_LOGIN: "SKETCHFAB_LOGIN",
-    SKETCHFAB_SEARCH: "SKETCHFAB_SEARCH",
-    SKYBOX: "SKYBOX",
-    SYSTEM: "SYSTEM",
-    SYSTEMS: "SYSTEMS",
-    TEXTURE: "TEXTURE",
-    TEXTURES: "TEXTURES",
-    TEXT_INPUT: "TEXT_INPUT",
-    TWO_BUTTON: "TWO_BUTTON",
-    UPLOAD: "UPLOAD",
-    USER_SETTINGS: "USER_SETTINGS",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$c = 0.05;
-const WIDTH$c = 0.31;
-const TITLE_WIDTH$c = 0.14;
-const COLOR_BOX_WIDTH = 0.08;
-const COLOR_BOX_HEIGHT = 0.04;
-
-class ColorInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        let title = params['title'] || 'Missing Field Name...';
-        this._lastValue = numberOr(params['initialValue'], 0x2abbd5);
-        this._color = new THREE.Color(this._lastValue);
-        this._onBlur = params['onBlur'];
-        this._onUpdate = params['onUpdate'];
-        this._getFromSource = params['getFromSource'];
-        this._createInputs(title);
-    }
-
-    _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$c,
-            'width': WIDTH$c,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$c,
-            'width': TITLE_WIDTH$c,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._colorBlock = ThreeMeshUIHelper.createColorBlock({
-            'height': COLOR_BOX_HEIGHT,
-            'width': COLOR_BOX_WIDTH,
-            'margin': 0,
-            'selectedColor': this._color,
-        });
-        this._object.add(titleBlock);
-        this._object.add(this._colorBlock);
-        let interactable = new PointerInteractable(this._colorBlock, true);
-        interactable.addAction(() => {
-            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
-            colorPage.setContent(this._id, this._color,
-                (color) => {
-                    this._color.setHex(color);
-                    if(this._onUpdate) this._onUpdate(color);
-                }, ()   => {
-                    if(colorPage.isDraggingCursors()) return;
-                    let oldColor = this._lastValue;
-                    let newColor = this._color.getHex();
-                    if(this._onBlur) this._onBlur(oldColor, newColor);
-                    this._lastValue = newColor;
-                    this._color.setHex(this._lastValue);
-                });
-            global$1.menuController.pushPage(MenuPages.COLOR_WHEEL);
-            pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-                'id': this._id,
-                'targetOnlyMenu': true,
-            });
-        });
-        this._pointerInteractable.addChild(interactable);
-    }
-
-    getWidth() {
-        return WIDTH$c;
-    }
-
-    getHeight() {
-        return HEIGHT$c;
-    }
-
-    deactivate() {
-        //Required method
-    }
-
-    updateFromSource() {
-        if(this._getFromSource) {
-            this._lastValue = this._getFromSource();
-            this._color.setHex(this._lastValue);
-            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
-            colorPage.updateColor(this._id, this._color);
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const KEYBOARD_SCALE = 0.6;
-const KEYBOARD_VERTICAL_OFFSET = -0.275;
-
-class Keyboard {
-    constructor() {
-        this._id = uuidv4();
-        this._pivotPoint = new Object3D();
-        this._interactables = [];
-        this._pageInteractables = [[],[]];
-        this._keyboardPage = 0;
-        this._owner = null;
-        this._keysPressed = new Set();
-    }
-
-    init(scene) {
-        this._scene = scene;
-        this._setupKeyboard();
-    }
-
-    _setupKeyboard() {
-        this._keyboard = new ThreeMeshUI.Keyboard({
-            language: 'English',
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture,
-            fontSize: 0.035, // fontSize will propagate to the keys blocks
-            backgroundColor: Colors.keyboard,
-            backgroundOpacity: 1,
-            backspaceTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDoyNTJDRDY5NkEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyNTJDRDY5NUEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6RUVFQjQyNUZBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6RUVFQjQyNjBBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+rrf2SgAADoVJREFUeNrs3QuQ1VUBx/Gz7LI8ZtTJ0VFBCAhDBR+h+SCjgikqbVIIMQUFRQgFfAT2MOXhA8g3Q2iRRsSjEBDIB2Cv6TU1PNJpLJqmoZIZkB6Ay0tYdju/OecSMAvce/eee/97zvczcwajZXf//3PP73/O+Z//+Vc1NjYaAGlqxSkACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQAkrqbSv0BDQ4Np1SrNHGpsbDx53bp1o7Zt29a7tra2yv7vBj6S8Tpw4EDrdu3a7evTp8+Ctm3brt60aZPp2rVr2gGQsFOqqqqe7t2793CFoP1vBQJnJXKq5+rq6n72P0fZP19NvgeQqO62fNeWj9kPgT4QnJG0dLRl1q5du/raPzczB5AWpf/ravyciqR1raur61/pX4IAKK8xtiy3pQunAjU1NV0IgDSojz/Dltm2nMTpgFfxSR/mAMI7w5ZnbbmOU4GjNBAAcbvElhdsuZBTgSxiCBDOQFtW0fhBAKTnXlsW2XIapwJZxhCgtNrZ8pQtozkVIADSojWdz9vyCU4FGAKk5aO2vErjBwGQnhtsWWzLuZwKEABpedCWubacyakAcwDpONWWZ2wZyqkAPYC09PJdfho/CIDEDDDu/n5/TgUIgLR8yTf+XpEcz35bDkRwHHv5aDIHEFKtLZNs+Xokx7PLuInLNbZU+d6MFi61aWHH8XtbnrNlq3FrMIbbchkfVwKglDrZ8k3jbvXF4E+23OMbf85KW9baMsuWU1rIcagnpr0Vdh72d0ttediW2/nYEgCl0NuWb9lyRSTH809/lVzbxP8335Z9/s+s9wR+aMtIW/Yc9ffbbBnrhzZ38vFlDqA5rvFXxlga/zvGPZ249jhfs8SWm/wQIasW2jKqicafs9/3cL7NR5gAKNYdvjvZMZLj0Rj5WlvW5/G1S30I7Mxot/82W+pO8HUHfA9gPh9lAqAQ7Y1b3KNuf20kx7TFlmG2/K6Af7PSDxXqMnQcuvLf7Icp+Tjoj2EhH2sCIB+62mtxz/iIjmm3Lbfa8pMi/q02Lh3hu9RZGPOr219f4L9TCIymJ0AAnIh27Flty9URHdMe8/8diYql4cDgCvcE5vvGv7vIf6/5DN0tWMbHnABoyiB/hewZ0THpQ69lymtK8L1W+hDYUYHjWGDcLb26EpyPW4x7XBsEwCEP+G7/6REdk7q999nyUgm/52o/j1DOnsA832j3lej75UJxPU2eANC2XXNsmRrh8f/Flh8F+L4vGzep9l6ZGv8YH2altN24uQ0kHAB6J98rxi0kidG/AzScnGVlmBOYa9xinj0Bzw8SDQCtedc7+WLetqt74CHNj20ZEmhO4Af+yh8yYNi1KdEA0EyyJrS6RH6cHWy537hXkYXymin9OoHvG3fbcV/A3/vTxq0lQEIBoON71LinxtonUqdqnE8E/hkrjFuVV4o5AV357ww4dBEt6da8z/to8keK+WGg033DH5hgvd5l3JLYiQF/xovGLc7RuP3kIr+HJvzGmeLv8+dDD3VpGfHZNPd0egB6J9+qRBt/zgRbHglcx7rdOLTIOQFd+bXJyruBr/wpDP0IgMPoLbzLfPKnTpuYTAv8MzQxqCXHOwts/Po3IXfzudL3UjryMUgnAPQoqN7G25mqPUQLg6YG/hnqCejWaj6TeAv9lb8+4O9zkR+a0O1PZA5Am1jonXxjqNImadWjJtmmBPwZS/yfCuCTjvE1WtuvCb89AX+Pnv7Kfw7VnkYPoLP/8NH4j2+yCb+voeph2DHmBHTlvz3wmP9i41b70fgTCYCP+wq/hqrMiyYFJwX+GSv8+P7whq4He0q5tr8pvf2VvzvVnMYQ4HpbnrblLKqx4J5AvQ+DkHMCGpZpc5VfG/dcfsgx//nG3VKk8ScSALrFpQU+ranCojzsG+SMgD9DG3n81ZZNJux9/u5+6HEe1Rp/AJzqG/5oqq7ZptvSaNy256GEfvz2Qt/4GfMnEABK+Nl+3I/SmOG76g+1wN9dt/q03qMb1Vi8ljIJ2Ne4Lapo/KWnNQITW9jv3MO4iUUafwIBoCe4ljPGC0rDgAkt5Hft5q/8Pam2uAOg1o9T9agoT3GF91gLCAE9z69nPM6nuuKeA9Bz7brFN5gqKnsIVPk/s0aNnhV+CQSAXr+tVzv1oXoqNhzQsuEnM/Q7dTFuGTFX/siHAHqF1Qoaf8VpQ5G7M/K76Gk+LSz6ENUSdwDoST6tF2dmNxvUA6j08xVa5KPn+S+mOuIOgCn+A9eOKskMzQVo3cVdFWz8Wk3Ivg4xB0B9ff0A+8eDVEVmaTL2jgp0+79n3M5OiDkAqqqqBlENmTfTuFuE5fi8aKJPLyK5itOexhCgPdWQedVlHIdrDugiTnk6AbCSasi8BX4Y0FCGn6WXeGr9x05OexoBoGW+L1IVmaV3Derpy3fL9PMUMnruQ7sHvcfpjz8A9tsy3jTvXfYId+VX499dgZ+ti4K2HK+jGuIOANlq3B7+z1Ilmbry31bhrrie9b/RhHkXIUy2FgLt9eNM7Rq7i6qp+JV/aEa64LlXk9MTiDwAcrT45CZbtlA9FbHIhN/Dr1C5jUb3Uz3xB4DozsBnbFlHFZXV/AqO+fMZDgyiJ5BGAMibtnzKuOcDEJ7O88iMNzANB4YwJ5BGAMh2PxadQlUFpS21bzYt47bba8wJpBMAop1rJ/sxIJVeenpRp576O9iCfucVPgRYJ5BAAOTo4RC9AejPVFvJaLu1sSbsu/pC0b6Ag7kopBMA8ks/L8CiodJ0+/WW3pAr/EI/3q1Xk+uOEcuGEwkA2WzcoqHvUH3NavwaUoV8V18P30C/VoYQuMWUb6kyAZABWjSk21V622091ViQ3Cu6Q4759b7G523pb9ybnMaWYU7gVuYE0gmAnGm2fMGWbVRlXub6xhhypWUH3yA/ctjfzfTDjZD0ANGNzAmkFQC59P+sLW9QnSe88o8JPF4+x9fHh4/6e20vpjcFjwp8jJoYHGbLf6nudAJA1vt5geVUaZN0q29EGcb8Wkx06XE+a9ru/Z4yXBAq/RATAVABeg21JoOeolqPsMB3v0POlXQx7pbipXl87ZNlmBNY7nsbzAkkFACimeB7/VVmH9V7qNsf8j5/Jz/+vryAfzPThN9yfLEfDnB3IKEAyNFOttfb8o+E61ZP9WlXnZCTYnphqx7cKnTr7tyW4+MCn4PcpiLbaeppBYDo/vB1tvw8wXpd6K9+IXtBvfxVtjmbhc70PbbQnwM95LSb5p5WAMgfjLs1tDihOv2VcRurhLzPr5d2zPMh0FxPmPATg8v8z2A/gcQCQLb6EHg0gWPd4a+oIWfAu/oGVcp39Wli8CuBz80c4yZEkVgAGH81vN+420P/ivg437LlbwG/v/brf92WCwJ87+m23Bf4/KynyacZADkvGLerzFuRHl+bgF1/TfTpLb0fCPj7z7DlgYDfv4Ymn3YA5MbInzdxTg7qtVp9A3xfjfUX+u5/aFNtmRTg++rOwydp8gSA8d3kgb5HEBO9Zu05c+Q6/OY6z4/5e5TxOCaXOARaG7dQ6WqaPAGQs8PPCUw0cc0O6826Wgl3eQm+l7r9q41b419uuRCobub3qTVuzcEwmjsB0JTHjVssEtM25KeZwlfnHe1K4xb5dKrgcSgEHmnmmF/1O5KPOQFwPFoxpseK/xhZT0BDnGIW6lxi3DLijhk4Dt0eLPYWrtYYjOPjTQDk47fGrRx8OaJj0qTgogLH7woMLZzqlqHj0K5C04vo2Y3nY00AFEKTg1+0ZVZEx3SunxP4YB5fe4Utr2Ss8R/eE5iW55yAhg5f5uNMABRjl+823m3c1mOxhMDCE4TAVX7eoEOGj+OrefQEvmHC3EYkABLzjHEzx5sjOR6N67VPX88m/j9NFs7LeOPPmWDLY030BGp843+Ij27+WBl1fLoiaqMRvbb8sgiOR1f5l3y4/dS4xTH9fff67BZ0HAqBM427vfeOcRuS6AGoQXxkCYBS22DcC0m0p93gCI5H9/Q1x7HF9wDPaKHHMdTXx1YfBm34qDIECEUPEN1g3Fr1WJzVght/jhr9+2n8BEA5NBg3CaW95vZyOkAApGmOHxJs4lSAAEjTz2zpZ9LcbgwEAKy/2/I53yMACIAE7fZzAtptqJHTAQIgTXpYRduQ/4dTAQIgTUuM23HmTU4FCIA0aRvyAcbtRQ8QAAnS0tQhJq4nCkEAoABaKKQnCvUyCl5QCQIgUXpH4bUm7XcUggBI2irj1gv8hlOBo1QRAGnQXoPaaWgppwKHqSEA0vG2LcNN83a5RVy2EwBp0XZj2rVG21Tv5HQkTfX/i+S7IInS1lxvHzx48HFbLuB0pKVVq1ampqZGexu+QQCka82GDRtGbNy4cXRtba027eTd9fGr3Wt17tx5db9+/WZXV1dX/BeqamzkGRYg2d4IpwAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAA4pv8JMAAdr12nbQhkBgAAAABJRU5ErkJggg==',
-            shiftTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo0NzY4M0Y0M0EzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo0NzY4M0Y0MkEzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MDYyMjJFRUJBM0UyMTFFQUE1QjVGOThGNjlDRTRBQzgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MDYyMjJFRUNBM0UyMTFFQUE1QjVGOThGNjlDRTRBQzgiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+MDNebAAACdBJREFUeNrs3X2slmUdB/DrdEDARMyDhLiTc7Oi5rKIOkZvaOl60aikyNLIsiSDZb62MqaVIhCt9aeL+qOXsdGqZWPTJRpGgIt0vdu0nFQUVhuOdQKy0/XzfnC8ezjnec5zv3w+2286FDjP776v77mu81zPdfcMDQ0loJmeowUgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAUF3jtKB5NmzYcNLKlSvPmzZt2sCOHTv+MH/+/HsXLlz4R50RADRAX1/fywYGBuZOmTJl1s6dO6f39/fvzr8sABqoZ2hoSBea5bJcq3ONP+jXv5rr6lxuCAFATb0q16ZcvUf47x/N9TVtEgDU8FrnWp9r7lH+n7/mek2ux7WrGbwL0ByLn2Xwhxm5btcqMwDq5YxcW3M9b5j//8W5vqdtZgDUw7JjGPypNQs4RdsEANX3jlwLjvH3vDDXDVpnCUC1nZRrS64XjeD3/ifXG3M9oI1mAFTTrSMc/GFiri/nmqSNAoDqOTfXVaP8M16bis1BWAJQpeua62e5zmnDn/WvXHNyPaytZgBUwzVtGvzh5FzLW6GCGQAl99JUbPc9sc1/7gdzfVN7BQDldmeuCzvw527LNZBruxZbAlBOCzs0+EN/rs9qsRkA5RQ79x7MdVoH/47/5np7rru12wyAclne4cEf4gCZVan9P19AADAK5+e6fIz+rrNyXafllgCUw3Nzbcg1awz/zidTsU34Ie03A6C7rh/jwZ9aS4CV7h8zALorjvj6Serefv0rc93hMggAuuO+1lS8W55IxRFij7oUlgCMrUVdHvwh3nr8vEthBsDYik058Tn96SX4WuIGeneuH7gsZgCMjRUlGfxPfxNpfT1TXRYBQOfFgZ3vK9nXFEeI3eTSWALQWfHR3I25Zpbwa3sq1+tybXaZzADojJtKOvhDb2spMN5lEgC0X3x3XVzyr/H1uT7lUlkC0F5xQGds+Hl1Bb7W2CYcZwn+2mUzA6A9rqrI4A+xTfiLLpkZAO0Rx3rHAZ99Ffu6L8m1xuUTAIxuhvb9VDzdp2riScOzkyPELAEYsYUVHfwhnjS81CU0A2BkpqViu+/pFX4NcYTYW3Ld43KaAXBsbqv44A/7jhA7weUUAAzfBbk+VJPXcnauG11SSwCGZ3Ku+1sDpy72pOJJRQ+6vGYAHN3VNRv84bhcy1xaMwCO7pWpOOWnrmvmK3KtdpkFAIeKD9Osz/WGGr/Gv7eWAo+53JYAHOjjNR/84fmpeIAJZgDsJ97ui+2+Mxryet+VHCFmBsAzbm3Q4E+tWcBkl10AkNK8XB9o2GuODzg5QswSoPFiu28c8XVmA1/7/1JxyMkmt4EZQFN9pqGDf9+9F0uBXreBAGiieKLOlQ3vgSPELAEaKZ7oG5+QG9CKp48Qi9OOHtYKM4CmWGLwP2Pfk4YxA2iEeIhGnJ1/slYc4L251mqDAKi7OOLrndpwiD+1lgL/0ApLgLq63OA/ojNyfUEbzADqKnb6xRFfp2nFUcURYndpgxlA3XzO4B+WOArN3gABUCtxxNcV2jAss5JtwpYANRJvc8V237O0Ytj+nYpzA36lFWYAVXeNwX/Mjk/FacKWAmYAlZ/O3pd89HWkPpzrG9ogAKoovnvdnes8rRixeKxY7A34s1ZYAlTNIoN/1E7NtUIbzACqJj7iG9t9+7SiLRwhZgZQKTcb/G0VewP8HEUAVMJFqXlHfHXaS1JxeAqWAKU2NddPc71YK9pud665raUVZgCltNTg75gJqTg3YIJWCIAyigMuP6YNHe/xJ7TBEqCM353uTcU5f3TWP1OxTfgRrTADKIslBv+YiXdXVmmDGUBZxE+o43P+J2jFmIp3Wr6jDQKg276b62JtGHOPtGZdjhCzBOiahQZ/18Ruy5u1wQygW+J0ny3JKT/dFI8Xe1tyhJgZQBfcYvCX4v6Nx4tN0goBMJbOTcVn1em+s3Ndqw2WAGMlvttsat14lMPOVDxn0BFiZgAdd4PBXzpTcn0pOULMDKDDZue6P9dErSileNryHdogADrlx7nepA2l9Zdcc3I9rhWWAJ347mLwl1u8K3ObNpgBtNsLcv0iOeWnCuKGjucv/lArzADaZZnBX51vaqnYG+B6CYC2uDDX+7WhUmbmul4bLAFGK95e2ty6oaiWwVQcIfaAVpgBjNQtBn9lxYatVck2YQEwQrGzbLE2VFocIbZEGywBjrkvqTjdd45WVN4TqTg34FGtMAMYrk8a/LVxSireFcAMYFjiWO/4wdGJWlErl+b6tjYIgGcTz6Cbpw21E9uDB3L9TSssAY7kEoO/tmI356e1wQzgSOKxXrHdt18ramtPrrfmWq8VZgAHW27w195xqdgb4EnDAuAA8Sk/R3w1w8tzXacNlgD7xE6xDak47INmeDIVG71+aQbAtQZ/48RbvCvc/2YAs1JxxNfxxkQjfSTX1wVAc8UTfecaB421PRU7Ph+zBGieRQZ/452aik98mgE0zIxcW3NNNwYaLx4vFkeI3WkGUHNr165Ne/fujX+93eBnvzGwMlffxo0bBUCdrVu3LgIg0v4y9z37iQ+A3bh161YBUGd9fX2n9/T0LHW/cxhLJk+ePFsA1Ns5uV7hXucw4mlPFwiAenM+HEczQQDU2K5du34/NDS0033O4QwODv5GANTYzJkzN/f29n7Frc5hrOvv7/9R0150E/cBxEdC423Ai3Kd6b5vvDghaEsqTg/eJgCao78VAONzPdXlryX+/vg4chPennwolePjuD2tf8YThX/X1EEwrsHJv61kiT/QkL7vyHWPiYefAXCgppxCPNGlFgCAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAHgWtRTr0vtpuNQ49xzuBjN9fOGvM4tLnV59AwNDelCORyX61u53lPj1/jbXG/Otd3lFgAcZM+ePZPWrFlz6eDg4Lze3t5p8Us1eFnjcw3u3r37rgULFqyeOnXqDldaAAB+BgAIAEAAAAIAEACAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQACAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAEAjMb/BRgAdeTDT5k20RsAAAAASUVORK5CYII=',
-            enterTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozOEE3NEZCM0EzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozOEE3NEZCMkEzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6Rjg2REZFNTNBM0UxMTFFQUEyRjRDNThCOUZCMENEMDIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6Rjg2REZFNTRBM0UxMTFFQUEyRjRDNThCOUZCMENEMDIiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+kfI9DgAACRJJREFUeNrs3X2slmUdwPHreOQtOkovI4RiKtDQXv5omb2MRkkGJWSRBhW9TLJFZmkmRi+Sc9WqtbbW3JTcaoRtZa2yRi9jtLWk/ihWttoysIkUURAI8tI5nn6/ruf808wdgTjnea7PZ/vNprQ957rP+fKc+7nv6+4bHh4uQJv6BAAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQABEAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEAuiIAGzZsKHPnzi0LFy50RDgpO3bsmL9ly5YL+/v7pwwODg6Nmx+0vr7+CRMmHFixYsWvJ02a9NDGjRvL0aNHy+rVq8f0dZ3pW4Ye8vqZM2euXLRo0cXxQzZhaGhoOH7wxvxF5V+yfVmA/v7DEYEfx7+6PWb7eFgwAaBXrMo3k5MnT5547rnnjufXOTdmcczlMTtjHh7LF3OG7xt6wAUxn4yZ2CWv97yY9+c7Fu8A4ORdFPPMLnvN82L2jPWL8A6AXjDUpa95SADg1PwwDXfha35UAAABAAQAEABAAAABAAQAEABAAAABAAQAEADgiXA7cPcfvxfHvCTmyTGbY+61LAhA78sf+ptLvRf+qZ1/tybmjpiPlnFwpxkCwKn39JhrYj4Qc/Zj/LcPx9wXs8lS4RxAb1kac3fnb/6zH+fPLbNUeAfQO3K7q7UxV8VMGcWf77NkCED3yx/kK2LWl7rx5Wgdt3QIQHd7bszHYq48wXCAAHSh3Nr66pjrS90+GgSgES+IuSXmtZYCAWjH5JgPxXywPP7ZfRCAHrOk1M/uF1gKBKAd53R+8PPxsFMsBwLQjuWlPsvu2ZYCAWjH/Jh1pT7JFgSgEXmS792dH/7plgMBaEfervvxUk/2gQA04qxSP9p7b8xTLAcC0I5LY24t9V59EIBGnF/qJbz50d4ky4EAtGNV5y3/8ywFAtCOOaWe5HubpUAA2pFv8d8Vc2PMsywHAtCOl8XcFHOZpUAA2pF36l1b6kd7z7AcCEA78m/73KHnRZYCAWhHbsh5XedvfuuFADTknTE3xFxoKRCAduQOvLn3/pu69PW3timoTVAF4JToL/Wuvfxcv5tP8h1p7LgdihkWAgE4GXnXXl6/f0kPfC35iLC8LDl3GO7lpz8Nd2I3x7evAJyoqaVezJPP2jurR76mxTEv7Pzw93oABmMGisfcCcAJyO2385FbvbYhZ16lOMu3NwLw2PL3+4+U+pRdvzciAA3JM/t5ks9HewhAQ1/r80u9fn+lww7tBCDPhOcGHev8XgxtBWBB5wd/sUMN7QTgaaV+rPe+4ll70FQA8q69fOTWSx1eaCcAeeVbPl337aVe3AM0EoA3l3qv/nyHFNoJwHNKvZLPs/agoQDkpa5rOm/5fbQHDQXgos7b/aUOH7QTgLzjKx+8kR/tTXPooJ0AvKbU6/cvdsignQDkAzdyT773xExwuKCdALy11Mt4L3CYoJ0A5Gf560v3bsgJAnCC8ok7uVHHOQ4NtBOA82Iuj/m8QwKnz3jZSPHlxdV80GwA8my/z/ahxQBMnDhxx+Dg4B6HAxo8BzAwMLB59uzZGaO80McuvdDSO4Dp06fvmzp16sZSPwV40GGBhgJw7NixMjQ0lP/ztlIv+73LoYFGAvBf7it1g4+3xPzWIYK2AjBiU8ySmM/FHHCooK0ApIdKvQX4jTE/d7igrQCM+EmpD/LMjUD2OmzQVgDSP2NujVkU802HDtoKwIjfxFxR6uO+djqE0FYARny582tB/nPYoYS2ApB+33knkCcJfWQIjQVgxLdiXhnzhZjDDiu0FYD095jrYl4Vs8WhhbYCMOLezrmBfEDoPxxiaCsA6WjMp0v9yPAbDjO0FYAR22OuLHWH4fsdbmgrACO+FvOKmC/FHHLYGSc/e2cIwOmzK+aamJUxP/P9x1jq6+vrF4CxcU/MZTG3xDzsW5GxcPz48d0DAwN/FoCxkbcX3xxzacwPfDtymv11zpw5t8e7gO+M9Qs5s/EDsa3U5xFcHXN9zPk98nUd7vzKk4G3x+I4edcfMzHmj/nuc968eT+dNWtWEYCx969STw5ujbmp1E8Mul1eCHVjzKSYfod4XBg56Zc3sO09cuRIOXjwoACMI7+LeUfM9zu/Hszv4q8lt1j/g0OKcwBPTO5M+vVS7yv4YsyxLv06nuRQIgAn7i8x18a8oXTnfQVuj0YAToH8hGB5zLqY/ZYDAWhPbkX2qVLvK/ih5UAA2vSrmMWlnii0FRkC0KivlHqS8A6/ayMAbXqg1IuHlnfeGYAANOjbnXcDuV35EcuBALQn7yvIB5bkfQVbLQcC0Ka8xTi3IstLcHdbDgSgPY/EfDbm1TF3Ww4EoE35iPN8VsGqmD9ZDgSgTRtjLom5Lea45UAA2pO7vqzpvCP4heVAANr0vZjXlXqrsecVIAANyvv0cy/C3JPwR5YDAWhTbkW2rNRdip0kRAAalJuN5FZkS2LujHnUkiAA7clNIvMR5/mRoW28EIAG5V2Fm0r9yPAzpT7bEASgMXkJ8dpSLyneajkQgDblPoR5kvATMfssBwLQnnxs2fpSTxLeYzkQgDb9MmZpqRuQPDDK/88Ey4YA9Jbcgiw3H7lzFH/2sOVCAHpPbkZ6VamXFG//H3/mUMxXLRUC0Lu+W+oORPmR4d92795djh37z0OMHoy5ofgEgVHybMDutTdm7cGDB+/atm3bsqGhoX0LFizYPGPGjPstDQLQiP3792+fNm3agZ07dz6ya9euPREAi8Ko9Q0P29oeBAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEABAAQAEAAAAEAAbAKIACAAAACAAgAIACAAAACAAgAIACAAAACAAgAIACAAAACAAgAIACAAAACAAgAIACAAAACAPx//FuAAQDSBME/mc3EEgAAAABJRU5ErkJggg==',
-        });
-        this._keyboard.scale.set(KEYBOARD_SCALE,KEYBOARD_SCALE,KEYBOARD_SCALE);
-        for(let i = 0; i < this._keyboard.keys.length; i++) {
-            this._setupKey(i);
-        }
-        this._pivotPoint.position.setY(KEYBOARD_VERTICAL_OFFSET);
-        this._pivotPoint.add(this._keyboard);
-    }
-
-    _setupKey(index) {
-        let key = this._keyboard.keys[index];
-        key.setupState({
-            state: InteractableStates.IDLE,
-            attributes: {
-                offset: 0,
-                backgroundColor: Colors.keyboardButtonIdle,
-                backgroundOpacity: 1,
-            },
-            onSet: () => {
-                this._keysPressed.delete(key);
-            },
-        });
-        key.setupState({
-            state: InteractableStates.HOVERED,
-            attributes: {
-                offset: 0,
-                backgroundColor: Colors.keyboardButtonHovered,
-                backgroundOpacity: 1,
-            },
-            onSet: () => {
-                this._keysPressed.delete(key);
-            },
-        });
-        key.setupState({
-            state: InteractableStates.SELECTED,
-            attributes: {
-                offset: 0,
-                backgroundColor: Colors.keyboardButtonSelected,
-                backgroundOpacity: 1,
-            },
-            onSet: () => {
-                this._keysPressed.add(key);
-                if(key.info.command) {
-                    switch(key.info.command) {
-
-						// switch between panel charsets (eg: russian/english)
-						case 'switch-set' :
-							this._keyboard.setNextCharset();
-							break;
-
-						case 'enter' :
-                            this._owner.handleKey('Enter');
-							break;
-
-						case 'space' :
-                            this._owner.handleKey(' ');
-							break;
-
-						case 'backspace' :
-                            this._owner.handleKey('Backspace');
-							break;
-
-						case 'shift' :
-							this._keyboard.toggleCase();
-							break;
-
-					}                } else if(key.info.input) {
-                    this._owner.handleKey(key.info.input);
-                }
-            },
-        });
-        let interactable;
-        // Need to make switch run on release otherwise _keysPressed prematurely
-        // becomes empty
-        let emptyFunction = () => {};
-        if(key.info.command == 'switch') {
-            // switch between panels
-            interactable = new PointerInteractable(key);
-            interactable.addAction(() => { this._switchPanel(); });
-        } else {
-            interactable = new PointerInteractable(key);
-            interactable.addAction(emptyFunction);
-        }
-        if(index <= 32) {
-            this._pageInteractables[0].push(interactable);
-        } else {
-            this._pageInteractables[1].push(interactable);
-        }
-        this._interactables.push(interactable);
-    }
-
-    _switchPanel() {
-        this._keyboard.setNextPanel();
-        if(this._owner) {
-            pointerInteractableHandler.removeInteractables(
-                this._pageInteractables[this._keyboardPage]);
-            this._keyboardPage = (this._keyboardPage + 1) % 2;
-            pointerInteractableHandler.addInteractables(
-                this._pageInteractables[this._keyboardPage]);
-        }
-    }
-
-    isKeyPressed() {
-        return this._keysPressed.size != 0;
-    }
-
-    setOwner(owner) {
-        this._owner = owner;
-        this._scene.add(this._pivotPoint);
-        pointerInteractableHandler.addInteractables(this._pageInteractables[this._keyboardPage]);
-        undoRedoHandler.disable(this._id);
-    }
-
-    removeOwner(owner) {
-        if(this._owner == owner && this._pivotPoint.parent) {
-            this._owner = null;
-            this._pivotPoint.parent.remove(this._pivotPoint);
-            pointerInteractableHandler.removeInteractables(this._interactables);
-            undoRedoHandler.enable(this._id);
-        }
-    }
-}
-
-let keyboard = new Keyboard();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class TextField extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._onBlur = params['onBlur'] || null;
-        this._onEnter = params['onEnter'] || null;
-        this._onUpdate = params['onUpdate'] || null;
-        this._defaultContent = params['text'] || "";
-        this._initialContent = params['initialText'] || "";
-        this._maxLength = params['maxLength'] || null;
-        this.content = "";
-        if(global$1.deviceType == "POINTER") this._setupEventListeners();
-        this._object = ThreeMeshUIHelper.createInputBlock(params);
-        this._pointerInteractable = new PointerInteractable(this._object, true);
-        this._pointerInteractable.addAction(() => { this._activate(); });
-        this._active = false;
-
-        if(this._initialContent) this.setContent(this._initialContent);
-    }
-
-    _setupEventListeners() {
-        this._keyListener = (event) => { this.handleKey(event.key); };
-        this._clickListener = (event) => {
-            if(!keyboard.isKeyPressed() && this._pointerInteractable.getState()
-                != InteractableStates.SELECTED)
-            {
-                this.deactivate();
-            }
-        };
-        this._pasteListener = (event) => { this._handlePaste(event); };
-    }
-
-    _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
-            if(this._id != message.id) this.deactivate();
-        });
-        pubSub.subscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED, () => {
-            this.deactivate();
-        });
-        if(global$1.deviceType == "XR") {
-            pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, () => {
-                this.deactivate();
-            });
-        }
-    }
-
-    _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED);
-        pubSub.unsubscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED);
-        if(global$1.deviceType == "XR")
-            pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
-    }
-
-    _handlePaste(e) {
-        if(e.clipboardData.types.indexOf('text/plain') < 0) return;
-        let data = e.clipboardData.getData('text/plain');
-        let valid = true;
-        for(let key of data) {
-            if(!ValidKeys.has(key)) valid = false;
-        }
-        if(valid) {
-            this.appendToContent(data);
-            e.preventDefault();
-        }
-    }
-
-    handleKey(key) {
-        if(inputHandler.isKeyCodePressed("ControlLeft")) {
-            return;
-        } else if(inputHandler.isKeyCodePressed("MetaLeft")) {
-            return;
-        } else if(ValidKeys.has(key)) {
-            this.appendToContent(key);
-            if(this._onUpdate) this._onUpdate();
-        } else if(key == "Backspace") {
-            this._removeFromEndOfContent();
-            if(this._onUpdate) this._onUpdate();
-        } else if(key == "Enter") {
-            this.deactivate();
-            if(this._onEnter) this._onEnter();
-        }
-    }
-
-    appendToContent(str) {
-        this.content += str;
-        this._updateDisplayedContentWithCursor();
-    }
-
-    _removeFromEndOfContent() {
-        if(this.content.length > 0) {
-            this.content = this.content.slice(0, -1);
-            this._updateDisplayedContentWithCursor();
-        }
-    }
-
-    _updateDisplayedContentWithCursor() {
-        this._updateDisplayedContent(true);
-    }
-
-    _updateDisplayedContentWithoutCursor() {
-        this._updateDisplayedContent(false);
-    }
-
-    _updateDisplayedContent(addPipe) {
-        let newContent = this.content;
-        let textComponent = this._object.children[1];
-        if(this._maxLength && newContent.length > this._maxLength) {
-            newContent = "..." + newContent.substring(
-                newContent.length - this._maxLength);
-        }
-        if(addPipe) newContent += "|";
-        textComponent.set({ content: newContent });
-    }
-
-    _activate() {
-        if(global$1.deviceType == "XR") {
-            if(this._active) return;
-            this._active = true;
-
-            this._updateDisplayedContentWithCursor();
-            keyboard.setOwner(this);
-            this._addSubscriptions();
-        } else if(global$1.deviceType == "POINTER") {
-            if(this._active) return;
-            this._active = true;
-
-            this._updateDisplayedContentWithCursor();
-            document.addEventListener("keydown", this._keyListener);
-            document.addEventListener("click", this._clickListener);
-            document.addEventListener("paste", this._pasteListener);
-            global$1.keyboardLock = true;
-        } else if (global$1.deviceType == "MOBILE") {
-            let content = prompt("Enter Value", this.content);
-            if(content || content == '') {
-                this.setContent(content);
-                if(this._onBlur) this._onBlur();
-                if(this._onEnter) this._onEnter();
-            }
-        }
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id, 'targetOnlyMenu': false });
-    }
-
-    deactivate() {
-        if(!this._active) return;
-        this._active = false;
-
-        if(global$1.deviceType == "XR") {
-            keyboard.removeOwner(this);
-            this._updateDisplayedContentWithoutCursor();
-            ThreeMeshUI.update();
-            this._removeSubscriptions();
-        } else if(global$1.deviceType == "POINTER") {
-            document.removeEventListener("keydown", this._keyListener);
-            document.removeEventListener("click", this._clickListener);
-            document.removeEventListener("paste", this._pasteListener);
-            global$1.keyboardLock = false;
-            this._updateDisplayedContentWithoutCursor();
-            ThreeMeshUI.update();
-        }
-        if(this._onBlur) this._onBlur();
-    }
-
-    setContent(content) {
-        this.content = content;
-        let textComponent = this._object.children[1];
-        let oldContent = textComponent.content;
-        if(oldContent == content) return;
-        if(oldContent.length > 0 && oldContent.endsWith("|")) {
-            this._updateDisplayedContentWithCursor();
-        } else {
-            this._updateDisplayedContentWithoutCursor();
-        }
-    }
-
-    setDefaultContent(defaultContent) {
-        this._defaultContent = defaultContent;
-    }
-
-    isBlank() {
-        return this.content == "";
-    }
-
-    reset() {
-        if(this._initialContent) {
-            this.setContent(this._initialContent);
-        } else {
-            this.content = "";
-            let textComponent = this._object.children[1];
-            textComponent.set({ content: this._defaultContent });
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class NumberField extends TextField {
-    constructor(params) {
-        super(params);
-        this._lastValidNumber = params['initialText'];
-        this._minValue = numberOr(params['minValue'], -Infinity);
-        this._maxValue = numberOr(params['maxValue'], Infinity);
-    }
-
-    handleKey(key) {
-        if(isFinite(key) || key == '-' || key == '.') {
-            this.appendToContent(key);
-            this._update();
-        } else if(key == "Backspace") {
-            this._removeFromEndOfContent();
-            this._update();
-        } else if(key == "Enter") {
-            this.deactivate();
-            if(this._onEnter) this._onEnter();
-        }
-    }
-
-    _update() {
-        let number = Number.parseFloat(this.content);
-        if(!isNaN(number)) {
-            if(number != this.content) {
-                this.setContent(String(number));
-            }
-            if(number >= this._minValue && number <= this._maxValue) {
-                this._lastValidNumber = String(number);
-            }
-        }
-        if(this._onUpdate) this._onUpdate();
-    }
-
-    _updateDisplayedContentWithoutCursor() {
-        let number = Number.parseFloat(this.content);
-        if(Number.isNaN(number)) {
-            this.content = String(this._lastValidNumber);
-        } else if(number < this._minValue) {
-            this.content = String(this._minValue);
-        } else if(number > this._maxValue) {
-            this.content = String(this._maxValue);
-        } else {
-            this._lastValidNumber = String(number);
-        }
-        this._updateDisplayedContent(false);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const HEIGHT$b = 0.05;
-const WIDTH$b = 0.31;
-const TITLE_WIDTH$b = 0.13;
-const FIELD_HEIGHT$9 = 0.03;
-const FIELD_WIDTH$9 = 0.17;
-const FIELD_MARGIN$9 = 0.01;
-const FIELD_MAX_LENGTH$d = 13;
-
-class NumberInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._onBlur = params['onBlur'];
-        this._onUpdate = params['onUpdate'];
-        this._getFromSource = params['getFromSource'];
-        this._minValue = numberOr(params['minValue'], -Infinity);
-        this._maxValue = numberOr(params['maxValue'], Infinity);
-        this._lastValue = params['initialValue'] || 0;
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInput(title);
-    }
-
-    _createInput(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$b,
-            'width': WIDTH$b,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$b,
-            'width': TITLE_WIDTH$b,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._numberField = new NumberField({
-            'initialText': String(this._lastValue),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$9,
-            'width': FIELD_WIDTH$9,
-            'margin': FIELD_MARGIN$9,
-            'maxLength': FIELD_MAX_LENGTH$d,
-            'minValue': this._minValue,
-            'maxValue': this._maxValue,
-            'onBlur': () => { this._blur(); },
-            'onUpdate': () => { this._update(); },
-        });
-        this._object.add(titleBlock);
-        this._numberField.addToScene(this._object, this._pointerInteractable);
-    }
-
-    _update() {
-        if(this._onUpdate && this._validate()) {
-            this._onUpdate(this.getValue());
-        }
-    }
-
-    _blur() {
-        let newValue = this.getValue();
-        if(this._onBlur) this._onBlur(this._lastValue, newValue);
-        this._lastValue = newValue;
-    }
-
-    _validate() {
-        let number = this.getValue();
-        return !isNaN(number) && number <= this._maxValue
-            && number >= this._minValue;
-    }
-
-    getValue() {
-        return Number.parseFloat(this._numberField.content);
-    }
-
-    getWidth() {
-        return WIDTH$b;
-    }
-
-    getHeight() {
-        return HEIGHT$b;
-    }
-
-    deactivate() {
-        this._numberField.deactivate();
-    }
-
-    reset() {
-        this._numberField.reset();
-    }
-
-    updateFromSource() {
-        if(this._getFromSource) {
-            this._lastValue = this._getFromSource();
-            this._numberField.setContent(String(this._lastValue));
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class AmbientLight extends Light {
-    constructor(params = {}) {
-        params['assetId'] = AmbientLight.assetId;
-        super(params);
-        this._createLight();
-    }
-
-    _createLight() {
-        this._light = new THREE.AmbientLight(this._color, this._intensity);
-        this._object.add(this._light);
-    }
-
-    _getDefaultName() {
-        return AmbientLight.assetName;
-    }
-
-    static assetId = '7605bff2-8ca3-4a47-b6f7-311d745507de';
-    static assetName = 'Ambient Light';
-}
-
-projectHandler.registerAsset(AmbientLight);
-libraryHandler.loadBuiltIn(AmbientLight);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Shape extends AssetEntity {
-    constructor(params = {}) {
-        super(params);
-        this._material = params['material'];
-    }
-
-    _updateGeometry() {
-        console.error("Shape._updateGeometry() should be overridden");
-    }
-
-    _getMaterial() {
-        let material = projectHandler.getAsset(this._material);
-        if(material) {
-            return material.getMaterial();
-        } else {
-            return Materials.defaultMeshMaterial;
-        }
-    }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addNewAsset(this._assetId, params);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['material'] = this._material;
-        return params;
-    }
-
-    getMaterial() {
-        return this._material;
-    }
-
-    getMesh() {
-        return this._mesh;
-    }
-
-    setMaterial(newValue) {
-        this._material = newValue;
-        let oldMaterial = this._mesh.material;
-        let material = this._getMaterial();
-        this._mesh.material = material;
-        oldMaterial.dispose();
-    }
-
-    static assetType = AssetTypes.SHAPE;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class BoxShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = BoxShape.assetId;
-        super(params);
-        this._width = numberOr(params['width'], 0.1);
-        this._height = numberOr(params['height'], 0.1);
-        this._depth = numberOr(params['depth'], 0.1);
-        this._widthSegments = params['widthSegments'] || 1;
-        this._heightSegments = params['heightSegments'] || 1;
-        this._depthSegments = params['depthSegments'] || 1;
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let geometry = new THREE.BoxGeometry(this._width, this._height,
-            this._depth, this._widthSegments, this._heightSegments,
-            this._depthSegments);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return BoxShape.assetName;
-    }
-
-    _updateGeometry() {
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.BoxGeometry(this._width, this._height,
-            this._depth, this._widthSegments, this._heightSegments,
-            this._depthSegments);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['width'] = this._width;
-        params['height'] = this._height;
-        params['depth'] = this._depth;
-        params['widthSegments'] = this._widthSegments;
-        params['heightSegments'] = this._heightSegments;
-        params['depthSegments'] = this._depthSegments;
-        return params;
-    }
-
-    getDepth() {
-        return this._depth;
-    }
-
-    getHeight() {
-        return this._height;
-    }
-
-    getWidth() {
-        return this._width;
-    }
-
-    getDepthSegments() {
-        return this._depthSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getWidthSegments() {
-        return this._widthSegments;
-    }
-
-    setDepth(depth) {
-        if(this._depth == depth) return;
-        this._depth = depth;
-        this._updateGeometry();
-    }
-
-    setHeight(height) {
-        if(this._height == height) return;
-        this._height = height;
-        this._updateGeometry();
-    }
-
-    setWidth(width) {
-        if(this._width == width) return;
-        this._width = width;
-        this._updateGeometry();
-    }
-
-    setDepthSegments(depthSegments) {
-        if(this._depthSegments == depthSegments) return;
-        this._depthSegments = depthSegments;
-        this._updateGeometry();
-    }
-
-    setHeightSegments(heightSegments) {
-        if(this._heightSegments == heightSegments) return;
-        this._heightSegments = heightSegments;
-        this._updateGeometry();
-    }
-
-    setWidthSegments(widthSegments) {
-        if(this._widthSegments == widthSegments) return;
-        this._widthSegments = widthSegments;
-        this._updateGeometry();
-    }
-
-    static assetId = 'a6ffffc9-2cd0-4fb7-a7b1-7f334930af51';
-    static assetName = 'Box';
-}
-
-projectHandler.registerAsset(BoxShape);
-libraryHandler.loadBuiltIn(BoxShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class CircleShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = CircleShape.assetId;
-        super(params);
-        this._radius = numberOr(params['radius'], 0.1);
-        this._segments = params['segments'] || 32;
-        this._thetaLength = numberOr(params['thetaLength'], 360);
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let geometry = new THREE.CircleGeometry(this._radius, this._segments, 0,
-            thetaLength);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return CircleShape.assetName;
-    }
-
-    _updateGeometry() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.CircleGeometry(this._radius, this._segments, 0,
-            thetaLength);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['radius'] = this._radius;
-        params['segments'] = this._segments;
-        params['thetaLength'] = this._thetaLength;
-        return params;
-    }
-
-    getRadius() {
-        return this._radius;
-    }
-
-    getSegments() {
-        return this._segments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    setRadius(radius) {
-        if(this._radius == radius) return;
-        this._radius = radius;
-        this._updateGeometry();
-    }
-
-    setSegments(segments) {
-        if(this._segments == segments) return;
-        this._segments = segments;
-        this._updateGeometry();
-    }
-
-    setThetaLength(thetaLength) {
-        if(this._thetaLength == thetaLength) return;
-        this._thetaLength = thetaLength;
-        this._updateGeometry();
-    }
-
-    static assetId = '0a0c7c21-d834-4a88-9234-0d9b5cf705f6';
-    static assetName = 'Circle';
-}
-
-projectHandler.registerAsset(CircleShape);
-libraryHandler.loadBuiltIn(CircleShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class ConeShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = ConeShape.assetId;
-        super(params);
-        this._height = numberOr(params['height'], 0.2);
-        this._radius = numberOr(params['radius'], 0.1);
-        this._radialSegments = params['radialSegments'] || 32;
-        this._heightSegments = params['heightSegments'] || 1;
-        this._thetaLength = numberOr(params['thetaLength'], 360);
-        this._openEnded = params['openEnded'] || false;
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let geometry = new THREE.ConeGeometry(this._radius, this._height,
-            this._radialSegments, this._heightSegments, this._openEnded, 0,
-            thetaLength);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return ConeShape.assetName;
-    }
-
-    _updateGeometry() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.ConeGeometry(this._radius, this._height,
-            this._radialSegments, this._heightSegments, this._openEnded, 0,
-            thetaLength);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['height'] = this._height;
-        params['radius'] = this._radius;
-        params['radialSegments'] = this._radialSegments;
-        params['heightSegments'] = this._heightSegments;
-        params['thetaLength'] = this._thetaLength;
-        params['openEnded'] = this._openEnded;
-        return params;
-    }
-
-    getHeight() {
-        return this._height;
-    }
-
-    getRadius() {
-        return this._radius;
-    }
-
-    getRadialSegments() {
-        return this._radialSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    getOpenEnded() {
-        return this._openEnded;
-    }
-
-    setHeight(height) {
-        if(this._height == height) return;
-        this._height = height;
-        this._updateGeometry();
-    }
-
-    setRadius(radius) {
-        if(this._radius == radius) return;
-        this._radius = radius;
-        this._updateGeometry();
-    }
-
-    setRadialSegments(radialSegments) {
-        if(this._radialSegments == radialSegments) return;
-        this._radialSegments = radialSegments;
-        this._updateGeometry();
-    }
-
-    setHeightSegments(heightSegments) {
-        if(this._heightSegments == heightSegments) return;
-        this._heightSegments = heightSegments;
-        this._updateGeometry();
-    }
-
-    setThetaLength(thetaLength) {
-        if(this._thetaLength == thetaLength) return;
-        this._thetaLength = thetaLength;
-        this._updateGeometry();
-    }
-
-    setOpenEnded(openEnded) {
-        if(this._openEnded == openEnded) return;
-        this._openEnded = openEnded;
-        this._updateGeometry();
-    }
-
-    static assetId = '42779f01-e2cc-495a-a4b3-b286197fa762';
-    static assetName = 'Cone';
-}
-
-projectHandler.registerAsset(ConeShape);
-libraryHandler.loadBuiltIn(ConeShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class CylinderShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = CylinderShape.assetId;
-        super(params);
-        this._height = numberOr(params['height'], 0.2);
-        this._radiusTop = numberOr(params['radiusTop'], 0.1);
-        this._radiusBottom = numberOr(params['radiusBottom'], 0.1);
-        this._radialSegments = params['radialSegments'] || 32;
-        this._heightSegments = params['heightSegments'] || 1;
-        this._thetaLength = numberOr(params['thetaLength'], 360);
-        this._openEnded = params['openEnded'] || false;
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let geometry = new THREE.CylinderGeometry(this._radiusTop,
-            this._radiusBottom, this._height, this._radialSegments,
-            this._heightSegments, this._openEnded, 0, thetaLength);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return CylinderShape.assetName;
-    }
-
-    _updateGeometry() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.CylinderGeometry(this._radiusTop,
-            this._radiusBottom, this._height, this._radialSegments,
-            this._heightSegments, this._openEnded, 0, thetaLength);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['height'] = this._height;
-        params['radiusTop'] = this._radiusTop;
-        params['radiusBottom'] = this._radiusBottom;
-        params['radialSegments'] = this._radialSegments;
-        params['heightSegments'] = this._heightSegments;
-        params['thetaLength'] = this._thetaLength;
-        params['openEnded'] = this._openEnded;
-        return params;
-    }
-
-    getHeight() {
-        return this._height;
-    }
-
-    getRadiusTop() {
-        return this._radiusTop;
-    }
-
-    getRadiusBottom() {
-        return this._radiusBottom;
-    }
-
-    getRadialSegments() {
-        return this._radialSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    getOpenEnded() {
-        return this._openEnded;
-    }
-
-    setHeight(height) {
-        if(this._height == height) return;
-        this._height = height;
-        this._updateGeometry();
-    }
-
-    setRadiusTop(radiusTop) {
-        if(this._radiusTop == radiusTop) return;
-        this._radiusTop = radiusTop;
-        this._updateGeometry();
-    }
-
-    setRadiusBottom(radiusBottom) {
-        if(this._radiusBottom == radiusBottom) return;
-        this._radiusBottom = radiusBottom;
-        this._updateGeometry();
-    }
-
-    setRadialSegments(radialSegments) {
-        if(this._radialSegments == radialSegments) return;
-        this._radialSegments = radialSegments;
-        this._updateGeometry();
-    }
-
-    setHeightSegments(heightSegments) {
-        if(this._heightSegments == heightSegments) return;
-        this._heightSegments = heightSegments;
-        this._updateGeometry();
-    }
-
-    setThetaLength(thetaLength) {
-        if(this._thetaLength == thetaLength) return;
-        this._thetaLength = thetaLength;
-        this._updateGeometry();
-    }
-
-    setOpenEnded(openEnded) {
-        if(this._openEnded == openEnded) return;
-        this._openEnded = openEnded;
-        this._updateGeometry();
-    }
-
-
-    static assetId = 'f4efc996-0d50-48fe-9313-3c7b1a5c1754';
-    static assetName = 'Cylinder';
-}
-
-projectHandler.registerAsset(CylinderShape);
-libraryHandler.loadBuiltIn(CylinderShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class PlaneShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = PlaneShape.assetId;
-        super(params);
-        this._width = numberOr(params['width'], 0.1);
-        this._height = numberOr(params['height'], 0.1);
-        this._widthSegments = params['widthSegments'] || 1;
-        this._heightSegments = params['heightSegments'] || 1;
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let geometry = new THREE.PlaneGeometry(this._width, this._height,
-            this._widthSegments, this._heightSegments);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return PlaneShape.assetName;
-    }
-
-    _updateGeometry() {
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.PlaneGeometry(this._width, this._height,
-            this._widthSegments, this._heightSegments);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['width'] = this._width;
-        params['height'] = this._height;
-        params['widthSegments'] = this._widthSegments;
-        params['heightSegments'] = this._heightSegments;
-        return params;
-    }
-
-    getHeight() {
-        return this._height;
-    }
-
-    getWidth() {
-        return this._width;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getWidthSegments() {
-        return this._widthSegments;
-    }
-
-    setHeight(height) {
-        if(this._height == height) return;
-        this._height = height;
-        this._updateGeometry();
-    }
-
-    setWidth(width) {
-        if(this._width == width) return;
-        this._width = width;
-        this._updateGeometry();
-    }
-
-    setHeightSegments(heightSegments) {
-        if(this._heightSegments == heightSegments) return;
-        this._heightSegments = heightSegments;
-        this._updateGeometry();
-    }
-
-    setWidthSegments(widthSegments) {
-        if(this._widthSegments == widthSegments) return;
-        this._widthSegments = widthSegments;
-        this._updateGeometry();
-    }
-
-    static assetId = '936bd538-9cb8-44f5-b21f-6b4a7eccfff4';
-    static assetName = 'Plane';
-}
-
-projectHandler.registerAsset(PlaneShape);
-libraryHandler.loadBuiltIn(PlaneShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class PointLight extends Light {
-    constructor(params = {}) {
-        params['assetId'] = PointLight.assetId;
-        super(params);
-        this._distance = numberOr(params['distance'], 0);
-        this._decay = numberOr(params['decay'], 2);
-        this._createLight();
-    }
-
-    _createLight() {
-        this._light = new THREE.PointLight(this._color, this._intensity,
-            this._distance, this._decay);
-        this._object.add(this._light);
-    }
-
-    _getDefaultName() {
-        return PointLight.assetName;
-    }
-
-    _updateLight() {
-        super._updateLight();
-        this._light.distance = this._distance;
-        this._light.decay = this._decay;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['distance'] = this._distance;
-        params['decay'] = this._decay;
-        return params;
-    }
-
-    getDistance() {
-        return this._distance;
-    }
-
-    getDecay() {
-        return this._decay;
-    }
-
-    setDistance(distance) {
-        if(this._distance == distance) return;
-        this._distance = distance;
-        this._light.distance = distance;
-    }
-
-    setDecay(decay) {
-        if(this._decay == decay) return;
-        this._decay = decay;
-        this._light.decay = decay;
-    }
-
-    static assetId = '944a6b29-05d2-47d9-9b33-60e7a3e18b7d';
-    static assetName = 'Basic Light';
-}
-
-projectHandler.registerAsset(PointLight);
-libraryHandler.loadBuiltIn(PointLight);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class RingShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = RingShape.assetId;
-        super(params);
-        this._innerRadius = numberOr(params['innerRadius'], 0.05);
-        this._outerRadius = numberOr(params['outerRadius'], 0.1);
-        this._thetaSegments = params['thetaSegments'] || 32;
-        this._phiSegments = params['phiSegments'] || 1;
-        this._thetaLength = numberOr(params['thetaLength'], 360);
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let geometry = new THREE.RingGeometry(this._innerRadius,
-            this._outerRadius, this._thetaSegments, this._phiSegments, 0,
-            thetaLength);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return RingShape.assetName;
-    }
-
-    _updateGeometry() {
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.RingGeometry(this._innerRadius,
-            this._outerRadius, this._thetaSegments, this._phiSegments, 0,
-            thetaLength);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['innerRadius'] = this._innerRadius;
-        params['outerRadius'] = this._outerRadius;
-        params['thetaSegments'] = this._thetaSegments;
-        params['phiSegments'] = this._phiSegments;
-        params['thetaLength'] = this._thetaLength;
-        return params;
-    }
-
-    getInnerRadius() {
-        return this._innerRadius;
-    }
-
-    getOuterRadius() {
-        return this._outerRadius;
-    }
-
-    getThetaSegments() {
-        return this._thetaSegments;
-    }
-
-    getPhiSegments() {
-        return this._phiSegments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    setInnerRadius(innerRadius) {
-        if(this._innerRadius == innerRadius) return;
-        this._innerRadius = innerRadius;
-        this._updateGeometry();
-    }
-
-    setOuterRadius(outerRadius) {
-        if(this._outerRadius == outerRadius) return;
-        this._outerRadius = outerRadius;
-        this._updateGeometry();
-    }
-
-    setThetaSegments(thetaSegments) {
-        if(this._thetaSegments == thetaSegments) return;
-        this._thetaSegments = thetaSegments;
-        this._updateGeometry();
-    }
-
-    setPhiSegments(phiSegments) {
-        if(this._phiSegments == phiSegments) return;
-        this._phiSegments = phiSegments;
-        this._updateGeometry();
-    }
-
-    setThetaLength(thetaLength) {
-        if(this._thetaLength == thetaLength) return;
-        this._thetaLength = thetaLength;
-        this._updateGeometry();
-    }
-
-    static assetId = '534f29c3-1e85-4510-bb84-459011de6722';
-    static assetName = 'Ring';
-}
-
-projectHandler.registerAsset(RingShape);
-libraryHandler.loadBuiltIn(RingShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class SphereShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = SphereShape.assetId;
-        super(params);
-        this._radius = numberOr(params['radius'], 0.1);
-        this._widthSegments = params['widthSegments'] || 32;
-        this._heightSegments = params['heightSegments'] || 16;
-        this._phiLength = numberOr(params['phiLength'], 360);
-        this._thetaLength = numberOr(params['thetaLength'], 180);
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let phiLength = this._phiLength * Math.PI / 180;
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let geometry = new THREE.SphereGeometry(this._radius,
-            this._widthSegments, this._heightSegments, 0, phiLength, 0,
-            thetaLength);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return SphereShape.assetName;
-    }
-
-    _updateGeometry() {
-        let phiLength = this._phiLength * Math.PI / 180;
-        let thetaLength = this._thetaLength * Math.PI / 180;
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.SphereGeometry(this._radius,
-            this._widthSegments, this._heightSegments, 0, phiLength, 0,
-            thetaLength);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['radius'] = this._radius;
-        params['widthSegments'] = this._widthSegments;
-        params['heightSegments'] = this._heightSegments;
-        params['phiLength'] = this._phiLength;
-        params['thetaLength'] = this._thetaLength;
-        return params;
-    }
-
-    getRadius() {
-        return this._radius;
-    }
-
-    getWidthSegments() {
-        return this._widthSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getPhiLength() {
-        return this._phiLength;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    setRadius(radius) {
-        if(this._radius == radius) return;
-        this._radius = radius;
-        this._updateGeometry();
-    }
-
-    setWidthSegments(widthSegments) {
-        if(this._widthSegments == widthSegments) return;
-        this._widthSegments = widthSegments;
-        this._updateGeometry();
-    }
-
-    setHeightSegments(heightSegments) {
-        if(this._heightSegments == heightSegments) return;
-        this._heightSegments = heightSegments;
-        this._updateGeometry();
-    }
-
-    setPhiLength(phiLength) {
-        if(this._phiLength == phiLength) return;
-        this._phiLength = phiLength;
-        this._updateGeometry();
-    }
-
-    setThetaLength(thetaLength) {
-        if(this._thetaLength == thetaLength) return;
-        this._thetaLength = thetaLength;
-        this._updateGeometry();
-    }
-
-    static assetId = '423c9506-52f4-4725-b848-69913cce2b00';
-    static assetName = 'Sphere';
-}
-
-projectHandler.registerAsset(SphereShape);
-libraryHandler.loadBuiltIn(SphereShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class TorusShape extends Shape {
-    constructor(params = {}) {
-        params['assetId'] = TorusShape.assetId;
-        super(params);
-        this._radius = numberOr(params['radius'], 0.1);
-        this._tube = numberOr(params['tube'], 0.05);
-        this._radialSegments = params['radialSegments'] || 16;
-        this._tubularSegments = params['tubularSegments'] || 32;
-        this._arc = numberOr(params['arc'], 360);
-        this._createMesh();
-    }
-
-    _createMesh() {
-        let arc = this._arc * Math.PI / 180;
-        let geometry = new THREE.TorusGeometry(this._radius, this._tube,
-            this._radialSegments, this._tubularSegments, arc);
-        this._mesh = new THREE.Mesh(geometry, this._getMaterial());
-        this._object.add(this._mesh);
-    }
-
-    _getDefaultName() {
-        return TorusShape.assetName;
-    }
-
-    _updateGeometry() {
-        let arc = this._arc * Math.PI / 180;
-        let oldGeometry = this._mesh.geometry;
-        let geometry = new THREE.TorusGeometry(this._radius, this._tube,
-            this._radialSegments, this._tubularSegments, arc);
-        this._mesh.geometry = geometry;
-        oldGeometry.dispose();
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['radius'] = this._radius;
-        params['tube'] = this._tube;
-        params['radialSegments'] = this._radialSegments;
-        params['tubularSegments'] = this._tubularSegments;
-        params['arc'] = this._arc;
-        return params;
-    }
-
-    getRadius() {
-        return this._radius;
-    }
-
-    getTube() {
-        return this._tube;
-    }
-
-    getRadialSegments() {
-        return this._radialSegments;
-    }
-
-    getTubularSegments() {
-        return this._tubularSegments;
-    }
-
-    getArc() {
-        return this._arc;
-    }
-
-    setRadius(radius) {
-        if(this._radius == radius) return;
-        this._radius = radius;
-        this._updateGeometry();
-    }
-
-    setTube(tube) {
-        if(this._tube == tube) return;
-        this._tube = tube;
-        this._updateGeometry();
-    }
-
-    setRadialSegments(radialSegments) {
-        if(this._radialSegments == radialSegments) return;
-        this._radialSegments = radialSegments;
-        this._updateGeometry();
-    }
-
-    setTubularSegments(tubularSegments) {
-        if(this._tubularSegments == tubularSegments) return;
-        this._tubularSegments = tubularSegments;
-        this._updateGeometry();
-    }
-
-    setArc(arc) {
-        if(this._arc == arc) return;
-        this._arc = arc;
-        this._updateGeometry();
-    }
-
-
-    static assetId = '6b8bcbf1-49b0-42ce-9d60-9a7db6e425bf';
-    static assetName = 'Torus';
-}
-
-projectHandler.registerAsset(TorusShape);
-libraryHandler.loadBuiltIn(TorusShape);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Material extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._opacity = numberOr(params['opacity'], 1);
-        this._side = params['side'] || THREE.FrontSide;
-        this._transparent = params['transparent'] || false;
-    }
-
-    _getDefaultName() {
-        return 'Material';
-    }
-
-    _createMaterial() {
-        console.error("Material._createMaterial() should be overridden");
-        return;
-    }
-
-    _setTexture(param, newValue) {
-        this['_' + param] = newValue;
-        let texture = projectHandler.getAsset(newValue);
-        this._material[param] = (texture)
-            ? texture.getTexture()
-            : null;
-        this._material.needsUpdate = true;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['opacity'] = this._material.opacity;
-        params['side'] = this._material.side;
-        params['transparent'] = this._material.transparent;
-        return params;
-    }
-
-    _updateMaterialParamsWithMaps(params, maps) {
-        for(let map of maps) {
-            if(this['_' + map]) {
-                let texture = projectHandler.getAsset(this['_' + map]);
-                if(texture) params[map] = texture.getTexture();
-            }
-        }
-    }
-
-    dispose() {
-        disposeMaterial(this._material);
-    }
-
-    getMaps() {
-        console.error("Material.getMaps() should be overridden");
-        return;
-    }
-
-    getMaterial() {
-        return this._material;
-    }
-
-    getSampleTexture() {
-        console.error("Material.getSampleTexture() should be overridden");
-        return;
-    }
-
-    getOpacity() {
-        return this._opacity;
-    }
-
-    getSide() {
-        return this._side;
-    }
-
-    getTransparent() {
-        return this._transparent;
-    }
-
-    setOpacity(opacity) {
-        if(this._opacity == opacity) return;
-        this._opacity = opacity;
-        this._material.opacity = opacity;
-    }
-
-    setSide(side) {
-        if(this._side == side) return;
-        this._side = side;
-        this._material.side = side;
-        this._material.needsUpdate = true;
-    }
-
-    setTransparent(transparent) {
-        if(this._transparent == transparent) return;
-        this._transparent = transparent;
-        this._material.transparent = transparent;
-        this._material.needsUpdate = true;
-    }
-
-    static assetType = AssetTypes.MATERIAL;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const MAPS$2 = ["map", "alphaMap", "envMap"];
-
-class BasicMaterial extends Material {
-    constructor(params = {}) {
-        params['assetId'] = BasicMaterial.assetId;
-        super(params);
-        this._alphaMap = params['alphaMap'];
-        this._color = numberOr(params['color'], 0x3d9970);
-        this._combine = params['combine'] || THREE.MultiplyOperation;
-        this._envMap = params['envMap'];
-        this._map = params['map'];
-        this._reflectivity = numberOr(params['reflectivity'], 1);
-        this._refractionRatio = numberOr(params['refractionRatio'],0.98);
-        this._wireframe = params['wireframe'] || false;
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return BasicMaterial.assetName;
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "color": this._color,
-            "combine": this._combine,
-            "reflectivity": this._reflectivity,
-            "refractionRatio": this._refractionRatio,
-            "side": this._side,
-            "transparent": this._transparent,
-            "opacity": this._opacity,
-            "wireframe": this._wireframe,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS$2);
-        this._material = new THREE.MeshBasicMaterial(materialParams);
-    }
-
-    getMaps() {
-        return MAPS$2;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['alphaMap'] = this._alphaMap;
-        params['color'] = this._color;
-        params['combine'] = this._combine;
-        params['envMap'] = this._envMap;
-        params['map'] = this._map;
-        params['reflectivity'] = this._reflectivity;
-        params['refractionRatio'] = this._refractionRatio;
-        params['wireframe'] = this._wireframe;
-        return params;
-    }
-
-    getAlphaMap() {
-        return this._alphaMap;
-    }
-
-    getColor() {
-        return this._color;
-    }
-
-    getCombine() {
-        return this._combine;
-    }
-
-    getEnvMap() {
-        return this._envMap;
-    }
-
-    getMap() {
-        return this._map;
-    }
-
-    getReflectivity() {
-        return this._reflectivity;
-    }
-
-    getRefractionRatio() {
-        return this._refractionRatio;
-    }
-
-    getWireframe() {
-        return this._wireframe;
-    }
-
-    setAlphaMap(alphaMap) {
-        if(this._alphaMap == alphaMap) return;
-        this._setTexture('alphaMap', alphaMap);
-    }
-
-    setColor(color) {
-        if(this._color == color) return;
-        this._color = color;
-        this._material.color.setHex(color);
-    }
-
-    setCombine(combine) {
-        if(this._combine == combine) return;
-        this._combine = combine;
-        this._material.combine = combine;
-        this._material.needsUpdate = true;
-    }
-
-    setEnvMap(envMap) {
-        if(this._envMap == envMap) return;
-        this._setTexture('envMap', envMap);
-    }
-
-    setMap(map) {
-        if(this._map == map) return;
-        this._setTexture('map', map);
-    }
-
-    setReflectivity(reflectivity) {
-        if(this._reflectivity == reflectivity) return;
-        this._reflectivity = reflectivity;
-        this._material.reflectivity = reflectivity;
-    }
-
-    setRefractionRatio(refractionRatio) {
-        if(this._refractionRatio == refractionRatio) return;
-        this._refractionRatio = refractionRatio;
-        this._material.refractionRatio = refractionRatio;
-    }
-
-    setWireframe(wireframe) {
-        if(this._wireframe == wireframe) return;
-        this._wireframe = wireframe;
-        this._material.wireframe = wireframe;
-        this._material.needsUpdate = true;
-    }
-
-    static assetId = '943b7a57-7e8f-4717-9bc6-0ba2637d9e3b';
-    static assetName = 'Basic Material';
-}
-
-projectHandler.registerAsset(BasicMaterial);
-libraryHandler.loadBuiltIn(BasicMaterial);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const MAPS$1 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "metalnessMap", "normalMap", "roughnessMap"];
-
-class StandardMaterial extends Material {
-    constructor(params = {}) {
-        params['assetId'] = StandardMaterial.assetId;
-        super(params);
-        this._color = numberOr(params['color'], 0x3d9970);
-        this._alphaMap = params['alphaMap'];
-        this._bumpMap = params['bumpMap'];
-        this._bumpScale = numberOr(params['bumpScale'], 1);
-        this._displacementMap = params['displacementMap'];
-        this._displacementScale = numberOr(params['displacementScale'], 1);
-        this._displacementBias = numberOr(params['displacementBias'], 0);
-        this._emissive = params['emissive'] || 0x000000;
-        this._emissiveMap = params['emissiveMap'];
-        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
-        this._envMap = params['envMap'];
-        this._envMapIntensity = numberOr(params['envMapIntensity'], 1);
-        this._flatShading = params['flatShading'] || false;
-        this._map = params['map'];
-        this._metalness = numberOr(params['metalness'], 0);
-        this._metalnessMap = params['metalnessMap'];
-        this._normalMap = params['normalMap'];
-        this._normalMapType = params['normalMapType']
-            || THREE.TangentSpaceNormalMap;
-        this._normalScale = params['normalScale'] || [1,1];
-        this._roughness = numberOr(params['roughness'], 1);
-        this._roughnessMap = params['roughnessMap'];
-        this._wireframe = params['wireframe'] || false;
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return StandardMaterial.assetName;
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "color": this._color,
-            "bumpScale": this._bumpScale,
-            "displacementScale": this._displacementScale,
-            "displacementBias": this._displacementBias,
-            "emissive": this._emissive,
-            "emissiveIntensity": this._emissiveIntensity,
-            "envMapIntensity": this._envMapIntensity,
-            "flatShading": this._flatShading,
-            "metalness": this._metalness,
-            "normalMapType": this._normalMapType,
-            "opacity": this._opacity,
-            "side": this._side,
-            "transparent": this._transparent,
-            "roughness": this._roughness,
-            "wireframe": this._wireframe,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS$1);
-        this._material = new THREE.MeshStandardMaterial(materialParams);
-        this._material.normalScale.fromArray(this._normalScale);
-    }
-
-    getMaps() {
-        return MAPS$1;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['alphaMap'] = this._alphaMap;
-        params['bumpMap'] = this._bumpMap;
-        params['bumpScale'] = this._bumpScale;
-        params['color'] = this._material.color.getHex();
-        params['displacementMap'] = this._displacementMap;
-        params['displacementScale'] = this._displacementScale;
-        params['displacementBias'] = this._displacementBias;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
-        params['emissiveIntensity'] = this._emissiveIntensity;
-        params['envMap'] = this._envMap;
-        params['envMapIntensity'] = this._envMapIntensity;
-        params['flatShading'] = this._flatShading;
-        params['map'] = this._map;
-        params['metalness'] = this._metalness;
-        params['metalnessMap'] = this._metalnessMap;
-        params['normalMap'] = this._normalMap;
-        params['normalMapType'] = this._normalMapType;
-        params['normalScale'] = this._normalScale;
-        params['roughness'] = this._roughness;
-        params['roughnessMap'] = this._roughnessMap;
-        params['wireframe'] = this._wireframe;
-        return params;
-    }
-
-    getAlphaMap() {
-        return this._alphaMap;
-    }
-
-    getBumpMap() {
-        return this._bumpMap;
-    }
-
-    getBumpScale() {
-        return this._bumpScale;
-    }
-
-    getColor() {
-        return this._color;
-    }
-
-    getDisplacementBias() {
-        return this._displacementBias;
-    }
-
-    getDisplacementMap() {
-        return this._displacementMap;
-    }
-
-    getDisplacementScale() {
-        return this._displacementScale;
-    }
-
-    getEmissive() {
-        return this._emissive;
-    }
-
-    getEmissiveIntensity() {
-        return this._emissiveIntensity;
-    }
-
-    getEmissiveMap() {
-        return this._emissiveMap;
-    }
-
-    getEnvMap() {
-        return this._envMap;
-    }
-
-    getEnvMapIntensity() {
-        return this._envMapIntensity;
-    }
-
-    getFlatShading() {
-        return this._flatShading;
-    }
-
-    getMap() {
-        return this._map;
-    }
-
-    getMetalness() {
-        return this._metalness;
-    }
-
-    getMetalnessMap() {
-        return this._metalnessMap;
-    }
-
-    getNormalMap() {
-        return this._normalMap;
-    }
-
-    getNormalMapType() {
-        return this._normalMapType;
-    }
-
-    getNormalScale() {
-        return this._normalScale;
-    }
-
-    getRoughness() {
-        return this._roughness;
-    }
-
-    getRoughnessMap() {
-        return this._roughnessMap;
-    }
-
-    getWireframe() {
-        return this._wireframe;
-    }
-
-    setAlphaMap(alphaMap) {
-        if(this._alphaMap == alphaMap) return;
-        this._setTexture('alphaMap', alphaMap);
-    }
-
-    setBumpMap(bumpMap) {
-        if(this._bumpMap == bumpMap) return;
-        this._setTexture('bumpMap', bumpMap);
-    }
-
-    setBumpScale(bumpScale) {
-        if(this._bumpScale == bumpScale) return;
-        this._bumpScale = bumpScale;
-        this._material.bumpScale = bumpScale;
-    }
-
-    setColor(color) {
-        if(this._color == color) return;
-        this._color = color;
-        this._material.color.setHex(color);
-    }
-
-    setDisplacementBias(displacementBias) {
-        if(this._displacementBias == displacementBias) return;
-        this._displacementBias = displacementBias;
-        this._material.displacementBias = displacementBias;
-    }
-
-    setDisplacementMap(displacementMap) {
-        if(this._displacementMap == displacementMap) return;
-        this._setTexture('displacementMap', displacementMap);
-    }
-
-    setDisplacementScale(displacementScale) {
-        if(this._displacementScale == displacementScale) return;
-        this._displacementScale = displacementScale;
-        this._material.displacementScale = displacementScale;
-    }
-
-    setEmissive(emissive) {
-        if(this._emissive == emissive) return;
-        this._emissive = emissive;
-        this._material.emissive.setHex(emissive);
-    }
-
-    setEmissiveIntensity(emissiveIntensity) {
-        if(this._emissiveIntensity == emissiveIntensity) return;
-        this._emissiveIntensity = emissiveIntensity;
-        this._material.emissiveIntensity = emissiveIntensity;
-    }
-
-    setEmissiveMap(emissiveMap) {
-        if(this._emissiveMap == emissiveMap) return;
-        this._setTexture('emissiveMap', emissiveMap);
-    }
-
-    setEnvMap(envMap) {
-        if(this._envMap == envMap) return;
-        this._setTexture('envMap', envMap);
-    }
-
-    setEnvMapIntensity(envMapIntensity) {
-        if(this._envMapIntensity == envMapIntensity) return;
-        this._envMapIntensity = envMapIntensity;
-        this._material.envMapIntensity = envMapIntensity;
-    }
-
-    setFlatShading(flatShading) {
-        if(this._flatShading == flatShading) return;
-        this._flatShading = flatShading;
-        this._material.flatShading = flatShading;
-        this._material.needsUpdate = true;
-    }
-
-    setMap(map) {
-        if(this._map == map) return;
-        this._setTexture('map', map);
-    }
-
-    setMetalness(metalness) {
-        if(this._metalness == metalness) return;
-        this._metalness = metalness;
-        this._material.metalness = metalness;
-    }
-
-    setMetalnessMap(metalnessMap) {
-        if(this._metalnessMap == metalnessMap) return;
-        this._setTexture('metalnessMap', metalnessMap);
-    }
-
-    setNormalMap(normalMap) {
-        if(this._normalMap == normalMap) return;
-        this._setTexture('normalMap', normalMap);
-    }
-
-    setNormalMapType(normalMapType) {
-        if(this._normalMapType == normalMapType) return;
-        this._normalMapType = normalMapType;
-        this._material.normalMapType = normalMapType;
-        this._material.needsUpdate = true;
-    }
-
-    setNormalScale(normalScale) {
-        this._normalScale = normalScale;
-        this._material.normalScale.fromArray(normalScale);
-    }
-
-    setRoughness(roughness) {
-        if(this._roughness == roughness) return;
-        this._roughness = roughness;
-        this._material.roughness = roughness;
-    }
-
-    setRoughnessMap(roughnessMap) {
-        if(this._roughnessMap == roughnessMap) return;
-        this._setTexture('roughnessMap', roughnessMap);
-    }
-
-    setWireframe(wireframe) {
-        if(this._wireframe == wireframe) return;
-        this._wireframe = wireframe;
-        this._material.wireframe = wireframe;
-        this._material.needsUpdate = true;
-    }
-
-    static assetId = 'a6a1aa81-50a6-4773-aaf5-446d418c9817';
-    static assetName = 'Standard Material';
-}
-
-projectHandler.registerAsset(StandardMaterial);
-libraryHandler.loadBuiltIn(StandardMaterial);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
-
-class ToonMaterial extends Material {
-    constructor(params = {}) {
-        params['assetId'] = ToonMaterial.assetId;
-        super(params);
-        this._alphaMap = params['alphaMap'];
-        this._color = numberOr(params['color'], 0x3d9970);
-        this._bumpMap = params['bumpMap'];
-        this._bumpScale = numberOr(params['bumpScale'], 1);
-        this._displacementMap = params['displacementMap'];
-        this._displacementScale = numberOr(params['displacementScale'], 1);
-        this._displacementBias = numberOr(params['displacementBias'], 0);
-        this._emissive = params['emissive'] || 0x000000;
-        this._emissiveMap = params['emissiveMap'];
-        this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
-        this._map = params['map'];
-        this._normalMap = params['normalMap'];
-        this._normalMapType = params['normalMapType']
-            || THREE.TangentSpaceNormalMap;
-        this._normalScale = params['normalScale'] || [1,1];
-        this._wireframe = params['wireframe'] || false;
-        this._createMaterial();
-    }
-
-    _getDefaultName() {
-        return ToonMaterial.assetName;
-    }
-
-    _createMaterial() {
-        let materialParams = {
-            "bumpScale": this._bumpScale,
-            "color": this._color,
-            "displacementScale": this._displacementScale,
-            "displacementBias": this._displacementBias,
-            "emissive": this._emissive,
-            "emissiveIntensity": this._emissiveIntensity,
-            "normalMapType": this._normalMapType,
-            "opacity": this._opacity,
-            "side": this._side,
-            "transparent": this._transparent,
-            "wireframe": this._wireframe,
-        };
-        this._updateMaterialParamsWithMaps(materialParams, MAPS);
-        this._material = new THREE.MeshToonMaterial(materialParams);
-        this._material.normalScale.fromArray(this._normalScale);
-    }
-
-    getMaps() {
-        return MAPS;
-    }
-
-    getSampleTexture() {
-        return this._material.map;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['alphaMap'] = this._alphaMap;
-        params['bumpMap'] = this._bumpMap;
-        params['bumpScale'] = this._bumpScale;
-        params['color'] = this._material.color.getHex();
-        params['displacementMap'] = this._displacementMap;
-        params['displacementScale'] = this._displacementScale;
-        params['displacementBias'] = this._displacementBias;
-        params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
-        params['emissiveIntensity'] = this._emissiveIntensity;
-        params['map'] = this._map;
-        params['normalMap'] = this._normalMap;
-        params['normalMapType'] = this._normalMapType;
-        params['normalScale'] = this._normalScale;
-        params['wireframe'] = this._wireframe;
-        return params;
-    }
-
-    getAlphaMap() {
-        return this._alphaMap;
-    }
-
-    getBumpMap() {
-        return this._bumpMap;
-    }
-
-    getBumpScale() {
-        return this._bumpScale;
-    }
-
-    getColor() {
-        return this._color;
-    }
-
-    getDisplacementBias() {
-        return this._displacementBias;
-    }
-
-    getDisplacementMap() {
-        return this._displacementMap;
-    }
-
-    getDisplacementScale() {
-        return this._displacementScale;
-    }
-
-    getEmissive() {
-        return this._emissive;
-    }
-
-    getEmissiveIntensity() {
-        return this._emissiveIntensity;
-    }
-
-    getEmissiveMap() {
-        return this._emissiveMap;
-    }
-
-    getMap() {
-        return this._map;
-    }
-
-    getNormalMap() {
-        return this._normalMap;
-    }
-
-    getNormalMapType() {
-        return this._normalMapType;
-    }
-
-    getNormalScale() {
-        return this._normalScale;
-    }
-
-    getWireframe() {
-        return this._wireframe;
-    }
-
-    setAlphaMap(alphaMap) {
-        if(this._alphaMap == alphaMap) return;
-        this._setTexture('alphaMap', alphaMap);
-    }
-
-    setBumpMap(bumpMap) {
-        if(this._bumpMap == bumpMap) return;
-        this._setTexture('bumpMap', bumpMap);
-    }
-
-    setBumpScale(bumpScale) {
-        if(this._bumpScale == bumpScale) return;
-        this._bumpScale = bumpScale;
-        this._material.bumpScale = bumpScale;
-    }
-
-    setColor(color) {
-        if(this._color == color) return;
-        this._color = color;
-        this._material.color.setHex(color);
-    }
-
-    setDisplacementBias(displacementBias) {
-        if(this._displacementBias == displacementBias) return;
-        this._displacementBias = displacementBias;
-        this._material.displacementBias = displacementBias;
-    }
-
-    setDisplacementMap(displacementMap) {
-        if(this._displacementMap == displacementMap) return;
-        this._setTexture('displacementMap', displacementMap);
-    }
-
-    setDisplacementScale(displacementScale) {
-        if(this._displacementScale == displacementScale) return;
-        this._displacementScale = displacementScale;
-        this._material.displacementScale = displacementScale;
-    }
-
-    setEmissive(emissive) {
-        if(this._emissive == emissive) return;
-        this._emissive = emissive;
-        this._material.emissive.setHex(emissive);
-    }
-
-    setEmissiveIntensity(emissiveIntensity) {
-        if(this._emissiveIntensity == emissiveIntensity) return;
-        this._emissiveIntensity = emissiveIntensity;
-        this._material.emissiveIntensity = emissiveIntensity;
-    }
-
-    setEmissiveMap(emissiveMap) {
-        if(this._emissiveMap == emissiveMap) return;
-        this._setTexture('emissiveMap', emissiveMap);
-    }
-
-    setMap(map) {
-        if(this._map == map) return;
-        this._setTexture('map', map);
-    }
-
-    setNormalMap(normalMap) {
-        if(this._normalMap == normalMap) return;
-        this._setTexture('normalMap', normalMap);
-    }
-
-    setNormalMapType(normalMapType) {
-        if(this._normalMapType == normalMapType) return;
-        this._normalMapType = normalMapType;
-        this._material.normalMapType = normalMapType;
-        this._material.needsUpdate = true;
-    }
-
-    setNormalScale(normalScale) {
-        this._normalScale = normalScale;
-        this._material.normalScale.fromArray(normalScale);
-    }
-
-    setWireframe(wireframe) {
-        if(this._wireframe == wireframe) return;
-        this._wireframe = wireframe;
-        this._material.wireframe = wireframe;
-        this._material.needsUpdate = true;
-    }
-
-    static assetId = 'be461019-0fc2-4c88-bee4-290ee3a585eb';
-    static assetName = 'Toon Material';
-}
-
-projectHandler.registerAsset(ToonMaterial);
-libraryHandler.loadBuiltIn(ToonMaterial);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class Texture extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._colorSpace = stringOr(params['colorSpace'], THREE.SRGBColorSpace);
-    }
-
-    _getDefaultName() {
-        return 'Texture';
-    }
-
-    _createTexture() {
-        console.error("Texture._createTexture() should be overridden");
-        return;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['colorSpace'] = this._colorSpace;
-        return params;
-    }
-
-    _updateTexture() {
-        let oldTexture = this._texture;
-        this._createTexture();
-        setTimeout(() => {
-            oldTexture.dispose();
-        }, 20);
-    }
-
-    dispose() {
-        setTimeout(() => {
-            this._texture.dispose();
-        }, 20);
-    }
-
-    getColorSpace() {
-        return this._colorSpace;
-    }
-
-    getTexture() {
-        return this._texture;
-    }
-
-    getPreviewTexture() {
-        return this._texture;
-    }
-
-    getAssetIds() {
-        console.error("Texture.getAssetIds() should be overridden");
-        return;
-    }
-
-    getTextureType() {
-        console.error("Texture.getTextureType() should be overridden");
-        return;
-    }
-
-    setColorSpace(colorSpace) {
-        this._colorSpace = colorSpace;
-        this._texture.colorSpace = colorSpace;
-        this._updateTexture();
-    }
-
-    static assetType = AssetTypes.TEXTURE;
-}
-
-const TextureTypes = {
-    BASIC: "BASIC",
-    CUBE: "CUBE",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class BasicTexture extends Texture {
-    constructor(params = {}) {
-        params['assetId'] = BasicTexture.assetId;
-        super(params);
-        this._image = params['image'];
-        this._wrapS = params['wrapS'] || THREE.ClampToEdgeWrapping;
-        this._wrapT = params['wrapT'] || THREE.ClampToEdgeWrapping;
-        this._repeat = params['repeat'] || [1, 1];
-        this._offset = params['offset'] || [0, 0];
-        this._createTexture();
-    }
-
-    _getDefaultName() {
-        return BasicTexture.assetName;
-    }
-
-    _createTexture() {
-        if(this._image) {
-            this._texture = libraryHandler.cloneTexture(this._image);
-        } else {
-            this._texture = Textures.blackPixel.clone();
-        }
-        this._texture.wrapS = this._wrapS;
-        this._texture.wrapT = this._wrapT;
-        this._texture.repeat.fromArray(this._repeat);
-        this._texture.offset.fromArray(this._offset);
-        this._texture.needsUpdate = true;
-        this._texture.colorSpace = this._colorSpace;
-    }
-
-    getAssetIds() {
-        if(this._image) return [this._image];
-        return [];
-    }
-
-    getTextureType() {
-        return BasicTexture.textureType;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['image'] = this._image;
-        params['wrapS'] = this._texture.wrapS;
-        params['wrapT'] = this._texture.wrapT;
-        params['repeat'] = this._texture.repeat.toArray();
-        params['offset'] = this._offset;
-        return params;
-    }
-
-    getImage() {
-        return this._image;
-    }
-
-    getOffset() {
-        return this._offset;
-    }
-
-    getRepeat() {
-        return this._repeat;
-    }
-
-    getWrapS() {
-        return this._wrapS;
-    }
-
-    getWrapT() {
-        return this._wrapT;
-    }
-
-    setImage(image) {
-        if(this._image == image) return;
-        this._image = image;
-        this._updateTexture();
-    }
-
-    setOffset(offset) {
-        this._offset = offset;
-        this._texture.offset.fromArray(offset);
-    }
-
-    setRepeat(repeat) {
-        this._repeat = repeat;
-        this._texture.repeat.fromArray(repeat);
-    }
-
-    setWrapS(wrapS) {
-        if(this._wrapS == wrapS) return;
-        this._wrapS = wrapS;
-        this._updateTexture();
-    }
-
-    setWrapT(wrapT) {
-        if(this._wrapT == wrapT) return;
-        this._wrapT = wrapT;
-        this._updateTexture();
-    }
-
-    static assetId = '95f63d4b-06d1-4211-912b-556b6ce7bf5f';
-    static assetName = 'Basic Texture';
-    static textureType = TextureTypes.BASIC;
-}
-
-projectHandler.registerAsset(BasicTexture);
-libraryHandler.loadBuiltIn(BasicTexture);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-class CubeTexture extends Texture {
-    constructor(params = {}) {
-        params['assetId'] = CubeTexture.assetId;
-        super(params);
-        this._images = params['images'] || {};
-        this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
-        this._createTexture();
-    }
-
-    _getDefaultName() {
-        return CubeTexture.assetName;
-    }
-
-    _createTexture() {
-        let images = [
-            this._getImageFromSide(CubeSides.RIGHT),
-            this._getImageFromSide(CubeSides.LEFT),
-            this._getImageFromSide(CubeSides.TOP),
-            this._getImageFromSide(CubeSides.BOTTOM),
-            this._getImageFromSide(CubeSides.FRONT),
-            this._getImageFromSide(CubeSides.BACK),
-        ];
-        //textures must be square, same size, and power of 2, otherwise
-        //use no images
-        if(!this._validateImageList(images))
-            images = Array(6).fill(Textures.blackPixel.image);
-        this._texture = new THREE.CubeTexture(images, this._mapping);
-        this._texture.needsUpdate = true;
-        this._texture.colorSpace = this._colorSpace;
-    }
-
-    _getImageFromSide(side) {
-        if(this._images[side]) {
-            return libraryHandler.getImage(this._images[side]);
-        }
-        return Textures.blackPixel.image;
-    }
-
-    _validateImageList(images) {
-        let width;
-        let isValid = true;
-        for(let image of images) {
-            if(image == Textures.blackPixel.image) {
-                isValid = false;
-                continue;
-            } else if(image.width != image.height) {
-                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Images must be of same width and height',
-                    sustainTime: 3,
-                });
-                return false;
-            } else if(!powerOf2(image.width)) {
-                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Image lengths must be a power of 2',
-                    sustainTime: 3,
-                });
-                return false;
-            } else if(width && image.width != width) {
-                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'All images must be the same size',
-                    sustainTime: 3,
-                });
-                return false;
-            }
-            width = image.width;
-        }
-        return isValid;
-    }
-
-    getPreviewTexture() {
-        let imageId = this._images[CubeSides.FRONT];
-        if(imageId) return libraryHandler.getTexture(imageId);
-        return Textures.blackPixel;
-    }
-
-    getAssetIds() {
-        let assetIds = [];
-        for(let side in CubeSides) {
-            if(this._images[side]) assetIds.push(this._images[side]);
-        }
-        return assetIds;
-    }
-
-    getTextureType() {
-        return CubeTexture.textureType;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['images'] = this._images;
-        params['mapping'] = this._texture.mapping;
-        return params;
-    }
-
-    getImages() {
-        return this._images;
-    }
-
-    getMapping() {
-        return this._mapping;
-    }
-
-    setImages(images, side) {
-        if(side) {
-            if(this._images[side] == images) return;
-            this._images[side] = images;
-            this._updateTexture();
-        } else {
-            let hasDiff = false;
-            for(let s in this._images) {
-                if(this._images[s] != images[s]) {
-                    this._images[s] = images[s];
-                    hasDiff = true;
-                }
-            }
-            if(hasDiff) this._updateTexture();
-        }
-    }
-
-    setMapping(mapping) {
-        if(this._mapping == mapping) return;
-        this._mapping = mapping;
-        this._updateTexture();
-    }
-
-    static assetId = '8f95c544-ff6a-42d3-b1e7-03a1e772b3b2';
-    static assetName = 'Cube Texture';
-    static textureType = TextureTypes.CUBE;
-}
-
-//https://stackoverflow.com/a/30924333
-function powerOf2(v) {
-    return v && !(v & (v - 1));
-}
-
-projectHandler.registerAsset(CubeTexture);
-libraryHandler.loadBuiltIn(CubeTexture);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
 
 class RotateHandler {
     constructor() {
@@ -19214,7 +20161,7 @@ class RotateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
@@ -19222,7 +20169,7 @@ class RotateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -19243,6 +20190,25 @@ class RotateHandler {
                     }
                 }
             });
+            pubSub.subscribe(this._id, assetType + '_UPDATED', (message) => {
+                for(let key in this._heldAssets) {
+                    let heldAsset = this._heldAssets[key];
+                    if(heldAsset.asset == message.asset) {
+                        let assetHelper = heldAsset.asset.editorHelper;
+                        let object = heldAsset.asset.getObject();
+                        if(message.fields.includes('visualEdit')
+                                && heldAsset.preTransformState)
+                        {
+                            object.quaternion.fromArray(
+                                heldAsset.preTransformState);
+                            object.rotation.setFromQuaternion(
+                                object.quaternion);
+                            assetHelper._publish(['rotation']);
+                        }
+                        delete this._heldAssets[key];
+                    }
+                }
+            });
         }
         pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let key in this._heldAssets) {
@@ -19251,45 +20217,48 @@ class RotateHandler {
         });
     }
 
-    attach(controller, hand, asset, rotationDifference) {
-        let controllerId = controller.getId();
-        let otherHand = Hands.otherHand(hand);
-        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
-        if(otherHeldAsset && otherHeldAsset.asset == asset) {
-            this._swapToHand(controller, hand, otherHand, rotationDifference);
+    _otherOwner(ownerId, asset) {
+        for(let otherId in this._heldAssets) {
+            if(this._heldAssets[otherId].asset == asset && otherId != ownerId)
+                return otherId;
+        }
+    }
+
+    attach(owner, asset, rotationDifference) {
+        let otherOwner = this._otherOwner(owner);
+        if(otherOwner) {
+            this._swapToOwner(owner, otherOwner, rotationDifference);
         } else {
             let heldAsset = {
                 asset: asset,
-                controller: controller,
-                hand: hand,
+                ownerId: owner,
             };
             if(rotationDifference) {
                 heldAsset.rotationDifference = rotationDifference;
             } else {
                 let rotation = asset.getWorldQuaternion();
                 heldAsset.preTransformState = rotation.toArray();
-                heldAsset.rotationDifference = controller.hands[hand]
+                heldAsset.rotationDifference = projectHandler.getAsset(owner)
                     .getWorldQuaternion().conjugate().multiply(rotation)
                     .toArray();
             }
-            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+            this._heldAssets[owner] = heldAsset;
         }
         if(!rotationDifference) {
-            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            let heldAsset = this._heldAssets[owner];
             pubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: hand,
+                option: owner,
                 type: 'rotate',
                 rotation: heldAsset.rotationDifference,
             });
         }
     }
 
-    detach(controller, hand, rotation) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+    detach(owner, rotation) {
+        let heldAsset = this._heldAssets[owner];
         if(!heldAsset) return;
-        delete this._heldAssets[controllerId + ':' + hand];
+        delete this._heldAssets[owner];
         if(!rotation) {
             rotation = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -19304,7 +20273,7 @@ class RotateHandler {
             assetHelper._publish(['rotation']);
             pubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: hand,
+                option: owner,
                 type: 'rotate',
                 rotation: rotation,
             });
@@ -19324,7 +20293,7 @@ class RotateHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world rotation of the asset once
         //we support parent child relationships
-        let handRotation = heldAsset.controller.hands[heldAsset.hand]
+        let handRotation = projectHandler.getAsset(heldAsset.ownerId)
             .getWorldQuaternion();
         this._quaternion.fromArray(heldAsset.rotationDifference);
         let newRotation = handRotation.multiply(this._quaternion).toArray();
@@ -19332,19 +20301,17 @@ class RotateHandler {
         return newRotation;
     }
 
-    _swapToHand(controller, newHand, oldHand, rotationDifference) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
-        heldAsset.hand = newHand;
-        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
-        delete this._heldAssets[controllerId + ':' + oldHand];
+    _swapToOwner(newOwner, newHand, rotationDifference) {
+        let heldAsset = this._heldAssets[oldOwner];
+        heldAsset.ownerId = newOwner;
+        this._heldAssets[newOwner] = heldAsset;
+        delete this._heldAssets[oldOwner];
         if(rotationDifference) {
             heldAsset.rotationDifference = rotationDifference;
         } else {
             let rotation = heldAsset.asset.getWorldQuaternion();
-            heldAsset.rotationDifference = heldAsset.controller
-                .hands[heldAsset.hand].getWorldQuaternion().conjugate()
-                .multiply(rotation).toArray();
+            heldAsset.rotationDifference = projectHandler.getAsset(newOwner)
+                .getWorldQuaternion().conjugate().multiply(rotation).toArray();
         }
     }
 }
@@ -19357,6 +20324,7 @@ let rotateHandler = new RotateHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class ScaleHandler {
     constructor() {
         this._id = uuidv4();
@@ -19365,7 +20333,7 @@ class ScaleHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
@@ -19373,7 +20341,7 @@ class ScaleHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -19391,6 +20359,22 @@ class ScaleHandler {
                     }
                 }
             });
+            pubSub.subscribe(this._id, assetType + '_UPDATED', (message) => {
+                for(let key in this._heldAssets) {
+                    let heldAsset = this._heldAssets[key];
+                    if(heldAsset.asset == message.asset) {
+                        let assetHelper = heldAsset.asset.editorHelper;
+                        let object = heldAsset.asset.getObject();
+                        if(message.fields.includes('visualEdit')
+                                && heldAsset.preTransformState)
+                        {
+                            object.scale.fromArray(heldAsset.preTransformState);
+                            assetHelper._publish(['scale']);
+                        }
+                        delete this._heldAssets[key];
+                    }
+                }
+            });
         }
         pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let key in this._heldAssets) {
@@ -19399,45 +20383,48 @@ class ScaleHandler {
         });
     }
 
-    attach(controller, hand, asset, scaleIdentity) {
-        let controllerId = controller.getId();
-        let otherHand = Hands.otherHand(hand);
-        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
-        if(otherHeldAsset && otherHeldAsset.asset == asset) {
-            this._swapToHand(controller, hand, otherHand, scaleIdentity);
+    _otherOwner(ownerId, asset) {
+        for(let otherId in this._heldAssets) {
+            if(this._heldAssets[otherId].asset == asset && otherId != ownerId)
+                return otherId;
+        }
+    }
+
+    attach(owner, asset, scaleIdentity) {
+        let otherOwner = this._otherOwner(owner);
+        if(otherOwner) {
+            this._swapToOwner(owner, otherOwner, scaleIdentity);
         } else {
             let heldAsset = {
                 asset: asset,
-                controller: controller,
-                hand: hand,
+                ownerId: owner,
             };
             if(scaleIdentity) {
                 heldAsset.scaleIdentity = scaleIdentity;
             } else {
-                let distance = controller.hands[hand].getWorldPosition()
+                let distance = projectHandler.getAsset(owner).getWorldPosition()
                     .distanceTo(asset.getWorldPosition());
                 let scale = asset.getWorldScale();
                 heldAsset.preTransformState = scale.toArray();
                 heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
             }
-            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+            this._heldAssets[owner] = heldAsset;
         }
         if(!scaleIdentity) {
-            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            let heldAsset = this._heldAssets[owner];
             pubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: hand,
+                option: owner,
                 type: 'scale',
                 scale: heldAsset.scaleIdentity,
             });
         }
     }
 
-    detach(controller, hand, scale) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+    detach(owner, scale) {
+        let heldAsset = this._heldAssets[owner];
         if(!heldAsset) return;
-        delete this._heldAssets[controllerId + ':' + hand];
+        delete this._heldAssets[owner];
         if(!scale) {
             scale = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -19448,7 +20435,7 @@ class ScaleHandler {
             assetHelper._publish(['scale']);
             pubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: hand,
+                option: owner,
                 type: 'scale',
                 scale: scale,
             });
@@ -19468,8 +20455,8 @@ class ScaleHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world scale of the asset once
         //we support parent child relationships
-        let distance = heldAsset.asset.getWorldPosition().distanceTo(heldAsset
-            .controller.hands[heldAsset.hand].getWorldPosition());
+        let distance = heldAsset.asset.getWorldPosition().distanceTo(
+            projectHandler.getAsset(heldAsset.ownerId).getWorldPosition());
         let newScale = [
             heldAsset.scaleIdentity[0] * distance,
             heldAsset.scaleIdentity[1] * distance,
@@ -19479,16 +20466,15 @@ class ScaleHandler {
         return newScale;
     }
 
-    _swapToHand(controller, newHand, oldHand, scaleIdentity) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
-        heldAsset.hand = newHand;
-        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
-        delete this._heldAssets[controllerId + ':' + oldHand];
+    _swapToOwner(newOwner, oldOwner, scaleIdentity) {
+        let heldAsset = this._heldAssets[oldOwner];
+        heldAsset.ownerId = newOwner;
+        this._heldAssets[newOwner] = heldAsset;
+        delete this._heldAssets[oldOwner];
         if(scaleIdentity) {
             heldAsset.scaleIdentity = scaleIdentity;
         } else {
-            let distance = controller.hands[newHand].getWorldPosition()
+            let distance = projectHandler.getAsset(newOwner).getWorldPosition()
                 .distanceTo(heldAsset.asset.getWorldPosition());
             let scale = heldAsset.asset.getWorldScale();
             heldAsset.scaleIdentity = scale.divideScalar(distance).toArray();
@@ -19504,6 +20490,7 @@ let scaleHandler = new ScaleHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class TranslateHandler {
     constructor() {
         this._id = uuidv4();
@@ -19512,7 +20499,7 @@ class TranslateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
@@ -19520,7 +20507,7 @@ class TranslateHandler {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.controller, heldAsset.hand);
+                    this.detach(heldAsset.ownerId);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -19539,6 +20526,23 @@ class TranslateHandler {
                     }
                 }
             });
+            pubSub.subscribe(this._id, assetType + '_UPDATED', (message) => {
+                for(let key in this._heldAssets) {
+                    let heldAsset = this._heldAssets[key];
+                    if(heldAsset.asset == message.asset) {
+                        let assetHelper = heldAsset.asset.editorHelper;
+                        let object = heldAsset.asset.getObject();
+                        if(message.fields.includes('visualEdit')
+                                && heldAsset.preTransformState)
+                        {
+                            object.position.fromArray(
+                                heldAsset.preTransformState);
+                            assetHelper._publish(['position']);
+                        }
+                        delete this._heldAssets[key];
+                    }
+                }
+            });
         }
         pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             for(let key in this._heldAssets) {
@@ -19547,44 +20551,47 @@ class TranslateHandler {
         });
     }
 
-    attach(controller, hand, asset, positionDifference) {
-        let controllerId = controller.getId();
-        let otherHand = Hands.otherHand(hand);
-        let otherHeldAsset = this._heldAssets[controllerId + ':' + otherHand];
-        if(otherHeldAsset && otherHeldAsset.asset == asset) {
-            this._swapToHand(controller, hand, otherHand, positionDifference);
+    _otherOwner(ownerId, asset) {
+        for(let otherId in this._heldAssets) {
+            if(this._heldAssets[otherId].asset == asset && otherId != ownerId)
+                return otherId;
+        }
+    }
+
+    attach(owner, asset, positionDifference) {
+        let otherOwner = this._otherOwner(owner);
+        if(otherOwner) {
+            this._swapToOwner(owner, otherOwner, positionDifference);
         } else {
             let heldAsset = {
                 asset: asset,
-                controller: controller,
-                hand: hand,
+                ownerId: owner,
             };
             if(positionDifference) {
                 heldAsset.positionDifference = positionDifference;
             } else {
                 let position = asset.getWorldPosition();
                 heldAsset.preTransformState = position.toArray();
-                heldAsset.positionDifference = position.sub(heldAsset
-                    .controller.hands[hand].getWorldPosition()).toArray();
+                heldAsset.positionDifference = position.sub(projectHandler
+                    .getAsset(owner).getWorldPosition()).toArray();
             }
-            this._heldAssets[controllerId + ':' + hand] = heldAsset;
+            this._heldAssets[owner] = heldAsset;
         }
         if(!positionDifference) {
-            let heldAsset = this._heldAssets[controllerId + ':' + hand];
+            let heldAsset = this._heldAssets[owner];
             pubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: hand,
+                option: owner,
                 type: 'translate',
                 position: heldAsset.positionDifference,
             });
         }
     }
 
-    detach(controller, hand, position) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + hand];
+    detach(owner, position) {
+        let heldAsset = this._heldAssets[owner];
         if(!heldAsset) return;
-        delete this._heldAssets[controllerId + ':' + hand];
+        delete this._heldAssets[owner];
         if(!position) {
             position = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -19595,7 +20602,7 @@ class TranslateHandler {
             assetHelper._publish(['position']);
             pubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: hand,
+                option: owner,
                 type: 'translate',
                 position: position,
             });
@@ -19615,7 +20622,7 @@ class TranslateHandler {
         if(!heldAsset) return;
         //Eventually we'll need to set the world position of the asset once
         //we support parent child relationships
-        let handPosition = heldAsset.controller.hands[heldAsset.hand]
+        let handPosition = projectHandler.getAsset(heldAsset.ownerId)
             .getWorldPosition();
         let newPosition = [
             heldAsset.positionDifference[0] + handPosition.x,
@@ -19626,18 +20633,17 @@ class TranslateHandler {
         return newPosition;
     }
 
-    _swapToHand(controller, newHand, oldHand, positionDifference) {
-        let controllerId = controller.getId();
-        let heldAsset = this._heldAssets[controllerId + ':' + oldHand];
-        heldAsset.hand = newHand;
-        this._heldAssets[controllerId + ':' + newHand] = heldAsset;
-        delete this._heldAssets[controllerId + ':' + oldHand];
+    _swapToOwner(newOwner, oldOwner, positionDifference) {
+        let heldAsset = this._heldAssets[oldOwner];
+        heldAsset.ownerId = newOwner;
+        this._heldAssets[newOwner] = heldAsset;
+        delete this._heldAssets[oldOwner];
         if(positionDifference) {
             heldAsset.positionDifference = positionDifference;
         } else {
             let position = heldAsset.asset.getWorldPosition();
-            heldAsset.positionDifference = position.sub(heldAsset
-                .controller.hands[heldAsset.hand].getWorldPosition()).toArray();
+            heldAsset.positionDifference = position.sub(projectHandler
+                .getAsset(newOwner).getWorldPosition()).toArray();
         }
     }
 }
@@ -19649,6 +20655,7 @@ let translateHandler = new TranslateHandler();
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const HEIGHT$a = 0.05;
 const WIDTH$a = 0.31;
@@ -19780,6 +20787,7 @@ class AudioInput extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const HEIGHT$9 = 0.05;
 const WIDTH$9 = 0.31;
 const TITLE_WIDTH$9 = 0.14;
@@ -19862,6 +20870,7 @@ class CheckboxInput extends PointerInteractableEntity {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const HEIGHT$8 = 0.2;
 const WIDTH$8 = 0.31;
@@ -20052,6 +21061,7 @@ class CubeImageInput extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const HEIGHT$7 = 0.05;
 const WIDTH$7 = 0.31;
 const TITLE_WIDTH$7 = 0.13;
@@ -20176,6 +21186,7 @@ class EnumInput extends PointerInteractableEntity {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const HEIGHT$6 = 0.11;
 const WIDTH$6 = 0.31;
@@ -20362,6 +21373,7 @@ function toDegrees(radians) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const HEIGHT$5 = 0.05;
 const WIDTH$5 = 0.31;
 const TITLE_WIDTH$5 = 0.13;
@@ -20512,6 +21524,7 @@ class ImageInput extends PointerInteractableEntity {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const HEIGHT$4 = 0.05;
 const WIDTH$4 = 0.31;
@@ -20724,6 +21737,7 @@ class MaterialInput extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const HEIGHT$3 = 0.05;
 const WIDTH$3 = 0.31;
 const TITLE_WIDTH$3 = 0.13;
@@ -20821,6 +21835,7 @@ class TextInput extends PointerInteractableEntity {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const HEIGHT$2 = 0.05;
 const WIDTH$2 = 0.31;
@@ -21018,6 +22033,7 @@ class TextureInput extends PointerInteractableEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const HEIGHT$1 = 0.085;
 const WIDTH$1 = 0.31;
 const TITLE_WIDTH$1 = 0.09;
@@ -21175,6 +22191,7 @@ function createLabelRow$1(label) {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const HEIGHT = 0.11;
 const WIDTH = 0.31;
@@ -21355,6 +22372,7 @@ function createLabelRow(label) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const INPUT_TYPE_TO_CREATE_FUNCTION = {
     AudioInput: "_createAudioInput",
     CheckboxInput: "_createCheckboxInput",
@@ -21375,7 +22393,8 @@ class EditorHelper {
     constructor(asset, updatedTopic) {
         this._asset = asset;
         this._id = asset.getId();
-        this._updatedTopic = updatedTopic;
+        this._updatedTopic = updatedTopic + ':' + asset.getAssetId() + ':'
+            + this._id;
         this._deletedAttachedComponents = new Set();
         this._addComponentSubscriptions();
     }
@@ -21790,6 +22809,7 @@ editorHelperFactory.registerEditorHelper(EditorHelper, Asset);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const TRS_HANDLERS = [{ handler: translateHandler, tool: HandTools.TRANSLATE },
     { handler: rotateHandler, tool: HandTools.ROTATE },
@@ -21809,37 +22829,34 @@ class AssetEntityHelper extends EditorHelper {
     }
 
     _addActions() {
+        if(this._pointerActions.length > 0) return;
         if(global$1.deviceType == "XR") {
             this._gripActions.push(
-                this._asset.addGripAction((hand) => {
-                    transformControlsHandler.attach(this._asset, hand);
-                }, (hand) => {
-                    transformControlsHandler.detach(hand);
+                this._asset.addGripAction((ownerId) => {
+                    transformControlsHandler.attach(this._asset, ownerId);
+                }, (ownerId) => {
+                    transformControlsHandler.detach(ownerId);
                 }, HandTools.EDIT));
             this._gripActions.push(
-                this._asset.addGripAction((hand) => {
+                this._asset.addGripAction((ownerId) => {
                     projectHandler.deleteAsset(this._asset);
                 }, null, HandTools.DELETE));
             this._pointerActions.push(
                 this._asset.addPointerAction(() => {
                     projectHandler.deleteAsset(this._asset);
                 }, null, null, HandTools.DELETE));
-            this._gripActions.push(
-                this._asset.addGripAction((hand) => {
-                    CopyPasteControlsHandler$1.copy(this._asset);
-                }, null, HandTools.COPY_PASTE, Hands.LEFT));
             this._pointerActions.push(
-                this._asset.addPointerAction(() => {
-                    CopyPasteControlsHandler$1.copy(this._asset);
-                }, null, null, HandTools.COPY_PASTE, Hands.LEFT));
+                this._asset.addPointerAction((ownerId) => {
+                    copyPasteControlsHandler.copy(ownerId, this._asset);
+                }, null, null, HandTools.COPY_PASTE));
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;
                 this._gripActions.push(
-                    this._asset.addGripAction((hand) => {
-                        handler.attach(UserController$1, hand, this._asset);
-                    }, (hand) => {
-                        handler.detach(UserController$1, hand);
+                    this._asset.addGripAction((ownerId) => {
+                        handler.attach(ownerId, this._asset);
+                    }, (ownerId) => {
+                        handler.detach(ownerId);
                     }, tool));
             }
         } else {
@@ -21869,11 +22886,12 @@ class AssetEntityHelper extends EditorHelper {
         for(let action of this._gripActions) {
             this._asset.removeGripAction(action.id);
         }
-        this._gripActionsIds = [];
+        this._gripActions = [];
         for(let action of this._pointerActions) {
             this._asset.removePointerAction(action.id);
         }
-        this._pointerActionsIds = [];
+        this._pointerActions = [];
+        this._attachedPeers = new Set();
     }
 
     updateVisualEdit(isVisualEdit) {
@@ -21889,31 +22907,20 @@ class AssetEntityHelper extends EditorHelper {
     }
 
     attachToPeer(peer, message) {
-        this._attachedPeers.add(peer.id + ':' + message.option);
+        this._attachedPeers.add(message.option);
         if(message.isXR) {
-            if(message.twoHandScaling) {
-                global$1.scene.attach(this._object);
-                this._asset.setPosition(message.position);
-                this._asset.setRotation(message.rotation);
-                return;
+            if(message.type == 'translate') {
+                translateHandler.attach(message.option, this._asset,
+                    message.position);
+            } else if(message.type == 'rotate') {
+                rotateHandler.attach(message.option, this._asset,
+                    message.rotation);
+            } else if(message.type == 'scale') {
+                scaleHandler.attach(message.option, this._asset,
+                    message.scale);
             } else {
-                if(message.option in Hands && peer.controller) {
-                    if(message.type == 'translate') {
-                        translateHandler.attach(peer.controller, message.option,
-                            this._asset, message.position);
-                    } else if(message.type == 'rotate') {
-                        rotateHandler.attach(peer.controller, message.option,
-                            this._asset, message.rotation);
-                    } else if(message.type == 'scale') {
-                        scaleHandler.attach(peer.controller, message.option,
-                            this._asset, message.scale);
-                    } else {
-                        peer.controller.hands[message.option].attach(
-                            this._object);
-                        this._asset.setPosition(message.position);
-                        this._asset.setRotation(message.rotation);
-                    }
-                }
+                transformControlsHandler.attachToPeer(peer, this._asset,
+                    message);
             }
         }
         if(!this._asset.visualEdit) return;
@@ -21922,29 +22929,21 @@ class AssetEntityHelper extends EditorHelper {
     }
 
     detachFromPeer(peer, message) {
-        this._attachedPeers.delete(peer.id + ':' + message.option);
+        this._attachedPeers.delete(message.option);
         if(message.isXR) {
-            if(message.twoHandScaling) {
-                let otherHand = Hands.otherHand(message.option);
-                peer.controller.hands[otherHand].attach(this._object);
-                this._asset.setPosition(message.position);
-                this._asset.setRotation(message.rotation);
-                return;
+            if(message.type == 'translate') {
+                translateHandler.detach(message.option,
+                    message.position);
+            } else if(message.type == 'rotate') {
+                rotateHandler.detach(message.option,
+                    message.rotation);
+            } else if(message.type == 'scale') {
+                scaleHandler.detach(message.option,
+                    message.scale);
             } else {
-                if(message.type == 'translate') {
-                    translateHandler.detach(peer.controller, message.option,
-                        message.position);
-                } else if(message.type == 'rotate') {
-                    rotateHandler.detach(peer.controller, message.option,
-                        message.rotation);
-                } else if(message.type == 'scale') {
-                    scaleHandler.detach(peer.controller, message.option,
-                        message.scale);
-                } else {
-                    global$1.scene.attach(this._object);
-                    this._asset.setPosition(message.position);
-                    this._asset.setRotation(message.rotation);
-                }
+                transformControlsHandler.detachFromPeer(peer, this._asset,
+                    message);
+                if(message.twoHandScaling) return;
             }
         }
         if(!this._asset.visualEdit) return;
@@ -22065,10 +23064,12 @@ class AssetEntityHelper extends EditorHelper {
     _overwriteAssetFunctions() {
         this._asset._addToScene = this._asset.addToScene;
         this._asset._removeFromScene = this._asset.removeFromScene;
-        this._asset.addToScene = (scene) => {
-            this._asset._addToScene(scene);
-            this.addToScene();
-        };
+        this._asset.addToScene =
+            (scene, pointerInteractable, gripInteractable) => {
+                this._asset._addToScene(scene, pointerInteractable,
+                    gripInteractable);
+                this.addToScene();
+            };
         this._asset.removeFromScene = (scene) => {
             this._asset._removeFromScene();
             this.removeFromScene();
@@ -22078,7 +23079,33 @@ class AssetEntityHelper extends EditorHelper {
         };
     }
 
-    addToScene(scene) {
+    addTo(newParent, ignorePublish, ignoreUndoRedo) {
+        let oldParent = this._asset.parent;
+        this._asset.addTo(newParent, ignorePublish);
+        if(oldParent == newParent) return;
+        if(!ignoreUndoRedo) {
+            undoRedoHandler.addAction(() => {
+                this.addTo(oldParent, ignorePublish, true);
+            }, () => {
+                this.addTo(newParent, ignorePublish, true);
+            });
+        }
+    }
+
+    attachTo(newParent, ignorePublish, ignoreUndoRedo) {
+        let oldParent = this._asset.parent;
+        this._asset.attachTo(newParent, ignorePublish);
+        if(oldParent == newParent) return;
+        if(!ignoreUndoRedo) {
+            undoRedoHandler.addAction(() => {
+                this.attachTo(oldParent, ignorePublish, true);
+            }, () => {
+                this.attachTo(newParent, ignorePublish, true);
+            });
+        }
+    }
+
+    addToScene() {
         if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
         this._addActions();
     }
@@ -22111,6 +23138,7 @@ editorHelperFactory.registerEditorHelper(AssetEntityHelper, AssetEntity);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class AudioHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -22189,6 +23217,7 @@ editorHelperFactory.registerEditorHelper(AudioHelper, AudioAsset);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class MaterialHelper extends EditorHelper {
     constructor(asset) {
@@ -22269,6 +23298,7 @@ editorHelperFactory.registerEditorHelper(MaterialHelper, Material);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class BasicMaterialHelper extends MaterialHelper {
     constructor(asset) {
         super(asset);
@@ -22303,6 +23333,7 @@ editorHelperFactory.registerEditorHelper(BasicMaterialHelper, BasicMaterial);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class TextureHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.TEXTURE_UPDATED);
@@ -22321,6 +23352,7 @@ editorHelperFactory.registerEditorHelper(TextureHelper, Texture);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class BasicTextureHelper extends TextureHelper {
     constructor(asset) {
@@ -22347,6 +23379,7 @@ editorHelperFactory.registerEditorHelper(BasicTextureHelper, BasicTexture);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class Component extends Asset {
     constructor(params = {}) {
         super(params);
@@ -22365,6 +23398,7 @@ class Component extends Asset {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class ComponentHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.COMPONENT_UPDATED);
@@ -22378,6 +23412,7 @@ editorHelperFactory.registerEditorHelper(ComponentHelper, Component);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class ClampedTexturePlaneHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -22416,6 +23451,7 @@ editorHelperFactory.registerEditorHelper(ClampedTexturePlaneHelper, ClampedTextu
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class CubeTextureHelper extends TextureHelper {
     constructor(asset) {
         super(asset);
@@ -22437,6 +23473,7 @@ editorHelperFactory.registerEditorHelper(CubeTextureHelper, CubeTexture);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class CustomAsset extends Asset {
     constructor(params = {}) {
         super(params);
@@ -22451,6 +23488,7 @@ class CustomAsset extends Asset {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class CustomAssetHelper extends EditorHelper {
     constructor(asset) {
         super(asset, PubSubTopics.CUSTOM_ASSET_UPDATED);
@@ -22464,6 +23502,7 @@ editorHelperFactory.registerEditorHelper(CustomAssetHelper, CustomAsset);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class GLTFAssetHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -22485,6 +23524,7 @@ editorHelperFactory.registerEditorHelper(GLTFAssetHelper, GLTFAsset);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class LightHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -22527,6 +23567,7 @@ editorHelperFactory.registerEditorHelper(LightHelper, Light);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class AmbientLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
@@ -22556,6 +23597,7 @@ editorHelperFactory.registerEditorHelper(AmbientLightHelper, AmbientLight);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class ShapeHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -22624,6 +23666,7 @@ editorHelperFactory.registerEditorHelper(ShapeHelper, Shape);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class BoxShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
@@ -22657,6 +23700,7 @@ editorHelperFactory.registerEditorHelper(BoxShapeHelper, BoxShape);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class CircleShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -22700,6 +23744,7 @@ editorHelperFactory.registerEditorHelper(CircleShapeHelper, CircleShape);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class ConeShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
@@ -22732,6 +23777,7 @@ editorHelperFactory.registerEditorHelper(ConeShapeHelper, ConeShape);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class CylinderShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -22767,6 +23813,7 @@ editorHelperFactory.registerEditorHelper(CylinderShapeHelper, CylinderShape);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class PlaneShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -22810,6 +23857,7 @@ editorHelperFactory.registerEditorHelper(PlaneShapeHelper, PlaneShape);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class PointLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
@@ -22843,6 +23891,7 @@ editorHelperFactory.registerEditorHelper(PointLightHelper, PointLight);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class RingShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -22890,6 +23939,7 @@ editorHelperFactory.registerEditorHelper(RingShapeHelper, RingShape);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class SphereShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
@@ -22922,6 +23972,7 @@ editorHelperFactory.registerEditorHelper(SphereShapeHelper, SphereShape);
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class TorusShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
@@ -22953,6 +24004,7 @@ editorHelperFactory.registerEditorHelper(TorusShapeHelper, TorusShape);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class StandardMaterialHelper extends MaterialHelper {
     constructor(asset) {
@@ -23015,10 +24067,28 @@ editorHelperFactory.registerEditorHelper(StandardMaterialHelper, StandardMateria
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
+let ATTACHED_COMPONENTS = {};
+
+pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_ATTACHED, (message) =>{
+    if(!(message.componentAssetId in ATTACHED_COMPONENTS))
+        ATTACHED_COMPONENTS[message.componentAssetId] = {};
+    ATTACHED_COMPONENTS[message.componentAssetId][message.id] = message;
+});
+
+pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_DETACHED, (message) =>{
+    if(!(message.componentAssetId in ATTACHED_COMPONENTS)) return;
+    delete ATTACHED_COMPONENTS[message.componentAssetId][message.id];
+});
+
+pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.PROJECT_LOADING, (done) => {
+    if(!done) ATTACHED_COMPONENTS = {};
+});
+
 class System extends Asset {
     constructor(params = {}) {
         super(params);
-        this._addSystemSubscriptions();
+        this._subscriptionTopics = [];
     }
 
     _getDefaultName() {
@@ -23026,8 +24096,14 @@ class System extends Asset {
     }
 
     _addSystemSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.USER_READY, () => {
+            this._onUserReady();
+        });
         pubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
             this._onPeerReady(message.peer);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PEER_DISCONNECTED, (message) =>{
+            this._onPeerDisconnected(message.peer);
         });
         pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(partyHandler.isHost());
@@ -23035,21 +24111,62 @@ class System extends Asset {
         pubSub.subscribe(this._id, PubSubTopics.PARTY_ENDED, () => {
             this._onPartyEnded();
         });
+        this._subscriptionTopics.push(PubSubTopics.USER_READY);
+        this._subscriptionTopics.push(PubSubTopics.PEER_READY);
+        this._subscriptionTopics.push(PubSubTopics.PARTY_STARTED);
+        this._subscriptionTopics.push(PubSubTopics.PARTY_ENDED);
+    }
+
+    _removeSubscriptions() {
+        for(let subscription of this._subscriptionTopics) {
+            pubSub.unsubscribe(this._id, subscription);
+        }
+        this._subscriptionTopics = [];
+    }
+
+    _listenForComponentAdded(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_ADDED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
     }
 
     _listenForComponentAttached(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
-        pubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
-                + componentAssetId, (message) => { handler(message); });
+        let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+        if(componentAssetId in ATTACHED_COMPONENTS) {
+            for(let id in ATTACHED_COMPONENTS[componentAssetId]) {
+                handler(ATTACHED_COMPONENTS[componentAssetId][id]);
+            }
+        }
+    }
+
+    _listenForComponentDeleted(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_DELETED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
     }
 
     _listenForComponentDetached(componentAssetId, handler) {
         if(!componentAssetId || !handler) return;
-        pubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
-                + componentAssetId, (message) => { handler(message); });
+        let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
     }
 
+    _listenForComponentUpdated(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_UPDATED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+    }
+
+    _onUserReady() {}
     _onPeerReady() {}
+    _onPeerDisconnected() {}
     _onPartyStarted() {}
     _onPartyEnded() {}
 
@@ -23062,6 +24179,14 @@ class System extends Asset {
         return false;
     }
 
+    addToScene() {
+        this._addSystemSubscriptions();
+    }
+
+    removeFromScene() {
+        this._removeSubscriptions();
+    }
+
     static assetType = AssetTypes.SYSTEM;
 }
 
@@ -23070,6 +24195,7 @@ class System extends Asset {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class SystemHelper extends EditorHelper {
     constructor(asset) {
@@ -23084,6 +24210,7 @@ editorHelperFactory.registerEditorHelper(SystemHelper, System);
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class ToonMaterialHelper extends MaterialHelper {
     constructor(asset) {
@@ -34977,6 +36104,7 @@ module.exports = JSZipUtils;
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const BACKGROUND_OPACITY = 0.8;
 const FONT_OPACITY = 1;
 const FADE_TIME = 1;
@@ -35092,63 +36220,6 @@ class NotificationHub extends Entity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class MenuGripInteractable extends GripInteractable {
-    constructor(threeObj, border) {
-        super(threeObj);
-        if(threeObj) threeObj.gripInteractable = this;
-        this._border = border;
-    }
-
-    _createBoundingObject() {
-        this._boundingPlane = new THREE.Plane();
-    }
-
-    _getBoundingObject() {
-        this._threeObj.getWorldPosition(vector3s[0]);
-        this._threeObj.getWorldQuaternion(quaternion);
-        vector3s[1].set(0,0,1).applyQuaternion(quaternion);
-        this._boundingPlane.setFromNormalAndCoplanarPoint(vector3s[1],
-            vector3s[0]);
-        return this._boundingPlane;
-    }
-
-    _displayBoundingObject() {
-        this._threeObj.add(this._border);
-    }
-
-    _hideBoundingObject() {
-        this._threeObj.remove(this._border);
-    }
-
-    intersectsSphere(sphere) {
-        let boundingPlane = this._getBoundingObject();
-        let intersects;
-        if(boundingPlane) {
-            //We already have threeObj's world position in vector3s[0]
-            intersects = sphere.intersectsPlane(boundingPlane)
-                && sphere.distanceToPoint(vector3s[0]) < 0.45;
-        } else {
-            intersects = false;
-        }
-        return intersects;
-    }
-
-    // Assumes intersectsSphere(sphere) is called first so we don't update the
-    // bounding plane by calling _getBoundingObject()
-    distanceToSphere(sphere) {
-        return this._boundingPlane.distanceToPoint(sphere.center);
-    }
-
-    static emptyGroup() {
-        return new MenuGripInteractable();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
 
 class MenuController extends PointerInteractableEntity {
     constructor() {
@@ -35246,13 +36317,16 @@ class MenuController extends PointerInteractableEntity {
         if(global$1.deviceType != 'XR') return;
         let border = this._createBorder();
         let interactable = new MenuGripInteractable(this._object, border);
-        interactable.addAction((hand) => {
-                UserController$1.hands[hand].attach(this._object);
-                this._gripOwners.add(hand);
-            }, (hand) => {
-                UserController$1.hands[hand].remove(this._object);
-                this._gripOwners.delete(hand);
-            });
+        interactable.addAction((ownerId) => {
+            let asset = projectHandler.getAsset(ownerId);
+            if(asset) asset.getObject().attach(this._object);
+            this._gripOwners.add(ownerId);
+        }, (ownerId) => {
+            let asset = projectHandler.getAsset(ownerId);
+            if(this._object.parent == asset.getObject())
+                scene.getObject().attach(this._object);
+            this._gripOwners.delete(ownerId);
+        });
         this._gripInteractable.addChild(interactable);
         keyboard.init(this._object);
     }
@@ -35309,8 +36383,8 @@ class MenuController extends PointerInteractableEntity {
 
     _updateVR(timeDelta) {
         if(global$1.sessionActive) {
-            let rightGamepad = inputHandler.getXRGamepad(Hands.RIGHT);
-            let leftGamepad = inputHandler.getXRGamepad(Hands.LEFT);
+            let rightGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
+            let leftGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
             if(rightGamepad?.buttons[4]?.pressed) {
                 if(!this._eventAlreadyTriggered) {
                     this._eventAlreadyTriggered = true;
@@ -35372,6 +36446,7 @@ class MenuController extends PointerInteractableEntity {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const FONT_FAMILY = Fonts.defaultFamily;
 const FONT_TEXTURE = Fonts.defaultTexture;
@@ -35475,6 +36550,8 @@ class MenuPage extends PointerInteractableEntity {
         this._container.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
         this._containerInteractable = new PointerInteractable(
             this._container.children[0]);
+        if(global$1.deviceType == 'XR')
+            this._containerInteractable.addAction(() => {});
         this._pointerInteractable.addChild(this._containerInteractable);
         borderedBlock.add(this._container);
         this._object.add(borderedBlock);
@@ -35492,6 +36569,7 @@ class MenuPage extends PointerInteractableEntity {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class AcknowledgementsPage extends MenuPage {
     constructor(controller) {
@@ -35698,6 +36776,7 @@ class AcknowledgementsPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const FIELDS_CONTAINER_HEIGHT = 0.22;
 
 class DynamicFieldsPage extends MenuPage {
@@ -35882,6 +36961,7 @@ class DynamicFieldsPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class AssetPage extends DynamicFieldsPage {
     constructor(controller, assetType) {
         super(controller, true);
@@ -35995,6 +37075,7 @@ class AssetPage extends DynamicFieldsPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const OPTIONS$5 = 5;
 
@@ -36154,6 +37235,7 @@ let PaginatedPage$1 = class PaginatedPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const FIELD_MAX_LENGTH$3 = 25;
 
 class AssetsPage extends PaginatedPage$1 {
@@ -36272,6 +37354,7 @@ class AssetsPage extends PaginatedPage$1 {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const FIELD_MAX_LENGTH$2 = 25;
 
 class AssetSelectPage extends PaginatedPage$1 {
@@ -36378,6 +37461,7 @@ class AssetSelectPage extends PaginatedPage$1 {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const LIGHTNESS_WIDTH = 1;
 const LIGHTNESS_HEIGHT = 256;
@@ -36563,6 +37647,7 @@ let colorWheel = new ColorWheel();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const RADIUS = 0.1;
 const HSL = {};
 
@@ -36609,21 +37694,21 @@ class ColorWheelPage extends MenuPage {
         });
         let colorInteractable = PointerInteractable.createDraggable(
             this._colorBlock,
-            (point) => {
+            (owner, point) => {
                 this._handleColorCursorDrag(point);
                 this._isDraggingColorCursor = false;
                 if(this._onEnter) this._onEnter();
             },
-            (point) => { this._handleColorCursorDrag(point); },
+            (owner, point) => { this._handleColorCursorDrag(point); },
         );
         let lightnessInteractable = PointerInteractable.createDraggable(
             this._lightnessBlock,
-            (point) => {
+            (owner, point) => {
                 this._handleLightnessCursorDrag(point);
                 this._isDraggingLightnessCursor = false;
                 if(this._onEnter) this._onEnter();
             },
-            (point) => { this._handleLightnessCursorDrag(point); });
+            (owner, point) => { this._handleLightnessCursorDrag(point); });
         rowBlock.add(this._colorBlock);
         rowBlock.add(this._lightnessBlock);
         this._container.add(rowBlock);
@@ -36711,7 +37796,7 @@ class ColorWheelPage extends MenuPage {
     }
 
     setContent(requesterId, color, onUpdate, onEnter) {
-        colorWheel.setFromHSL(color.getHSL(HSL));
+        colorWheel.setFromHSL(color.getHSL(HSL, THREE.SRGBColorSpace));
         this._updateColorCursor();
         this._updateLightnessCursor();
         this._requesterId = requesterId;
@@ -36744,6 +37829,7 @@ class ColorWheelPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class EditAcknowledgementsPage extends MenuPage {
     constructor(controller) {
@@ -36959,6 +38045,7 @@ class EditAcknowledgementsPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class EditorSettingsPage extends DynamicFieldsPage {
     constructor(controller) {
         super(controller, true);
@@ -36994,8 +38081,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'maxValue': 1000,
             'initialValue': 1,
             'onBlur': (oldValue, newValue) => {
-                pubSub.publish(this._id, PubSubTopics.USER_SCALE_UPDATED,
-                    newValue);
+                global$1.userController.setScale([newValue, newValue, newValue]);
                 settingsHandler.setEditorSetting('User Scale', newValue);
             },
             'getFromSource': () => {
@@ -37047,6 +38133,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const hands = [
     { "title": "Edit", "type": HandTools.EDIT },
     { "title": "Copy / Paste", "type": HandTools.COPY_PASTE },
@@ -37095,6 +38182,7 @@ class HandsPage extends PaginatedPage$1 {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class HostPartyPage extends MenuPage {
     constructor(controller) {
@@ -37230,6 +38318,7 @@ class HostPartyPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class JoinPartyPage extends MenuPage {
     constructor(controller) {
@@ -37478,6 +38567,13 @@ class GoogleDrive {
         this._fileId = null;
     }
 
+    getCurrentFileName() {
+        for(let file of this._files) {
+            if(file.id == this._fileId) return file.name;
+        }
+        return '';
+    }
+
     fetchFiles(callback) {
         var request = gapi.client.drive.files.list({
             'q': "mimeType='application/zip'",
@@ -37621,6 +38717,7 @@ let googleDrive = new GoogleDrive();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class LoadFromGDrivePage extends PaginatedPage$1 {
     constructor(controller) {
         super(controller, true);
@@ -37760,6 +38857,7 @@ class LoadFromGDrivePage extends PaginatedPage$1 {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const ROWS$1 = 2;
 const OPTIONS$4 = 3;
@@ -37957,6 +39055,7 @@ let PaginatedIconsPage$1 = class PaginatedIconsPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const ASSETS = [{
         'text': 'Models',
         'icon': Textures.objectIcon,
@@ -38074,6 +39173,7 @@ class LibraryPage extends PaginatedIconsPage$1 {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const FIELD_MAX_LENGTH$1 = 25;
 
 class LibrarySearchPage extends PaginatedPage$1 {
@@ -38149,6 +39249,7 @@ class LibrarySearchPage extends PaginatedPage$1 {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const OPTIONS$3 = 5;
 
@@ -38357,6 +39458,7 @@ class PaginatedPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const FIELD_MAX_LENGTH = 25;
 
 class ListComponentsPage extends PaginatedPage {
@@ -38538,6 +39640,7 @@ class ListComponentsPage extends PaginatedPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const pages$3 = [
     { "title": "Hand Tools", "menuPage": MenuPages.HANDS },
     { "title": "Library", "menuPage": MenuPages.LIBRARY },
@@ -38597,6 +39700,7 @@ class NavigationPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken';
 const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry';
@@ -38713,6 +39817,7 @@ let sketchfab = new Sketchfab();
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const SPECIAL_OPTIONS = {
     DEVICE: {
@@ -38854,6 +39959,7 @@ class NewAssetPage extends PaginatedPage$1 {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const pages$2 = [
     { "title": "Host Party", "menuPage": MenuPages.HOST_PARTY },
     { "title": "Join Party", "menuPage": MenuPages.JOIN_PARTY },
@@ -38926,7 +40032,7 @@ class PartyPage extends DynamicFieldsPage {
 
     _handleUpdateUsername() {
         let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
-        let username = partyHandler.getUsername();
+        let username = global$1.userController.getUsername();
         inputPage.setContentWithInitialValue("Update Username", username,
             "Update",
             (username) => {
@@ -38937,7 +40043,7 @@ class PartyPage extends DynamicFieldsPage {
                     });
                     return;
                 }
-                partyHandler.setUsername(username);
+                global$1.userController.setUsername(username);
                 this._controller.back();
             }
         );
@@ -39276,6 +40382,7 @@ class PeerEntity extends MenuEntity {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 const options = [
     { "title": "Make Host", "handler": "_handleMakeHost" },
     { "title": "Kick Out", "handler": "_handleKickOut" },
@@ -39376,6 +40483,7 @@ class PeerPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class DelayedClickEventHandler {
     constructor() {
         this._triggerDelayedClickEvent = false;
@@ -39426,6 +40534,7 @@ let delayedClickEventHandler = new DelayedClickEventHandler();
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const OPTIONS$2 = {
     'New Project': '_newProject',
@@ -39529,31 +40638,54 @@ class ProjectPage extends PaginatedPage$1 {
     _googleDriveSave() {
         if(googleDrive.isSignedIn()) {
             if(googleDrive.hasActiveFile()) {
-                this._updateSaving(false);
-                pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
-                googleDrive.save(
-                    projectHandler.exportProject(),
-                    () => { this._saveSuccessCallback(); },
-                    () => { this._saveErrorCallback(); });
-                return;
+                let page = this._controller.getPage(MenuPages.TWO_BUTTON);
+                let filename = googleDrive.getCurrentFileName();
+                page.setContent(
+                    "Would you like to overwrite " + filename
+                        + " or save the project as a new one?",
+                    "Overwrite existing project",
+                    "Save as new",
+                    () => {
+                        this._controller.popPage();
+                        this._googleDriveOverwrite();
+                    },
+                    () => {
+                        this._controller.popPage();
+                        this._googleDriveSaveAs();
+                    });
+                this._controller.pushPage(MenuPages.TWO_BUTTON);
+            } else {
+                this._googleDriveSaveAs();
             }
-            let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
-            inputPage.setContent("Save Project As", "Filename", "Save",
-                (projectName) => {
-                    this._updateSaving(false);
-                    pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING,false);
-                    googleDrive.saveAs(
-                        projectName,
-                        projectHandler.exportProject(),
-                        () => { this._saveSuccessCallback(); },
-                        () => { this._saveErrorCallback(); });
-                    this._controller.back();
-                }
-            );
-            this._controller.pushPage(MenuPages.TEXT_INPUT);
         } else {
             this._googleDriveSignin(() => this._googleDriveSave());
         }
+    }
+
+    _googleDriveOverwrite() {
+        this._updateSaving(false);
+        pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING, false);
+        googleDrive.save(
+            projectHandler.exportProject(),
+            () => { this._saveSuccessCallback(); },
+            () => { this._saveErrorCallback(); });
+    }
+
+    _googleDriveSaveAs() {
+        let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
+        inputPage.setContent("Save Project As", "Filename", "Save",
+            (projectName) => {
+                this._updateSaving(false);
+                pubSub.publish(this._id, PubSubTopics.PROJECT_SAVING,false);
+                googleDrive.saveAs(
+                    projectName,
+                    projectHandler.exportProject(),
+                    () => { this._saveSuccessCallback(); },
+                    () => { this._saveErrorCallback(); });
+                this._controller.back();
+            }
+        );
+        this._controller.pushPage(MenuPages.TEXT_INPUT);
     }
 
     _googleDriveLoad() {
@@ -39601,7 +40733,6 @@ class ProjectPage extends PaginatedPage$1 {
     _handleLocalFile(file) {
         this._updateLoading(false);
         JSZip.loadAsync(file).then((jsZip) => {
-            googleDrive.clearActiveFile();
             projectHandler.loadZip(jsZip, () => {
                 pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION,
                     { text: 'Project Loaded', });
@@ -39622,7 +40753,7 @@ class ProjectPage extends PaginatedPage$1 {
             return;
         }
         projectHandler.reset();
-        UserController$1.setPosition([0, 0, 0]);
+        userController.setPosition([0, 0, 0]);
         let ambientLight = new AmbientLight({
             'visualEdit': false,
         });
@@ -39722,6 +40853,7 @@ class ProjectPage extends PaginatedPage$1 {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class ReadyPlayerMe {
     init(container) {
         this._setupIframe(container);
@@ -39766,7 +40898,7 @@ class ReadyPlayerMe {
 
         // Get avatar GLB URL
         if(json.eventName === 'v1.avatar.exported') {
-            UserController$1.updateAvatar(json.data.url + '?useHands=false');
+            userController.setAvatarUrl(json.data.url + '?useHands=false');
             this._close();
         }
 
@@ -39803,6 +40935,7 @@ let readyPlayerMe = new ReadyPlayerMe();
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const pages$1 = [
     { "title": "Backdrop", "menuPage": MenuPages.SKYBOX, isEditorOnly: true },
@@ -39867,6 +41000,7 @@ class SettingsPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
@@ -39984,6 +41118,13 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
     }
 
     setContent(sketchfabAsset) {
+        let validCharacters = [];
+        for(let c of sketchfabAsset['name']) {
+            if(ValidKeys.has(c)) {
+                validCharacters.push(c);
+            }
+        }
+        sketchfabAsset['name'] = validCharacters.join('');
         this._titleBlock.children[1].set({ content: sketchfabAsset['name'] });
         this._authorBlock.children[1].set({
             content: 'Author: ' + sketchfabAsset.user.username,
@@ -40010,6 +41151,7 @@ let SketchfabLoginPage$1 = class SketchfabLoginPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class ClickAction {
     constructor(action) {
@@ -40062,6 +41204,7 @@ class ClickAction {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
@@ -40142,6 +41285,7 @@ class SketchfabLoginPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const ROWS = 2;
 const OPTIONS$1 = 3;
@@ -40339,6 +41483,7 @@ class PaginatedIconsPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class SketchfabSearchPage extends PaginatedIconsPage {
     constructor(controller) {
         super(controller, true);
@@ -40472,6 +41617,7 @@ class SketchfabSearchPage extends PaginatedIconsPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const sides = [
     CubeSides.TOP,
@@ -40622,6 +41768,7 @@ class SkyboxPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class TextInputPage extends MenuPage {
     constructor(controller) {
         super(controller, true);
@@ -40697,6 +41844,7 @@ class TextInputPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class TwoButtonPage extends MenuPage {
     constructor(controller) {
         super(controller, true);
@@ -40762,6 +41910,7 @@ class TwoButtonPage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const OPTIONS = {
     'Select from Device': '_uploadAsset',
@@ -40857,6 +42006,7 @@ class UploadPage extends PaginatedPage$1 {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class UserSettingsPage extends DynamicFieldsPage {
     constructor(controller) {
         super(controller, true);
@@ -40893,8 +42043,8 @@ class UserSettingsPage extends DynamicFieldsPage {
             'initialValue': 1,
             'onBlur': (oldValue, newValue) => {
                 if(!global$1.isEditor) {
-                    pubSub.publish(this._id, PubSubTopics.USER_SCALE_UPDATED,
-                        newValue);
+                    global$1.userController.setScale(
+                        [newValue, newValue, newValue]);
                 }
                 settingsHandler.setUserSetting('User Scale', newValue);
             },
@@ -40961,6 +42111,7 @@ class UserSettingsPage extends DynamicFieldsPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class EditorMenuController extends MenuController {
     constructor() {
         super();
@@ -40989,6 +42140,7 @@ class EditorMenuController extends MenuController {
         this._pages[MenuPages.UPLOAD] = new UploadPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         for(let assetType in AssetTypes) {
+            if(assetType == AssetTypes.INTERNAL) continue;
             this._pages[assetType + 'S'] = new AssetsPage(this, assetType);
             this._pages[assetType] = new AssetPage(this, assetType);
             this._pages['NEW_' + assetType] = new NewAssetPage(this, assetType);
@@ -41010,6 +42162,7 @@ class EditorMenuController extends MenuController {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 const pages = [
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
@@ -41068,6 +42221,7 @@ class HomePage extends MenuPage {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class LiveMenuController extends MenuController {
     constructor() {
@@ -41256,11 +42410,12 @@ Stats.Panel = function ( name, fg, bg ) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class Main {
     constructor(callback, containerId, params) {
         this._renderer;
-        this._scene;
         this._camera;
+        this._scene = scene.getObject();
         this._clock = new THREE.Clock();
         this._container = document.getElementById(containerId);
         this._loadingMessage = document.querySelector('#digital-bacon-loading');
@@ -41268,7 +42423,6 @@ class Main {
         this._callback = callback;
 
         this._createRenderer();
-        this._createScene();
         this._createCamera();
         this._createUser();
         this._createHandlers(params.onStart);
@@ -41283,17 +42437,11 @@ class Main {
 
     _createRenderer() {
         this._renderer = new THREE.WebGLRenderer({ antialias : true });
-        this._renderer.useLegacyLights = false;
         this._container.appendChild(this._renderer.domElement);
         if(global$1.deviceType == "XR") {
             this._renderer.xr.enabled = true;
         }
         global$1.renderer = this._renderer;
-    }
-
-    _createScene() {
-        this._scene = new THREE.Scene();
-        global$1.scene = this._scene;
     }
 
     _createCamera() {
@@ -41309,24 +42457,23 @@ class Main {
 
     _createUser() {
         if(global$1.disableImmersion) return;
-        this._userObj = new THREE.Object3D();
         this._cameraFocus = new THREE.Object3D();
         if(global$1.deviceType != "XR") {
-            //this._cameraFocus.position.setY(1.7); //Height of your eyes
+            this._cameraFocus.position.setY(1.7); //Height of your eyes
             this._camera.position.setY(0.5);
             this._camera.position.setZ(1.9);
         }
         this._cameraFocus.add(this._camera);
-        this._userObj.add(this._cameraFocus);
-        this._scene.add(this._userObj);
         global$1.cameraFocus = this._cameraFocus;
+        global$1.userController = userController;
     }
 
     _createHandlers(onStart) {
-        projectHandler.init(this._scene);
+        audioHandler.init();
         if(global$1.disableImmersion) return;
         sessionHandler.init(this._container, onStart);
-        inputHandler.init(this._container, this._renderer, this._userObj);
+        inputHandler.init(this._container, this._renderer,
+            userController.getObject());
         pointerInteractableHandler.init();
         undoRedoHandler.init();
         if(global$1.deviceType == "XR") {
@@ -41375,11 +42522,9 @@ class Main {
         this._menuController.addToScene(this._scene);
         global$1.menuController = this._menuController;
 
-        UserController$1.init({
-            'User Object': this._userObj,
-            'Flight Enabled': true,
-        });
-        UserController$1.addToScene(this._userObj);
+        projectHandler.addAsset(userController, true, true);
+        userController.init();
+        userController.getObject().add(this._cameraFocus);
     }
 
     _addEventListeners() {
@@ -41422,15 +42567,12 @@ class Main {
                 }, 1000);
             }, 50);
             if(global$1.disableImmersion) {
-                global$1.dynamicAssets.add(pubSub);
-                global$1.dynamicAssets.add(ThreeMeshUI);
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });
                 if(this._callback) this._callback(this);
                 return;
             } else if(global$1.deviceType == "XR") {
-                global$1.dynamicAssets.add(gripInteractableHandler);
                 this._renderer.setAnimationLoop((time, frame) => {
                     inputHandler.update(frame);
                     this._update();
@@ -41445,16 +42587,16 @@ class Main {
                 });
             }
             global$1.dynamicAssets.add(this._menuController);
-            global$1.dynamicAssets.add(UserController$1);
-            global$1.dynamicAssets.add(pointerInteractableHandler);
-            global$1.dynamicAssets.add(pubSub);
-            global$1.dynamicAssets.add(ThreeMeshUI);
+            global$1.dynamicAssets.add(userController);
             global$1.dynamicAssets.add(partyHandler);
             if(global$1.isEditor) {
                 global$1.dynamicAssets.add(translateHandler);
                 global$1.dynamicAssets.add(rotateHandler);
                 global$1.dynamicAssets.add(scaleHandler);
             }
+            global$1.dynamicAssets.add(pointerInteractableHandler);
+            if(global$1.deviceType == "XR")
+                global$1.dynamicAssets.add(gripInteractableHandler);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "
@@ -41468,6 +42610,8 @@ class Main {
         for(let asset of global$1.dynamicAssets) {
             asset.update(timeDelta);
         }
+        pubSub.update(timeDelta);
+        ThreeMeshUI.update(timeDelta);
         this._renderer.render(this._scene, this._camera);
         this._stats.end();
     }
@@ -41486,6 +42630,7 @@ class Main {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 global$1.deviceType = "MOBILE";
 global$1.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
@@ -41581,13 +42726,13 @@ function setupContainer(containerId) {
     right: 10px;
 }
 
-#mobile-flying-controls {
+#extra-controls {
     position: absolute;
     bottom: 10px;
     right: 10px;
 }
 
-#mobile-flying-controls > button, #mobile-menu-open-button {
+#extra-controls > button, #mobile-menu-open-button {
     border-width: 1px;
     border-style: solid;
     border-color: #fff;
@@ -41596,10 +42741,11 @@ function setupContainer(containerId) {
     padding: 12px;
     color: #fff;
     font: normal 13px sans-serif;
+    margin-left: 5px;
     opacity: 0.75;
 }
 
-#mobile-flying-controls > button {
+#extra-controls > button {
     width: 70px;
 }
 
@@ -41701,10 +42847,7 @@ function setupContainer(containerId) {
       </div>
       <div id="mobile-joystick" class="hidden"></div>
       <button id="mobile-menu-open-button" class="hidden">OPEN MENU</button>
-      <div id="mobile-flying-controls" class="hidden">
-        <button id="mobile-flying-up-button">UP</button>
-        <button id="mobile-flying-down-button">DOWN</button>
-      </div>`;
+      <div id="extra-controls" class="hidden"></div>`;
     container.style.position = 'relative';
 }
 
@@ -41754,6 +42897,7 @@ function setup(containerId, params) {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+
 class CustomAssetEntity extends AssetEntity {
     constructor(params = {}) {
         super(params);
@@ -41798,6 +42942,7 @@ var Assets = /*#__PURE__*/Object.freeze({
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 
 class CustomAssetEntityHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -41857,7 +43002,8 @@ var MenuInputs = /*#__PURE__*/Object.freeze({
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-const version = "0.1.3";
+
+const version = "0.1.5";
 
 global$1.version = version;
 
@@ -41882,6 +43028,7 @@ if(window != null) {
         Assets: Assets,
         AudioHandler: audioHandler,
         EditorHelpers: EditorHelpers,
+        InputHandler: inputHandler,
         Interactables: Interactables,
         LibraryHandler: libraryHandler,
         MenuInputs: MenuInputs,
@@ -41889,7 +43036,9 @@ if(window != null) {
         PartyMessageHelper: partyMessageHelper,
         ProjectHandler: projectHandler,
         PubSub: pubSub,
-        UserController: UserController$1,
+        Scene: scene,
+        SettingsHandler: settingsHandler,
+        UserController: userController,
         disableImmersion: disableImmersion,
         getCamera: getCamera,
         getDeviceType: getDeviceType,
@@ -41901,4 +43050,4 @@ if(window != null) {
     };
 }
 
-export { Assets, audioHandler as AudioHandler, EditorHelpers, Interactables, libraryHandler as LibraryHandler, MenuInputs, partyHandler as PartyHandler, partyMessageHelper as PartyMessageHelper, projectHandler as ProjectHandler, pubSub as PubSub, UserController$1 as UserController, disableImmersion, getCamera, getDeviceType, setup, setupEditor, utils, version };
+export { Assets, audioHandler as AudioHandler, EditorHelpers, inputHandler as InputHandler, Interactables, libraryHandler as LibraryHandler, MenuInputs, partyHandler as PartyHandler, partyMessageHelper as PartyMessageHelper, projectHandler as ProjectHandler, pubSub as PubSub, scene as Scene, settingsHandler as SettingsHandler, userController as UserController, disableImmersion, getCamera, getDeviceType, setup, setupEditor, utils, version };
