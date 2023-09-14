@@ -57,6 +57,7 @@ export default {
     external: [
         'three',
         'three-mesh-ui',
+        'three-mesh-bvh',
     ],
     plugins: [
         rootImport({
