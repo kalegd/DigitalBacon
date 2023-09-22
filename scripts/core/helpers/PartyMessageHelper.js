@@ -217,9 +217,11 @@ class PartyMessageHelper {
         } else {
             asset = ProjectHandler.addNewAsset(message.asset.assetId,
                 message.asset, true, true);
-            let parentId = asset.getParentId();
-            let parentAsset = ProjectHandler.getSessionAsset(parentId);
-            if(parentAsset) asset.addTo(parentAsset, true);
+            if(asset.getParentId) {
+                let parentId = asset.getParentId();
+                let parentAsset = ProjectHandler.getSessionAsset(parentId);
+                if(parentAsset) asset.addTo(parentAsset, true);
+            }
         }
         PubSub.publish(this._id, message.assetType + '_ADDED', asset);
     }

@@ -28,7 +28,9 @@ export default class XRHand extends XRDevice {
             this._modelObject = controllerModel;
             this._modelUrl = DEFAULT_HAND_PROFILE_PATH
                 + this._handedness.toLowerCase() + '.glb';
+            this._isUsers = true;
         }
+        this._palmDirection = new Vector3();
         this._raycasterOrigin = new Vector3();
         this._raycasterDirection = new Vector3();
     }
@@ -82,9 +84,22 @@ export default class XRHand extends XRDevice {
     }
 
     getPalmDirection() {
-        let model = InputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
-            this._handedness);
-        return model.motionController.palmDirection;
+        if(this._isUsers) {
+            let model = InputHandler.getXRControllerModel(
+                XRInputDeviceTypes.HAND, this._handedness);
+            this._palmDirection.copy(model.motionController.palmDirection);
+        } else if(this._handedness == Handedness.LEFT) {
+            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
+                0.1958660688459766);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        } else {
+            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
+                0.19586401335899684);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        }
+        return this._palmDirection;
     }
 
     isButtonPressed(index) {
