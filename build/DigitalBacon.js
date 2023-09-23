@@ -11514,7 +11514,9 @@ class XRHand extends XRDevice {
             this._modelObject = controllerModel;
             this._modelUrl = DEFAULT_HAND_PROFILE_PATH
                 + this._handedness.toLowerCase() + '.glb';
+            this._isUsers = true;
         }
+        this._palmDirection = new Vector3();
         this._raycasterOrigin = new Vector3();
         this._raycasterDirection = new Vector3();
     }
@@ -11568,9 +11570,22 @@ class XRHand extends XRDevice {
     }
 
     getPalmDirection() {
-        let model = inputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
-            this._handedness);
-        return model.motionController.palmDirection;
+        if(this._isUsers) {
+            let model = inputHandler.getXRControllerModel(
+                XRInputDeviceTypes.HAND, this._handedness);
+            this._palmDirection.copy(model.motionController.palmDirection);
+        } else if(this._handedness == Handedness.LEFT) {
+            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
+                0.1958660688459766);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        } else {
+            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
+                0.19586401335899684);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        }
+        return this._palmDirection;
     }
 
     isButtonPressed(index) {
@@ -12870,9 +12885,11 @@ class PartyMessageHelper {
         } else {
             asset = projectHandler.addNewAsset(message.asset.assetId,
                 message.asset, true, true);
-            let parentId = asset.getParentId();
-            let parentAsset = projectHandler.getSessionAsset(parentId);
-            if(parentAsset) asset.addTo(parentAsset, true);
+            if(asset.getParentId) {
+                let parentId = asset.getParentId();
+                let parentAsset = projectHandler.getSessionAsset(parentId);
+                if(parentAsset) asset.addTo(parentAsset, true);
+            }
         }
         pubSub.publish(this._id, message.assetType + '_ADDED', asset);
     }
@@ -43011,7 +43028,7 @@ var MenuInputs = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.1.6";
+const version = "0.1.8";
 
 global$1.version = version;
 
