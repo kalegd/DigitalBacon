@@ -36,24 +36,40 @@ class InternalAssetsHandler extends AssetsHandler {
         PubSub.publish(this._id, topic, { asset: asset }, true);
     }
 
-    load(assets) {
-        if(!assets) return;
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in this._assetClassMap)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else if(this._sessionAssets[params.id]) {
-                    this.addAsset(this._sessionAssets[params.id], true, true);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
+    deleteFromDiff() {}
+
+    loadAsset(params) {
+        if(!(params.assetId in this._assetClassMap)) {
+            console.error("Unrecognized asset found");
+        } else if(this._assets[params.id]) {
+            this._assets[params.id].updateFromParams(params);
+            return this._assets[params.id];
+        } else if(this._sessionAssets[params.id]) {
+            this.addAsset(this._sessionAssets[params.id], true, true);
+            return this._assets[params.id];
+        } else {
+            return this.addNewAsset(params.assetId, params, true, true);
         }
     }
+
+    //load(assets) {
+    //    if(!assets) return;
+    //    for(let assetTypeId in assets) {
+    //        if(!(assetTypeId in this._assetClassMap)) {
+    //            console.error("Unrecognized asset found");
+    //            continue;
+    //        }
+    //        for(let params of assets[assetTypeId]) {
+    //            if(this._assets[params.id]) {
+    //                this._assets[params.id].updateFromParams(params);
+    //            } else if(this._sessionAssets[params.id]) {
+    //                this.addAsset(this._sessionAssets[params.id], true, true);
+    //            } else {
+    //                this.addNewAsset(assetTypeId, params, true, true);
+    //            }
+    //        }
+    //    }
+    //}
 
     reset() {
         let keptAssets = this._assets;

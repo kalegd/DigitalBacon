@@ -13,7 +13,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //TODO: Delete this when we handle the debacle TODO in loadZip() + loadDiffZip()
@@ -62,29 +62,40 @@ class ProjectHandler {
                 LibraryHandler.load(this._projectDetails['library'], jsZip,()=>{
                     global.loadingLocks.delete(lock);
                     SettingsHandler.load(this._projectDetails['settings']);
-                    //TODO: Loop through this._assetHandlers. Not doing it now
-                    //      because order is semi-important. Eventually it
-                    //      shouldn't matter as there's the potential for
-                    //      components to depend on models and circular
-                    //      dependencies as well which we'll need to handle
                     try {
-                        for(let key of orderedHandlerKeys) {
-                            this._assetHandlers[key].load(
+                        for(let key in this._assetHandlers) {
+                            this._assetHandlers[key].deleteFromDiff(
                                 this._projectDetails[key.toLowerCase() + 's']);
                         }
-                        for(let id in this._assets) {
-                            let asset = this._assets[id];
-                            if(asset.addTo) {
-                                let parentAsset = this._sessionAssets[
-                                    asset.getParentId()];
-                                asset.addTo(parentAsset, true);
-                            }
-                        }
+                        this._loadAssets(this._projectDetails, true);
                     } catch(error) {
                         console.error(error);
                         this._handleLoadingError(errorCallback);
                         return;
                     }
+                    //TODO: Loop through this._assetHandlers. Not doing it now
+                    //      because order is semi-important. Eventually it
+                    //      shouldn't matter as there's the potential for
+                    //      components to depend on models and circular
+                    //      dependencies as well which we'll need to handle
+                    //try {
+                    //    for(let key of orderedHandlerKeys) {
+                    //        this._assetHandlers[key].load(
+                    //            this._projectDetails[key.toLowerCase() + 's']);
+                    //    }
+                    //    for(let id in this._assets) {
+                    //        let asset = this._assets[id];
+                    //        if(asset.addTo) {
+                    //            let parentAsset = this._sessionAssets[
+                    //                asset.getParentId()];
+                    //            asset.addTo(parentAsset, true);
+                    //        }
+                    //    }
+                    //} catch(error) {
+                    //    console.error(error);
+                    //    this._handleLoadingError(errorCallback);
+                    //    return;
+                    //}
                     PubSub.publish(this._id, PubSubTopics.PROJECT_LOADING,true);
                     if(successCallback) successCallback();
                 }, () => { this._handleLoadingError(errorCallback); });
@@ -103,32 +114,165 @@ class ProjectHandler {
                     return;
                 }
                 LibraryHandler.load(projectDetails['library'], jsZip,()=>{
-                    //TODO: Loop through this._assetHandlers. Not doing it now
-                    //      because order is semi-important. Eventually it
-                    //      shouldn't matter as there's the potential for
-                    //      components to depend on models and circular
-                    //      dependencies as well which we'll need to handle
                     try {
-                        for(let key of orderedHandlerKeys) {
-                            this._assetHandlers[key].load(
-                                projectDetails[key.toLowerCase() + 's'], true);
+                        for(let key in this._assetHandlers) {
+                            this._assetHandlers[key].deleteFromDiff(
+                                projectDetails[key.toLowerCase() + 's']);
                         }
-                        for(let id in this._assets) {
-                            let asset = this._assets[id];
-                            if(asset.addTo) {
-                                let parentAsset = this._sessionAssets[
-                                    asset.getParentId()];
-                                asset.addTo(parentAsset, true);
-                            }
-                        }
+                        this._loadAssets(projectDetails, true);
                     } catch(error) {
                         console.error(error);
                         if(errorCallback) errorCallback();
                         return;
                     }
+                    //TODO: Loop through this._assetHandlers. Not doing it now
+                    //      because order is semi-important. Eventually it
+                    //      shouldn't matter as there's the potential for
+                    //      components to depend on models and circular
+                    //      dependencies as well which we'll need to handle
+                    //try {
+                    //    for(let key of orderedHandlerKeys) {
+                    //        this._assetHandlers[key].load(
+                    //            projectDetails[key.toLowerCase() + 's'], true);
+                    //    }
+                    //    for(let id in this._assets) {
+                    //        let asset = this._assets[id];
+                    //        if(asset.addTo) {
+                    //            let parentAsset = this._sessionAssets[
+                    //                asset.getParentId()];
+                    //            asset.addTo(parentAsset, true);
+                    //        }
+                    //    }
+                    //} catch(error) {
+                    //    console.error(error);
+                    //    if(errorCallback) errorCallback();
+                    //    return;
+                    //}
                     if(successCallback) successCallback();
                 }, () => { if(errorCallback) errorCallback(); });
             }, () => { if(errorCallback) errorCallback(); });
+    }
+
+    _createDependencyGraph(projectDetails) {
+        let pendingAssets = {};
+        for(let key in this._assetHandlers) {
+            let handler = this._assetHandlers[key];
+            key = key.toLowerCase() + 's';
+            if(!handler) {
+                console.error('Unexpected asset type: ' + handlerKey);
+                continue;
+            }
+            for(let assetId in projectDetails[key]) {
+                for(let params of projectDetails[key][assetId]) {
+                    pendingAssets[params.id] = {
+                        params: params,
+                        removedParams: {},
+                        handler: handler,
+                        loaded: false,
+                        dependsOn: new Set(),
+                        dependedOnBy: new Set(),
+                    };
+                }
+            }
+        }
+        for(let key in this._assetHandlers) {
+            key = key.toLowerCase() + 's';
+            for(let assetId in projectDetails[key]) {
+                for(let params of projectDetails[key][assetId]) {
+                    this._addDependencies(pendingAssets, params);
+                }
+            }
+        }
+        return pendingAssets;
+    }
+
+    _addDependencies(pendingAssets, params) {
+        for(let key in params) {
+            if(key == 'id') continue;
+            let value = params[key];
+            if(Array.isArray(value)) {
+                for(let id of value) {
+                    if(id in pendingAssets && !this._sessionAssets[id]) {
+                        pendingAssets[params.id].dependsOn.add(id);
+                        pendingAssets[id].dependedOnBy.add(params.id);
+                    }
+                }
+            } else if(typeof value == 'string') {
+                if(value in pendingAssets && !this._sessionAssets[value]) {
+                    pendingAssets[params.id].dependsOn.add(value);
+                    pendingAssets[value].dependedOnBy.add(params.id);
+                }
+            }
+        }
+    }
+
+    _loadAssets(projectDetails, isDiff) {
+        let pendingAssets = this._createDependencyGraph(projectDetails);
+        let assetsPendingUpdates = {};
+        while(Object.keys(pendingAssets).length > 0) {
+            let loadedSomething = false;
+            let maxDependedOnBy = 0;
+            let maxDependedOnByAssetId;
+            for(let id in pendingAssets) {
+                if(pendingAssets[id].dependedOnBy.size > maxDependedOnBy)
+                    maxDependedOnByAssetId = id;
+                if(pendingAssets[id].dependsOn.size != 0) continue;
+                pendingAssets[id].handler.loadAsset(pendingAssets[id].params,
+                    isDiff);
+                for(let dependencyId of pendingAssets[id].dependedOnBy) {
+                    pendingAssets[dependencyId].dependsOn.delete(id);
+                }
+                delete pendingAssets[id];
+                loadedSomething = true;
+            }
+            if(!loadedSomething) {
+                let pendingAsset = pendingAssets[maxDependedOnByAssetId];
+                this._loadAssetWithoutDependencies(pendingAsset, isDiff);
+                for(let dependencyId of pendingAsset.dependedOnBy) {
+                    pendingAssets[dependencyId].dependsOn
+                        .delete(maxDependedOnByAssetId);
+                }
+                assetsPendingUpdates[maxDependedOnByAssetId] = pendingAsset;
+                delete pendingAssets[maxDependedOnByAssetId];
+            }
+        }
+        for(let id in assetsPendingUpdates) {
+            let removedParams = assetsPendingUpdates[id].removedParams;
+            let asset = assetsPendingUpdates[id].asset;
+            for(let key in removedParams) {
+                let value = removedParams[key];
+                if(Array.isArray(value))
+                    value = assetsPendingUpdates[id].params[key].concat(value);
+                asset['set' + capitalizeFirstLetter(key)](value);
+            }
+        }
+        for(let id in this._assets) {
+            let asset = this._assets[id];
+            if(asset.addTo) {
+                let parentAsset = this._sessionAssets[
+                    asset.getParentId()];
+                asset.addTo(parentAsset, true);
+            }
+        }
+    }
+
+    _loadAssetWithoutDependencies(pendingAsset, isDiff) {
+        let params = pendingAsset.params;
+        let removedParams = pendingAsset.removedParams;
+        for(let dependencyId of pendingAsset.dependsOn) {
+            for(let key in params) {
+                let value = params[key];
+                if(value == dependencyId) {
+                    removedParams[key] = params[key];
+                    delete params[key];
+                } else if(Array.isArray(value) && value.includes(dependencyId)){
+                    if(!removedParams[key]) removedParams[key] = [];
+                    removedParams[key].push(dependencyId);
+                    params[key] = value.filter((v) => v != dependencyId);
+                }
+            }
+        }
+        pendingAsset.handler.loadAsset(params, isDiff);
     }
 
     getAssetHandler(assetType) {
