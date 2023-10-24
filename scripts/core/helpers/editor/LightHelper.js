@@ -39,6 +39,7 @@ export default class LightHelper extends AssetEntityHelper {
         { "parameter": "intensity", "name": "Intensity", "min": 0,
             "type": NumberInput },
         { "parameter": "color", "name": "Color", "type": ColorInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

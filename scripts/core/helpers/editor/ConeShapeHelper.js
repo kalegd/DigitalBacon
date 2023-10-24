@@ -29,6 +29,7 @@ export default class ConeShapeHelper extends ShapeHelper {
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
         { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxInput},
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

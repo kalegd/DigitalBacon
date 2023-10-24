@@ -16,9 +16,6 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 import { uuidv4, capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-//TODO: Delete this when we handle the debacle TODO in loadZip() + loadDiffZip()
-const orderedHandlerKeys = [AssetTypes.INTERNAL, AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.AUDIO, AssetTypes.MODEL, AssetTypes.SHAPE, AssetTypes.CUSTOM_ASSET];
-  
 class ProjectHandler {
     constructor() {
         this._id = uuidv4();
@@ -53,13 +50,16 @@ class ProjectHandler {
         global.loadingLocks.add(lock);
         jsZip.file("projectDetails.json").async("string").then(
             (projectDetailsString) => {
+                let projectDetailsCopy;
                 try {
+                    //this._projectDetails needs to be immutable hence the copy
                     this._projectDetails = JSON.parse(projectDetailsString);
+                    projectDetailsCopy = JSON.parse(projectDetailsString);
                 } catch(error) {
                     this._handleLoadingError(errorCallback);
                     return;
                 }
-                LibraryHandler.load(this._projectDetails['library'], jsZip,()=>{
+                LibraryHandler.load(projectDetailsCopy['library'], jsZip,()=>{
                     global.loadingLocks.delete(lock);
                     SettingsHandler.load(this._projectDetails['settings']);
                     try {
@@ -67,35 +67,12 @@ class ProjectHandler {
                             this._assetHandlers[key].deleteFromDiff(
                                 this._projectDetails[key.toLowerCase() + 's']);
                         }
-                        this._loadAssets(this._projectDetails, true);
+                        this._loadAssets(projectDetailsCopy, true);
                     } catch(error) {
                         console.error(error);
                         this._handleLoadingError(errorCallback);
                         return;
                     }
-                    //TODO: Loop through this._assetHandlers. Not doing it now
-                    //      because order is semi-important. Eventually it
-                    //      shouldn't matter as there's the potential for
-                    //      components to depend on models and circular
-                    //      dependencies as well which we'll need to handle
-                    //try {
-                    //    for(let key of orderedHandlerKeys) {
-                    //        this._assetHandlers[key].load(
-                    //            this._projectDetails[key.toLowerCase() + 's']);
-                    //    }
-                    //    for(let id in this._assets) {
-                    //        let asset = this._assets[id];
-                    //        if(asset.addTo) {
-                    //            let parentAsset = this._sessionAssets[
-                    //                asset.getParentId()];
-                    //            asset.addTo(parentAsset, true);
-                    //        }
-                    //    }
-                    //} catch(error) {
-                    //    console.error(error);
-                    //    this._handleLoadingError(errorCallback);
-                    //    return;
-                    //}
                     PubSub.publish(this._id, PubSubTopics.PROJECT_LOADING,true);
                     if(successCallback) successCallback();
                 }, () => { this._handleLoadingError(errorCallback); });
@@ -125,29 +102,6 @@ class ProjectHandler {
                         if(errorCallback) errorCallback();
                         return;
                     }
-                    //TODO: Loop through this._assetHandlers. Not doing it now
-                    //      because order is semi-important. Eventually it
-                    //      shouldn't matter as there's the potential for
-                    //      components to depend on models and circular
-                    //      dependencies as well which we'll need to handle
-                    //try {
-                    //    for(let key of orderedHandlerKeys) {
-                    //        this._assetHandlers[key].load(
-                    //            projectDetails[key.toLowerCase() + 's'], true);
-                    //    }
-                    //    for(let id in this._assets) {
-                    //        let asset = this._assets[id];
-                    //        if(asset.addTo) {
-                    //            let parentAsset = this._sessionAssets[
-                    //                asset.getParentId()];
-                    //            asset.addTo(parentAsset, true);
-                    //        }
-                    //    }
-                    //} catch(error) {
-                    //    console.error(error);
-                    //    if(errorCallback) errorCallback();
-                    //    return;
-                    //}
                     if(successCallback) successCallback();
                 }, () => { if(errorCallback) errorCallback(); });
             }, () => { if(errorCallback) errorCallback(); });
@@ -243,16 +197,18 @@ class ProjectHandler {
                 let value = removedParams[key];
                 if(Array.isArray(value))
                     value = assetsPendingUpdates[id].params[key].concat(value);
+                if(key == 'parentId')
+                    asset.addTo(this._sessionAssets[value], true);
                 asset['set' + capitalizeFirstLetter(key)](value);
             }
         }
         for(let id in this._assets) {
             let asset = this._assets[id];
-            if(asset.addTo) {
-                let parentAsset = this._sessionAssets[
-                    asset.getParentId()];
-                asset.addTo(parentAsset, true);
-            }
+            //if(asset.addTo) {
+            //    let parentAsset = this._sessionAssets[
+            //        asset.getParentId()];
+            //    asset.addTo(parentAsset, true);
+            //}
         }
     }
 
@@ -261,8 +217,9 @@ class ProjectHandler {
         let removedParams = pendingAsset.removedParams;
         for(let dependencyId of pendingAsset.dependsOn) {
             for(let key in params) {
+                if(key == 'id') continue;
                 let value = params[key];
-                if(value == dependencyId) {
+                if(value === dependencyId) {
                     removedParams[key] = params[key];
                     delete params[key];
                 } else if(Array.isArray(value) && value.includes(dependencyId)){
@@ -272,7 +229,7 @@ class ProjectHandler {
                 }
             }
         }
-        pendingAsset.handler.loadAsset(params, isDiff);
+        pendingAsset.asset = pendingAsset.handler.loadAsset(params, isDiff);
     }
 
     getAssetHandler(assetType) {
@@ -336,9 +293,11 @@ class ProjectHandler {
                             break;
                         }
                     }
-                    let parentType=LibraryHandler.getType(asset.parent.getId());
-                    if(parentType == AssetTypes.INTERNAL && asset.parent!=Scene)
-                        this._scene.attach(object);
+                    if(asset.parent) {
+                        let type = LibraryHandler.getType(asset.parent.getId());
+                        if(type == AssetTypes.INTERNAL && asset.parent != Scene)
+                            this._scene.attach(object);
+                    }
                 }
                 asset.removeFromScene();
             }
@@ -391,7 +350,7 @@ class ProjectHandler {
     exportDiff() {
         let assetIds = [];
         let projectDetails = this._getProjectDetails(true);
-        for(let key of orderedHandlerKeys) {
+        for(let key in this._assetHandlers) {
             key = key.toLowerCase() + 's';
             for(let assetId in projectDetails[key]) {
                 if(!this._projectDetails[key]

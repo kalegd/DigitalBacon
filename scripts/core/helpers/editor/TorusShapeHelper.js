@@ -27,6 +27,7 @@ export default class TorusShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

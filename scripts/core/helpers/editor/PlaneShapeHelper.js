@@ -39,6 +39,7 @@ export default class PlaneShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

@@ -1,3 +1,4 @@
+import AssetEntityInput from '/scripts/core/menu/input/AssetEntityInput.js';
 import AudioInput from '/scripts/core/menu/input/AudioInput.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
@@ -13,6 +14,7 @@ import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 
+export { AssetEntityInput };
 export { AudioInput };
 export { CheckboxInput };
 export { ColorInput };

@@ -35,6 +35,7 @@ export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
         { "parameter": "visualEdit" },
         { "parameter": "doubleSided", "name": "Double Sided",
             "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

@@ -39,6 +39,7 @@ export default class CircleShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

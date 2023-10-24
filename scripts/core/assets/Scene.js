@@ -27,6 +27,10 @@ class Scene {
         return this._object;
     }
 
+    getName() {
+        return 'Scene';
+    }
+
     getGripInteractable() {
         return this._gripInteractable;
     }

@@ -27,6 +27,7 @@ export default class SphereShapeHelper extends ShapeHelper {
             "max": 360, "type": NumberInput },
         { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
             "max": 180, "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

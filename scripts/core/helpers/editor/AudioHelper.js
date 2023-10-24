@@ -80,6 +80,7 @@ export default class AudioHelper extends AssetEntityHelper {
         { "parameter": "playTopic", "name": "Play Event", "type": TextInput },
         { "parameter": "pauseTopic", "name": "Pause Event", "type": TextInput },
         { "parameter": "stopTopic", "name": "Stop Event", "type": TextInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

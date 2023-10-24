@@ -28,6 +28,7 @@ import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import AssetEntityInput from '/scripts/core/menu/input/AssetEntityInput.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EulerInput from '/scripts/core/menu/input/EulerInput.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
@@ -49,6 +50,7 @@ export default class AssetEntityHelper extends EditorHelper {
         this._boundingBox = new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
         this._overwriteAssetFunctions();
+        this._addDeleteSubscriptionForPromotions();
     }
 
     _addActions() {
@@ -302,6 +304,40 @@ export default class AssetEntityHelper extends EditorHelper {
         }
     }
 
+    _addDeleteSubscriptionForPromotions() {
+        let topic = this._asset.constructor.assetType + '_DELETED:'
+            + this._asset.getAssetId();
+        PubSub.subscribe(this._id, topic, (message) => {
+            if(message.asset != this._asset) return;
+            let action = message.undoRedoAction;
+            if(!action || action.promotionUpdateAdded) return;
+            this._promoteChildren(action);
+            let undo = action.undo;
+            let redo = action.redo;
+            action.undo = () => { undo(); this._demoteChildren(action); };
+            action.redo = () => { redo(); this._promoteChildren(action); };
+            action.promotionUpdateAdded = true;
+        });
+    }
+
+    _promoteChildren(action) {
+        action.promotedChildren = new Set();
+        for(let child of this._asset.children) {
+            action.promotedChildren.add(child);
+        }
+        for(let child of action.promotedChildren) {
+            child.getObject().applyMatrix4(this._object.matrix);
+            child.addTo(this._asset.parent);
+        }
+    }
+
+    _demoteChildren(action) {
+        for(let child of action.promotedChildren) {
+            if(child.parent == this._asset.parent)
+                child.attachTo(this._asset);
+        }
+    }
+
     addTo(newParent, ignorePublish, ignoreUndoRedo) {
         let oldParent = this._asset.parent;
         this._asset.addTo(newParent, ignorePublish);
@@ -341,6 +377,8 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     static fields = [
+        { "parameter": "parentId", "name": "Parent", "includeScene": true,
+            "excludeSelf": true, "type": AssetEntityInput },
         { "parameter": "position", "name": "Position", "type": Vector3Input },
         { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
         { "parameter": "scale", "name": "Scale", "type": Vector3Input },

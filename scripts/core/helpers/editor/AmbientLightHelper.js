@@ -26,6 +26,7 @@ export default class AmbientLightHelper extends LightHelper {
         { "parameter": "visualEdit" },
         { "parameter": "intensity" },
         { "parameter": "color" },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

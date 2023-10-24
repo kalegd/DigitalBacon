@@ -21,9 +21,14 @@ export default class AssetEntity extends Asset {
         super(params);
         this._object = params['object'] || new THREE.Object3D();
         this._object.asset = this;
-        this._parentId = params['parentId'] || Scene.getId();
+        if('parentId' in params) {
+            this._parentId = params['parentId'];
+        } else {
+            this._parentId = Scene.getId();
+        }
         this.children = new Set();
-        this.parent = Scene;
+        this.parent = ProjectHandler.getSessionAsset(this._parentId);
+        if(this.parent) this.parent.children.add(this);
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
@@ -45,12 +50,7 @@ export default class AssetEntity extends Asset {
         let visualEdit = (visualEditOverride != null)
             ? visualEditOverride
             : this.visualEdit;
-        let position = this._object.getWorldPosition(vector3s[0]).toArray();
-        let rotation = euler.setFromQuaternion(
-            this._object.getWorldQuaternion(quaternion)).toArray();
         params['visualEdit'] = visualEdit;
-        params['position'] = position;
-        params['rotation'] = rotation;
         delete params['id'];
         return params;
     }
@@ -153,6 +153,15 @@ export default class AssetEntity extends Asset {
     }
 
     setParentId(parentId) {
+        if(this._parentId == parentId) return;
+        this.parent = ProjectHandler.getSessionAsset(parentId);
+        if(!this.parent) {
+            this.removeFromScene();
+        } else if(this._parentId != null) {
+            this.attachTo(this.parent, true);
+        } else {
+            this.addTo(this.parent, true);
+        }
         this._parentId = parentId;
     }
 
@@ -187,7 +196,7 @@ export default class AssetEntity extends Asset {
         this.parent = newParent;
         newParent.children.add(this);
         this._parentId = newParent.getId();
-        if(this._object.parent) {
+        if(ProjectHandler.getAsset(this._id)) {
             this.addToScene(newParent.getObject(),
                 newParent.getPointerInteractable(),
                 newParent.getGripInteractable());
@@ -210,7 +219,7 @@ export default class AssetEntity extends Asset {
         this.parent = newParent;
         newParent.children.add(this);
         this._parentId = newParent.getId();
-        if(this._object.parent) {
+        if(ProjectHandler.getAsset(this._id)) {
             this.attachToScene(newParent.getObject(),
                 newParent.getPointerInteractable(),
                 newParent.getGripInteractable());

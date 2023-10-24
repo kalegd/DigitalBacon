@@ -29,6 +29,7 @@ export default class BoxShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

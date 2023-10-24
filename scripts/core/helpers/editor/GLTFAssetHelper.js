@@ -17,6 +17,7 @@ export default class GLTFAssetHelper extends AssetEntityHelper {
 
     static fields = [
         { "parameter": "visualEdit" },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

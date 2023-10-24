@@ -39,13 +39,17 @@ class CopyPasteControlsHandler {
             this._previewAssets[ownerId].removeFromScene();
         this._copiedAssets[ownerId] = asset;
         this._previewAssets[ownerId] = asset.editorHelper.preview();
-        ProjectHandler.getAsset(ownerId).getObject().attach(
-            this._previewAssets[ownerId].getObject());
+        let previewObject = this._previewAssets[ownerId].getObject();
+        asset.parent.getObject().add(previewObject);
+        ProjectHandler.getAsset(ownerId).getObject().attach(previewObject);
     }
 
     _paste(ownerId) {
-        this._previewAssets[ownerId].clone(
-            this._copiedAssets[ownerId].visualEdit);
+        let previewAsset = this._previewAssets[ownerId];
+        let previewObject = previewAsset.getObject();
+        previewAsset.parent.getObject().attach(previewObject);
+        previewAsset.clone(this._copiedAssets[ownerId].visualEdit);
+        ProjectHandler.getAsset(ownerId).getObject().attach(previewObject);
         this._assetAlreadyPastedByGrip = true;
     }
 

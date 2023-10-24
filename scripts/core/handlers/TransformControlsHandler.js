@@ -86,8 +86,10 @@ class TransformControlsHandler {
             PubSub.subscribe(this._id, assetType + '_UPDATED', (e) => {
                 for(let option in this._attachedAssets) {
                     if(this._attachedAssets[option] == e.asset) {
-                        if(e.fields.includes('visualEdit'))
+                        if(e.fields.includes('visualEdit')
+                                || e.fields.includes('parentId')) {
                             this._detachDeleted(option);
+                        }
                     }
                 }
             });

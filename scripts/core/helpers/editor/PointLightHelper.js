@@ -31,6 +31,7 @@ export default class PointLightHelper extends LightHelper {
             "type": NumberInput },
         { "parameter": "decay", "name": "Decay", "min": 0,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },

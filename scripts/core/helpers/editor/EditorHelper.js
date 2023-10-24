@@ -11,6 +11,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import AssetEntityInput from '/scripts/core/menu/input/AssetEntityInput.js';
 import AudioInput from '/scripts/core/menu/input/AudioInput.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
@@ -26,6 +27,7 @@ import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 
 const INPUT_TYPE_TO_CREATE_FUNCTION = {
+    AssetEntityInput: "_createAssetEntityInput",
     AudioInput: "_createAudioInput",
     CheckboxInput: "_createCheckboxInput",
     ColorInput: "_createColorInput",
@@ -255,6 +257,20 @@ export default class EditorHelper {
         if(field.type.name in INPUT_TYPE_TO_CREATE_FUNCTION) {
             return this[INPUT_TYPE_TO_CREATE_FUNCTION[field.type.name]](field);
         }
+    }
+
+    _createAssetEntityInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new AssetEntityInput({
+            'title': field.name,
+            'exclude': field.excludeSelf ? [this._id] : null,
+            'includeScene': field.includeScene,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
+            },
+        });
     }
 
     _createAudioInput(field) {
