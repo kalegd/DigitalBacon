@@ -9091,6 +9091,10 @@ class Scene {
         return this._object;
     }
 
+    getName() {
+        return 'Scene';
+    }
+
     getGripInteractable() {
         return this._gripInteractable;
     }
@@ -9872,9 +9876,6 @@ let editorHelperFactory = new EditorHelperFactory();
  */
 
 
-//TODO: Delete this when we handle the debacle TODO in loadZip() + loadDiffZip()
-const orderedHandlerKeys = [AssetTypes.INTERNAL, AssetTypes.LIGHT, AssetTypes.SYSTEM, AssetTypes.COMPONENT, AssetTypes.TEXTURE, AssetTypes.MATERIAL, AssetTypes.IMAGE, AssetTypes.AUDIO, AssetTypes.MODEL, AssetTypes.SHAPE, AssetTypes.CUSTOM_ASSET];
-  
 class ProjectHandler {
     constructor() {
         this._id = uuidv4();
@@ -9909,33 +9910,24 @@ class ProjectHandler {
         global$1.loadingLocks.add(lock);
         jsZip.file("projectDetails.json").async("string").then(
             (projectDetailsString) => {
+                let projectDetailsCopy;
                 try {
+                    //this._projectDetails needs to be immutable hence the copy
                     this._projectDetails = JSON.parse(projectDetailsString);
+                    projectDetailsCopy = JSON.parse(projectDetailsString);
                 } catch(error) {
                     this._handleLoadingError(errorCallback);
                     return;
                 }
-                libraryHandler.load(this._projectDetails['library'], jsZip,()=>{
+                libraryHandler.load(projectDetailsCopy['library'], jsZip,()=>{
                     global$1.loadingLocks.delete(lock);
                     settingsHandler.load(this._projectDetails['settings']);
-                    //TODO: Loop through this._assetHandlers. Not doing it now
-                    //      because order is semi-important. Eventually it
-                    //      shouldn't matter as there's the potential for
-                    //      components to depend on models and circular
-                    //      dependencies as well which we'll need to handle
                     try {
-                        for(let key of orderedHandlerKeys) {
-                            this._assetHandlers[key].load(
+                        for(let key in this._assetHandlers) {
+                            this._assetHandlers[key].deleteFromDiff(
                                 this._projectDetails[key.toLowerCase() + 's']);
                         }
-                        for(let id in this._assets) {
-                            let asset = this._assets[id];
-                            if(asset.addTo) {
-                                let parentAsset = this._sessionAssets[
-                                    asset.getParentId()];
-                                asset.addTo(parentAsset, true);
-                            }
-                        }
+                        this._loadAssets(projectDetailsCopy, true);
                     } catch(error) {
                         console.error(error);
                         this._handleLoadingError(errorCallback);
@@ -9959,24 +9951,12 @@ class ProjectHandler {
                     return;
                 }
                 libraryHandler.load(projectDetails['library'], jsZip,()=>{
-                    //TODO: Loop through this._assetHandlers. Not doing it now
-                    //      because order is semi-important. Eventually it
-                    //      shouldn't matter as there's the potential for
-                    //      components to depend on models and circular
-                    //      dependencies as well which we'll need to handle
                     try {
-                        for(let key of orderedHandlerKeys) {
-                            this._assetHandlers[key].load(
-                                projectDetails[key.toLowerCase() + 's'], true);
+                        for(let key in this._assetHandlers) {
+                            this._assetHandlers[key].deleteFromDiff(
+                                projectDetails[key.toLowerCase() + 's']);
                         }
-                        for(let id in this._assets) {
-                            let asset = this._assets[id];
-                            if(asset.addTo) {
-                                let parentAsset = this._sessionAssets[
-                                    asset.getParentId()];
-                                asset.addTo(parentAsset, true);
-                            }
-                        }
+                        this._loadAssets(projectDetails, true);
                     } catch(error) {
                         console.error(error);
                         if(errorCallback) errorCallback();
@@ -9985,6 +9965,131 @@ class ProjectHandler {
                     if(successCallback) successCallback();
                 }, () => { if(errorCallback) errorCallback(); });
             }, () => { if(errorCallback) errorCallback(); });
+    }
+
+    _createDependencyGraph(projectDetails) {
+        let pendingAssets = {};
+        for(let key in this._assetHandlers) {
+            let handler = this._assetHandlers[key];
+            key = key.toLowerCase() + 's';
+            if(!handler) {
+                console.error('Unexpected asset type: ' + handlerKey);
+                continue;
+            }
+            for(let assetId in projectDetails[key]) {
+                for(let params of projectDetails[key][assetId]) {
+                    pendingAssets[params.id] = {
+                        params: params,
+                        removedParams: {},
+                        handler: handler,
+                        loaded: false,
+                        dependsOn: new Set(),
+                        dependedOnBy: new Set(),
+                    };
+                }
+            }
+        }
+        for(let key in this._assetHandlers) {
+            key = key.toLowerCase() + 's';
+            for(let assetId in projectDetails[key]) {
+                for(let params of projectDetails[key][assetId]) {
+                    this._addDependencies(pendingAssets, params);
+                }
+            }
+        }
+        return pendingAssets;
+    }
+
+    _addDependencies(pendingAssets, params) {
+        for(let key in params) {
+            if(key == 'id') continue;
+            let value = params[key];
+            if(Array.isArray(value)) {
+                for(let id of value) {
+                    if(id in pendingAssets && !this._sessionAssets[id]) {
+                        pendingAssets[params.id].dependsOn.add(id);
+                        pendingAssets[id].dependedOnBy.add(params.id);
+                    }
+                }
+            } else if(typeof value == 'string') {
+                if(value in pendingAssets && !this._sessionAssets[value]) {
+                    pendingAssets[params.id].dependsOn.add(value);
+                    pendingAssets[value].dependedOnBy.add(params.id);
+                }
+            }
+        }
+    }
+
+    _loadAssets(projectDetails, isDiff) {
+        let pendingAssets = this._createDependencyGraph(projectDetails);
+        let assetsPendingUpdates = {};
+        while(Object.keys(pendingAssets).length > 0) {
+            let loadedSomething = false;
+            let maxDependedOnBy = 0;
+            let maxDependedOnByAssetId;
+            for(let id in pendingAssets) {
+                if(pendingAssets[id].dependedOnBy.size > maxDependedOnBy)
+                    maxDependedOnByAssetId = id;
+                if(pendingAssets[id].dependsOn.size != 0) continue;
+                pendingAssets[id].handler.loadAsset(pendingAssets[id].params,
+                    isDiff);
+                for(let dependencyId of pendingAssets[id].dependedOnBy) {
+                    pendingAssets[dependencyId].dependsOn.delete(id);
+                }
+                delete pendingAssets[id];
+                loadedSomething = true;
+            }
+            if(!loadedSomething) {
+                let pendingAsset = pendingAssets[maxDependedOnByAssetId];
+                this._loadAssetWithoutDependencies(pendingAsset, isDiff);
+                for(let dependencyId of pendingAsset.dependedOnBy) {
+                    pendingAssets[dependencyId].dependsOn
+                        .delete(maxDependedOnByAssetId);
+                }
+                assetsPendingUpdates[maxDependedOnByAssetId] = pendingAsset;
+                delete pendingAssets[maxDependedOnByAssetId];
+            }
+        }
+        for(let id in assetsPendingUpdates) {
+            let removedParams = assetsPendingUpdates[id].removedParams;
+            let asset = assetsPendingUpdates[id].asset;
+            for(let key in removedParams) {
+                let value = removedParams[key];
+                if(Array.isArray(value))
+                    value = assetsPendingUpdates[id].params[key].concat(value);
+                if(key == 'parentId')
+                    asset.addTo(this._sessionAssets[value], true);
+                asset['set' + capitalizeFirstLetter(key)](value);
+            }
+        }
+        for(let id in this._assets) {
+            this._assets[id];
+            //if(asset.addTo) {
+            //    let parentAsset = this._sessionAssets[
+            //        asset.getParentId()];
+            //    asset.addTo(parentAsset, true);
+            //}
+        }
+    }
+
+    _loadAssetWithoutDependencies(pendingAsset, isDiff) {
+        let params = pendingAsset.params;
+        let removedParams = pendingAsset.removedParams;
+        for(let dependencyId of pendingAsset.dependsOn) {
+            for(let key in params) {
+                if(key == 'id') continue;
+                let value = params[key];
+                if(value === dependencyId) {
+                    removedParams[key] = params[key];
+                    delete params[key];
+                } else if(Array.isArray(value) && value.includes(dependencyId)){
+                    if(!removedParams[key]) removedParams[key] = [];
+                    removedParams[key].push(dependencyId);
+                    params[key] = value.filter((v) => v != dependencyId);
+                }
+            }
+        }
+        pendingAsset.asset = pendingAsset.handler.loadAsset(params, isDiff);
     }
 
     getAssetHandler(assetType) {
@@ -10048,9 +10153,11 @@ class ProjectHandler {
                             break;
                         }
                     }
-                    let parentType=libraryHandler.getType(asset.parent.getId());
-                    if(parentType == AssetTypes.INTERNAL && asset.parent!=scene)
-                        this._scene.attach(object);
+                    if(asset.parent) {
+                        let type = libraryHandler.getType(asset.parent.getId());
+                        if(type == AssetTypes.INTERNAL && asset.parent != scene)
+                            this._scene.attach(object);
+                    }
                 }
                 asset.removeFromScene();
             }
@@ -10103,7 +10210,7 @@ class ProjectHandler {
     exportDiff() {
         let assetIds = [];
         let projectDetails = this._getProjectDetails(true);
-        for(let key of orderedHandlerKeys) {
+        for(let key in this._assetHandlers) {
             key = key.toLowerCase() + 's';
             for(let assetId in projectDetails[key]) {
                 if(!this._projectDetails[key]
@@ -10234,34 +10341,58 @@ class AssetsHandler {
         }, true);
     }
 
-    load(assets, isDiff) {
-        if(!assets) return;
-        if(isDiff) {
-            let assetsToDelete = [];
-            for(let id in this._assets) {
-                let asset = this._assets[id];
-                let assetId = asset.getAssetId();
-                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-                    assetsToDelete.push(asset);
-            }
-            for(let asset of assetsToDelete) {
-                this.deleteAsset(asset, true, true);
-            }
+    deleteFromDiff(assets) {
+        let assetsToDelete = [];
+        for(let id in this._assets) {
+            let asset = this._assets[id];
+            let assetId = asset.getAssetId();
+            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+                assetsToDelete.push(asset);
         }
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in this._assetClassMap)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(isDiff && this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
+        for(let asset of assetsToDelete) {
+            this.deleteAsset(asset, true, true);
         }
     }
+
+    loadAsset(params, isDiff) {
+        if(!(params.assetId in this._assetClassMap)) {
+            console.error("Unrecognized asset found");
+        } else if(isDiff && this._assets[params.id]) {
+            this._assets[params.id].updateFromParams(params);
+            return this._assets[params.id];
+        } else {
+            return this.addNewAsset(params.assetId, params, true, true);
+        }
+    }
+
+    //load(assets, isDiff) {
+    //    if(!assets) return;
+    //    if(isDiff) {
+    //        let assetsToDelete = [];
+    //        for(let id in this._assets) {
+    //            let asset = this._assets[id];
+    //            let assetId = asset.getAssetId();
+    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+    //                assetsToDelete.push(asset);
+    //        }
+    //        for(let asset of assetsToDelete) {
+    //            this.deleteAsset(asset, true, true);
+    //        }
+    //    }
+    //    for(let assetTypeId in assets) {
+    //        if(!(assetTypeId in this._assetClassMap)) {
+    //            console.error("Unrecognized asset found");
+    //            continue;
+    //        }
+    //        for(let params of assets[assetTypeId]) {
+    //            if(isDiff && this._assets[params.id]) {
+    //                this._assets[params.id].updateFromParams(params);
+    //            } else {
+    //                this.addNewAsset(assetTypeId, params, true, true);
+    //            }
+    //        }
+    //    }
+    //}
 
     registerAsset(assetClass) {
         if(this._assetClassMap[assetClass.assetId]) ;
@@ -10379,24 +10510,40 @@ class InternalAssetsHandler extends AssetsHandler {
         pubSub.publish(this._id, topic, { asset: asset }, true);
     }
 
-    load(assets) {
-        if(!assets) return;
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in this._assetClassMap)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else if(this._sessionAssets[params.id]) {
-                    this.addAsset(this._sessionAssets[params.id], true, true);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
+    deleteFromDiff() {}
+
+    loadAsset(params) {
+        if(!(params.assetId in this._assetClassMap)) {
+            console.error("Unrecognized asset found");
+        } else if(this._assets[params.id]) {
+            this._assets[params.id].updateFromParams(params);
+            return this._assets[params.id];
+        } else if(this._sessionAssets[params.id]) {
+            this.addAsset(this._sessionAssets[params.id], true, true);
+            return this._assets[params.id];
+        } else {
+            return this.addNewAsset(params.assetId, params, true, true);
         }
     }
+
+    //load(assets) {
+    //    if(!assets) return;
+    //    for(let assetTypeId in assets) {
+    //        if(!(assetTypeId in this._assetClassMap)) {
+    //            console.error("Unrecognized asset found");
+    //            continue;
+    //        }
+    //        for(let params of assets[assetTypeId]) {
+    //            if(this._assets[params.id]) {
+    //                this._assets[params.id].updateFromParams(params);
+    //            } else if(this._sessionAssets[params.id]) {
+    //                this.addAsset(this._sessionAssets[params.id], true, true);
+    //            } else {
+    //                this.addNewAsset(assetTypeId, params, true, true);
+    //            }
+    //        }
+    //    }
+    //}
 
     reset() {
         this._assets;
@@ -10543,9 +10690,14 @@ class AssetEntity extends Asset {
         super(params);
         this._object = params['object'] || new THREE.Object3D();
         this._object.asset = this;
-        this._parentId = params['parentId'] || scene.getId();
+        if('parentId' in params) {
+            this._parentId = params['parentId'];
+        } else {
+            this._parentId = scene.getId();
+        }
         this.children = new Set();
-        this.parent = scene;
+        this.parent = projectHandler.getSessionAsset(this._parentId);
+        if(this.parent) this.parent.children.add(this);
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
@@ -10567,12 +10719,7 @@ class AssetEntity extends Asset {
         let visualEdit = (visualEditOverride != null)
             ? visualEditOverride
             : this.visualEdit;
-        let position = this._object.getWorldPosition(vector3s[0]).toArray();
-        let rotation = euler.setFromQuaternion(
-            this._object.getWorldQuaternion(quaternion)).toArray();
         params['visualEdit'] = visualEdit;
-        params['position'] = position;
-        params['rotation'] = rotation;
         delete params['id'];
         return params;
     }
@@ -10675,6 +10822,15 @@ class AssetEntity extends Asset {
     }
 
     setParentId(parentId) {
+        if(this._parentId == parentId) return;
+        this.parent = projectHandler.getSessionAsset(parentId);
+        if(!this.parent) {
+            this.removeFromScene();
+        } else if(this._parentId != null) {
+            this.attachTo(this.parent, true);
+        } else {
+            this.addTo(this.parent, true);
+        }
         this._parentId = parentId;
     }
 
@@ -10709,7 +10865,7 @@ class AssetEntity extends Asset {
         this.parent = newParent;
         newParent.children.add(this);
         this._parentId = newParent.getId();
-        if(this._object.parent) {
+        if(projectHandler.getAsset(this._id)) {
             this.addToScene(newParent.getObject(),
                 newParent.getPointerInteractable(),
                 newParent.getGripInteractable());
@@ -10732,7 +10888,7 @@ class AssetEntity extends Asset {
         this.parent = newParent;
         newParent.children.add(this);
         this._parentId = newParent.getId();
-        if(this._object.parent) {
+        if(projectHandler.getAsset(this._id)) {
             this.attachToScene(newParent.getObject(),
                 newParent.getPointerInteractable(),
                 newParent.getGripInteractable());
@@ -13951,34 +14107,45 @@ class AudioHandler extends AssetsHandler {
         return asset;
     }
 
-    load(assets, isDiff) {
-        if(!assets) return;
-        if(isDiff) {
-            let assetsToDelete = [];
-            for(let id in this._assets) {
-                let asset = this._assets[id];
-                let assetId = asset.getAssetId();
-                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-                    assetsToDelete.push(asset);
-            }
-            for(let asset of assetsToDelete) {
-                this.deleteAsset(asset, true, true);
-            }
-        }
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in libraryHandler.library)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(isDiff && this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
+    loadAsset(params, isDiff) {
+        if(!(params.assetId in libraryHandler.library)) {
+            console.error("Unrecognized asset found");
+        } else if(isDiff && this._assets[params.id]) {
+            this._assets[params.id].updateFromParams(params);
+            return this._assets[params.id];
+        } else {
+            return this.addNewAsset(params.assetId, params, true, true);
         }
     }
+
+    //load(assets, isDiff) {
+    //    if(!assets) return;
+    //    if(isDiff) {
+    //        let assetsToDelete = [];
+    //        for(let id in this._assets) {
+    //            let asset = this._assets[id];
+    //            let assetId = asset.getAssetId();
+    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+    //                assetsToDelete.push(asset);
+    //        }
+    //        for(let asset of assetsToDelete) {
+    //            this.deleteAsset(asset, true, true);
+    //        }
+    //    }
+    //    for(let assetTypeId in assets) {
+    //        if(!(assetTypeId in LibraryHandler.library)) {
+    //            console.error("Unrecognized asset found");
+    //            continue;
+    //        }
+    //        for(let params of assets[assetTypeId]) {
+    //            if(isDiff && this._assets[params.id]) {
+    //                this._assets[params.id].updateFromParams(params);
+    //            } else {
+    //                this.addNewAsset(assetTypeId, params, true, true);
+    //            }
+    //        }
+    //    }
+    //}
 }
 
 new AudioHandler();
@@ -14064,34 +14231,45 @@ class ImagesHandler extends AssetsHandler {
         return asset;
     }
 
-    load(assets, isDiff) {
-        if(!assets) return;
-        if(isDiff) {
-            let assetsToDelete = [];
-            for(let id in this._assets) {
-                let asset = this._assets[id];
-                let assetId = asset.getAssetId();
-                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-                    assetsToDelete.push(asset);
-            }
-            for(let asset of assetsToDelete) {
-                this.deleteAsset(asset, true, true);
-            }
-        }
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in libraryHandler.library)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(isDiff && this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
+    loadAsset(params, isDiff) {
+        if(!(params.assetId in libraryHandler.library)) {
+            console.error("Unrecognized asset found");
+        } else if(isDiff && this._assets[params.id]) {
+            this._assets[params.id].updateFromParams(params);
+            return this._assets[params.id];
+        } else {
+            return this.addNewAsset(params.assetId, params, true, true);
         }
     }
+
+    //load(assets, isDiff) {
+    //    if(!assets) return;
+    //    if(isDiff) {
+    //        let assetsToDelete = [];
+    //        for(let id in this._assets) {
+    //            let asset = this._assets[id];
+    //            let assetId = asset.getAssetId();
+    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+    //                assetsToDelete.push(asset);
+    //        }
+    //        for(let asset of assetsToDelete) {
+    //            this.deleteAsset(asset, true, true);
+    //        }
+    //    }
+    //    for(let assetTypeId in assets) {
+    //        if(!(assetTypeId in LibraryHandler.library)) {
+    //            console.error("Unrecognized asset found");
+    //            continue;
+    //        }
+    //        for(let params of assets[assetTypeId]) {
+    //            if(isDiff && this._assets[params.id]) {
+    //                this._assets[params.id].updateFromParams(params);
+    //            } else {
+    //                this.addNewAsset(assetTypeId, params, true, true);
+    //            }
+    //        }
+    //    }
+    //}
 }
 
 new ImagesHandler();
@@ -14184,34 +14362,45 @@ class ModelsHandler extends AssetsHandler {
         return asset;
     }
 
-    load(assets, isDiff) {
-        if(!assets) return;
-        if(isDiff) {
-            let assetsToDelete = [];
-            for(let id in this._assets) {
-                let asset = this._assets[id];
-                let assetId = asset.getAssetId();
-                if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-                    assetsToDelete.push(asset);
-            }
-            for(let asset of assetsToDelete) {
-                this.deleteAsset(asset, true, true);
-            }
-        }
-        for(let assetTypeId in assets) {
-            if(!(assetTypeId in libraryHandler.library)) {
-                console.error("Unrecognized asset found");
-                continue;
-            }
-            for(let params of assets[assetTypeId]) {
-                if(isDiff && this._assets[params.id]) {
-                    this._assets[params.id].updateFromParams(params);
-                } else {
-                    this.addNewAsset(assetTypeId, params, true, true);
-                }
-            }
+    loadAsset(params, isDiff) {
+        if(!(params.assetId in libraryHandler.library)) {
+            console.error("Unrecognized asset found");
+        } else if(isDiff && this._assets[params.id]) {
+            this._assets[params.id].updateFromParams(params);
+            return this._assets[params.id];
+        } else {
+            return this.addNewAsset(params.assetId, params, true, true);
         }
     }
+
+    //load(assets, isDiff) {
+    //    if(!assets) return;
+    //    if(isDiff) {
+    //        let assetsToDelete = [];
+    //        for(let id in this._assets) {
+    //            let asset = this._assets[id];
+    //            let assetId = asset.getAssetId();
+    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
+    //                assetsToDelete.push(asset);
+    //        }
+    //        for(let asset of assetsToDelete) {
+    //            this.deleteAsset(asset, true, true);
+    //        }
+    //    }
+    //    for(let assetTypeId in assets) {
+    //        if(!(assetTypeId in LibraryHandler.library)) {
+    //            console.error("Unrecognized asset found");
+    //            continue;
+    //        }
+    //        for(let params of assets[assetTypeId]) {
+    //            if(isDiff && this._assets[params.id]) {
+    //                this._assets[params.id].updateFromParams(params);
+    //            } else {
+    //                this.addNewAsset(assetTypeId, params, true, true);
+    //            }
+    //        }
+    //    }
+    //}
 }
 
 new ModelsHandler();
@@ -14453,9 +14642,9 @@ const MenuPages = {
  */
 
 
-const HEIGHT$c = 0.05;
-const WIDTH$c = 0.31;
-const TITLE_WIDTH$c = 0.14;
+const HEIGHT$d = 0.05;
+const WIDTH$d = 0.31;
+const TITLE_WIDTH$d = 0.14;
 const COLOR_BOX_WIDTH = 0.08;
 const COLOR_BOX_HEIGHT = 0.04;
 
@@ -14475,8 +14664,8 @@ class ColorInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$c,
-            'width': WIDTH$c,
+            'height': HEIGHT$d,
+            'width': WIDTH$d,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -14485,8 +14674,8 @@ class ColorInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$c,
-            'width': TITLE_WIDTH$c,
+            'height': HEIGHT$d,
+            'width': TITLE_WIDTH$d,
             'margin': 0,
             'textAlign': 'left',
         });
@@ -14523,11 +14712,11 @@ class ColorInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$c;
+        return WIDTH$d;
     }
 
     getHeight() {
-        return HEIGHT$c;
+        return HEIGHT$d;
     }
 
     deactivate() {
@@ -15117,10 +15306,6 @@ class Keyboard {
                             this._owner.handleKey('Backspace');
 							break;
 
-						case 'shift' :
-							this._keyboard.toggleCase();
-							break;
-
 					}                } else if(key.info.input) {
                     this._owner.handleKey(key.info.input);
                 }
@@ -15443,13 +15628,13 @@ class NumberField extends TextField {
  */
 
 
-const HEIGHT$b = 0.05;
-const WIDTH$b = 0.31;
-const TITLE_WIDTH$b = 0.13;
-const FIELD_HEIGHT$9 = 0.03;
-const FIELD_WIDTH$9 = 0.17;
-const FIELD_MARGIN$9 = 0.01;
-const FIELD_MAX_LENGTH$d = 13;
+const HEIGHT$c = 0.05;
+const WIDTH$c = 0.31;
+const TITLE_WIDTH$c = 0.13;
+const FIELD_HEIGHT$a = 0.03;
+const FIELD_WIDTH$a = 0.17;
+const FIELD_MARGIN$a = 0.01;
+const FIELD_MAX_LENGTH$e = 13;
 
 class NumberInput extends PointerInteractableEntity {
     constructor(params) {
@@ -15468,8 +15653,8 @@ class NumberInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$b,
-            'width': WIDTH$b,
+            'height': HEIGHT$c,
+            'width': WIDTH$c,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -15478,18 +15663,18 @@ class NumberInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$b,
-            'width': TITLE_WIDTH$b,
+            'height': HEIGHT$c,
+            'width': TITLE_WIDTH$c,
             'margin': 0,
             'textAlign': 'left',
         });
         this._numberField = new NumberField({
             'initialText': String(this._lastValue),
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$9,
-            'width': FIELD_WIDTH$9,
-            'margin': FIELD_MARGIN$9,
-            'maxLength': FIELD_MAX_LENGTH$d,
+            'height': FIELD_HEIGHT$a,
+            'width': FIELD_WIDTH$a,
+            'margin': FIELD_MARGIN$a,
+            'maxLength': FIELD_MAX_LENGTH$e,
             'minValue': this._minValue,
             'maxValue': this._maxValue,
             'onBlur': () => { this._blur(); },
@@ -15522,11 +15707,11 @@ class NumberInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$b;
+        return WIDTH$c;
     }
 
     getHeight() {
-        return HEIGHT$b;
+        return HEIGHT$c;
     }
 
     deactivate() {
@@ -17880,13 +18065,17 @@ class CopyPasteControlsHandler {
             this._previewAssets[ownerId].removeFromScene();
         this._copiedAssets[ownerId] = asset;
         this._previewAssets[ownerId] = asset.editorHelper.preview();
-        projectHandler.getAsset(ownerId).getObject().attach(
-            this._previewAssets[ownerId].getObject());
+        let previewObject = this._previewAssets[ownerId].getObject();
+        asset.parent.getObject().add(previewObject);
+        projectHandler.getAsset(ownerId).getObject().attach(previewObject);
     }
 
     _paste(ownerId) {
-        this._previewAssets[ownerId].clone(
-            this._copiedAssets[ownerId].visualEdit);
+        let previewAsset = this._previewAssets[ownerId];
+        let previewObject = previewAsset.getObject();
+        previewAsset.parent.getObject().attach(previewObject);
+        previewAsset.clone(this._copiedAssets[ownerId].visualEdit);
+        projectHandler.getAsset(ownerId).getObject().attach(previewObject);
         this._assetAlreadyPastedByGrip = true;
     }
 
@@ -19715,8 +19904,10 @@ class TransformControlsHandler {
             pubSub.subscribe(this._id, assetType + '_UPDATED', (e) => {
                 for(let option in this._attachedAssets) {
                     if(this._attachedAssets[option] == e.asset) {
-                        if(e.fields.includes('visualEdit'))
+                        if(e.fields.includes('visualEdit')
+                                || e.fields.includes('parentId')) {
                             this._detachDeleted(option);
+                        }
                     }
                 }
             });
@@ -20674,6 +20865,139 @@ class TranslateHandler {
 }
 
 let translateHandler = new TranslateHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const HEIGHT$b = 0.05;
+const WIDTH$b = 0.31;
+const TITLE_WIDTH$b = 0.13;
+const FIELD_HEIGHT$9 = 0.03;
+const FIELD_WIDTH$9 = 0.17;
+const FIELD_MARGIN$9 = 0.01;
+const FIELD_MAX_LENGTH$d = 13;
+
+class AssetEntityInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._getFromSource = params['getFromSource'];
+        this._onUpdate = params['onUpdate'];
+        this._lastValue =  params['initialValue'];
+        this._exclude =  params['exclude'];
+        this._filter =  params['filter'];
+        this._includeScene =  params['includeScene'];
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInputs(title);
+        this._updateAssetEntity(this._lastValue);
+    }
+
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$b,
+            'width': WIDTH$b,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$b,
+            'width': TITLE_WIDTH$b,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._assetEntitySelection = ThreeMeshUIHelper.createButtonBlock({
+            'text': ' ',
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$9,
+            'width': FIELD_WIDTH$9,
+            'margin': FIELD_MARGIN$9,
+            'idleOpacity': 0.9,
+            'hoveredOpacity': 1,
+            'selectedOpacity': 1,
+        });
+        this._updateAssetEntity();
+        this._object.add(titleBlock);
+        this._object.add(this._assetEntitySelection);
+        let interactable = new PointerInteractable(this._assetEntitySelection,
+            true);
+        interactable.addAction(() => {
+            let assets = projectHandler.getAssets();
+            let filteredAssets = {};
+            filteredAssets["null\n"] = { Name: "Blank" };
+            if(this._includeScene)
+                filteredAssets[scene.getId()] = { Name: 'Scene' };
+            for(let assetId in assets) {
+                if(this._exclude == assetId) continue;
+                let asset = assets[assetId];
+                if(asset instanceof InternalAssetEntity) continue;
+                if(asset instanceof AssetEntity) {
+                    if(this._filter && !this._filter(asset)) continue;
+                    filteredAssets[assetId] = { Name: asset.getName() };
+                }
+            }
+            let page = global$1.menuController.getPage(MenuPages.ASSET_SELECT);
+            page.setContent(filteredAssets, (assetId) => {
+                if(assetId == "null\n") assetId = null;
+                this._handleAssetSelection(assetId);
+            });
+            global$1.menuController.pushPage(MenuPages.ASSET_SELECT);
+        });
+        this._pointerInteractable.addChild(interactable);
+    }
+
+    _handleAssetSelection(assetId) {
+        if(assetId == "null\n") {
+            assetId = null;
+        }
+        if(this._lastValue != assetId) {
+            if(this._onUpdate) this._onUpdate(assetId);
+            this._updateAssetEntity(assetId);
+        }
+        global$1.menuController.back();
+        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+            'id': this._id,
+            'targetOnlyMenu': true,
+        });
+    }
+
+    _updateAssetEntity(assetId) {
+        this._lastValue = assetId;
+        let assetEntity = projectHandler.getAsset(this._lastValue);
+        let assetEntityName = assetEntity
+            ? assetEntity.getName()
+            : scene.getId() == this._lastValue ? 'Scene' : " ";
+        assetEntityName = stringWithMaxLength(assetEntityName,FIELD_MAX_LENGTH$d);
+        let textComponent = this._assetEntitySelection.children[1];
+        textComponent.set({ content: assetEntityName });
+    }
+
+    getWidth() {
+        return WIDTH$b;
+    }
+
+    getHeight() {
+        return HEIGHT$b;
+    }
+
+    deactivate() {
+        //Required method
+    }
+
+    updateFromSource() {
+        if(!this._getFromSource) return;
+        let assetEntity = this._getFromSource();
+        if(this._lastValue != assetEntity) this._updateAssetEntity(assetEntity);
+    }
+}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -22399,6 +22723,7 @@ function createLabelRow(label) {
 
 
 const INPUT_TYPE_TO_CREATE_FUNCTION = {
+    AssetEntityInput: "_createAssetEntityInput",
     AudioInput: "_createAudioInput",
     CheckboxInput: "_createCheckboxInput",
     ColorInput: "_createColorInput",
@@ -22630,6 +22955,21 @@ class EditorHelper {
         }
     }
 
+    _createAssetEntityInput(field) {
+        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
+        return new AssetEntityInput({
+            'title': field.name,
+            'exclude': field.excludeSelf ? this._id : null,
+            'filter': typeof field.filter == 'function' ? field.filter : null,
+            'includeScene': field.includeScene,
+            'initialValue': this._asset[getFunction](),
+            'getFromSource': () => { return this._asset[getFunction](); },
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
+            },
+        });
+    }
+
     _createAudioInput(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new AudioInput({
@@ -22851,6 +23191,7 @@ class AssetEntityHelper extends EditorHelper {
         this._boundingBox = new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
         this._overwriteAssetFunctions();
+        this._addDeleteSubscriptionForPromotions();
     }
 
     _addActions() {
@@ -23104,6 +23445,40 @@ class AssetEntityHelper extends EditorHelper {
         };
     }
 
+    _addDeleteSubscriptionForPromotions() {
+        let topic = this._asset.constructor.assetType + '_DELETED:'
+            + this._asset.getAssetId();
+        pubSub.subscribe(this._id, topic, (message) => {
+            if(message.asset != this._asset) return;
+            let action = message.undoRedoAction;
+            if(!action || action.promotionUpdateAdded) return;
+            this._promoteChildren(action);
+            let undo = action.undo;
+            let redo = action.redo;
+            action.undo = () => { undo(); this._demoteChildren(action); };
+            action.redo = () => { redo(); this._promoteChildren(action); };
+            action.promotionUpdateAdded = true;
+        });
+    }
+
+    _promoteChildren(action) {
+        action.promotedChildren = new Set();
+        for(let child of this._asset.children) {
+            action.promotedChildren.add(child);
+        }
+        for(let child of action.promotedChildren) {
+            child.getObject().applyMatrix4(this._object.matrix);
+            child.addTo(this._asset.parent);
+        }
+    }
+
+    _demoteChildren(action) {
+        for(let child of action.promotedChildren) {
+            if(child.parent == this._asset.parent)
+                child.attachTo(this._asset);
+        }
+    }
+
     addTo(newParent, ignorePublish, ignoreUndoRedo) {
         let oldParent = this._asset.parent;
         this._asset.addTo(newParent, ignorePublish);
@@ -23143,6 +23518,8 @@ class AssetEntityHelper extends EditorHelper {
     }
 
     static fields = [
+        { "parameter": "parentId", "name": "Parent", "includeScene": true,
+            "excludeSelf": true, "type": AssetEntityInput },
         { "parameter": "position", "name": "Position", "type": Vector3Input },
         { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
         { "parameter": "scale", "name": "Scale", "type": Vector3Input },
@@ -23229,6 +23606,7 @@ class AudioHelper extends AssetEntityHelper {
         { "parameter": "playTopic", "name": "Play Event", "type": TextInput },
         { "parameter": "pauseTopic", "name": "Pause Event", "type": TextInput },
         { "parameter": "stopTopic", "name": "Stop Event", "type": TextInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23462,6 +23840,7 @@ class ClampedTexturePlaneHelper extends AssetEntityHelper {
         { "parameter": "visualEdit" },
         { "parameter": "doubleSided", "name": "Double Sided",
             "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23536,6 +23915,7 @@ class GLTFAssetHelper extends AssetEntityHelper {
 
     static fields = [
         { "parameter": "visualEdit" },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23578,6 +23958,7 @@ class LightHelper extends AssetEntityHelper {
         { "parameter": "intensity", "name": "Intensity", "min": 0,
             "type": NumberInput },
         { "parameter": "color", "name": "Color", "type": ColorInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23609,6 +23990,7 @@ class AmbientLightHelper extends LightHelper {
         { "parameter": "visualEdit" },
         { "parameter": "intensity" },
         { "parameter": "color" },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23712,6 +24094,7 @@ class BoxShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23755,6 +24138,7 @@ class CircleShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23789,6 +24173,7 @@ class ConeShapeHelper extends ShapeHelper {
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
         { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxInput},
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23825,6 +24210,7 @@ class CylinderShapeHelper extends ShapeHelper {
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
         { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxInput},
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23868,6 +24254,7 @@ class PlaneShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23903,6 +24290,7 @@ class PointLightHelper extends LightHelper {
             "type": NumberInput },
         { "parameter": "decay", "name": "Decay", "min": 0,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23950,6 +24338,7 @@ class RingShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -23983,6 +24372,7 @@ class SphereShapeHelper extends ShapeHelper {
             "max": 360, "type": NumberInput },
         { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
             "max": 180, "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -24016,6 +24406,7 @@ class TorusShapeHelper extends ShapeHelper {
             "type": NumberInput },
         { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberInput },
+        { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
         { "parameter": "scale" },
@@ -39251,10 +39642,13 @@ class LibrarySearchPage extends PaginatedPage$1 {
         let items = [];
         let content = this._textField.content.toLowerCase();
         for(let id in this._assets) {
-            if(this._assets[id].getName().toLowerCase().includes(content)) {
+            let asset = this._assets[id];
+            if(asset instanceof InternalAssetEntity) {
+                continue;
+            } else if(asset.getName().toLowerCase().includes(content)) {
                 items.push(id);
             } else {
-                let assetId = this._assets[id].getAssetId();
+                let assetId = asset.getAssetId();
                 let assetName = libraryHandler.getAssetName(assetId);
                 if(assetName.toLowerCase().includes(content)) items.push(id);
             }
@@ -42471,7 +42865,7 @@ class Main {
 
     _createCamera() {
         this._camera = new THREE.PerspectiveCamera(
-            45, //Field of View Angle
+            global$1.deviceType != "XR" ? 45 : 90, //Field of View Angle
             this._container.clientWidth / this._container.clientHeight, //Aspect Ratio
             0.1, //Clipping for things closer than this amount
             1000 //Clipping for things farther than this amount
@@ -42936,6 +43330,7 @@ var Assets = /*#__PURE__*/Object.freeze({
   AmbientLight: AmbientLight,
   Asset: Asset,
   AssetEntity: AssetEntity,
+  AudioAsset: AudioAsset,
   BasicMaterial: BasicMaterial,
   BasicTexture: BasicTexture,
   BoxShape: BoxShape,
@@ -43005,6 +43400,7 @@ var Interactables = /*#__PURE__*/Object.freeze({
 
 var MenuInputs = /*#__PURE__*/Object.freeze({
   __proto__: null,
+  AssetEntityInput: AssetEntityInput,
   AudioInput: AudioInput,
   CheckboxInput: CheckboxInput,
   ColorInput: ColorInput,
@@ -43028,7 +43424,7 @@ var MenuInputs = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.1.8";
+const version = "0.1.9";
 
 global$1.version = version;
 
