@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import InteractableStates from '/scripts/core/enums/InteractableStates.js';
@@ -34,6 +35,7 @@ class AssetEntityInput extends PointerInteractableEntity {
         this._onUpdate = params['onUpdate'];
         this._lastValue =  params['initialValue'];
         this._exclude =  params['exclude'];
+        this._filter =  params['filter'];
         this._includeScene =  params['includeScene'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
@@ -81,10 +83,13 @@ class AssetEntityInput extends PointerInteractableEntity {
             if(this._includeScene)
                 filteredAssets[Scene.getId()] = { Name: 'Scene' };
             for(let assetId in assets) {
-                if(this._exclude && this._exclude.includes(assetId)) continue;
+                if(this._exclude == assetId) continue;
                 let asset = assets[assetId];
-                if(asset instanceof AssetEntity)
+                if(asset instanceof InternalAssetEntity) continue;
+                if(asset instanceof AssetEntity) {
+                    if(this._filter && !this._filter(asset)) continue;
                     filteredAssets[assetId] = { Name: asset.getName() };
+                }
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
             page.setContent(filteredAssets, (assetId) => {

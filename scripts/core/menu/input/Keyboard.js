@@ -108,7 +108,7 @@ class Keyboard {
 							break;
 
 						case 'shift' :
-							this._keyboard.toggleCase();
+							//this._keyboard.toggleCase();
 							break;
 
 					};

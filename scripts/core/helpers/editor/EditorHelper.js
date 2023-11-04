@@ -263,7 +263,8 @@ export default class EditorHelper {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new AssetEntityInput({
             'title': field.name,
-            'exclude': field.excludeSelf ? [this._id] : null,
+            'exclude': field.excludeSelf ? this._id : null,
+            'filter': typeof field.filter == 'function' ? field.filter : null,
             'includeScene': field.includeScene,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => { return this._asset[getFunction](); },

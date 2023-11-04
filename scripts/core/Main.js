@@ -67,7 +67,7 @@ export default class Main {
 
     _createCamera() {
         this._camera = new THREE.PerspectiveCamera(
-            45, //Field of View Angle
+            global.deviceType != "XR" ? 45 : 90, //Field of View Angle
             this._container.clientWidth / this._container.clientHeight, //Aspect Ratio
             0.1, //Clipping for things closer than this amount
             1000 //Clipping for things farther than this amount

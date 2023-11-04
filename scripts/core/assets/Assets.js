@@ -1,5 +1,6 @@
 import Asset from '/scripts/core/assets/Asset.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import AudioAsset from '/scripts/core/assets/AudioAsset.js';
 import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
 import CustomAsset from '/scripts/core/assets/CustomAsset.js';
 import CustomAssetEntity from '/scripts/core/assets/CustomAssetEntity.js';
@@ -28,6 +29,7 @@ import System from '/scripts/core/assets/systems/System.js';
 
 export { Asset };
 export { AssetEntity };
+export { AudioAsset };
 export { ClampedTexturePlane };
 export { CustomAsset };
 export { CustomAssetEntity };

@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
@@ -66,10 +67,13 @@ class LibrarySearchPage extends PaginatedPage {
         let items = [];
         let content = this._textField.content.toLowerCase();
         for(let id in this._assets) {
-            if(this._assets[id].getName().toLowerCase().includes(content)) {
+            let asset = this._assets[id];
+            if(asset instanceof InternalAssetEntity) {
+                continue;
+            } else if(asset.getName().toLowerCase().includes(content)) {
                 items.push(id);
             } else {
-                let assetId = this._assets[id].getAssetId();
+                let assetId = asset.getAssetId();
                 let assetName = LibraryHandler.getAssetName(assetId);
                 if(assetName.toLowerCase().includes(content)) items.push(id);
             }
