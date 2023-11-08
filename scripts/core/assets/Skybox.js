@@ -6,7 +6,9 @@
 
 import global from '/scripts/core/global.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { CubeTexture, SRGBColorSpace } from 'three';
 
@@ -23,9 +25,17 @@ for(let side in CubeSides) {
 }
 
 class Skybox {
+    constructor() {
+        this._id = uuidv4();
+        this._isAR = false;
+        PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            this._isAR = global.xrSessionType == 'AR';
+            this._scene.background = (this._isAR) ? null : this._background;
+        });
+    }
     init(scene) {
         this._scene = scene;
-        this._scene.background = new CubeTexture([
+        this._background = new CubeTexture([
             SIDES[CubeSides.RIGHT].canvas,
             SIDES[CubeSides.LEFT].canvas,
             SIDES[CubeSides.TOP].canvas,
@@ -33,7 +43,8 @@ class Skybox {
             SIDES[CubeSides.FRONT].canvas,
             SIDES[CubeSides.BACK].canvas,
         ]);
-        this._scene.background.colorSpace = SRGBColorSpace;
+        this._background.colorSpace = SRGBColorSpace;
+        if(!this._isAR) this._scene.background = this._background;
     }
 
     setSides(assetIds) {
@@ -47,12 +58,12 @@ class Skybox {
             ? LibraryHandler.getImage(assetId)
             : null;
         this._drawImage(side, image);
-        this._scene.background.needsUpdate = true;
+        this._background.needsUpdate = true;
     }
 
     deleteSide(side) {
         this._drawImage(side);
-        this._scene.background.needsUpdate = true;
+        this._background.needsUpdate = true;
     }
 
     //https://stackoverflow.com/a/23105310

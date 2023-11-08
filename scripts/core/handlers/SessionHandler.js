@@ -5,13 +5,17 @@
  */
 
 import global from '/scripts/core/global.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
-import { VRButton } from '/node_modules/three/examples/jsm/webxr/VRButton.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { OrbitControls } from '/scripts/three/examples/jsm/controls/OrbitControls.js';
 import { Vector3 } from 'three';
 
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
+const XR_OPTIONS = {
+    optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking','layers']
+};
 
 class SessionHandler {
     init(container, onStart) {
@@ -42,16 +46,14 @@ class SessionHandler {
 
     _configureForXR() {
         this._div = document.createElement('div');
-        this._button = VRButton.createButton(global.renderer);
-        this._button.removeAttribute('style');
-        this._stylizeElements();
-        this._button.style.minWidth = '150px';
-        this._div.appendChild(this._button);
+        if(global.vrSessionSupported) this._createXRButton('VR');
+        if(global.arSessionSupported) this._createXRButton('AR');
         this._div.appendChild(this._createMobileOverrideLink());
         global.renderer.xr.addEventListener("sessionstart", () => {
             global.sessionActive = true;
             AudioHandler.resume();
             global.renderer.xr.setFoveation(0);
+            PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
                 this._onStart = null;
@@ -63,11 +65,41 @@ class SessionHandler {
         });
     }
 
+    _createXRButton(xrSessionType) {
+        let isVR = xrSessionType == 'VR';
+        let button = document.createElement('button');
+        button.innerText = isVR ? 'ENTER VR' : 'START AR';
+        this._stylizeElements(button);
+        button.style.minWidth = '150px';
+        this._div.appendChild(button);
+        let onSessionEnded = () => {
+            this._currentSession.removeEventListener( 'end', onSessionEnded );
+            button.innerText = isVR ? 'ENTER VR' : 'START AR';
+            this._currentSession = null;
+        }
+        let onSessionStarted = async (session) => {
+            session.addEventListener( 'end', onSessionEnded );
+            await global.renderer.xr.setSession( session );
+            button.innerText = isVR ? 'EXIT VR' : 'STOP AR';
+            this._currentSession = session;
+        }
+        button.addEventListener('click', () => {
+            if(this._currentSession) {
+                this._currentSession.end();
+            } else {
+                global.xrSessionType = xrSessionType;
+                let mode = isVR ? 'immersive-vr' : 'immersive-ar';
+                navigator.xr.requestSession(mode, XR_OPTIONS)
+                    .then(onSessionStarted);
+            }
+        });
+    }
+
     _configureForPointer() {
         this._div = document.createElement('div');
         this._button = document.createElement('button');
         this._button.innerText = "CLICK TO START";
-        this._stylizeElements();
+        this._stylizeElements(this._button);
         this._div.appendChild(this._button);
 
         this._controls = new OrbitControls(global.camera,
@@ -91,6 +123,7 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.resume();
             InputHandler.createPointerControls();
+            PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
                 this._onStart = null;
@@ -102,10 +135,10 @@ class SessionHandler {
         this._div = document.createElement('div');
         this._button = document.createElement('button');
         this._button.innerText = "TAP TO START";
-        this._stylizeElements();
+        this._stylizeElements(this._button);
         this._div.appendChild(this._button);
         if(localStorage.getItem(MOBILE_OVERRIDE))
-            this._div.appendChild(this._createVROverrideLink());
+            this._div.appendChild(this._createXROverrideLink());
 
         this._controls = new OrbitControls(global.camera,
             global.renderer.domElement);
@@ -127,6 +160,7 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.resume();
             InputHandler.createMobileControls();
+            PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
                 this._onStart = null;
@@ -134,7 +168,7 @@ class SessionHandler {
         });
     }
 
-    _stylizeElements() {
+    _stylizeElements(button) {
         this._div.style.position = 'absolute';
         this._div.style.top = '75%';
         this._div.style.transform = 'translateY(-50%)';
@@ -142,21 +176,22 @@ class SessionHandler {
         this._div.style.textAlign = 'center';
         this._div.style.backgroundColor = 'rgba(0,0,0,0.5)';
         this._div.style.padding = '10px 0';
-        this._button.style.padding = '12px';
-        this._button.style.border = '2px solid #ffc7e5';
-        this._button.style.borderRadius = '4px';
-        this._button.style.background = 'none';
-        this._button.style.color = '#ffc7e5';
-        this._button.style.font = 'normal 18px sans-serif';
-        this._button.style.outline = 'none';
-        this._button.style.transition = 'background-color .15s ease-in-out';
-        this._button.onmouseenter = () => {
-            this._button.style.cursor = 'pointer';
-            this._button.style.background = 'rgba(0, 0, 0, 0.5)';
+        button.style.padding = '12px';
+        button.style.border = '2px solid #ffc7e5';
+        button.style.borderRadius = '4px';
+        button.style.background = 'none';
+        button.style.color = '#ffc7e5';
+        button.style.font = 'normal 18px sans-serif';
+        button.style.margin = '0 4px';
+        button.style.outline = 'none';
+        button.style.transition = 'background-color .15s ease-in-out';
+        button.onmouseenter = () => {
+            button.style.cursor = 'pointer';
+            button.style.background = 'rgba(0, 0, 0, 0.5)';
         };
-        this._button.onmouseleave = () => {
-            this._button.style.cursor = 'inherit';
-            this._button.style.background = 'none';
+        button.onmouseleave = () => {
+            button.style.cursor = 'inherit';
+            button.style.background = 'none';
         };
     }
 
@@ -175,9 +210,9 @@ class SessionHandler {
         return a;
     }
 
-    _createVROverrideLink() {
+    _createXROverrideLink() {
         let a = document.createElement('a');
-        a.innerText = 'Use VR Controls';
+        a.innerText = 'Use AR/VR Controls';
         a.href = '#';
         a.style.display = 'block';
         a.style.paddingTop = '12px';
@@ -196,7 +231,7 @@ class SessionHandler {
     }
 
     exitXRSession() {
-        this._button.click();
+        this._currentSession.end();
     }
 
     enableOrbit() {

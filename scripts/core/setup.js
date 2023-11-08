@@ -104,6 +104,26 @@ function checkIfPointer() {
     }
 }
 
+function isARSupported() {
+    return navigator.xr.isSessionSupported('immersive-ar')
+        .then(function (supported) {
+            if(supported) global.arSessionSupported = true;
+            return supported;
+        }).catch(function() {
+            return false;
+        });
+}
+
+function isVRSupported() {
+    return navigator.xr.isSessionSupported('immersive-vr')
+        .then(function (supported) {
+            if(supported) global.vrSessionSupported = true;
+            return supported;
+        }).catch(function() {
+            return false;
+        });
+}
+
 //Yuck, css and html through javascript. But it's easier to import the project
 //this way
 function setupContainer(containerId) {
@@ -303,18 +323,17 @@ function setup(containerId, params) {
             return;
         }
         if('xr' in navigator) {
-            navigator.xr.isSessionSupported( 'immersive-vr' )
-                .then(function (supported) {
-                    if (supported) {
+            isVRSupported().then((vrSupported) => {
+                isARSupported().then((arSupported) => {
+                    if(vrSupported || arSupported) {
                         global.deviceType = "XR";
                     } else {
                         checkIfPointer();
                     }
-                }).catch(function() {
-                    checkIfPointer();
                 }).finally(function() {
                     start(resolve, containerId, params);
                 });
+            });
         } else {
             checkIfPointer();
             start(resolve, containerId, params);
