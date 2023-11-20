@@ -7,18 +7,19 @@
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, uuidToBytes } from '/scripts/core/helpers/utils.module.js';
 
 export default class Asset {
     constructor(params = {}) {
         this._id = params['id'] || uuidv4();
+        this._idBytes = uuidToBytes(this._id);
         this._assetId = params['assetId'];
         this._name = ('name' in params)
             ? params['name']
             : this._getDefaultName();
         this._components = new Set();
         if(params['components']) {
-            params['components'].forEach((id) => { this.addComponent(id); });
+            params['components'].forEach((id) => this.addComponent(id));
         }
     }
 
@@ -72,12 +73,12 @@ export default class Asset {
         for(let component of this._components) {
             let componentId = component.getId();
             if(!componentIds.includes(componentId))
-                this.removeComponent(componentId);
+                this.removeComponent(componentId, true);
         }
         for(let componentId of componentIds) {
             let component = ProjectHandler.getAsset(componentId);
             if(!this._components.has(component))
-                this.addComponent(componentId);
+                this.addComponent(componentId, true);
         }
     }
 
@@ -96,8 +97,6 @@ export default class Asset {
         let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,
-            assetId: this._assetId,
-            assetType: this.constructor.assetType,
             componentId: componentId,
             componentAssetId: componentAssetId,
         });
@@ -114,8 +113,6 @@ export default class Asset {
         let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,
-            assetId: this._assetId,
-            assetType: this.constructor.assetType,
             componentId: componentId,
             componentAssetId: componentAssetId,
         });

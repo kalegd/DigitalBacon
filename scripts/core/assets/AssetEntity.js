@@ -7,11 +7,13 @@
 import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
 import Scene from '/scripts/core/assets/Scene.js';
+import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
+import { concatenateArrayBuffers, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import * as THREE from 'three';
@@ -39,6 +41,10 @@ export default class AssetEntity extends Asset {
         this._gripInteractable = new GripInteractable(this._object);
         this._pointerInteractable = new PointerInteractable(this._object);
         this._deleteCallbacks = {};
+        this._positionBytes = new Float64Array(3);
+        this._rotationBytes = new Float64Array(3);
+        this._scaleBytes = new Float64Array(3);
+        this._transformationBytes = new Float64Array(9);
     }
 
     _getDefaultName() {
@@ -184,6 +190,37 @@ export default class AssetEntity extends Asset {
 
     setVisualEdit(visualEdit) {
         this.visualEdit = visualEdit;
+    }
+
+    publishPosition() {
+        this._positionBytes.set(this._object.position.toArray());
+        let message =concatenateArrayBuffers(this._idBytes,this._positionBytes);
+        PartyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_POSITION, message);
+    }
+
+    publishRotation() {
+        this._rotationBytes.set(this._object.rotation.toArray());
+        let message =concatenateArrayBuffers(this._idBytes,this._rotationBytes);
+        PartyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_ROTATION, message);
+    }
+
+    publishScale() {
+        this._scaleBytes.set(this._object.scale.toArray());
+        let message = concatenateArrayBuffers(this._idBytes, this._scaleBytes);
+        PartyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_SCALE, message);
+    }
+
+    publishTransformation() {
+        this._transformationBytes.set(this._object.position.toArray());
+        this._transformationBytes.set(this._object.rotation.toArray(), 3);
+        this._transformationBytes.set(this._object.scale.toArray(), 6);
+        let message = concatenateArrayBuffers(this._idBytes,
+            this._transformationBytes);
+        PartyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_TRANSFORMATION, message);
     }
 
     add(child, ignorePublish) {

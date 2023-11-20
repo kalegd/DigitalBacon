@@ -16,6 +16,7 @@ import '/scripts/core/handlers/assetTypes/ModelsHandler.js';
 import '/scripts/core/handlers/assetTypes/ShapesHandler.js';
 import '/scripts/core/handlers/assetTypes/SystemsHandler.js';
 import '/scripts/core/handlers/assetTypes/TexturesHandler.js';
+import '/scripts/core/assets/PeerController.js';
 import '/scripts/core/assets/primitives/AmbientLight.js';
 import '/scripts/core/assets/primitives/BoxShape.js';
 import '/scripts/core/assets/primitives/CircleShape.js';

@@ -121,7 +121,7 @@ class TransformControlsHandler {
             instanceHelper.setObjectTransformation(preState, postState);
         });
         this._transformControls.addEventListener('objectChange', () => {
-            if(global.renderer.info.render.frame % 6 == 0) {
+            if(global.renderer.info.render.frame % 3 == 0) {
                 this._attachedAssets[global.deviceType].editorHelper
                     .roundAttributes();
             }
@@ -253,8 +253,8 @@ class TransformControlsHandler {
         vector3s[1].setLength(0.2);
         vector3s[1].applyAxisAngle(vector3s[0], -Math.PI / 4);
         object.position.add(vector3s[1]);
-
         instance.editorHelper.roundAttributes(true);
+        instance.publishPosition();
     }
 
     _delete(option) {

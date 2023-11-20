@@ -6,19 +6,25 @@
 
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { uuidv4, capitalizeFirstLetter, Queue } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, uuidFromBytes, uuidToBytes, capitalizeFirstLetter, concatenateArrayBuffers, concatenateArrayBuffersFromList, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
-const BLOCKABLE_HANDLERS_MAP = {
-    component_attached: '_handleComponentAttached',
-    component_detached: '_handleComponentDetached',
-    entity_added: '_handleEntityAdded',
-    entity_attached: '_handleEntityAttached',
+const HANDLERS = {
+    asset_added: '_handleAssetAdded',
+    user_controller: '_handleUserController',
+    username: '_handleUsername',
+};
+const BUFFER_HANDLERS = {
+    [InternalMessageIds.ASSET_ADDED_PART]: '_handleBufferAssetAdded',
+    [InternalMessageIds.USER_PERSPECTIVE]: '_handleUserPerspective',
+};
+const BLOCKABLE_HANDLERS = {
     instance_added: '_handleInstanceAdded',
     instance_deleted: '_handleInstanceDeleted',
     instance_updated: '_handleInstanceUpdated',
@@ -28,10 +34,21 @@ const BLOCKABLE_HANDLERS_MAP = {
     sanitize_internals: '_handleSanitizeInternals',
     settings_updated: '_handleSettingsUpdated',
 };
+const BLOCKABLE_BUFFER_HANDLERS = {
+    [InternalMessageIds.ENTITY_POSITION]: '_handleEntityPosition',
+    [InternalMessageIds.ENTITY_ROTATION]: '_handleEntityRotation',
+    [InternalMessageIds.ENTITY_SCALE]: '_handleEntityScale',
+    [InternalMessageIds.ENTITY_TRANSFORMATION]: '_handleEntityTransformation',
+    [InternalMessageIds.COMPONENT_ATTACHED]: '_handleComponentAttached',
+    [InternalMessageIds.COMPONENT_DETACHED]: '_handleComponentDetached',
+    [InternalMessageIds.ENTITY_ADDED]: '_handleEntityAdded',
+    [InternalMessageIds.ENTITY_ATTACHED]: '_handleEntityAttached',
+};
 
 class PartyMessageHelper {
     constructor() {
-        this._id = uuidv4();
+        this._id = '44a9d6b3-2bf7-4e36-b8d1-10bb69de95cc';
+        this._idBytes = uuidToBytes(this._id);
         this._handlingLocks = new Set();
         this._handleQueue = new Queue();
         this._publishQueue = new Queue();
@@ -39,30 +56,37 @@ class PartyMessageHelper {
 
     init(PartyHandler) {
         this._partyHandler = PartyHandler;
-        let handlers = {
-            asset_added: (p, m) => { this._handleAssetAdded(p, m); },
-            username: (p, m) => { this._handleUsername(p, m); },
-            user_controller: (p, m) => { this._handleUserController(p, m); },
-            user_perspective: (p, m) => { this._handleUserPerspective(p,m); },
-        };
-        for(let topic in BLOCKABLE_HANDLERS_MAP) {
-            let handler = (p,m) => {this[BLOCKABLE_HANDLERS_MAP[topic]](p, m);};
-            handlers[topic] = (p, m) => { this._handleBlockable(handler,p,m); };
+        for(let id in HANDLERS) {
+            let handler = (p, m) => this[HANDLERS[id]](p, m);
+            this._partyHandler.addInternalMessageHandler(id, handler, true);
         }
-        this._partyHandler.addMessageHandlers(handlers);
+        for(let id in BUFFER_HANDLERS) {
+            let handler = (p, m) => this[BUFFER_HANDLERS[id]](p, m);
+            this._partyHandler.addInternalBufferMessageHandler(id,handler,true);
+        }
+        for(let id in BLOCKABLE_HANDLERS) {
+            let handler = (p, m) => this[BLOCKABLE_HANDLERS[id]](p, m);
+            this._partyHandler.addInternalMessageHandler(id, handler);
+        }
+        for(let id in BLOCKABLE_BUFFER_HANDLERS) {
+            let handler = (p, m) => this[BLOCKABLE_BUFFER_HANDLERS[id]](p, m);
+            this._partyHandler.addInternalBufferMessageHandler(id, handler);
+        }
     }
 
     registerHandler(topic, handler) {
+        console.warn('registerHandler(...) is deprecated');
         this._partyHandler.addMessageHandler(topic, handler);
     }
 
     registerBlockableHandler(topic, handler) {
+        console.warn('registerBlockableHandler(...) is deprecated');
         let blockableHandler = (p, m) => { this._handleBlockable(handler,p,m);};
         this._partyHandler.addMessageHandler(topic, blockableHandler);
     }
 
     publish(message) {
-        this._partyHandler.sendToAllPeers(message);
+        this._partyHandler._sendToAllPeers(message);
     }
 
     queuePublish(message) {
@@ -70,7 +94,7 @@ class PartyMessageHelper {
             this._publishQueue.enqueue(f);
         } else {
             this._publishQueue.enqueue(() => {
-                this._partyHandler.sendToAllPeers(message);
+                this._partyHandler._sendToAllPeers(message);
                 return Promise.resolve();
             });
         }
@@ -106,29 +130,31 @@ class PartyMessageHelper {
 
     _handleAssetAdded(peer, message) {
         let lock = uuidv4();
-        this._handlingLocks.add(lock);
-        let partsLength = message.parts;
-        let assetId = message.assetId;
-        let name = message.name;
-        let type = message.type;
-        let parts = [];
-        this._partyHandler.setEventBufferHandler(peer, (peer, message) => {
-            parts.push(message);
-            if(parts.length == partsLength) {
-                this._partyHandler.setEventBufferHandler(peer);
-                let blob = new Blob(parts, { type: 'application/javascript' });
-                let assetDetails = {
-                    Name: name,
-                    Type: type,
-                };
-                LibraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
-                    .then(() => {
-                        PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId);
-                        this._removeHandlingLock(lock);
-                    });
-            }
-        });
+        message.lock = this._partyHandler.addMessageHandlerLock();
+        message.parts = [];
+        peer.assetAddedDetails = message;
+    }
+
+    _handleBufferAssetAdded(peer, message) {
+        if(!peer.assetAddedDetails) {
+            console.error('Unexpected call to _handleBufferAssetAdded() before _handleAssetAdded()');
+            return;
+        }
+        let {parts,partsLength,assetId,name,type,lock} = peer.assetAddedDetails;
+        parts.push(message);
+        if(parts.length == partsLength) {
+            let blob = new Blob(parts, { type: 'application/javascript' });
+            let assetDetails = {
+                Name: name,
+                Type: type,
+            };
+            LibraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
+                .then(() => {
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                        assetId);
+                    this._partyHandler.removeMessageHandlerLock(lock);
+                });
+        }
     }
 
     _handleBlockable(handler, peer, message) {
@@ -142,6 +168,12 @@ class PartyMessageHelper {
     }
 
     _handleComponentAttached(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            id: uuidFromBytes(messageBytes.subarray(0, 16)),
+            componentId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            componentAssetId: uuidFromBytes(messageBytes.subarray(32, 48)),
+        };
         let asset = ProjectHandler.getSessionAsset(message.id);
         if(asset) {
             if(asset.editorHelper) {
@@ -149,13 +181,18 @@ class PartyMessageHelper {
             } else {
                 asset.addComponent(message.componentId, true);
             }
-            delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
                 + message.componentAssetId, message);
         }
     }
 
     _handleComponentDetached(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            id: uuidFromBytes(messageBytes.subarray(0, 16)),
+            componentId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            componentAssetId: uuidFromBytes(messageBytes.subarray(32, 48)),
+        };
         let asset = ProjectHandler.getSessionAsset(message.id);
         if(asset) {
             if(asset.editorHelper) {
@@ -164,13 +201,19 @@ class PartyMessageHelper {
             } else {
                 asset.removeComponent(message.componentId, true);
             }
-            delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
                 + message.componentAssetId, message);
         }
     }
 
     _handleEntityAdded(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            parentId: uuidFromBytes(messageBytes.subarray(0, 16)),
+            childId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            position: typedArrayToArray(new Float64Array(message, 32, 3)),
+            rotation: typedArrayToArray(new Float64Array(message, 224, 3)),
+        };
         let parentAsset = ProjectHandler.getSessionAsset(message.parentId);
         let childAsset = ProjectHandler.getSessionAsset(message.childId);
         if(childAsset) {
@@ -182,15 +225,20 @@ class PartyMessageHelper {
             let object = childAsset.getObject();
             object.position.fromArray(message.position);
             object.rotation.fromArray(message.rotation);
-            delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, message);
         } else {
-            console.error(
-                "Missing child from entity_added message");
+            console.error("Missing child in message for _handleEntityAdded()");
         }
     }
 
     _handleEntityAttached(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            parentId: uuidFromBytes(messageBytes.subarray(0, 16)),
+            childId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            position: typedArrayToArray(new Float64Array(message, 32, 3)),
+            rotation: typedArrayToArray(new Float64Array(message, 224, 3)),
+        };
         let parentAsset = ProjectHandler.getSessionAsset(message.parentId);
         let childAsset = ProjectHandler.getSessionAsset(message.childId);
         if(childAsset) {
@@ -202,11 +250,57 @@ class PartyMessageHelper {
             let object = childAsset.getObject();
             object.position.fromArray(message.position);
             object.rotation.fromArray(message.rotation);
-            delete message['topic'];
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, message);
         } else {
-            console.error(
-                "Missing child from entity_attached message");
+            console.error("Missing child from entity_attached message");
+        }
+    }
+
+    _handleEntityPosition(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let position = Array.from(new Float64Array(message, 16, 3));
+        let asset = ProjectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setPosition(position);
+        } else {
+            console.error("Missing asset in message for _handleEntityPosition()");
+        }
+    }
+
+    _handleEntityRotation(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let rotation = Array.from(new Float64Array(message, 16, 3));
+        let asset = ProjectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setRotation(rotation);
+        } else {
+            console.error("Missing asset in message for _handleEntityRotation()");
+        }
+    }
+
+    _handleEntityScale(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let scale = Array.from(new Float64Array(message, 16, 3));
+        let asset = ProjectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setScale(scale);
+        } else {
+            console.error("Missing asset in message for _handleEntityScale()");
+        }
+    }
+
+    _handleEntityTransformation(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let position = Array.from(new Float64Array(message, 16, 3));
+        let rotation = Array.from(new Float64Array(message, 40, 3));
+        let scale = Array.from(new Float64Array(message, 64, 3));
+        let asset = ProjectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setPosition(position);
+            asset.setRotation(rotation);
+            asset.setScale(scale);
+        } else {
+            console.error("Missing asset in message for _handleEntityTransformation()");
         }
     }
 
@@ -270,8 +364,7 @@ class PartyMessageHelper {
         PubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
     }
 
-    _handleSettingsUpdated(peer, message) {
-        let settings = message.settings;
+    _handleSettingsUpdated(peer, settings) {
         for(let setting in settings) {
             let handler;
             if(setting == 'User Settings') {
@@ -307,8 +400,7 @@ class PartyMessageHelper {
         PubSub.publish(this._id, topic, message);
     }
 
-    _handleUsername(peer, message) {
-        let username = message.username;
+    _handleUsername(peer, username) {
         if(peer.username == username) return;
         peer.username = username;
         if(peer.controller) peer.controller.setUsername(username);
@@ -318,7 +410,7 @@ class PartyMessageHelper {
     }
 
     _handleUserPerspective(peer, message) {
-        let perspective = message.perspective;
+        let perspective = new Uint8Array(message)[0];
         if(peer.controller) peer.controller.setFirstPerson(perspective == 1);
     }
 
@@ -339,7 +431,7 @@ class PartyMessageHelper {
     }
 
     handleDiffLoaded() {
-        this._partyHandler.sendToAllPeers(JSON.stringify({
+        this._partyHandler._sendToAllPeers(JSON.stringify({
             topic: 'loaded_diff',
         }));
         PubSub.publish(this._id, PubSubTopics.USER_READY);
@@ -353,100 +445,83 @@ class PartyMessageHelper {
     }
 
     _publishAssetAdded(assetId) {
-        return new Promise((resolve) => {
-            let libraryDetails = LibraryHandler.getLibrary()[assetId];
-            let blob = libraryDetails['Blob'];
-            blob.arrayBuffer().then((buffer) => {
-                let parts = [];
-                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
-                for(let i = 0; i < n; i++) {
-                    let chunkStart = i * SIXTEEN_KB;
-                    let chunkEnd = (i + 1) * SIXTEEN_KB;
-                    parts.push(buffer.slice(chunkStart, chunkEnd));
-                }
-                this._partyHandler.sendToAllPeers(JSON.stringify({
-                    topic: 'asset_added',
-                    assetId: assetId,
-                    name: libraryDetails['Name'],
-                    type: libraryDetails['Type'],
-                    parts: parts.length,
-                }));
-                for(let part of parts) {
-                    this._partyHandler.sendToAllPeers(part);
-                }
-                resolve();
+        this._partyHandler.publishFromFunction(() => {
+            return new Promise((resolve) => {
+                let libraryDetails = LibraryHandler.getLibrary()[assetId];
+                let blob = libraryDetails['Blob'];
+                blob.arrayBuffer().then((buffer) => {
+                    let parts = [];
+                    let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
+                    for(let i = 0; i < n; i++) {
+                        let chunkStart = i * SIXTEEN_KB;
+                        let chunkEnd = (i + 1) * SIXTEEN_KB;
+                        parts.push(buffer.slice(chunkStart, chunkEnd));
+                    }
+                    this._partyHandler.publishInternalMessage('asset_added', {
+                        assetId: assetId,
+                        name: libraryDetails['Name'],
+                        type: libraryDetails['Type'],
+                        partsLength: parts.length,
+                    }, true);
+                    for(let part of parts) {
+                        this._partyHandler.publishInternalBufferMessage(
+                            InternalMessageIds.ASSET_ADDED_PART, part, true);
+                    }
+                    resolve();
+                });
             });
         });
     }
 
-    _publishComponentAttachedDetached(topic, message) {
-        let peerMessage = {
-            topic: topic,
-            id: message.id,
-            assetId: message.assetId,
-            assetType: message.assetType,
-            componentId: message.componentId,
-            componentAssetId: message.componentAssetId,
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+    _publishComponentAttachedDetached(internalMessageId, message) {
+        let peerMessage = concatenateArrayBuffers(
+            uuidToBytes(message.id),
+            uuidToBytes(message.componentId),
+            uuidToBytes(message.componentAssetId)
+        );
+        this._partyHandler.publishInternalBufferMessage(internalMessageId,
+            peerMessage);
     }
 
     _publishEntityAdded(message) {
         let childAsset = ProjectHandler.getSessionAsset(message.childId);
-        let peerMessage = {
-            topic: 'entity_added',
-            parentId: message.parentId,
-            childId: message.childId,
-            position: childAsset.getObject().position.toArray(),
-            rotation: childAsset.getObject().rotation.toArray(),
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+        let peerMessage = concatenateArrayBuffers(
+            uuidToBytes(message.parentId),
+            uuidToBytes(message.childId),
+            new Float64Array(childAsset.getObject().position.toArray()),
+            new Float64Array(childAsset.getObject().rotation.toArray()),
+        );
+        this._partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_ADDED, peerMessage);
     }
 
     _publishEntityAttached(message) {
         let childAsset = ProjectHandler.getSessionAsset(message.childId);
-        let peerMessage = {
-            topic: 'entity_attached',
-            parentId: message.parentId,
-            childId: message.childId,
-            position: childAsset.getObject().position.toArray(),
-            rotation: childAsset.getObject().rotation.toArray(),
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+        let peerMessage = concatenateArrayBuffers(
+            uuidToBytes(message.parentId),
+            uuidToBytes(message.childId),
+            new Float64Array(childAsset.getObject().position.toArray()),
+            new Float64Array(childAsset.getObject().rotation.toArray()),
+        );
+        this._partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_ATTACHED, peerMessage);
     }
 
     _publishInstanceAdded(asset, assetType) {
         let message = {
-            topic: 'instance_added',
             asset: asset.exportParams(),
             assetType: assetType,
         };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_added', message);
     }
 
     _publishInstanceDeleted(asset, assetType) {
         let message = {
-            topic: 'instance_deleted',
             id: asset.getId(),
             assetId: asset.getAssetId(),
             assetType: assetType,
         };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_deleted', message);
     }
 
     _publishInstanceUpdated(updateMessage, assetType) {
@@ -455,22 +530,18 @@ class PartyMessageHelper {
         for(let param of updateMessage.fields) {
             let capitalizedParam = capitalizeFirstLetter(param);
             asset[param] = updateMessage.asset['get' + capitalizedParam]();
+            if(asset[param] === undefined) asset[param] = null;
         }
         let peerMessage = {
-            topic: "instance_updated",
             params: asset,
             assetType: assetType,
         };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(
-                JSON.stringify(peerMessage, (k, v) => v === undefined ?null:v));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_updated',
+            peerMessage);
     }
 
     _publishInstanceAttached(data) {
         let message = {
-            topic: 'instance_attached',
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
@@ -483,15 +554,11 @@ class PartyMessageHelper {
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_attached', message);
     }
 
     _publishInstanceDetached(data) {
         let message = {
-            topic: 'instance_detached',
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
@@ -504,54 +571,31 @@ class PartyMessageHelper {
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_detached', message);
     }
 
-    _publishSettingsUpdate(updateMessage) {
+    _publishSettingsUpdated(updateMessage) {
         let settings = updateMessage.settings;
         let keys = updateMessage.keys;
-        let peerMessage = {
-            topic: 'settings_updated',
-            settings: {},
-        };
-        peerMessage.settings[keys[0]] = {};
-        peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+        let message = {};
+        message[keys[0]] = {};
+        message[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
+        this._partyHandler.publishInternalMessage('settings_updated', message);
     }
 
     _publishUserPerspectiveChanged(perspective) {
-        let message = {
-            topic: 'user_perspective',
-            perspective: perspective,
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        let message = new Uint8Array([perspective]);
+        this._partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.USER_PERSPECTIVE, message);
     }
 
     _publishUsernameUpdated(username) {
-        let message = {
-            topic: 'username',
-            username: username,
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('username', username);
     }
 
     addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetAdded(assetId);
-            });
+            this._publishAssetAdded(assetId);
         });
         PubSub.subscribe(this._id, PubSubTopics.BECOME_PARTY_HOST, () => {
             this._partyHandler.setIsHost(true);
@@ -560,12 +604,12 @@ class PartyMessageHelper {
             this._partyHandler.bootPeer(peerId);
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
-            this._publishComponentAttachedDetached('component_attached',
-                message);
+            this._publishComponentAttachedDetached(
+                InternalMessageIds.COMPONENT_ATTACHED, message);
         });
         PubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED, (message)=>{
-            this._publishComponentAttachedDetached('component_detached',
-                message);
+            this._publishComponentAttachedDetached(
+                InternalMessageIds.COMPONENT_DETACHED, message);
         });
         PubSub.subscribe(this._id, PubSubTopics.ENTITY_ADDED, (message) => {
             this._publishEntityAdded(message);
@@ -581,13 +625,13 @@ class PartyMessageHelper {
         });
         PubSub.subscribe(this._id, PubSubTopics.SANITIZE_INTERNALS, () => {
             this._publishQueue.enqueue(() => {
-                this._partyHandler.sendToAllPeers(
+                this._partyHandler._sendToAllPeers(
                     JSON.stringify({ topic: 'sanitize_internals' }));
                 return Promise.resolve();
             });
         });
         PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
-            this._publishSettingsUpdate(message);
+            this._publishSettingsUpdated(message);
         });
         PubSub.subscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, (n)=>{
             this._publishUserPerspectiveChanged(n);
@@ -618,6 +662,7 @@ class PartyMessageHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DETACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.ENTITY_ADDED);
+        PubSub.unsubscribe(this._id, PubSubTopics.ENTITY_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
         PubSub.unsubscribe(this._id, PubSubTopics.SANITIZE_INTERNALS);

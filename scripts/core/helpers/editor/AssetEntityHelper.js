@@ -20,7 +20,6 @@ import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHa
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
 import ScaleHandler from '/scripts/core/handlers/hands/ScaleHandler.js';
 import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
-import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
@@ -35,6 +34,11 @@ import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
 import * as THREE from 'three';
 
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
+const TRANSFORM_PUBLISH_FUNCTIONS = {
+    position: 'publishPosition',
+    rotation: 'publishRotation',
+    scale: 'publishScale',
+};
 const TRS_HANDLERS = [{ handler: TranslateHandler, tool: HandTools.TRANSLATE },
     { handler: RotateHandler, tool: HandTools.ROTATE },
     { handler: ScaleHandler, tool: HandTools.SCALE },
@@ -266,8 +270,13 @@ export default class AssetEntityHelper extends EditorHelper {
             }
         }
         if(updated.length == 0) return;
-        if(!ignorePublish)
-            this._publish(updated);
+        if(!ignorePublish) {
+            if(updated.length == 1) {
+                this._asset[TRANSFORM_PUBLISH_FUNCTIONS[updated[0]]]();
+            } else {
+                this._asset.publishTransformation();
+            }
+        }
     }
 
     place(intersection) {

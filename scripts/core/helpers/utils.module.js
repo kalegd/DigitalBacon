@@ -7,9 +7,27 @@
 import * as THREE from 'three';
 
 export const uuidv4 = () => {
-  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
+        c => (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4)
+        .toString(16));
 };
+
+//https://github.com/domske/uuid-tool/blob/master/src/uuid.ts
+export const uuidToBytes = (uuid) => {
+    let array = new Uint8Array(16);
+    (uuid.replace(/-/g, '').match(/.{2}/g) || [])
+        .map((b, i) => array[i] = parseInt(b, 16));
+    return array;
+}
+
+export const uuidFromBytes = (bytes) => {
+    let array = [];
+    for(let b of bytes) {
+        array.push(('00' + b.toString(16)).slice(-2));
+    }
+    return array.join('')
+        .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+}
 
 export const numberOr = (number, defaultValue) => {
     return (typeof number == 'number')
@@ -187,7 +205,11 @@ export const blobToHash = (blob) => {
 }
 
 //https://gist.github.com/72lions/4528834
-export const concatenateArrayBuffers = (buffers) => {
+export const concatenateArrayBuffers = (...buffers) => {
+    return concatenateArrayBuffersFromList(buffers);
+}
+
+export const concatenateArrayBuffersFromList = (buffers) => {
     let length = 0;
     for(let buffer of buffers) {
         length += buffer.byteLength;
@@ -195,10 +217,15 @@ export const concatenateArrayBuffers = (buffers) => {
     let array = new Uint8Array(length);
     let index = 0;
     for(let buffer of buffers) {
+        if(buffer.buffer) buffer = buffer.buffer;//Convert TypedArray
         array.set(new Uint8Array(buffer), index);
         index += buffer.byteLength;
     }
     return array.buffer;
+}
+
+export const typedArrayToArray = (typedArray) => {
+    return [].slice.call(typedArray);
 }
 
 //https://dmitripavlutin.com/javascript-queue/

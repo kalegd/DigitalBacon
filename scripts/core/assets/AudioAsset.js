@@ -13,11 +13,13 @@ import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
-import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import { concatenateArrayBuffers, numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 const PLAY_TOPIC_PREFIX = 'PLAY_AUDIO_ASSET:';
+const PLAY = 0;
+const PAUSE = 1;
+const STOP = 2
 
 export default class AudioAsset extends AssetEntity {
     constructor(params = {}) {
@@ -180,8 +182,7 @@ export default class AudioAsset extends AssetEntity {
         this._playTopic = playTopic;
         if(this._playTopic) {
             PubSub.subscribe(this._id, this._playTopic, (message) => {
-                if(!global.isEditor)
-                    this.play(null, message.userController == UserController);
+                if(!global.isEditor) this._audio.play();
             });
         }
     }
@@ -232,11 +233,29 @@ export default class AudioAsset extends AssetEntity {
         }
         this._audio.play();
         if(ignorePublish) return;
-        let message = {
-            topic: PLAY_TOPIC_PREFIX + this._id,
-            position: this._audio._progress,
-        };
-        PartyMessageHelper.queuePublish(JSON.stringify(message));
+        let type = new Uint8Array([PLAY]);
+        position = new Float64Array([this._audio._progress]);
+        let message = concatenateArrayBuffers(type, position);
+        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
+    }
+
+    pause(position, ignorePublish) {
+        this._audio.pause();
+        if(position != null) {
+            this._audio._progress = position || 0;
+        }
+        if(ignorePublish) return;
+        let type = new Uint8Array([PAUSE]);
+        position = new Float64Array([this._audio._progress]);
+        let message = concatenateArrayBuffers(type, position);
+        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
+    }
+
+    stop(ignorePublish) {
+        this._audio.stop();
+        if(ignorePublish) return;
+        let message = new Uint8Array([STOP]);
+        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
     }
 
     _addPartySubscriptions() {
@@ -246,22 +265,29 @@ export default class AudioAsset extends AssetEntity {
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(PartyHandler.isHost());
         });
-        let playTopic = PLAY_TOPIC_PREFIX + this._id;
-        PartyMessageHelper.registerBlockableHandler(playTopic, (p, m) => {
-            this.play(m.position, true);
+        PartyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
+            let type = new Uint8Array(m, 0, 1);
+            if(type[0] == PLAY) {
+                let message = new Float64Array(m, 1, 1);
+                this.play(message[0], true);
+            } else if(type[0] == PAUSE) {
+                let message = new Float64Array(m, 1, 1);
+                this.pause(message[0], true);
+            } else if(type[0] == STOP) {
+                this.stop(true);
+            }
         });
     }
 
-    _onPeerReady() {
+    _onPeerReady(peer) {
         if(!PartyHandler.isHost()) return;
         if(!this._audio.isPlaying) return;
         this._audio.pause();//pause() update audio._progress
         this._audio.play();
-        let message = {
-            topic: PLAY_TOPIC_PREFIX + this._id,
-            position: this._audio._progress,
-        };
-        PartyMessageHelper.queuePublish(JSON.stringify(message));
+        let type = new Uint8Array([PLAY]);
+        let position = new Float64Array([this._audio._progress]);
+        let message = concatenateArrayBuffers(type, position);
+        PartyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
     }
 
     _onPartyStarted(isHost) {

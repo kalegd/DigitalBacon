@@ -109,8 +109,19 @@ export default class System extends Asset {
     _onUserReady() {}
     _onPeerReady() {}
     _onPeerDisconnected() {}
+    _onPeerMessage(p, m) {}
+    _onPeerBufferMessage(p, m) {}
     _onPartyStarted() {}
     _onPartyEnded() {}
+
+    _publishPeerMessage(message, skipQueue) {
+        PartyHandler.publishInternalMessage(this._id, message, skipQueue);
+    }
+
+    _publishPeerBufferMessage(message, skipQueue) {
+        PartyHandler.publishInternalBufferMessage(this._idBytes, message,
+            skipQueue);
+    }
 
     getDescription() {
         console.error("System.getDescription() should be overridden");
@@ -123,6 +134,10 @@ export default class System extends Asset {
 
     addToScene() {
         this._addSystemSubscriptions();
+        PartyHandler.addInternalMessageHandler(this._id,
+            (p, m) => this._onPeerMessage(p, m));
+        PartyHandler.addInternalBufferMessageHandler(this._id,
+            (p, m) => this._onPeerBufferMessage(p, m));
     }
 
     removeFromScene() {

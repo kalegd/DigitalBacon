@@ -171,6 +171,7 @@ export default class EditorHelper {
                 this.addComponent(componentId, ignorePublish, true);
             });
         }
+        return component;
     }
 
     removeComponent(componentId, ignorePublish, ignoreUndoRedo) {
@@ -191,6 +192,7 @@ export default class EditorHelper {
                 this.removeComponent(componentId, ignorePublish, true);
             });
         }
+        return component;
     }
 
     _publishComponentAttachment(topicPrefix, component) {
@@ -198,8 +200,6 @@ export default class EditorHelper {
         let topic = topicPrefix + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,
-            assetId: this._asset.getAssetId(),
-            assetType: this._asset.constructor.assetType,
             componentId: component.getId(),
             componentAssetId: componentAssetId,
         });
