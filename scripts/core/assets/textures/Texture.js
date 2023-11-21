@@ -6,6 +6,8 @@
 
 import Asset from '/scripts/core/assets/Asset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
 import { stringOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -36,6 +38,8 @@ export default class Texture extends Asset {
         setTimeout(() => {
             oldTexture.dispose();
         }, 20);
+        console.log('Publishing to ' + PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
+        PubSub.publish(this._id, PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
     }
 
     dispose() {

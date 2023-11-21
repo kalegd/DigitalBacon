@@ -100,13 +100,15 @@ export default class BasicTexture extends Texture {
     setWrapS(wrapS) {
         if(this._wrapS == wrapS) return;
         this._wrapS = wrapS;
-        this._updateTexture();
+        this._texture.wrapS = wrapS;
+        this._texture.needsUpdate = true;
     }
 
     setWrapT(wrapT) {
         if(this._wrapT == wrapT) return;
         this._wrapT = wrapT;
-        this._updateTexture();
+        this._texture.wrapT = wrapT;
+        this._texture.needsUpdate = true;
     }
 
     static assetId = '95f63d4b-06d1-4211-912b-556b6ce7bf5f';

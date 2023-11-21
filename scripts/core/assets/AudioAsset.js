@@ -268,10 +268,10 @@ export default class AudioAsset extends AssetEntity {
         PartyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
             let type = new Uint8Array(m, 0, 1);
             if(type[0] == PLAY) {
-                let message = new Float64Array(m, 1, 1);
+                let message = new Float64Array(m.slice(1));
                 this.play(message[0], true);
             } else if(type[0] == PAUSE) {
-                let message = new Float64Array(m, 1, 1);
+                let message = new Float64Array(m.slice(1));
                 this.pause(message[0], true);
             } else if(type[0] == STOP) {
                 this.stop(true);

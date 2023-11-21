@@ -129,7 +129,9 @@ export default class AssetEntity extends Asset {
     }
 
     getRotation() {
-        return this._object.rotation.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        return rotation;
     }
 
     getScale() {
@@ -200,7 +202,7 @@ export default class AssetEntity extends Asset {
     }
 
     publishRotation() {
-        this._rotationBytes.set(this._object.rotation.toArray());
+        this._rotationBytes.set(this.getRotation());
         let message =concatenateArrayBuffers(this._idBytes,this._rotationBytes);
         PartyHandler.publishInternalBufferMessage(
             InternalMessageIds.ENTITY_ROTATION, message);
@@ -215,7 +217,7 @@ export default class AssetEntity extends Asset {
 
     publishTransformation() {
         this._transformationBytes.set(this._object.position.toArray());
-        this._transformationBytes.set(this._object.rotation.toArray(), 3);
+        this._transformationBytes.set(this.getRotation(), 3);
         this._transformationBytes.set(this._object.scale.toArray(), 6);
         let message = concatenateArrayBuffers(this._idBytes,
             this._transformationBytes);

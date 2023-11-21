@@ -211,8 +211,8 @@ class PartyMessageHelper {
         message = {
             parentId: uuidFromBytes(messageBytes.subarray(0, 16)),
             childId: uuidFromBytes(messageBytes.subarray(16, 32)),
-            position: typedArrayToArray(new Float64Array(message, 32, 3)),
-            rotation: typedArrayToArray(new Float64Array(message, 224, 3)),
+            position: Array.from(new Float64Array(message, 32, 3)),
+            rotation: Array.from(new Float64Array(message, 56, 3)),
         };
         let parentAsset = ProjectHandler.getSessionAsset(message.parentId);
         let childAsset = ProjectHandler.getSessionAsset(message.childId);
@@ -236,8 +236,8 @@ class PartyMessageHelper {
         message = {
             parentId: uuidFromBytes(messageBytes.subarray(0, 16)),
             childId: uuidFromBytes(messageBytes.subarray(16, 32)),
-            position: typedArrayToArray(new Float64Array(message, 32, 3)),
-            rotation: typedArrayToArray(new Float64Array(message, 224, 3)),
+            position: Array.from(new Float64Array(message, 32, 3)),
+            rotation: Array.from(new Float64Array(message, 56, 3)),
         };
         let parentAsset = ProjectHandler.getSessionAsset(message.parentId);
         let childAsset = ProjectHandler.getSessionAsset(message.childId);
@@ -488,8 +488,8 @@ class PartyMessageHelper {
         let peerMessage = concatenateArrayBuffers(
             uuidToBytes(message.parentId),
             uuidToBytes(message.childId),
-            new Float64Array(childAsset.getObject().position.toArray()),
-            new Float64Array(childAsset.getObject().rotation.toArray()),
+            new Float64Array(childAsset.getPosition()),
+            new Float64Array(childAsset.getRotation()),
         );
         this._partyHandler.publishInternalBufferMessage(
             InternalMessageIds.ENTITY_ADDED, peerMessage);
@@ -500,8 +500,8 @@ class PartyMessageHelper {
         let peerMessage = concatenateArrayBuffers(
             uuidToBytes(message.parentId),
             uuidToBytes(message.childId),
-            new Float64Array(childAsset.getObject().position.toArray()),
-            new Float64Array(childAsset.getObject().rotation.toArray()),
+            new Float64Array(childAsset.getPosition()),
+            new Float64Array(childAsset.getRotation()),
         );
         this._partyHandler.publishInternalBufferMessage(
             InternalMessageIds.ENTITY_ATTACHED, peerMessage);

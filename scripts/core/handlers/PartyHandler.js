@@ -11,7 +11,7 @@ import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
-import { concatenateArrayBuffers, concatenateArrayBuffersFromList, uuidv4, Queue } from '/scripts/core/helpers/utils.module.js';
+import { concatenateArrayBuffers, concatenateArrayBuffersFromList, uuidv4, uuidFromBytes, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
 const TWO_BYTE_MOD = 2 ** 16;
