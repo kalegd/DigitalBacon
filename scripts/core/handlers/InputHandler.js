@@ -334,9 +334,7 @@ class InputHandler {
     }
 
     update(frame) {
-        if(frame == null) {
-            return;
-        }
+        if(frame == null) return;
         //Assumes device type is XR
         let referenceSpace = this._renderer.xr.getReferenceSpace();
         for(let type in this._xrInputDevices) {

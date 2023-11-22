@@ -14,7 +14,8 @@ import { Vector3 } from 'three';
 
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
 const XR_OPTIONS = {
-    optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking','layers']
+    optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking',
+                       'layers', 'anchors']
 };
 
 class SessionHandler {
@@ -248,6 +249,31 @@ class SessionHandler {
 
     getCameraDistance() {
         if(this._controls) return this._controls.getDistance();
+    }
+
+    update() {
+        if(!global.frame || !global.frame.createAnchor) return;
+        let pose = new XRRigidTransform({ x: 0, y: 0, z: 0 },
+            { x: 0, y: 0, z: 0, w: 1 });
+        let referenceSpace = global.renderer.xr.getReferenceSpace();
+        global.frame.createAnchor(pose, referenceSpace).then(
+            (anchor) => this._anchor = anchor );
+        referenceSpace.onreset = (event) => {
+            if(global.xrSessionType != 'AR') return;
+            global.dynamicAssets.add(this);
+        };
+        global.dynamicAssets.delete(this);
+        this.update = this._updateReferenceSpace;
+    }
+
+    _updateReferenceSpace() {
+        if(!this._anchor) return;//Sucks to suck :(
+        let space = global.renderer.xr.getReferenceSpace();
+        let pose = global.frame.getPose(this._anchor.anchorSpace, space);
+        if(!pose) return;//Still sucks to suck :(
+        let newSpace = space.getOffsetReferenceSpace(pose.transform);
+        global.renderer.xr.setReferenceSpace(newSpace);
+        global.dynamicAssets.delete(this);
     }
 }
 
