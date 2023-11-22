@@ -24,6 +24,7 @@ export default class BasicMovement {
         this._verticalVelocity = 0;
         this._worldVelocity = new THREE.Vector3();
         this._snapRotationTriggered = false;
+        this._disabled = false;
     }
 
     _setupMobileFlyingButtons() {
@@ -83,6 +84,14 @@ export default class BasicMovement {
             { asset: global.userController, fields: ['rotation'] });
     }
 
+    disable() {
+        this._disabled = true;
+    }
+
+    enable() {
+        this._enabled = true;
+    }
+
     getWorldVelocity() {
         return this._worldVelocity;
     }
@@ -107,7 +116,7 @@ export default class BasicMovement {
 
     _updatePosition(timeDelta) {
         this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
+        if(this._disabled || timeDelta > 1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
         // Decrease the velocity.
@@ -166,7 +175,7 @@ export default class BasicMovement {
 
     _updatePositionMobile(timeDelta) {
         this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
+        if(this._disabled || timeDelta > 1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
         this._velocity.x = 0;
@@ -212,7 +221,7 @@ export default class BasicMovement {
 
     _updatePositionVR(timeDelta) {
         this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
+        if(this._disabled || global.xrSessionType=='AR' || timeDelta >1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
         let movementGamepad;

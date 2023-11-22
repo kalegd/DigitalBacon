@@ -142,6 +142,14 @@ class UserController extends InternalAssetEntity {
         this._xrDevices.add(xrDevice);
     }
 
+    disableBasicMovement() {
+        this._basicMovement.disable();
+    }
+
+    enableBasicMovement() {
+        this._basicMovement.enable();
+    }
+
     getDistanceBetweenHands() {
         if(global.deviceType != 'XR') return;
         let leftController = this._xrControllers[Handedness.LEFT];
