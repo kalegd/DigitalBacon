@@ -234,8 +234,7 @@ export default class AssetEntityHelper extends EditorHelper {
         };
     }
 
-    setObjectTransformation(oldValues, newValues, ignoreUndoRedo,
-                            ignorePublish) {
+    setObjectTransformation(oldValues, newValues, ignorePublish,ignoreUndoRedo){
         let updated = [];
         for(let param of OBJECT_TRANSFORM_PARAMS) {
             let oldValue = (oldValues)
@@ -252,11 +251,9 @@ export default class AssetEntityHelper extends EditorHelper {
             this._publish(updated);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this.setObjectTransformation(null, oldValues, true,
-                    ignorePublish);
+                this.setObjectTransformation(null,oldValues,ignorePublish,true);
             }, () => {
-                this.setObjectTransformation(null, newValues, true,
-                    ignorePublish);
+                this.setObjectTransformation(null,newValues,ignorePublish,true);
             });
         }
     }

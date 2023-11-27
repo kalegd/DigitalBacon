@@ -16,9 +16,9 @@ class AudioHandler extends AssetsHandler {
             AssetTypes.AUDIO);
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let asset = new AudioAsset(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
 

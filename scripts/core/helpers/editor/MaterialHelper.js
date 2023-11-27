@@ -28,7 +28,7 @@ export default class MaterialHelper extends EditorHelper {
             for(let map of maps) {
                 let capitalizedMap = capitalizeFirstLetter(map);
                 if(this._asset['get' + capitalizedMap]() == e.asset.getId()) {
-                    this._updateParameter(map, null, true);
+                    this._updateParameter(map, null, false, true);
                     this.updateMenuField(map);
                     updatedMaps.push(map);
                 }
@@ -38,7 +38,7 @@ export default class MaterialHelper extends EditorHelper {
                 e.undoRedoAction.undo = () => {
                     undo();
                     for(let map of updatedMaps) {
-                        this._updateParameter(map, e.asset.getId(), true);
+                        this._updateParameter(map, e.asset.getId(), false,true);
                         this.updateMenuField(map);
                     }
                 }

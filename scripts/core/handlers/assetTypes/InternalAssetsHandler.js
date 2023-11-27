@@ -17,7 +17,7 @@ class InternalAssetsHandler extends AssetsHandler {
             PubSubTopics.INTERNAL_DELETED, AssetTypes.INTERNAL);
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(this._assets[asset.getId()]) return;
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
@@ -27,7 +27,7 @@ class InternalAssetsHandler extends AssetsHandler {
         PubSub.publish(this._id, topic, asset, true);
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(!(asset.getId() in this._assets)) return;
         delete this._assets[asset.getId()];
         ProjectHandler.deleteAssetFromHandler(asset);

@@ -58,7 +58,7 @@ export default class EditorHelper {
         PubSub.publish(this._id, this._updatedTopic, message);
     }
 
-    _updateCubeImage(param, side, newValue, ignoreUndoRedo, ignorePublish,
+    _updateCubeImage(param, side, newValue, ignorePublish, ignoreUndoRedo,
                      oldValue) {
         let capitalizedParam = capitalizeFirstLetter(param);
         let currentValue = this._asset['get' + capitalizedParam]()[side];
@@ -70,28 +70,26 @@ export default class EditorHelper {
         if(!oldValue) oldValue = currentValue;
         if(!ignoreUndoRedo && oldValue != newValue) {
             UndoRedoHandler.addAction(() => {
-                this._updateCubeImage(param, side, oldValue, true,
-                                      ignorePublish);
+                this._updateCubeImage(param, side, oldValue,ignorePublish,true);
                 this.updateMenuField(param);
             }, () => {
-                this._updateCubeImage(param, side, newValue, true,
-                                      ignorePublish);
+                this._updateCubeImage(param, side, newValue,ignorePublish,true);
                 this.updateMenuField(param);
             });
         }
     }
 
-    _updateEuler(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
-        this._updateVector3(param, newValue, ignoreUndoRedo, ignorePublish,
+    _updateEuler(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
+        this._updateVector3(param, newValue, ignorePublish, ignoreUndoRedo,
             oldValue);
     }
 
-    _updateVector2(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
-        this._updateVector3(param, newValue, ignoreUndoRedo, ignorePublish,
+    _updateVector2(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
+        this._updateVector3(param, newValue, ignorePublish, ignoreUndoRedo,
             oldValue);
     }
 
-    _updateVector3(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+    _updateVector3(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
         let capitalizedParam = capitalizeFirstLetter(param);
         let currentValue = this._asset['get' + capitalizedParam]();
         if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
@@ -104,16 +102,16 @@ export default class EditorHelper {
                 .reduce((a,v,i) => a && newValue[i] == v,true))
         {
             UndoRedoHandler.addAction(() => {
-                this._updateVector3(param, oldValue, true, ignorePublish);
+                this._updateVector3(param, oldValue, ignorePublish, true);
                 this.updateMenuField(param);
             }, () => {
-                this._updateVector3(param, newValue, true, ignorePublish);
+                this._updateVector3(param, newValue, ignorePublish, true);
                 this.updateMenuField(param);
             });
         }
     }
 
-    _updateParameter(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+    _updateParameter(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
         let capitalizedParam = capitalizeFirstLetter(param);
         let currentValue = this._asset['get' + capitalizedParam]();
         if(currentValue != newValue) {
@@ -124,10 +122,10 @@ export default class EditorHelper {
         if(oldValue == null) oldValue = currentValue;
         if(!ignoreUndoRedo && oldValue != newValue) {
             UndoRedoHandler.addAction(() => {
-                this._updateParameter(param, oldValue, true, ignorePublish);
+                this._updateParameter(param, oldValue, ignorePublish, true);
                 this.updateMenuField(param);
             }, () => {
-                this._updateParameter(param, newValue, true, ignorePublish);
+                this._updateParameter(param, newValue, ignorePublish, true);
                 this.updateMenuField(param);
             });
         }
@@ -310,7 +308,7 @@ export default class EditorHelper {
                                       oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateParameter(field.parameter, newValue, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
@@ -355,7 +353,7 @@ export default class EditorHelper {
                                   oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateEuler(field.parameter, newValue, true);
+                this._updateEuler(field.parameter, newValue, false, true);
             },
         });
     }
@@ -397,7 +395,7 @@ export default class EditorHelper {
                                       oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateParameter(field.parameter, newValue, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
@@ -413,7 +411,7 @@ export default class EditorHelper {
                                       oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateParameter(field.parameter, newValue, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
@@ -442,7 +440,7 @@ export default class EditorHelper {
                                   oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateVector2(field.parameter, newValue, true);
+                this._updateVector2(field.parameter, newValue, false, true);
             },
         });
     }
@@ -458,7 +456,7 @@ export default class EditorHelper {
                                   oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateVector3(field.parameter, newValue, true);
+                this._updateVector3(field.parameter, newValue, false, true);
             },
         });
     }

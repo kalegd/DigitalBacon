@@ -321,10 +321,10 @@ class UserController extends InternalAssetEntity {
                     object: InputHandler.getXRController(type, handedness,
                         'grip'),
                 });
-                ProjectHandler.addAsset(controller, true);
+                ProjectHandler.addAsset(controller, false, true);
                 controller.attachTo(this);
             } else {
-                ProjectHandler.addAsset(controller, true);
+                ProjectHandler.addAsset(controller, false, true);
             }
         }
     }

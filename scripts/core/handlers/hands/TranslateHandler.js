@@ -117,7 +117,7 @@ class TranslateHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = position;
-            assetHelper._updateVector3('position', postState, false, true,
+            assetHelper._updateVector3('position', postState, true, false,
                 preState);
             assetHelper._publish(['position']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {

@@ -14,8 +14,8 @@ class TexturesHandler extends AssetsHandler {
             AssetTypes.TEXTURE);
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
+        super.deleteAsset(asset, ignorePublish, ignoreUndoRedo);
         asset.dispose();
     }
 

@@ -130,7 +130,7 @@ class RotateHandler {
             this._euler2.setFromQuaternion(this._quaternion);
             let preState = this._euler1.toArray();
             let postState = this._euler2.toArray();
-            assetHelper._updateEuler('rotation', postState, false, true,
+            assetHelper._updateEuler('rotation', postState, true, false,
                 preState);
             assetHelper._publish(['rotation']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {

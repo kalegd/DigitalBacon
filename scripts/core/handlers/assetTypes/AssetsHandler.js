@@ -23,13 +23,13 @@ export default class AssetsHandler {
         ProjectHandler.registerAssetHandler(this, detailsName);
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let asset = new this._assetClassMap[assetId](params);
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(this._assets[asset.getId()]) return;
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
@@ -38,9 +38,9 @@ export default class AssetsHandler {
         ProjectHandler.addAssetFromHandler(asset);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
-                this.deleteAsset(asset, true, ignorePublish);
+                this.deleteAsset(asset, ignorePublish, true);
             }, () => {
-                this.addAsset(asset, true, ignorePublish);
+                this.addAsset(asset, ignorePublish, true);
             });
         }
         if(ignorePublish) return;
@@ -48,14 +48,14 @@ export default class AssetsHandler {
         PubSub.publish(this._id, topic, asset, true);
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(!(asset.getId() in this._assets)) return;
         let undoRedoAction;
         if(!ignoreUndoRedo) {
             undoRedoAction = UndoRedoHandler.addAction(() => {
-                this.addAsset(asset, true, ignorePublish);
+                this.addAsset(asset, ignorePublish, true);
             }, () => {
-                this.deleteAsset(asset, true, ignorePublish);
+                this.deleteAsset(asset, ignorePublish, true);
             });
         }
         delete this._assets[asset.getId()];

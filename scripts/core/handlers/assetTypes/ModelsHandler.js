@@ -16,9 +16,9 @@ class ModelsHandler extends AssetsHandler {
             AssetTypes.MODEL);
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let asset = new GLTFAsset(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
 

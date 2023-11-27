@@ -273,10 +273,10 @@ class ProjectHandler {
         return this._sessionAssets[id];
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
         let assetType = LibraryHandler.getType(asset.getAssetId());
         let handler = this._assetHandlers[assetType];
-        handler.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+        handler.deleteAsset(asset, ignorePublish, ignoreUndoRedo);
     }
 
     deleteAssetFromHandler(asset) {
@@ -305,17 +305,17 @@ class ProjectHandler {
         }
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let assetType = LibraryHandler.getType(assetId);
         let handler = this._assetHandlers[assetType];
-        return handler.addNewAsset(assetId, params, ignoreUndoRedo,
-            ignorePublish);
+        return handler.addNewAsset(assetId, params, ignorePublish,
+            ignoreUndoRedo);
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
         let assetType = LibraryHandler.getType(asset.getAssetId());
         let handler = this._assetHandlers[assetType];
-        handler.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        handler.addAsset(asset, ignorePublish, ignoreUndoRedo);
     }
 
     addAssetFromHandler(asset) {

@@ -116,7 +116,7 @@ class ScaleHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = scale;
-            assetHelper._updateVector3('scale', postState, false, true,
+            assetHelper._updateVector3('scale', postState, true, false,
                 preState);
             assetHelper._publish(['scale']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {

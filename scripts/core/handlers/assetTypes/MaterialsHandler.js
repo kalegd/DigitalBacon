@@ -14,13 +14,13 @@ class MaterialsHandler extends AssetsHandler {
             AssetTypes.MATERIAL);
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
+        super.addAsset(asset, ignorePublish, ignoreUndoRedo);
         if(asset.editorHelper) asset.editorHelper.undoDispose();
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
+        super.deleteAsset(asset, ignorePublish, ignoreUndoRedo);
         asset.dispose();
         if(asset.editorHelper) asset.editorHelper.dispose();
     }
