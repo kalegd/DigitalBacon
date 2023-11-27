@@ -29,6 +29,7 @@ export default class XRHand extends XRDevice {
             this._modelUrl = DEFAULT_HAND_PROFILE_PATH
                 + this._handedness.toLowerCase() + '.glb';
             this._isUsers = true;
+            this._enableARMask();
         }
         this._palmDirection = new Vector3();
         this._raycasterOrigin = new Vector3();

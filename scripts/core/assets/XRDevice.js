@@ -4,11 +4,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { Euler, Quaternion, Vector3 } from 'three';
+import PubSub from '/scripts/core/handlers/PubSub.js';
+import { Euler, Mesh, Quaternion, Vector3 } from 'three';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 
 const TTL = 5;
@@ -42,6 +45,57 @@ export default class XRDevice extends InternalAssetEntity {
         if(owner) {
             owner.registerXRDevice(this);
         }
+    }
+
+    _enableARMask() {
+        this._isAR = global.xrSessionType == 'AR';
+        if(this._isAR) this._setARMask();
+        PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            let isAR = global.xrSessionType == 'AR';
+            if(this._isAR == isAR) return;
+            this._isAR = isAR;
+            if(isAR) {
+                this._setARMask();
+            } else {
+                this._removeARMask();
+            }
+        });
+    }
+
+    _setARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = -Infinity;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = false;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = false;
+                    }
+                }
+            }
+        });
+    }
+
+    _removeARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = 0;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = true;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = true;
+                    }
+                }
+            }
+        });
     }
 
     exportParams() {

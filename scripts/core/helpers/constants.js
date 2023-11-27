@@ -152,6 +152,7 @@ export const vector3s = [v1, v2, v3];
 export const vector2 = new THREE.Vector2();
 export const euler = new THREE.Euler();
 export const quaternion = new THREE.Quaternion();
+export const matrix4 = new THREE.Matrix4();
 
 // For Bounding Box
 let indices = new Uint16Array( [ 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7 ] );

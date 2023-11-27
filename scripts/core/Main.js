@@ -194,7 +194,6 @@ export default class Main {
                 if(this._callback) this._callback(this);
                 return;
             } else if(global.deviceType == "XR") {
-                global.dynamicAssets.add(SessionHandler);
                 this._renderer.setAnimationLoop((time, frame) => {
                     global.frame = frame;
                     InputHandler.update(frame);

@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import XRPlanes from '/scripts/core/assets/XRPlanes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
@@ -13,9 +14,16 @@ import { OrbitControls } from '/scripts/three/examples/jsm/controls/OrbitControl
 import { Vector3 } from 'three';
 
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
-const XR_OPTIONS = {
+const AR_OPTIONS = {
     optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking',
-                       'layers', 'anchors']
+                       'layers', 'anchors', 'plane-detection']
+};
+const VR_OPTIONS = {
+    optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking','layers']
+};
+const XR_OPTIONS = {
+    AR: AR_OPTIONS,
+    VR: VR_OPTIONS,
 };
 
 class SessionHandler {
@@ -50,10 +58,14 @@ class SessionHandler {
         if(global.vrSessionSupported) this._createXRButton('VR');
         if(global.arSessionSupported) this._createXRButton('AR');
         this._div.appendChild(this._createMobileOverrideLink());
+        global.renderer.xr.addEventListener('planesdetected', (event) => {
+            XRPlanes.updatePlanes(event);
+        });
         global.renderer.xr.addEventListener("sessionstart", () => {
             global.sessionActive = true;
             AudioHandler.resume();
             global.renderer.xr.setFoveation(0);
+            if(global.xrSessionType == 'AR') XRPlanes.addToScene(global.scene);
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
@@ -61,6 +73,8 @@ class SessionHandler {
             }
         });
         global.renderer.xr.addEventListener("sessionend", () => {
+            XRPlanes.removeFromScene();
+            PubSub.publish(null, PubSubTopics.SESSION_ENDED);
             global.sessionActive = false;
             AudioHandler.suspend();
         });
@@ -90,7 +104,11 @@ class SessionHandler {
             } else {
                 global.xrSessionType = xrSessionType;
                 let mode = isVR ? 'immersive-vr' : 'immersive-ar';
-                navigator.xr.requestSession(mode, XR_OPTIONS)
+                if(!isVR) {
+                    this._update = this._createAnchor;
+                    global.dynamicAssets.add(this);
+                }
+                navigator.xr.requestSession(mode, XR_OPTIONS[xrSessionType])
                     .then(onSessionStarted);
             }
         });
@@ -203,7 +221,7 @@ class SessionHandler {
         a.style.display = 'block';
         a.style.paddingTop = '12px';
         a.style.color = 'rgb(255, 199, 229)';
-        a.addEventListener('click', () => {
+        a.addEventListener('click', (event) => {
             event.preventDefault();
             localStorage.setItem(MOBILE_OVERRIDE, true);
             window.location.reload();
@@ -218,7 +236,7 @@ class SessionHandler {
         a.style.display = 'block';
         a.style.paddingTop = '12px';
         a.style.color = 'rgb(255, 199, 229)';
-        a.addEventListener('click', () => {
+        a.addEventListener('click', (event) => {
             event.preventDefault();
             localStorage.removeItem(MOBILE_OVERRIDE);
             window.location.reload();
@@ -252,7 +270,12 @@ class SessionHandler {
     }
 
     update() {
+        this._update();
+    }
+
+    _createAnchor() {
         if(!global.frame || !global.frame.createAnchor) return;
+        console.log("Setting up anchor");
         let pose = new XRRigidTransform({ x: 0, y: 0, z: 0 },
             { x: 0, y: 0, z: 0, w: 1 });
         let referenceSpace = global.renderer.xr.getReferenceSpace();
@@ -263,11 +286,11 @@ class SessionHandler {
             global.dynamicAssets.add(this);
         };
         global.dynamicAssets.delete(this);
-        this.update = this._updateReferenceSpace;
+        this._update = this._updateReferenceSpace;
     }
 
     _updateReferenceSpace() {
-        if(!this._anchor) return;//Sucks to suck :(
+        if(!this._anchor || !global.frame) return;//Sucks to suck :(
         let space = global.renderer.xr.getReferenceSpace();
         let pose = global.frame.getPose(this._anchor.anchorSpace, space);
         if(!pose) return;//Still sucks to suck :(

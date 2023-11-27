@@ -310,6 +310,7 @@ class UserController extends InternalAssetEntity {
             }
         } else if(source && this._getControllerModelUrl(controllerModel)) {
             if(!controller) {
+                if(controllerModel.children.length == 0) return;
                 let assetClass = (type == XRInputDeviceTypes.HAND)
                     ? XRHand
                     : XRController;

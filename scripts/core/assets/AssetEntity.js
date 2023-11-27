@@ -116,6 +116,10 @@ export default class AssetEntity extends Asset {
         this._deleteCallbacks[id] = handler;
     }
 
+    removeDeleteCallback(id) {
+        delete this._deleteCallbacks[id];
+    }
+
     getObject() {
         return this._object;
     }

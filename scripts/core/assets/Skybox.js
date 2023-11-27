@@ -30,7 +30,11 @@ class Skybox {
         this._isAR = false;
         PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
             this._isAR = global.xrSessionType == 'AR';
-            this._scene.background = (this._isAR) ? null : this._background;
+            if(this._isAR) this._scene.background = null;
+        });
+        PubSub.subscribe(this._id, PubSubTopics.SESSION_ENDED, () => {
+            this._isAR = false;
+            this._scene.background = this._background;
         });
     }
     init(scene) {
