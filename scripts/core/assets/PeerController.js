@@ -49,11 +49,11 @@ export default class PeerController extends InternalAssetEntity {
         let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
         let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
         usernameFront.rotateY(Math.PI);
-        this._usernameBlock.position.setY(1.85);
+        this._usernameBlock.position.setY(0.15);
         this._usernameBlock.add(usernameFront);
         this._usernameBlock.add(usernameBack);
-        if(this._displayingUsername) {
-            this._object.add(this._usernameBlock);
+        if(this._displayingUsername && this._avatar) {
+            this._avatar.getObject().add(this._usernameBlock);
         }
     }
 
@@ -141,6 +141,9 @@ export default class PeerController extends InternalAssetEntity {
 
     registerAvatar(avatar) {
         this._avatar = avatar;
+        if(this._displayingUsername && this._avatar) {
+            this._avatar.getObject().add(this._usernameBlock);
+        }
     }
 
     registerXRController(hand, xrController) {
@@ -160,10 +163,11 @@ export default class PeerController extends InternalAssetEntity {
     setDisplayingUsername(displayingUsername) {
         if(this._displayingUsername == displayingUsername) return;
         this._displayingUsername = displayingUsername;
+        if(!this._avatar) return;
         if(this._displayingUsername) {
-            this._object.add(this._usernameBlock);
+            this._avatar.getObject().add(this._usernameBlock);
         } else {
-            this._object.remove(this._usernameBlock);
+            this._avatar.getObject().remove(this._usernameBlock);
         }
     }
 

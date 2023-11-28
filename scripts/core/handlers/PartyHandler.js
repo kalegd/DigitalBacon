@@ -310,12 +310,6 @@ class PartyHandler {
             : (p, m) => this._handleBlockable(handler,p,m);
     }
 
-    addMessageHandlers(messageHandlers) {
-        for(let key in messageHandlers) {
-            this._messageHandlers[key] = messageHandlers[key];
-        }
-    }
-
     addBufferMessageHandler(id, handler, skipQueue) {
         this._bufferMessageHandlers['U' + id] = (skipQueue)
             ? handler
