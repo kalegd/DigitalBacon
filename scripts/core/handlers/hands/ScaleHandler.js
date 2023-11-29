@@ -77,7 +77,7 @@ class ScaleHandler {
     }
 
     attach(owner, asset, scaleIdentity) {
-        let otherOwner = this._otherOwner(owner);
+        let otherOwner = this._otherOwner(owner, asset);
         if(otherOwner) {
             this._swapToOwner(owner, otherOwner, scaleIdentity);
         } else {
@@ -91,7 +91,7 @@ class ScaleHandler {
                 let distance = ProjectHandler.getAsset(owner).getWorldPosition()
                     .distanceTo(asset.getWorldPosition());
                 let scale = asset.getWorldScale();
-                heldAsset.preTransformState = scale.toArray();
+                heldAsset.preTransformState = asset.getScale();
                 heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
             }
             this._heldAssets[owner] = heldAsset;
@@ -116,9 +116,8 @@ class ScaleHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = scale;
-            assetHelper._updateVector3('scale', postState, true, false,
+            assetHelper._updateVector3('scale', postState, false, false,
                 preState);
-            assetHelper._publish(['scale']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
                 option: owner,
@@ -149,6 +148,11 @@ class ScaleHandler {
             heldAsset.scaleIdentity[2] * distance
         ];
         heldAsset.asset.setScale(newScale);
+        if(heldAsset.asset.parent) {
+            let parentScale = heldAsset.asset.parent.getWorldScale();
+            heldAsset.asset.getObject().scale.divide(parentScale);
+            newScale = heldAsset.asset.getScale();
+        }
         return newScale;
     }
 

@@ -192,8 +192,7 @@ export default class AssetEntityHelper extends EditorHelper {
                             newMaterial.userData['oldMaterial'] = mtrl;
                             node.material[i] = newMaterial;
                         }
-                    }
-                    else {
+                    } else {
                         let newMaterial = node.material.clone();
                         makeMaterialTranslucent(newMaterial);
                         newMaterial.userData['oldMaterial'] = node.material;
@@ -211,15 +210,19 @@ export default class AssetEntityHelper extends EditorHelper {
                     if (Array.isArray(node.material)) {
                         for(let i = 0; i < node.material.length; i++) {
                             let mtrl = node.material[i];
-                            node.material[i] =
-                                mtrl.userData['oldMaterial'];
-                            disposeMaterial(mtrl);
+                            if(mtrl.userData['oldMaterial']) {
+                                node.material[i] =
+                                    mtrl.userData['oldMaterial'];
+                                disposeMaterial(mtrl);
+                            }
                         }
-                    }
-                    else {
+                    } else {
                         let oldMaterial = node.material;
-                        node.material = node.material.userData['oldMaterial'];
-                        disposeMaterial(oldMaterial);
+                        let userData = node.material.userData;
+                        if(userData['oldMaterial']) {
+                            node.material = userData['oldMaterial'];
+                            disposeMaterial(oldMaterial);
+                        }
                     }
                 }
             }

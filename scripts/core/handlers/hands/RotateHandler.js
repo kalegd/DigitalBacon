@@ -87,7 +87,7 @@ class RotateHandler {
     }
 
     attach(owner, asset, rotationDifference) {
-        let otherOwner = this._otherOwner(owner);
+        let otherOwner = this._otherOwner(owner, asset);
         if(otherOwner) {
             this._swapToOwner(owner, otherOwner, rotationDifference);
         } else {
@@ -99,7 +99,8 @@ class RotateHandler {
                 heldAsset.rotationDifference = rotationDifference;
             } else {
                 let rotation = asset.getWorldQuaternion();
-                heldAsset.preTransformState = rotation.toArray();
+                heldAsset.preTransformState = asset.getObject().quaternion
+                    .toArray();
                 heldAsset.rotationDifference = ProjectHandler.getAsset(owner)
                     .getWorldQuaternion().conjugate().multiply(rotation)
                     .toArray();
@@ -130,9 +131,8 @@ class RotateHandler {
             this._euler2.setFromQuaternion(this._quaternion);
             let preState = this._euler1.toArray();
             let postState = this._euler2.toArray();
-            assetHelper._updateEuler('rotation', postState, true, false,
+            assetHelper._updateEuler('rotation', postState, false, false,
                 preState);
-            assetHelper._publish(['rotation']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
                 option: owner,
@@ -158,12 +158,20 @@ class RotateHandler {
         let handRotation = ProjectHandler.getAsset(heldAsset.ownerId)
             .getWorldQuaternion();
         this._quaternion.fromArray(heldAsset.rotationDifference);
-        let newRotation = handRotation.multiply(this._quaternion).toArray();
-        heldAsset.asset.setRotationFromQuaternion(newRotation);
-        return newRotation;
+        let newRotation = handRotation.multiply(this._quaternion);
+        if(heldAsset.asset.parent) {
+            let parentObject = heldAsset.asset.parent.getObject();
+            this._quaternion.copy(parentObject.quaternion).conjugate();
+            //newRotation.multiply(this._quaternion);
+            this._quaternion.multiply(newRotation);
+        }
+        heldAsset.asset.setRotationFromQuaternion(this._quaternion.toArray());
+        return this._quaternion.toArray();
+        //heldAsset.asset.setRotationFromQuaternion(newRotation.toArray());
+        //return newRotation.toArray();
     }
 
-    _swapToOwner(newOwner, newHand, rotationDifference) {
+    _swapToOwner(newOwner, oldOwner, rotationDifference) {
         let heldAsset = this._heldAssets[oldOwner];
         heldAsset.ownerId = newOwner;
         this._heldAssets[newOwner] = heldAsset;

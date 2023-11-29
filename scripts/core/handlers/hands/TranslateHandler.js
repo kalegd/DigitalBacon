@@ -79,7 +79,7 @@ class TranslateHandler {
     }
 
     attach(owner, asset, positionDifference) {
-        let otherOwner = this._otherOwner(owner);
+        let otherOwner = this._otherOwner(owner, asset);
         if(otherOwner) {
             this._swapToOwner(owner, otherOwner, positionDifference);
         } else {
@@ -91,7 +91,7 @@ class TranslateHandler {
                 heldAsset.positionDifference = positionDifference;
             } else {
                 let position = asset.getWorldPosition();
-                heldAsset.preTransformState = position.toArray();
+                heldAsset.preTransformState = asset.getPosition();
                 heldAsset.positionDifference = position.sub(ProjectHandler
                     .getAsset(owner).getWorldPosition()).toArray();
             }
@@ -117,9 +117,8 @@ class TranslateHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = position;
-            assetHelper._updateVector3('position', postState, true, false,
+            assetHelper._updateVector3('position', postState, false, false,
                 preState);
-            assetHelper._publish(['position']);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
                 option: owner,
@@ -150,6 +149,11 @@ class TranslateHandler {
             heldAsset.positionDifference[2] + handPosition.z
         ];
         heldAsset.asset.setPosition(newPosition);
+        if(heldAsset.asset.parent) {
+            let parentObject = heldAsset.asset.parent.getObject();
+            parentObject.worldToLocal(heldAsset.asset.getObject().position);
+            newPosition = heldAsset.asset.getPosition();
+        }
         return newPosition;
     }
 

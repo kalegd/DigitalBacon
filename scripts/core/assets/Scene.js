@@ -7,6 +7,7 @@
 import global from '/scripts/core/global.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import { quaternion, vector3s } from '/scripts/core/helpers/constants.js';
 import * as THREE from 'three';
 
 class Scene {
@@ -37,6 +38,24 @@ class Scene {
 
     getPointerInteractable() {
         return this._pointerInteractable;
+    }
+
+    getWorldPosition(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldPosition(vector3);
+        return vector3;
+    }
+
+    getWorldQuaternion(quat) {
+        if(!quat) quat = quaternion;
+        this._object.getWorldQuaternion(quat);
+        return quat;
+    }
+
+    getWorldScale(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldScale(vector3);
+        return vector3;
     }
 
     add(child, ignorePublish) {
