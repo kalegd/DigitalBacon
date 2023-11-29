@@ -8,60 +8,54 @@ import global from '/scripts/core/global.js';
 import States from '/scripts/core/enums/InteractableStates.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import Interactable from '/scripts/core/interactables/Interactable.js';
 
 class PointerInteractable extends Interactable {
     constructor(threeObj, canDisableOrbit) {
         super(threeObj);
         if(threeObj) threeObj.pointerInteractable = this;
-        this._draggableActions = [];
         this._canDisableOrbit = global.deviceType != "XR" && canDisableOrbit;
+        this._maxDistance = -Infinity;
     }
 
-    addAction(action, draggableAction, maxDistance, tool, option) {
-        if(action && typeof action == 'object') {
-            this._actions.push(action);
-            return action;
+    addAction(clickAction, draggableAction, maxDistance, tool, option) {
+        if(clickAction && typeof clickAction == 'object') {
+            if(!this._actions[clickAction.id]) {
+                this._toolCounts[clickAction.tool || 'none']++;
+            }
+            this._actions[clickAction.id] = clickAction;
+            this._actionsLength = Object.keys(this._actions).length;
+            return clickAction;
         }
         if(!maxDistance) maxDistance = Infinity;
-        let id = uuidv4();
-        action = {
-            id: id,
-            action: action,
-            draggableAction: draggableAction,
-            draggingOwners: new Set(),
-            maxDistance: maxDistance,
-            tool: tool,
-            specificOption: option,
-            type: 'POINTER',
-        };
-        this._actions.push(action);
+        if(maxDistance > this._maxDistance) this._maxDistance = maxDistance;
+        let action = super.addAction(tool, option);
+        action['clickAction'] = clickAction;
+        action['draggableAction'] = draggableAction;
+        action['draggingOwners'] = new Set();
+        action['maxDistance'] = maxDistance;
+        action['type'] = 'POINTER';
+        return action;
+    }
+
+    removeAction(id) {
+        let action = super.removeAction(id);
+        if(action && action.maxDistance == this._maxDistance) {
+            this._maxDistance = -Infinity;
+            for(let id in this._actions) {
+                if(this._actions[id].maxDistance > this._maxDistance)
+                    this._maxDistance = this._actions[id].maxDistance;
+            }
+        }
         return action;
     }
 
     isOnlyGroup() {
-        return this._threeObj && this._actions.length == 0
-            && !this._canDisableOrbit;
+        return !this.supportsTool() && !this._canDisableOrbit;
     }
 
     isWithinReach(distance) {
-        for(let action of this._actions) {
-            if(action.maxDistance < distance) return false;
-        }
-        return true;
-    }
-
-    supportsOwner(owner) {
-        //TODO: Should have a map that tracks how many actions for each tool as
-        //      we add + remove actions so we can respond to this function call
-        //      faster
-        for(let action of this._actions) {
-            if((!action.tool || action.tool == ToolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner))
-                return true;
-        }
-        return this._actions.length == 0;
+        return distance < this._maxDistance;
     }
 
     _determineAndSetState() {
@@ -108,14 +102,16 @@ class PointerInteractable extends Interactable {
     }
 
     triggerActions(owner, closestPoint, distance) {
-        for(let action of this._actions) {
-            if(action.action
-                && (!action.tool || action.tool == ToolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner)
+        let ids = Object.keys(this._actions);
+        let tool = ToolHandler.getTool();
+        for(let id of ids) {
+            let action = this._actions[id];
+            if(!action) continue;
+            if(action.clickAction && (!action.tool || action.tool == tool)
                 && (action.maxDistance >= distance
                     || action.draggingOwners.has(owner)))
             {
-                action.action(owner, closestPoint);
+                action.clickAction(owner, closestPoint);
             }
             if(action.draggingOwners.has(owner))
                 action.draggingOwners.delete(owner);
@@ -123,10 +119,12 @@ class PointerInteractable extends Interactable {
     }
 
     triggerDraggableActions(owner, closestPoint, distance) {
-        for(let action of this._actions) {
-            if(action.draggableAction
-                && (!action.tool || action.tool == ToolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner)
+        let ids = Object.keys(this._actions);
+        let tool = ToolHandler.getTool();
+        for(let id of ids) {
+            let action = this._actions[id];
+            if(!action) continue;
+            if(action.draggableAction && (!action.tool || action.tool == tool)
                 && (action.draggingOwners.has(owner)
                     || action.maxDistance >= distance))
             {
@@ -139,9 +137,12 @@ class PointerInteractable extends Interactable {
     }
 
     releaseDraggedActions(owner) {
-        for(let action of this._actions) {
+        let ids = Object.keys(this._actions);
+        for(let id of ids) {
+            let action = this._actions[id];
+            if(!action) continue;
             if(action.draggingOwners.has(owner)) {
-                if(action.action) action.action(owner);
+                if(action.clickAction) action.clickAction(owner);
                 action.draggingOwners.delete(owner);
             }
         }

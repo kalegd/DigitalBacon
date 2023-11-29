@@ -41,10 +41,7 @@ class GripInteractableHandler extends InteractableHandler {
             if(interactable.children.size != 0)
                 this._scopeInteractables(controller, interactable.children);
             let threeObj = interactable.getThreeObj();
-            if(threeObj == null || interactable.isOnlyGroup()
-                    || !interactable.supportsOwner(controller.option)) {
-                continue;
-            }
+            if(threeObj == null || interactable.isOnlyGroup()) continue;
             let intersects = interactable.intersectsSphere(boundingSphere);
             if(intersects) {
                 let distance = interactable.distanceToSphere(boundingSphere);

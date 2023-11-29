@@ -118,13 +118,11 @@ class PaginatedIconsPage extends MenuPage {
             this._updateItemsGUI();
         });
         this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextInteractable.addAction(() => {
+        this._nextAction = this._nextInteractable.addAction(() => {
             this._page += 1;
             this._updateItemsGUI();
         });
-        this._fetchNextInteractable = new PointerInteractable(this._nextButton,
-            true);
-        this._fetchNextInteractable.addAction(() => {
+        this._fetchNextAction = this._nextInteractable.addAction(() => {
             this._page += 1;
             this._fetchNextItems();
             this._updateItemsGUI();
@@ -157,18 +155,26 @@ class PaginatedIconsPage extends MenuPage {
         if(this._items.length > firstIndex + ROWS * OPTIONS) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
-            this._optionsInteractable.removeChild(this._fetchNextInteractable);
+            this._nextInteractable.addAction(this._nextAction);
+            this._nextInteractable.removeAction(this._fetchNextAction.id);
         } else if(this._items.length == firstIndex + ROWS * OPTIONS
                 && this._canFetchMore) {
             this._nextButton.visible = true;
-            this._optionsInteractable.addChild(this._fetchNextInteractable);
-            this._optionsInteractable.removeChild(this._nextInteractable);
+            this._optionsInteractable.addChild(this._nextInteractable);
+            this._nextInteractable.addAction(this._fetchNextAction);
+            this._nextInteractable.removeAction(this._nextAction.id);
         } else {
             this._nextButton.visible = false;
             this._optionsInteractable.removeChild(this._nextInteractable);
-            this._optionsInteractable.removeChild(this._fetchNextInteractable);
         }
         //this._container.update(false, true, false);
+    }
+
+    //Needs to be overridden
+    _fetchNextItems() {
+        console.error(
+            "PaginatedIconsPage._fetchNextItems() should be overridden");
+        return "";
     }
 
     //Needs to be overridden

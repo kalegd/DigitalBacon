@@ -5,6 +5,8 @@
  */
 
 import States from '/scripts/core/enums/InteractableStates.js';
+import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 class Interactable {
     constructor(threeObj) {
@@ -13,19 +15,40 @@ class Interactable {
         this.children = new Set();
         this._hoveredOwners = new Set();
         this._selectedOwners = new Set();
-        this._actions = [];
+        this._actions = {};
+        this._actionsLength = 0;
+        this._toolCounts = {};
+    }
+
+    addAction(tool) {
+        let id = uuidv4();
+        let action = {
+            id: id,
+            tool: tool,
+        };
+        this._actions[id] = action;
+        this._actionsLength = Object.keys(this._actions).length;
+        tool = tool || 'none';
+        if(!this._toolCounts[tool]) this._toolCounts[tool] = 0;
+        this._toolCounts[tool]++;
+        return action;
     }
 
     removeAction(id) {
-        for(let i = this._actions.length - 1; i >= 0; i--) {
-            if(this._actions[i].id == id) {
-                this._actions.splice(i, 1);
-            }
-        }
+        let action = this._actions[id];
+        delete this._actions[id];
+        this._actionsLength = Object.keys(this._actions).length;
+        if(action) this._toolCounts[action.tool || 'none']--;
+        return action;
     }
 
     getActionsLength() {
-        return this._actions.length;
+        return this._actionsLength;
+    }
+
+    supportsTool() {
+        let tool = ToolHandler.getTool();
+        return this._toolCounts['none'] || this._toolCounts[tool];
     }
 
     isOnlyGroup() {
@@ -76,6 +99,7 @@ class Interactable {
     }
 
     addChild(interactable) {
+        if(interactable.parent == this) return;
         if(interactable.parent) interactable.parent.removeChild(interactable);
         this.children.add(interactable);
         interactable.parent = this;

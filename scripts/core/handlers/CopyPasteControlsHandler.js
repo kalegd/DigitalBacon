@@ -16,21 +16,18 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 class CopyPasteControlsHandler {
     constructor() {
         this._id = uuidv4();
-        this._assetAlreadyPastedByTrigger = false;
-        this._assetAlreadyPastedByGrip = false;
+        this._assetAlreadyPastedByGrip = {};
         this._copiedAssets = {};
         this._previewAssets = {};
         GripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
             (controller) => { return this._toolHandler(controller); });
         PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
+            this._assetAlreadyPastedByGrip = {};
         });
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
+            this._assetAlreadyPastedByGrip = {};
         });
     }
 
@@ -50,15 +47,16 @@ class CopyPasteControlsHandler {
         previewAsset.parent.getObject().attach(previewObject);
         previewAsset.clone(this._copiedAssets[ownerId].visualEdit);
         ProjectHandler.getAsset(ownerId).getObject().attach(previewObject);
-        this._assetAlreadyPastedByGrip = true;
+        this._assetAlreadyPastedByGrip[ownerId] = true;
     }
 
     _toolHandler(controller) {
         let ownerId = controller.option;
         if(!this._copiedAssets[ownerId]) return false;
-        if(controller.isPressed != this._assetAlreadyPastedByGrip) {
+        let alreadyPasted = Boolean(this._assetAlreadyPastedByGrip[ownerId]);
+        if(controller.isPressed != alreadyPasted) {
             if(controller.isPressed) this._paste(ownerId);
-            else this._assetAlreadyPastedByGrip = false;
+            else this._assetAlreadyPastedByGrip[ownerId] = false;
         }
         return true;
     }

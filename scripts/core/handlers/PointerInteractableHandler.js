@@ -84,7 +84,6 @@ class PointerInteractableHandler extends InteractableHandler {
 
     _squashInteractables(option, interactables, objects) {
         for(let interactable of interactables) {
-            if(!interactable.supportsOwner(option)) continue;
             let object = interactable.getThreeObj();
             if(object && !interactable.isOnlyGroup()) objects.push(object);
             if(interactable.children.size != 0) {
