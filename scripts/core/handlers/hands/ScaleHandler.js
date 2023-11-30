@@ -138,8 +138,6 @@ class ScaleHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
-        //Eventually we'll need to set the world scale of the asset once
-        //we support parent child relationships
         let distance = heldAsset.asset.getWorldPosition().distanceTo(
             ProjectHandler.getAsset(heldAsset.ownerId).getWorldPosition());
         let newScale = [

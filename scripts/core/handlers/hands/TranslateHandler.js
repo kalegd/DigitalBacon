@@ -139,8 +139,6 @@ class TranslateHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
-        //Eventually we'll need to set the world position of the asset once
-        //we support parent child relationships
         let handPosition = ProjectHandler.getAsset(heldAsset.ownerId)
             .getWorldPosition();
         let newPosition = [

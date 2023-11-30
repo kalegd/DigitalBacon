@@ -153,22 +153,17 @@ class RotateHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
-        //Eventually we'll need to set the world rotation of the asset once
-        //we support parent child relationships
         let handRotation = ProjectHandler.getAsset(heldAsset.ownerId)
             .getWorldQuaternion();
         this._quaternion.fromArray(heldAsset.rotationDifference);
         let newRotation = handRotation.multiply(this._quaternion);
         if(heldAsset.asset.parent) {
             let parentObject = heldAsset.asset.parent.getObject();
-            this._quaternion.copy(parentObject.quaternion).conjugate();
-            //newRotation.multiply(this._quaternion);
+            parentObject.getWorldQuaternion(this._quaternion).conjugate();
             this._quaternion.multiply(newRotation);
         }
         heldAsset.asset.setRotationFromQuaternion(this._quaternion.toArray());
         return this._quaternion.toArray();
-        //heldAsset.asset.setRotationFromQuaternion(newRotation.toArray());
-        //return newRotation.toArray();
     }
 
     _swapToOwner(newOwner, oldOwner, rotationDifference) {

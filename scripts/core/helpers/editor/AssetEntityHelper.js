@@ -341,9 +341,15 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     _demoteChildren(action) {
+        let invertedMatrix = this._object.matrix.clone().invert();
         for(let child of action.promotedChildren) {
-            if(child.parent == this._asset.parent)
+            if(child.parent == this._asset.parent) {
                 child.attachTo(this._asset);
+                let childObject = child.getObject();
+                if(!childObject.parent) {
+                    childObject.applyMatrix4(invertedMatrix);
+                }
+            }
         }
     }
 
