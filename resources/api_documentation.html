@@ -110,13 +110,6 @@
               </a>
             </li>
             <li>
-              <a href="#section/PartyMessageHelper">
-                <label type="section" role="menuitem">
-                  <span title="PartyMessageHelper">PartyMessageHelper</span>
-                </label>
-              </a>
-            </li>
-            <li>
               <a href="#section/ProjectHandler">
                 <label type="section" role="menuitem">
                   <span title="ProjectHandler">ProjectHandler</span>
@@ -151,7 +144,7 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.1.9)</h1>
+        <h1>DigitalBacon (0.2.0)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
@@ -262,16 +255,6 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/PartyHandler">PartyHandler</a> for more info</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">PartyMessageHelper</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Object</p>
-                <p>See <a href="#section/PartyMessageHelper">PartyMessageHelper</a> for more info</p>
               </td>
             </tr>
             <tr>
@@ -792,22 +775,18 @@
         <h5>Functions</h5>
         <p class="bold">isHost()</p>
         <p class="return-data">Returns whether or not the user is the Party Host</p>
-        <h1 id="section/PartyMessageHelper">PartyMessageHelper</h1>
-        <h5>Functions</h5>
-        <p class="bold">registerHandler(topic, handler)</p>
-        <p>Registers a callback function that triggers when messages to the provided topic are received from peers</p>
-        <p class="bold">registerBlockableHandler(topic, handler)</p>
-        <p>Same as registerHandler, but will ensure that the callback is triggered after the callbacks for other messages that are received as blockable before this message finish processing first</p>
+        <p class="bold">addMessageHandler(id, handler, skipQueue)</p>
+        <p>Registers a callback function that triggers when messages to the provided id are received from peers</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">topic</span>
+                <span class="property-name">id</span>
               </td>
               <td class="details">
                 <p class="datatype">String</p>
-                <p>Topic that is listened to</p>
+                <p>Id that is used to filter messages</p>
               </td>
             </tr>
             <tr>
@@ -817,30 +796,335 @@
               </td>
               <td class="details">
                 <p class="datatype">function(peer, message)</p>
-                <p>Callback function triggered when messages with the provided topic are found</p>
+                <p>Callback function triggered when messages with the provided id are found</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">skipQueue</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>If true, will process message immediately upon receiving it instead of in the order all messages are being received</p>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="bold">publish(message)</p>
-        <p>Publishes a message to all other peers</p>
-        <p class="bold">publishQueue(message)</p>
-        <p>Same as publish, but will ensure that the message is sent after other messages published to the queue before this are sent</p>
+        <p class="bold">addBufferMessageHandler(id, handler, skipQueue)</p>
+        <p>Same as addMessageHandler, but for ArrayBuffer messages</p>
         <table class="attributes">
           <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">8-bit Number | uuid String</p>
+                <p>Id that is used to filter messages</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">handler</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function(peer, message)</p>
+                <p>Callback function triggered when messages with the provided id are found</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">skipQueue</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>If true, will process message immediately upon receiving it instead of in the order all messages are being received</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">publishFromFunction(publishFunction)</p>
+        <p>Typically used when you want to block other messages in the publish queue from being sent while an asynchronous process generates the message(s) you want to publish. See <a href="https://github.com/kalegd/DigitalBacon/blob/112e6cb40282e1865df3a33f657a0bc66934a660/scripts/core/helpers/PartyMessageHelper.js#L448-L473">the following code snippet</a> for an example</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">publishFunction</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function()</p>
+                <p>Callback function triggered from the publish queue</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">publishMessage(id, message, skipQueue, ...peerList)</p>
+        <p>Publishes a message to all or optionally some list of peers using the provided id</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The id that is used to filter messages by message handlers</p>
+              </td>
+            </tr>
             <tr>
               <td>
                 <span></span>
                 <span class="property-name">message</span>
               </td>
               <td class="details">
-                <p class="datatype">JSON-String</p>
-                <p>JSON formatted string that must include a top level parameter named "topic" that is used to forward received messages to the correct handler</p>
+                <p class="datatype">Object | String | Number</p>
+                <p>The message being sent. If message is an object, the object must be parseable by <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse">JSON.parse()</a></p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">skipQueue</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>If true, will send message immediately</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">...peerList</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Expanded List&lt;Peers&gt;</p>
+                <p class="optional">Optional</p>
+                <p>List of peers that you want to send the message to. If not provided, message will be sent to all peers</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">publishBufferMessage(id, message, skipQueue, ...peerList)</p>
+        <p>Publishes an ArrayBuffer message to all or optionally some list of peers using the provided id</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">8-bit Number | 128-bit uuid Uint8Array | uuid String</p>
+                <p>The id that is used to filter messages by message handlers</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">message</span>
+              </td>
+              <td class="details">
+                <p class="datatype">ArrayBuffer</p>
+                <p>The message being sent</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">skipQueue</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>If true, will send message immediately</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">...peerList</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Expanded List&lt;Peers&gt;</p>
+                <p class="optional">Optional</p>
+                <p>List of peers that you want to send the message to. If not provided, message will be sent to all peers</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">addMessageHandlerLock()</p>
+        <p>Adds a lock to prevent messages from being processed by the message queue</p>
+        <p class="return-data">Returns the lock that was created</p>
+        <p class="bold">removeMessageHandlerLock(lock)</p>
+        <p>Removes the lock from preventing messages being processed by the message queue</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">lock</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>The lock that was provided to you by addMessageHandlerLock()</p>
               </td>
             </tr>
           </tbody>
         </table>
         <h1 id="section/ProjectHandler">ProjectHandler</h1>
+        <p class="bold">getAsset(id)</p>
+        <p class="return-data">Returns a reference to the asset instance with the following id if it exists within the project</p>
+        <p class="bold">getSessionAsset(id)</p>
+        <p>Same as getAsset(id), except includes asset instances that have been deleted from the project as well</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">id</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>ID of the asset instance you want a reference to</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo)</p>
+        <p>Adds a new instance to the project based on the assetId provided</p>
+        <p class="return-data">Returns the asset instance that was created</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">assetId</span>
+              </td>
+              <td class="details">
+                <p class="datatype">String</p>
+                <p>ID of the asset you want to create that corresponds to some existing asset in the Library</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">params</span>
+              </td>
+              <td class="details">
+                <p class="datatype">object</p>
+                <p class="optional">Optional</p>
+                <p>Parameters used for creating the Asset</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignorePublish</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the creation of this instance should not be broadcasted to other users. Defaults to false (will be broadcasted to other users)</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignoreUndoRedo</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">addAsset(asset, ignorePublish, ignoreUndoRedo)</p>
+        <p>Adds the asset to the project</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">asset</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Asset Instance</p>
+                <p>The asset you want to add to the project</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignorePublish</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the addition of this instance to the project should not be broadcasted to other users. Defaults to false (will be broadcasted to other users)</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignoreUndoRedo</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the addition of this instance to the project should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">deleteAsset(asset, ignorePublish, ignoreUndoRedo)</p>
+        <p>Deletes the asset from the project</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">asset</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Asset Instance</p>
+                <p>The asset you want to delete from the project</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignorePublish</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the deletion of this instance should not be broadcasted to other users. Defaults to false (will be broadcasted to other users)</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">ignoreUndoRedo</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether the deletion of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <p class="bold">load(filepath, successCallback, errorCallback)</p>
         <p>Loads the provided Digital Bacon project</p>
         <table class="attributes">
@@ -875,45 +1159,6 @@
                 <p class="datatype">function</p>
                 <p class="optional">Optional</p>
                 <p>Callback function that is triggered if an error occerred while loading the project file</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">addNewAsset(assetId, params, ignoreUndoRedo)</p>
-        <p>Adds a new instance to the project based on the assetId provided</p>
-        <p class="return-data">Returns the asset instance that was created</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">assetId</span>
-              </td>
-              <td class="details">
-                <p class="datatype">String</p>
-                <p>ID of the asset you want to create that corresponds to some existing asset in the Library</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">params</span>
-              </td>
-              <td class="details">
-                <p class="datatype">object</p>
-                <p class="optional">Optional</p>
-                <p>Parameters used for creating the Asset</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">ignoreUndoRedo</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Boolean</p>
-                <p class="optional">Optional</p>
-                <p>Whether the creation of this instance should not be registered as an action that can be undone + redone. Defaults to false (can be undone + redone)</p>
               </td>
             </tr>
           </tbody>

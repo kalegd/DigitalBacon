@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, LinearSRGBColorSpace, SpotLight, PointLight as PointLight$1, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, ColorManagement, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, NumberKeyframeTrack, QuaternionKeyframeTrack, Box3, Sphere, Interpolant, SphereGeometry, Triangle, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Euler, Raycaster, CylinderGeometry, BoxGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
+import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, LinearSRGBColorSpace, SpotLight, PointLight as PointLight$1, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, ColorManagement, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, NumberKeyframeTrack, QuaternionKeyframeTrack, Box3, Sphere, Interpolant, BoxGeometry, SphereGeometry, Triangle, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Euler, Raycaster, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
@@ -101,6 +101,8 @@ const PubSubTopics = {
     SHAPE_UPDATED: "SHAPE_UPDATED",
     SHAPE_ATTACHED: "SHAPE_ATTACHED",
     SHAPE_DETACHED: "SHAPE_DETACHED",
+    SESSION_STARTED: "SESSION_STARTED",
+    SESSION_ENDED: "SESSION_ENDED",
     SYSTEM_ADDED: "SYSTEM_ADDED",
     SYSTEM_CREATED: "SYSTEM_CREATED",
     SYSTEM_DELETED: "SYSTEM_DELETED",
@@ -108,6 +110,7 @@ const PubSubTopics = {
     TEXTURE_ADDED: "TEXTURE_ADDED",
     TEXTURE_CREATED: "TEXTURE_CREATED",
     TEXTURE_DELETED: "TEXTURE_DELETED",
+    TEXTURE_RECREATED: "TEXTURE_RECREATED",
     TEXTURE_UPDATED: "TEXTURE_UPDATED",
     TOOL_UPDATED: "TOOL_UPDATED",
     USER_PERSPECTIVE_CHANGED: "USER_PERSPECTIVE_CHANGED",
@@ -207,8 +210,26 @@ let pubSub = new PubSub();
 
 
 const uuidv4 = () => {
-  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
+        c => (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4)
+        .toString(16));
+};
+
+//https://github.com/domske/uuid-tool/blob/master/src/uuid.ts
+const uuidToBytes$1 = (uuid) => {
+    let array = new Uint8Array(16);
+    (uuid.replace(/-/g, '').match(/.{2}/g) || [])
+        .map((b, i) => array[i] = parseInt(b, 16));
+    return array;
+};
+
+const uuidFromBytes = (bytes) => {
+    let array = [];
+    for(let b of bytes) {
+        array.push(('00' + b.toString(16)).slice(-2));
+    }
+    return array.join('')
+        .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
 };
 
 const numberOr = (number, defaultValue) => {
@@ -386,7 +407,11 @@ const blobToHash = (blob) => {
 };
 
 //https://gist.github.com/72lions/4528834
-const concatenateArrayBuffers = (buffers) => {
+const concatenateArrayBuffers = (...buffers) => {
+    return concatenateArrayBuffersFromList(buffers);
+};
+
+const concatenateArrayBuffersFromList = (buffers) => {
     let length = 0;
     for(let buffer of buffers) {
         length += buffer.byteLength;
@@ -394,10 +419,15 @@ const concatenateArrayBuffers = (buffers) => {
     let array = new Uint8Array(length);
     let index = 0;
     for(let buffer of buffers) {
+        if(buffer.buffer) buffer = buffer.buffer;//Convert TypedArray
         array.set(new Uint8Array(buffer), index);
         index += buffer.byteLength;
     }
     return array.buffer;
+};
+
+const typedArrayToArray = (typedArray) => {
+    return [].slice.call(typedArray);
 };
 
 //https://dmitripavlutin.com/javascript-queue/
@@ -434,6 +464,7 @@ var utils = /*#__PURE__*/Object.freeze({
   cartesianToPolar: cartesianToPolar,
   compareLists: compareLists,
   concatenateArrayBuffers: concatenateArrayBuffers,
+  concatenateArrayBuffersFromList: concatenateArrayBuffersFromList,
   disposeMaterial: disposeMaterial,
   fullDispose: fullDispose,
   hslToRGB: hslToRGB,
@@ -445,6 +476,9 @@ var utils = /*#__PURE__*/Object.freeze({
   roundWithPrecision: roundWithPrecision,
   stringOr: stringOr,
   stringWithMaxLength: stringWithMaxLength,
+  typedArrayToArray: typedArrayToArray,
+  uuidFromBytes: uuidFromBytes,
+  uuidToBytes: uuidToBytes$1,
   uuidv4: uuidv4
 });
 
@@ -598,6 +632,7 @@ const vector3s = [v1, v2, v3];
 const vector2 = new THREE.Vector2();
 const euler = new THREE.Euler();
 const quaternion = new THREE.Quaternion();
+const matrix4 = new THREE.Matrix4();
 
 // For Bounding Box
 let indices = new Uint16Array( [ 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7 ] );
@@ -5746,19 +5781,40 @@ class Interactable {
         this.children = new Set();
         this._hoveredOwners = new Set();
         this._selectedOwners = new Set();
-        this._actions = [];
+        this._actions = {};
+        this._actionsLength = 0;
+        this._toolCounts = {};
+    }
+
+    addAction(tool) {
+        let id = uuidv4();
+        let action = {
+            id: id,
+            tool: tool,
+        };
+        this._actions[id] = action;
+        this._actionsLength = Object.keys(this._actions).length;
+        tool = tool || 'none';
+        if(!this._toolCounts[tool]) this._toolCounts[tool] = 0;
+        this._toolCounts[tool]++;
+        return action;
     }
 
     removeAction(id) {
-        for(let i = this._actions.length - 1; i >= 0; i--) {
-            if(this._actions[i].id == id) {
-                this._actions.splice(i, 1);
-            }
-        }
+        let action = this._actions[id];
+        delete this._actions[id];
+        this._actionsLength = Object.keys(this._actions).length;
+        if(action) this._toolCounts[action.tool || 'none']--;
+        return action;
     }
 
     getActionsLength() {
-        return this._actions.length;
+        return this._actionsLength;
+    }
+
+    supportsTool() {
+        let tool = toolHandler.getTool();
+        return this._toolCounts['none'] || this._toolCounts[tool];
     }
 
     isOnlyGroup() {
@@ -5809,6 +5865,7 @@ class Interactable {
     }
 
     addChild(interactable) {
+        if(interactable.parent == this) return;
         if(interactable.parent) interactable.parent.removeChild(interactable);
         this.children.add(interactable);
         interactable.parent = this;
@@ -5846,39 +5903,25 @@ class GripInteractable extends Interactable {
         this._createBoundingObject();
     }
 
-    addAction(selectedAction, releasedAction, tool, option) {
+    addAction(selectedAction, releasedAction, tool) {
         if(selectedAction && typeof selectedAction == 'object') {
-            this._actions.push(selectedAction);
+            if(!this._actions[selectedAction.id]) {
+                this._toolCounts[selectedAction.tool || 'none']++;
+            }
+            this._actions[selectedAction.id] = selectedAction;
+            this._actionsLength = Object.keys(this._actions).length;
             return selectedAction;
         }
-        let id = uuidv4();
-        let action = {
-            id: id,
-            selectedAction: selectedAction,
-            releasedAction: releasedAction,
-            selectedBy: new Set(),
-            tool: tool,
-            specificOption: option,
-            type: 'GRIP',
-        };
-        this._actions.push(action);
+        let action = super.addAction(tool);
+        action['selectedAction'] = selectedAction;
+        action['releasedAction'] = releasedAction;
+        action['selectedBy'] = new Set();
+        action['type'] = 'GRIP';
         return action;
     }
 
     isOnlyGroup() {
-        return this._actions.length == 0;
-    }
-
-    supportsOwner(owner) {
-        //TODO: Should have a map that tracks how many actions for each tool as
-        //      we add + remove actions so we can respond to this function call
-        //      faster
-        for(let action of this._actions) {
-            if((!action.tool || action.tool == toolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner))
-                return true;
-        }
-        return this._actions.length == 0;
+        return !this.supportsTool();
     }
 
     _createBoundingObject() {
@@ -5962,10 +6005,12 @@ class GripInteractable extends Interactable {
     }
     
     _triggerSelected(owner) {
-        for(let action of this._actions) {
-            if((!action.specificOption || action.specificOption == owner)
-                    && (!action.tool || action.tool == toolHandler.getTool()))
-            {
+        let tool = toolHandler.getTool();
+        let currentIds = Object.keys(this._actions);
+        for(let id of currentIds) {
+            let action = this._actions[id];
+            if(!action) continue;
+            if(!action.tool || action.tool == tool) {
                 if(action.selectedAction) action.selectedAction(owner);
                 action.selectedBy.add(owner);
             }
@@ -5973,7 +6018,10 @@ class GripInteractable extends Interactable {
     }
 
     _triggerReleased(owner) {
-        for(let action of this._actions) {
+        let currentIds = Object.keys(this._actions);
+        for(let id of currentIds) {
+            let action = this._actions[id];
+            if(!action) continue;
             if(action.selectedBy.has(owner)) {
                 if(action.releasedAction) action.releasedAction(owner);
                 action.selectedBy.delete(owner);
@@ -5985,6 +6033,122 @@ class GripInteractable extends Interactable {
         return new GripInteractable();
     }
 }
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class Entity {
+    constructor() {
+        this._id = uuidv4();
+        this._object = new Object3D();
+    }
+    
+    getId() {
+        return this._id;
+    }
+
+    getObject() {
+        return this._object;
+    }
+
+    addToScene(scene) {
+        if(scene) {
+            scene.add(this._object);
+        }
+    }
+
+    removeFromScene() {
+        if(this._object.parent) { 
+            this._object.parent.remove(this._object);
+            fullDispose(this._object);
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class XRPlanes extends Entity {
+    constructor() {
+        super();
+        this._object.renderOrder = -Infinity;
+        this._planes = new Map();
+        this._material = new MeshBasicMaterial({
+            color: 0xffffff,
+            colorWrite: false,
+            side: DoubleSide,
+        });
+    }
+
+    updatePlanes(event) {
+        let frame = event.data;
+        let detectedPlanes = frame.detectedPlanes;
+        let referenceSpace = global$1.renderer.xr.getReferenceSpace();
+        for(let [plane, details] of this._planes) {
+            if(!detectedPlanes.has(plane)) {
+                this._deletePlane(plane, details.mesh);
+            }
+        }
+
+        for(let plane of detectedPlanes) {
+            let details = this._planes.get(plane);
+            if(!details) {
+                this._addPlane(plane, frame, referenceSpace);
+            } else if(plane.lastChangedTime != details.lastChangedTime) {
+                this._deletePlane(plane, details.mesh);
+                this._addPlane(plane, frame, referenceSpace);
+            }
+        }
+    }
+
+    _addPlane(plane, frame, referenceSpace) {
+        let pose = frame.getPose(plane.planeSpace, referenceSpace);
+        matrix4.fromArray(pose.transform.matrix);
+
+        let minX = Number.MAX_SAFE_INTEGER;
+        let maxX = Number.MIN_SAFE_INTEGER;
+        let minZ = Number.MAX_SAFE_INTEGER;
+        let maxZ = Number.MIN_SAFE_INTEGER;
+
+        for (let point of plane.polygon) {
+            minX = Math.min(minX, point.x);
+            maxX = Math.max(maxX, point.x);
+            minZ = Math.min(minZ, point.z);
+            maxZ = Math.max(maxZ, point.z);
+        }
+
+        let width = maxX - minX;
+        let height = maxZ - minZ;
+
+        let geometry = new BoxGeometry(width, 0.01, height);
+
+        let mesh = new Mesh(geometry, this._material);
+        mesh.renderOrder = -Infinity;
+        mesh.position.setFromMatrixPosition(matrix4);
+        mesh.quaternion.setFromRotationMatrix(matrix4);
+        this._object.add(mesh);
+
+        let details = { lastChangedTime: plane.lastChangedTime, mesh: mesh };
+        this._planes.set(plane, details);
+    }
+
+    _deletePlane(plane, mesh) {
+        mesh.geometry.dispose();
+        mesh.material.dispose();
+        this._object.remove(mesh);
+        this._planes.delete(plane);
+    }
+}
+
+let xrPlanes = new XRPlanes();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -7234,9 +7398,7 @@ class InputHandler {
     }
 
     update(frame) {
-        if(frame == null) {
-            return;
-        }
+        if(frame == null) return;
         //Assumes device type is XR
         let referenceSpace = this._renderer.xr.getReferenceSpace();
         for(let type in this._xrInputDevices) {
@@ -7249,205 +7411,6 @@ class InputHandler {
 }
 
 let inputHandler = new InputHandler();
-
-class VRButton {
-
-	static createButton( renderer ) {
-
-		const button = document.createElement( 'button' );
-
-		function showEnterVR( /*device*/ ) {
-
-			let currentSession = null;
-
-			async function onSessionStarted( session ) {
-
-				session.addEventListener( 'end', onSessionEnded );
-
-				await renderer.xr.setSession( session );
-				button.textContent = 'EXIT VR';
-
-				currentSession = session;
-
-			}
-
-			function onSessionEnded( /*event*/ ) {
-
-				currentSession.removeEventListener( 'end', onSessionEnded );
-
-				button.textContent = 'ENTER VR';
-
-				currentSession = null;
-
-			}
-
-			//
-
-			button.style.display = '';
-
-			button.style.cursor = 'pointer';
-			button.style.left = 'calc(50% - 50px)';
-			button.style.width = '100px';
-
-			button.textContent = 'ENTER VR';
-
-			button.onmouseenter = function () {
-
-				button.style.opacity = '1.0';
-
-			};
-
-			button.onmouseleave = function () {
-
-				button.style.opacity = '0.5';
-
-			};
-
-			button.onclick = function () {
-
-				if ( currentSession === null ) {
-
-					// WebXR's requestReferenceSpace only works if the corresponding feature
-					// was requested at session creation time. For simplicity, just ask for
-					// the interesting ones as optional features, but be aware that the
-					// requestReferenceSpace call will fail if it turns out to be unavailable.
-					// ('local' is always available for immersive sessions and doesn't need to
-					// be requested separately.)
-
-					const sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor', 'hand-tracking', 'layers' ] };
-					navigator.xr.requestSession( 'immersive-vr', sessionInit ).then( onSessionStarted );
-
-				} else {
-
-					currentSession.end();
-
-				}
-
-			};
-
-		}
-
-		function disableButton() {
-
-			button.style.display = '';
-
-			button.style.cursor = 'auto';
-			button.style.left = 'calc(50% - 75px)';
-			button.style.width = '150px';
-
-			button.onmouseenter = null;
-			button.onmouseleave = null;
-
-			button.onclick = null;
-
-		}
-
-		function showWebXRNotFound() {
-
-			disableButton();
-
-			button.textContent = 'VR NOT SUPPORTED';
-
-		}
-
-		function showVRNotAllowed( exception ) {
-
-			disableButton();
-
-			console.warn( 'Exception when trying to call xr.isSessionSupported', exception );
-
-			button.textContent = 'VR NOT ALLOWED';
-
-		}
-
-		function stylizeElement( element ) {
-
-			element.style.position = 'absolute';
-			element.style.bottom = '20px';
-			element.style.padding = '12px 6px';
-			element.style.border = '1px solid #fff';
-			element.style.borderRadius = '4px';
-			element.style.background = 'rgba(0,0,0,0.1)';
-			element.style.color = '#fff';
-			element.style.font = 'normal 13px sans-serif';
-			element.style.textAlign = 'center';
-			element.style.opacity = '0.5';
-			element.style.outline = 'none';
-			element.style.zIndex = '999';
-
-		}
-
-		if ( 'xr' in navigator ) {
-
-			button.id = 'VRButton';
-			button.style.display = 'none';
-
-			stylizeElement( button );
-
-			navigator.xr.isSessionSupported( 'immersive-vr' ).then( function ( supported ) {
-
-				supported ? showEnterVR() : showWebXRNotFound();
-
-				if ( supported && VRButton.xrSessionIsGranted ) {
-
-					button.click();
-
-				}
-
-			} ).catch( showVRNotAllowed );
-
-			return button;
-
-		} else {
-
-			const message = document.createElement( 'a' );
-
-			if ( window.isSecureContext === false ) {
-
-				message.href = document.location.href.replace( /^http:/, 'https:' );
-				message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
-
-			} else {
-
-				message.href = 'https://immersiveweb.dev/';
-				message.innerHTML = 'WEBXR NOT AVAILABLE';
-
-			}
-
-			message.style.left = 'calc(50% - 90px)';
-			message.style.width = '180px';
-			message.style.textDecoration = 'none';
-
-			stylizeElement( message );
-
-			return message;
-
-		}
-
-	}
-
-	static registerSessionGrantedListener() {
-
-		if ( 'xr' in navigator ) {
-
-			// WebXRViewer (based on Firefox) has a bug where addEventListener
-			// throws a silent exception and aborts execution entirely.
-			if ( /WebXRViewer\//i.test( navigator.userAgent ) ) return;
-
-			navigator.xr.addEventListener( 'sessiongranted', () => {
-
-				VRButton.xrSessionIsGranted = true;
-
-			} );
-
-		}
-
-	}
-
-}
-
-VRButton.xrSessionIsGranted = false;
-VRButton.registerSessionGrantedListener();
 
 ////////////////////////////////////////////////////////////////////////////////
 // Hey dumbass, there are 5 local changes in this file that need to be carried
@@ -8706,6 +8669,17 @@ class OrbitControls extends EventDispatcher {
 
 
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
+const AR_OPTIONS = {
+    optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking',
+                       'layers', 'anchors', 'plane-detection']
+};
+const VR_OPTIONS = {
+    optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking','layers']
+};
+const XR_OPTIONS = {
+    AR: AR_OPTIONS,
+    VR: VR_OPTIONS,
+};
 
 class SessionHandler {
     init(container, onStart) {
@@ -8736,24 +8710,62 @@ class SessionHandler {
 
     _configureForXR() {
         this._div = document.createElement('div');
-        this._button = VRButton.createButton(global$1.renderer);
-        this._button.removeAttribute('style');
-        this._stylizeElements();
-        this._button.style.minWidth = '150px';
-        this._div.appendChild(this._button);
+        if(global$1.vrSessionSupported) this._createXRButton('VR');
+        if(global$1.arSessionSupported) this._createXRButton('AR');
         this._div.appendChild(this._createMobileOverrideLink());
+        global$1.renderer.xr.addEventListener('planesdetected', (event) => {
+            xrPlanes.updatePlanes(event);
+        });
         global$1.renderer.xr.addEventListener("sessionstart", () => {
             global$1.sessionActive = true;
             audioHandler.resume();
             global$1.renderer.xr.setFoveation(0);
+            if(global$1.xrSessionType == 'AR') xrPlanes.addToScene(global$1.scene);
+            pubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
                 this._onStart = null;
             }
         });
         global$1.renderer.xr.addEventListener("sessionend", () => {
+            xrPlanes.removeFromScene();
+            pubSub.publish(null, PubSubTopics.SESSION_ENDED);
             global$1.sessionActive = false;
             audioHandler.suspend();
+        });
+    }
+
+    _createXRButton(xrSessionType) {
+        let isVR = xrSessionType == 'VR';
+        let button = document.createElement('button');
+        button.innerText = isVR ? 'ENTER VR' : 'START AR';
+        this._stylizeElements(button);
+        button.style.minWidth = '150px';
+        this._div.appendChild(button);
+        let onSessionEnded = () => {
+            this._currentSession.removeEventListener( 'end', onSessionEnded );
+            button.innerText = isVR ? 'ENTER VR' : 'START AR';
+            this._currentSession = null;
+        };
+        let onSessionStarted = async (session) => {
+            session.addEventListener( 'end', onSessionEnded );
+            await global$1.renderer.xr.setSession( session );
+            button.innerText = isVR ? 'EXIT VR' : 'STOP AR';
+            this._currentSession = session;
+        };
+        button.addEventListener('click', () => {
+            if(this._currentSession) {
+                this._currentSession.end();
+            } else {
+                global$1.xrSessionType = xrSessionType;
+                let mode = isVR ? 'immersive-vr' : 'immersive-ar';
+                if(!isVR) {
+                    this._update = this._createAnchor;
+                    global$1.dynamicAssets.add(this);
+                }
+                navigator.xr.requestSession(mode, XR_OPTIONS[xrSessionType])
+                    .then(onSessionStarted);
+            }
         });
     }
 
@@ -8761,7 +8773,7 @@ class SessionHandler {
         this._div = document.createElement('div');
         this._button = document.createElement('button');
         this._button.innerText = "CLICK TO START";
-        this._stylizeElements();
+        this._stylizeElements(this._button);
         this._div.appendChild(this._button);
 
         this._controls = new OrbitControls(global$1.camera,
@@ -8785,6 +8797,7 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.resume();
             inputHandler.createPointerControls();
+            pubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
                 this._onStart = null;
@@ -8796,10 +8809,10 @@ class SessionHandler {
         this._div = document.createElement('div');
         this._button = document.createElement('button');
         this._button.innerText = "TAP TO START";
-        this._stylizeElements();
+        this._stylizeElements(this._button);
         this._div.appendChild(this._button);
         if(localStorage.getItem(MOBILE_OVERRIDE))
-            this._div.appendChild(this._createVROverrideLink());
+            this._div.appendChild(this._createXROverrideLink());
 
         this._controls = new OrbitControls(global$1.camera,
             global$1.renderer.domElement);
@@ -8821,6 +8834,7 @@ class SessionHandler {
             global$1.sessionActive = true;
             audioHandler.resume();
             inputHandler.createMobileControls();
+            pubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
                 this._onStart = null;
@@ -8828,7 +8842,7 @@ class SessionHandler {
         });
     }
 
-    _stylizeElements() {
+    _stylizeElements(button) {
         this._div.style.position = 'absolute';
         this._div.style.top = '75%';
         this._div.style.transform = 'translateY(-50%)';
@@ -8836,21 +8850,22 @@ class SessionHandler {
         this._div.style.textAlign = 'center';
         this._div.style.backgroundColor = 'rgba(0,0,0,0.5)';
         this._div.style.padding = '10px 0';
-        this._button.style.padding = '12px';
-        this._button.style.border = '2px solid #ffc7e5';
-        this._button.style.borderRadius = '4px';
-        this._button.style.background = 'none';
-        this._button.style.color = '#ffc7e5';
-        this._button.style.font = 'normal 18px sans-serif';
-        this._button.style.outline = 'none';
-        this._button.style.transition = 'background-color .15s ease-in-out';
-        this._button.onmouseenter = () => {
-            this._button.style.cursor = 'pointer';
-            this._button.style.background = 'rgba(0, 0, 0, 0.5)';
+        button.style.padding = '12px';
+        button.style.border = '2px solid #ffc7e5';
+        button.style.borderRadius = '4px';
+        button.style.background = 'none';
+        button.style.color = '#ffc7e5';
+        button.style.font = 'normal 18px sans-serif';
+        button.style.margin = '0 4px';
+        button.style.outline = 'none';
+        button.style.transition = 'background-color .15s ease-in-out';
+        button.onmouseenter = () => {
+            button.style.cursor = 'pointer';
+            button.style.background = 'rgba(0, 0, 0, 0.5)';
         };
-        this._button.onmouseleave = () => {
-            this._button.style.cursor = 'inherit';
-            this._button.style.background = 'none';
+        button.onmouseleave = () => {
+            button.style.cursor = 'inherit';
+            button.style.background = 'none';
         };
     }
 
@@ -8861,7 +8876,7 @@ class SessionHandler {
         a.style.display = 'block';
         a.style.paddingTop = '12px';
         a.style.color = 'rgb(255, 199, 229)';
-        a.addEventListener('click', () => {
+        a.addEventListener('click', (event) => {
             event.preventDefault();
             localStorage.setItem(MOBILE_OVERRIDE, true);
             window.location.reload();
@@ -8869,14 +8884,14 @@ class SessionHandler {
         return a;
     }
 
-    _createVROverrideLink() {
+    _createXROverrideLink() {
         let a = document.createElement('a');
-        a.innerText = 'Use VR Controls';
+        a.innerText = 'Use AR/VR Controls';
         a.href = '#';
         a.style.display = 'block';
         a.style.paddingTop = '12px';
         a.style.color = 'rgb(255, 199, 229)';
-        a.addEventListener('click', () => {
+        a.addEventListener('click', (event) => {
             event.preventDefault();
             localStorage.removeItem(MOBILE_OVERRIDE);
             window.location.reload();
@@ -8890,7 +8905,7 @@ class SessionHandler {
     }
 
     exitXRSession() {
-        this._button.click();
+        this._currentSession.end();
     }
 
     enableOrbit() {
@@ -8908,6 +8923,36 @@ class SessionHandler {
     getCameraDistance() {
         if(this._controls) return this._controls.getDistance();
     }
+
+    update() {
+        this._update();
+    }
+
+    _createAnchor() {
+        if(!global$1.frame || !global$1.frame.createAnchor) return;
+        console.log("Setting up anchor");
+        let pose = new XRRigidTransform({ x: 0, y: 0, z: 0 },
+            { x: 0, y: 0, z: 0, w: 1 });
+        let referenceSpace = global$1.renderer.xr.getReferenceSpace();
+        global$1.frame.createAnchor(pose, referenceSpace).then(
+            (anchor) => this._anchor = anchor );
+        referenceSpace.onreset = (event) => {
+            if(global$1.xrSessionType != 'AR') return;
+            global$1.dynamicAssets.add(this);
+        };
+        global$1.dynamicAssets.delete(this);
+        this._update = this._updateReferenceSpace;
+    }
+
+    _updateReferenceSpace() {
+        if(!this._anchor || !global$1.frame) return;//Sucks to suck :(
+        let space = global$1.renderer.xr.getReferenceSpace();
+        let pose = global$1.frame.getPose(this._anchor.anchorSpace, space);
+        if(!pose) return;//Still sucks to suck :(
+        let newSpace = space.getOffsetReferenceSpace(pose.transform);
+        global$1.renderer.xr.setReferenceSpace(newSpace);
+        global$1.dynamicAssets.delete(this);
+    }
 }
 
 let sessionHandler = new SessionHandler();
@@ -8923,53 +8968,48 @@ class PointerInteractable extends Interactable {
     constructor(threeObj, canDisableOrbit) {
         super(threeObj);
         if(threeObj) threeObj.pointerInteractable = this;
-        this._draggableActions = [];
         this._canDisableOrbit = global$1.deviceType != "XR" && canDisableOrbit;
+        this._maxDistance = -Infinity;
     }
 
-    addAction(action, draggableAction, maxDistance, tool, option) {
-        if(action && typeof action == 'object') {
-            this._actions.push(action);
-            return action;
+    addAction(clickAction, draggableAction, maxDistance, tool, option) {
+        if(clickAction && typeof clickAction == 'object') {
+            if(!this._actions[clickAction.id]) {
+                this._toolCounts[clickAction.tool || 'none']++;
+            }
+            this._actions[clickAction.id] = clickAction;
+            this._actionsLength = Object.keys(this._actions).length;
+            return clickAction;
         }
         if(!maxDistance) maxDistance = Infinity;
-        let id = uuidv4();
-        action = {
-            id: id,
-            action: action,
-            draggableAction: draggableAction,
-            draggingOwners: new Set(),
-            maxDistance: maxDistance,
-            tool: tool,
-            specificOption: option,
-            type: 'POINTER',
-        };
-        this._actions.push(action);
+        if(maxDistance > this._maxDistance) this._maxDistance = maxDistance;
+        let action = super.addAction(tool, option);
+        action['clickAction'] = clickAction;
+        action['draggableAction'] = draggableAction;
+        action['draggingOwners'] = new Set();
+        action['maxDistance'] = maxDistance;
+        action['type'] = 'POINTER';
+        return action;
+    }
+
+    removeAction(id) {
+        let action = super.removeAction(id);
+        if(action && action.maxDistance == this._maxDistance) {
+            this._maxDistance = -Infinity;
+            for(let id in this._actions) {
+                if(this._actions[id].maxDistance > this._maxDistance)
+                    this._maxDistance = this._actions[id].maxDistance;
+            }
+        }
         return action;
     }
 
     isOnlyGroup() {
-        return this._threeObj && this._actions.length == 0
-            && !this._canDisableOrbit;
+        return !this.supportsTool() && !this._canDisableOrbit;
     }
 
     isWithinReach(distance) {
-        for(let action of this._actions) {
-            if(action.maxDistance < distance) return false;
-        }
-        return true;
-    }
-
-    supportsOwner(owner) {
-        //TODO: Should have a map that tracks how many actions for each tool as
-        //      we add + remove actions so we can respond to this function call
-        //      faster
-        for(let action of this._actions) {
-            if((!action.tool || action.tool == toolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner))
-                return true;
-        }
-        return this._actions.length == 0;
+        return distance < this._maxDistance;
     }
 
     _determineAndSetState() {
@@ -9016,14 +9056,16 @@ class PointerInteractable extends Interactable {
     }
 
     triggerActions(owner, closestPoint, distance) {
-        for(let action of this._actions) {
-            if(action.action
-                && (!action.tool || action.tool == toolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner)
+        let ids = Object.keys(this._actions);
+        let tool = toolHandler.getTool();
+        for(let id of ids) {
+            let action = this._actions[id];
+            if(!action) continue;
+            if(action.clickAction && (!action.tool || action.tool == tool)
                 && (action.maxDistance >= distance
                     || action.draggingOwners.has(owner)))
             {
-                action.action(owner, closestPoint);
+                action.clickAction(owner, closestPoint);
             }
             if(action.draggingOwners.has(owner))
                 action.draggingOwners.delete(owner);
@@ -9031,10 +9073,12 @@ class PointerInteractable extends Interactable {
     }
 
     triggerDraggableActions(owner, closestPoint, distance) {
-        for(let action of this._actions) {
-            if(action.draggableAction
-                && (!action.tool || action.tool == toolHandler.getTool())
-                && (!action.specificOption || action.specificOption == owner)
+        let ids = Object.keys(this._actions);
+        let tool = toolHandler.getTool();
+        for(let id of ids) {
+            let action = this._actions[id];
+            if(!action) continue;
+            if(action.draggableAction && (!action.tool || action.tool == tool)
                 && (action.draggingOwners.has(owner)
                     || action.maxDistance >= distance))
             {
@@ -9047,9 +9091,12 @@ class PointerInteractable extends Interactable {
     }
 
     releaseDraggedActions(owner) {
-        for(let action of this._actions) {
+        let ids = Object.keys(this._actions);
+        for(let id of ids) {
+            let action = this._actions[id];
+            if(!action) continue;
             if(action.draggingOwners.has(owner)) {
-                if(action.action) action.action(owner);
+                if(action.clickAction) action.clickAction(owner);
                 action.draggingOwners.delete(owner);
             }
         }
@@ -9103,6 +9150,24 @@ class Scene {
         return this._pointerInteractable;
     }
 
+    getWorldPosition(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldPosition(vector3);
+        return vector3;
+    }
+
+    getWorldQuaternion(quat) {
+        if(!quat) quat = quaternion;
+        this._object.getWorldQuaternion(quat);
+        return quat;
+    }
+
+    getWorldScale(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldScale(vector3);
+        return vector3;
+    }
+
     add(child, ignorePublish) {
         child.addTo(this, ignorePublish);
     }
@@ -9143,9 +9208,21 @@ for(let side in CubeSides) {
 }
 
 class Skybox {
+    constructor() {
+        this._id = uuidv4();
+        this._isAR = false;
+        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            this._isAR = global$1.xrSessionType == 'AR';
+            if(this._isAR) this._scene.background = null;
+        });
+        pubSub.subscribe(this._id, PubSubTopics.SESSION_ENDED, () => {
+            this._isAR = false;
+            this._scene.background = this._background;
+        });
+    }
     init(scene) {
         this._scene = scene;
-        this._scene.background = new CubeTexture$1([
+        this._background = new CubeTexture$1([
             SIDES$1[CubeSides.RIGHT].canvas,
             SIDES$1[CubeSides.LEFT].canvas,
             SIDES$1[CubeSides.TOP].canvas,
@@ -9153,7 +9230,8 @@ class Skybox {
             SIDES$1[CubeSides.FRONT].canvas,
             SIDES$1[CubeSides.BACK].canvas,
         ]);
-        this._scene.background.colorSpace = SRGBColorSpace;
+        this._background.colorSpace = SRGBColorSpace;
+        if(!this._isAR) this._scene.background = this._background;
     }
 
     setSides(assetIds) {
@@ -9167,12 +9245,12 @@ class Skybox {
             ? libraryHandler.getImage(assetId)
             : null;
         this._drawImage(side, image);
-        this._scene.background.needsUpdate = true;
+        this._background.needsUpdate = true;
     }
 
     deleteSide(side) {
         this._drawImage(side);
-        this._scene.background.needsUpdate = true;
+        this._background.needsUpdate = true;
     }
 
     //https://stackoverflow.com/a/23105310
@@ -10133,10 +10211,10 @@ class ProjectHandler {
         return this._sessionAssets[id];
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
         let assetType = libraryHandler.getType(asset.getAssetId());
         let handler = this._assetHandlers[assetType];
-        handler.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+        handler.deleteAsset(asset, ignorePublish, ignoreUndoRedo);
     }
 
     deleteAssetFromHandler(asset) {
@@ -10165,17 +10243,17 @@ class ProjectHandler {
         }
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let assetType = libraryHandler.getType(assetId);
         let handler = this._assetHandlers[assetType];
-        return handler.addNewAsset(assetId, params, ignoreUndoRedo,
-            ignorePublish);
+        return handler.addNewAsset(assetId, params, ignorePublish,
+            ignoreUndoRedo);
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
         let assetType = libraryHandler.getType(asset.getAssetId());
         let handler = this._assetHandlers[assetType];
-        handler.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        handler.addAsset(asset, ignorePublish, ignoreUndoRedo);
     }
 
     addAssetFromHandler(asset) {
@@ -10295,13 +10373,13 @@ class AssetsHandler {
         projectHandler.registerAssetHandler(this, detailsName);
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let asset = new this._assetClassMap[assetId](params);
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(this._assets[asset.getId()]) return;
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
@@ -10310,9 +10388,9 @@ class AssetsHandler {
         projectHandler.addAssetFromHandler(asset);
         if(!ignoreUndoRedo) {
             undoRedoHandler.addAction(() => {
-                this.deleteAsset(asset, true, ignorePublish);
+                this.deleteAsset(asset, ignorePublish, true);
             }, () => {
-                this.addAsset(asset, true, ignorePublish);
+                this.addAsset(asset, ignorePublish, true);
             });
         }
         if(ignorePublish) return;
@@ -10320,14 +10398,14 @@ class AssetsHandler {
         pubSub.publish(this._id, topic, asset, true);
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(!(asset.getId() in this._assets)) return;
         let undoRedoAction;
         if(!ignoreUndoRedo) {
             undoRedoAction = undoRedoHandler.addAction(() => {
-                this.addAsset(asset, true, ignorePublish);
+                this.addAsset(asset, ignorePublish, true);
             }, () => {
-                this.deleteAsset(asset, true, ignorePublish);
+                this.deleteAsset(asset, ignorePublish, true);
             });
         }
         delete this._assets[asset.getId()];
@@ -10491,7 +10569,7 @@ class InternalAssetsHandler extends AssetsHandler {
             PubSubTopics.INTERNAL_DELETED, AssetTypes.INTERNAL);
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(this._assets[asset.getId()]) return;
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
@@ -10501,7 +10579,7 @@ class InternalAssetsHandler extends AssetsHandler {
         pubSub.publish(this._id, topic, asset, true);
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
         if(!(asset.getId() in this._assets)) return;
         delete this._assets[asset.getId()];
         projectHandler.deleteAssetFromHandler(asset);
@@ -10567,13 +10645,14 @@ new InternalAssetsHandler();
 class Asset {
     constructor(params = {}) {
         this._id = params['id'] || uuidv4();
+        this._idBytes = uuidToBytes$1(this._id);
         this._assetId = params['assetId'];
         this._name = ('name' in params)
             ? params['name']
             : this._getDefaultName();
         this._components = new Set();
         if(params['components']) {
-            params['components'].forEach((id) => { this.addComponent(id); });
+            params['components'].forEach((id) => this.addComponent(id));
         }
     }
 
@@ -10627,12 +10706,12 @@ class Asset {
         for(let component of this._components) {
             let componentId = component.getId();
             if(!componentIds.includes(componentId))
-                this.removeComponent(componentId);
+                this.removeComponent(componentId, true);
         }
         for(let componentId of componentIds) {
             let component = projectHandler.getAsset(componentId);
             if(!this._components.has(component))
-                this.addComponent(componentId);
+                this.addComponent(componentId, true);
         }
     }
 
@@ -10651,8 +10730,6 @@ class Asset {
         let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
         pubSub.publish(this._id, topic, {
             id: this._id,
-            assetId: this._assetId,
-            assetType: this.constructor.assetType,
             componentId: componentId,
             componentAssetId: componentAssetId,
         });
@@ -10669,8 +10746,6 @@ class Asset {
         let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentAssetId;
         pubSub.publish(this._id, topic, {
             id: this._id,
-            assetId: this._assetId,
-            assetType: this.constructor.assetType,
             componentId: componentId,
             componentAssetId: componentAssetId,
         });
@@ -10678,1641 +10753,20 @@ class Asset {
     }
 }
 
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class AssetEntity extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._object = params['object'] || new THREE.Object3D();
-        this._object.asset = this;
-        if('parentId' in params) {
-            this._parentId = params['parentId'];
-        } else {
-            this._parentId = scene.getId();
-        }
-        this.children = new Set();
-        this.parent = projectHandler.getSessionAsset(this._parentId);
-        if(this.parent) this.parent.children.add(this);
-        let position = (params['position']) ? params['position'] : [0,0,0];
-        let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
-        let scale = (params['scale']) ? params['scale'] : [1,1,1];
-        this.visualEdit = params['visualEdit'] || false;
-        this._object.position.fromArray(position);
-        this._object.rotation.fromArray(rotation);
-        this._object.scale.fromArray(scale);
-        this._gripInteractable = new GripInteractable(this._object);
-        this._pointerInteractable = new PointerInteractable(this._object);
-        this._deleteCallbacks = {};
-    }
-
-    _getDefaultName() {
-        return 'Object';
-    }
-
-    _fetchCloneParams(visualEditOverride) {
-        let params = this.exportParams();
-        let visualEdit = (visualEditOverride != null)
-            ? visualEditOverride
-            : this.visualEdit;
-        params['visualEdit'] = visualEdit;
-        delete params['id'];
-        return params;
-    }
-
-    clone(visualEditOverride) {
-        let params = this._fetchCloneParams(visualEditOverride);
-        return projectHandler.addNewAsset(this._assetId, params);
-    }
-
-    preview() {
-        let params = this.exportParams();
-        params['visualEdit'] = false;
-        params['isPreview'] = true;
-        delete params['id'];
-        return new this.constructor(params);
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['parentId'] = this._parentId;
-        params['position'] = this.getPosition();
-        params['rotation'] = this.getRotation();
-        params['scale'] = this.getScale();
-        params['visualEdit'] = this.getVisualEdit();
-        return params;
-    }
-
-    addGripAction(selectedFunc, releasedFunc, tool, option){
-        let action = this._gripInteractable.addAction(selectedFunc,
-            releasedFunc, tool, option);
-        return action;
-    }
-
-    addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
-        let action = this._pointerInteractable.addAction(actionFunc,
-            draggableActionFunc, maxDistance, tool, option);
-        return action;
-    }
-
-    getGripInteractable() {
-        return this._gripInteractable;
-    }
-
-    getPointerInteractable() {
-        return this._pointerInteractable;
-    }
-
-    removeGripAction(id) {
-        this._gripInteractable.removeAction(id);
-    }
-
-    removePointerAction(id) {
-        this._pointerInteractable.removeAction(id);
-    }
-
-    addDeleteCallback(id, handler) {
-        this._deleteCallbacks[id] = handler;
-    }
-
-    getObject() {
-        return this._object;
-    }
-
-    getParentId() {
-        return this._parentId;
-    }
-
-    getPosition() {
-        return this._object.position.toArray();
-    }
-
-    getRotation() {
-        return this._object.rotation.toArray();
-    }
-
-    getScale() {
-        return this._object.scale.toArray();
-    }
-
-    getVisualEdit() {
-        return this.visualEdit;
-    }
-
-    getWorldPosition(vector3) {
-        if(!vector3) vector3 = vector3s[0];
-        this._object.getWorldPosition(vector3);
-        return vector3;
-    }
-
-    getWorldQuaternion(quat) {
-        if(!quat) quat = quaternion;
-        this._object.getWorldQuaternion(quat);
-        return quat;
-    }
-
-    getWorldScale(vector3) {
-        if(!vector3) vector3 = vector3s[0];
-        this._object.getWorldScale(vector3);
-        return vector3;
-    }
-
-    setParentId(parentId) {
-        if(this._parentId == parentId) return;
-        this.parent = projectHandler.getSessionAsset(parentId);
-        if(!this.parent) {
-            this.removeFromScene();
-        } else if(this._parentId != null) {
-            this.attachTo(this.parent, true);
-        } else {
-            this.addTo(this.parent, true);
-        }
-        this._parentId = parentId;
-    }
-
-    setPosition(position) {
-        this._object.position.fromArray(position);
-    }
-
-    setRotation(rotation) {
-        this._object.rotation.fromArray(rotation);
-    }
-
-    setRotationFromQuaternion(quat) {
-        quaternion.fromArray(quat);
-        this._object.setRotationFromQuaternion(quaternion);
-    }
-
-    setScale(scale) {
-        this._object.scale.fromArray(scale);
-    }
-
-    setVisualEdit(visualEdit) {
-        this.visualEdit = visualEdit;
-    }
-
-    add(child, ignorePublish) {
-        child.addTo(this, ignorePublish);
-    }
-
-    addTo(newParent, ignorePublish) {
-        if(!newParent) return;
-        if(this.parent) this.parent.children.delete(this);
-        this.parent = newParent;
-        newParent.children.add(this);
-        this._parentId = newParent.getId();
-        if(projectHandler.getAsset(this._id)) {
-            this.addToScene(newParent.getObject(),
-                newParent.getPointerInteractable(),
-                newParent.getGripInteractable());
-        }
-        if(!ignorePublish) {
-            pubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
-                parentId: newParent.getId(),
-                childId: this._id,
-            }, true);
-        }
-    }
-
-    attach(child, ignorePublish) {
-        child.attachTo(this, ignorePublish);
-    }
-
-    attachTo(newParent, ignorePublish) {
-        if(!newParent) return;
-        if(this.parent) this.parent.children.delete(this);
-        this.parent = newParent;
-        newParent.children.add(this);
-        this._parentId = newParent.getId();
-        if(projectHandler.getAsset(this._id)) {
-            this.attachToScene(newParent.getObject(),
-                newParent.getPointerInteractable(),
-                newParent.getGripInteractable());
-        }
-        if(!ignorePublish) {
-            pubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
-                parentId: newParent.getId(),
-                childId: this._id,
-            }, true);
-        }
-    }
-
-    addToScene(scene, pointerInteractable, gripInteractable) {
-        if(scene) scene.add(this._object);
-        if(pointerInteractable)
-            pointerInteractable.addChild(this._pointerInteractable);
-        if(gripInteractable)
-            gripInteractable.addChild(this._gripInteractable);
-    }
-
-    attachToScene(scene, pointerInteractable, gripInteractable) {
-        if(scene) scene.attach(this._object);
-        if(pointerInteractable)
-            pointerInteractable.addChild(this._pointerInteractable);
-        if(gripInteractable)
-            gripInteractable.addChild(this._gripInteractable);
-    }
-
-    removeFromScene() {
-        if(this._gripInteractable.parent) {
-            this._gripInteractable.parent.removeChild(this._gripInteractable);
-        }
-        if(this._pointerInteractable.parent) {
-            this._pointerInteractable.parent.removeChild(
-                this._pointerInteractable);
-        }
-        if(this._object.parent) {
-            this._object.parent.remove(this._object);
-            fullDispose(this._object);
-        }
-        for(let id in this._deleteCallbacks) {
-            if(this._deleteCallbacks[id]) this._deleteCallbacks[id]();
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class InternalAssetEntity extends AssetEntity {
-    constructor(params = {}) {
-        super(params);
-    }
-
-    removeFromScene() {
-        let inheritor = this.parent;
-        while(inheritor.constructor.assetType == AssetTypes.INTERNAL) {
-            inheritor = inheritor.parent;
-        }
-        this.promoteExternalAssets(inheritor, this.children);
-        super.removeFromScene();
-    }
-
-    promoteExternalAssets(inheritor, children) {
-        for(let child of children) {
-            if(child.constructor.assetType == AssetTypes.INTERNAL) {
-                this.promoteExternalAssets(inheritor, child.children);
-            } else {
-                child.attachTo(inheritor, true);
-            }
-        }
-    }
-
-    static assetType = AssetTypes.INTERNAL;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-  
-class Avatar extends InternalAssetEntity {
-    constructor(params = {}) {
-        params['assetId'] = Avatar.assetId;
-        super(params);
-        if(params == null) {
-            params = {};
-        }
-        this._avatarParent = new THREE.Object3D();
-        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
-        this._verticalOffset = params['verticalOffset'] || 0;
-        this._object.position.setY(this._verticalOffset);
-        this._object.add(this._avatarParent);
-
-        this._createMesh(this._avatarUrl);
-        let parentAsset = projectHandler.getSessionAsset(this._parentId);
-        if(parentAsset && parentAsset.registerAvatar) {
-            parentAsset.registerAvatar(this);
-        }
-    }
-
-    _createMesh(filename) {
-        if(/\.glb/.test(filename)) {
-            let gltfLoader = new GLTFLoader();
-            gltfLoader.load(filename, (gltf) => {
-                gltf.scene.rotateY(Math.PI);
-                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
-                    let hands = new Set();
-                    gltf.scene.traverse((child) => {
-                        if(child.name.toLowerCase().includes("hand")) {
-                            hands.add(child);
-                        }
-                    });
-                    hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.65);
-                }
-                this._avatarParent.add(gltf.scene);
-                this._saveOriginalTransparencyStates();
-                this._dimensions = 3;
-            }, () => {}, (error) => {
-                console.log(error);
-                if(filename != DEFAULT_URL) {
-                    this._createMesh(DEFAULT_URL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
-            new THREE.TextureLoader().load(filename, (texture) => {
-                let width = texture.image.width;
-                let height = texture.image.height;
-                if(width > height) {
-                    let factor = 0.3 / width;
-                    width = 0.3;
-                    height *= factor;
-                } else {
-                    let factor = 0.3 / height;
-                    height = 0.3;
-                    width *= factor;
-                }
-                let material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                });
-                let geometry = new THREE.PlaneGeometry(width, height);
-                geometry.rotateY(Math.PI);
-                let mesh = new THREE.Mesh(geometry, material);
-                this._avatarParent.add(mesh);
-                this._saveOriginalTransparencyStates();
-                //let sprite = new THREE.Sprite(material);
-                //this._avatarParent.add(sprite);
-                this._dimensions = 2;
-            }, () => {}, () => {
-                if(filename != DEFAULT_URL) {
-                    this._createMesh(DEFAULT_URL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else {
-            if(filename != DEFAULT_URL) {
-                this._createMesh(DEFAULT_URL);
-            } else {
-                console.error("Default avatar URL is invalid :(");
-            }
-        }
-    }
-
-    _saveOriginalTransparencyStates() {
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.userData['transparent'] = material.transparent;
-                        material.userData['opacity'] = material.opacity;
-                    }
-                } else {
-                    let material = node.material;
-                    material.userData['transparent'] = material.transparent;
-                    material.userData['opacity'] = material.opacity;
-                }
-            }
-        });
-    }
-
-    fade(percent) {
-        this._isFading = true;
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                node.renderOrder = Infinity;
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        if(!material.transparent) {
-                            material.transparent = true;
-                            material.needsUpdate = true;
-                        }
-                        material.opacity = material.userData['opacity']*percent;
-                    }
-                } else {
-                    let material = node.material;
-                    if(!material.transparent) {
-                        material.transparent = true;
-                        material.needsUpdate = true;
-                    }
-                    material.opacity = material.userData['opacity'] * percent;
-                }
-            }
-        });
-    }
-
-    endFade() {
-        if(!this._isFading) return;
-        this._isFading = false;
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let mtrl = node.material[i];
-                        if(mtrl.transparent != mtrl.userData['transparent']) {
-                            mtrl.transparent = mtrl.userData['transparent'];
-                            mtrl.needsUpdate = true;
-                        }
-                        mtrl.opacity = mtrl.userData['opacity'];
-                    }
-                } else {
-                    let mtrl = node.material;
-                    if(mtrl.transparent != mtrl.userData['transparent']) {
-                        mtrl.transparent = mtrl.userData['transparent'];
-                        mtrl.needsUpdate = true;
-                    }
-                    mtrl.opacity = mtrl.userData['opacity'];
-                }
-            }
-        });
-    }
-
-    lookAtLocal(point) {
-        if(this._object.parent) {
-            vector3s[0].copy(point);
-            this._object.parent.localToWorld(vector3s[0]);
-            this._object.lookAt(vector3s[0]);
-        }
-    }
-
-    updateSourceUrl(url) {
-        while(this._avatarParent.children[0]) {
-            let child = this._avatarParent.children[0];
-            this._avatarParent.remove(child);
-            fullDispose(child, true);
-        }
-        this._avatarUrl = url;
-        this._createMesh(url);
-    }
-
-    getAvatarUrl() {
-        return this._avatarUrl;
-    }
-
-    getVerticalOffset(verticalOffset) {
-        return this._verticalOffset;
-    }
-
-    setAvatarUrl(avatarUrl) {
-        this.updateSourceUrl(avatarUrl);
-    }
-
-    setVerticalOffset(verticalOffset) {
-        this._verticalOffsert = verticalOffset;
-        this._object.position.setY(verticalOffset);
-    }
-
-    displayAvatar() {
-        this._object.add(this._avatarParent);
-    }
-
-    hideAvatar() {
-        this._object.remove(this._avatarParent);
-    }
-
-    isDisplayingAvatar() {
-        return this._avatarParent.parent == this._object;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['avatarUrl'] = this._avatarUrl;
-        params['verticalOffset'] = this._verticalOffset;
-        return params;
-    }
-
-    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
-    static assetName = 'Avatar';
-}
-
-projectHandler.registerAsset(Avatar);
-libraryHandler.loadBuiltIn(Avatar);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class BasicMovement {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        this._avatar = params['Avatar'];
-        this._userObj = params['User Object'];
-        this._velocity = new THREE.Vector3();
-        this._verticalVelocity = 0;
-        this._worldVelocity = new THREE.Vector3();
-        this._snapRotationTriggered = false;
-    }
-
-    _setupMobileFlyingButtons() {
-        this._mobileUp = false;
-        this._mobileDown = false;
-        let upButton = inputHandler.addExtraControlsButton(
-            'mobile-flying-up-button', 'UP');
-        let downButton = inputHandler.addExtraControlsButton(
-            'mobile-flying-down-button', 'DOWN');
-        upButton.addEventListener('touchstart',
-            () => { this._mobileUp = true; });
-        upButton.addEventListener('touchend',
-            () => { this._mobileUp = false; });
-        downButton.addEventListener('touchstart',
-            () => { this._mobileDown = true; });
-        downButton.addEventListener('touchend',
-            () => { this._mobileDown = false; });
-    }
-
-    _moveForward(velocity, timeDelta) {
-        // move forward parallel to the xz-plane
-        // assumes camera.up is y-up
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
-        // not using addScaledVector because we use vector3s[0] later
-        vector3s[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s[0]);
-        vector3s[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s[0]);
-    };
-
-    _moveRight(velocity, timeDelta) {
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].y = 0;
-        vector3s[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s[0]);
-        vector3s[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s[0]);
-    };
-
-    _moveUp(velocity, timeDelta) {
-        velocity = this._userObj.scale.y * velocity;
-        this._worldVelocity.setY(velocity);
-        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
-        this._userObj.position.add(vector3s[0]);
-    }
-
-    _snapLeft() {
-        this._userObj.rotateY(Math.PI/8);
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: global$1.userController, fields: ['rotation'] });
-    }
-
-    _snapRight() {
-        this._userObj.rotateY(-Math.PI/8);
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: global$1.userController, fields: ['rotation'] });
-    }
-
-    getWorldVelocity() {
-        return this._worldVelocity;
-    }
-
-    setPerspective(perspective) {
-        this._perspective = perspective;
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updatePositionVR(timeDelta);
-            this.update = this._updatePositionVR;
-        } else if(global$1.deviceType == "POINTER") {
-            this._updatePosition(timeDelta);
-            this.update = this._updatePosition;
-        } else if(global$1.deviceType == "MOBILE") {
-            this._setupMobileFlyingButtons();
-            this._updatePositionMobile(timeDelta);
-            this.update = this._updatePositionMobile;
-        }
-    }
-
-    _updatePosition(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        // Decrease the velocity.
-        let slowdownFactor = (1 - timeDelta) * 0.88;
-        this._velocity.x *= slowdownFactor;
-        if(flightEnabled)
-            this._verticalVelocity *= slowdownFactor;
-        this._velocity.z *= slowdownFactor;
-
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            if (inputHandler.isKeyCodePressed("ArrowUp")
-                    || inputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowDown")
-                    || inputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowLeft")
-                    || inputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowRight")
-                    || inputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += movementSpeed / 4;
-            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
-                    != inputHandler.isKeyPressed("Shift")
-                    && !inputHandler.isKeyPressed("Meta")) {
-                this._verticalVelocity =
-                    (inputHandler.isKeyCodePressed("Space"))
-                        ? movementSpeed
-                        : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s[1].add(vector3s[0]);
-            if(this._perspective != 1 && vector3s[1].length() > 0.001
-                    * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
-                this._avatar.lookAtLocal(vector3s[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionMobile(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        this._velocity.x = 0;
-        if(flightEnabled)
-            this._verticalVelocity *= (1 - timeDelta) * 0.88;
-        this._velocity.z = 0;
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            let joystickAngle = inputHandler.getJoystickAngle();
-            let joystickDistance = inputHandler.getJoystickDistance();
-            let movingDistance = movementSpeed * joystickDistance;
-            this._velocity.x = movingDistance * Math.cos(joystickAngle);
-            this._velocity.z = movingDistance * Math.sin(joystickAngle);
-            if(flightEnabled && this._mobileUp != this._mobileDown) {
-                this._verticalVelocity = (this._mobileUp)
-                    ? movementSpeed
-                    : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s[1].add(vector3s[0]);
-            if(this._perspective != 1 && vector3s[1].length() > 0.001
-                    * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
-                this._avatar.lookAtLocal(vector3s[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionVR(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        let movementGamepad;
-        let rotationGamepad;
-        if(settingsHandler.areJoysticksSwapped()) {
-            movementGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
-            rotationGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
-        } else {
-            movementGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
-            rotationGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
-        }
-        this._velocity.x = 0;
-        this._velocity.y = 0;
-        this._velocity.z = 0;
-        if(movementGamepad) {
-            let axes = movementGamepad.axes;
-            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
-            this._velocity.x = movementSpeed * axes[2];//Left/Right
-
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        if(rotationGamepad) {
-            let verticalForce = rotationGamepad.axes[3];
-            let rotationForce = rotationGamepad.axes[2];
-            if(Math.abs(rotationForce) > 0.7) {
-                if(!this._snapRotationTriggered) {
-                    this._snapRotationTriggered = true; 
-                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
-                }
-            } else {
-                this._snapRotationTriggered = false;
-            }
-            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
-                this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y, timeDelta);
-            }
-        } else {
-            this._snapRotationTriggered = false;
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const TTL = 5;
-
-class XRDevice extends InternalAssetEntity {
-    constructor(params = {}) {
-        if(!params['assetId']) params['assetId'] = XRDevice.assetId;
-        super(params);
-        this._ttl = TTL;
-        this._ownerId = params['ownerId'];
-        this._modelUrl = params['modelUrl'];
-        if(this._modelUrl) {
-            this._loadModelFromUrl();
-        }
-        this._vector3 = new Vector3();
-        this._euler = new Euler();
-        this._quaternion = new Quaternion();
-        this._registerOwner(params);
-    }
-
-    _loadModelFromUrl() {
-        let gltfLoader = new GLTFLoader();
-        gltfLoader.load(this._modelUrl, (gltf) => {
-            this._modelObject = gltf.scene;
-            this._object.add(gltf.scene);
-        });
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
-            owner.registerXRDevice(this);
-        }
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['ownerId'] = this._ownerId;
-        params['modelUrl'] = this._modelUrl;
-        return params;
-    }
-
-    isInScene() {
-        return this._object.parent != null;
-    }
-
-    getModelObject() {
-        return this._modelObject;
-    }
-
-    getModelUrl() {
-        return this._modelUrl;
-    }
-
-    getOwnerId() {
-        return this._ownerId;
-    }
-
-    getWorldPosition() {
-        this._object.getWorldPosition(this._vector3);
-        return this._vector3;
-    }
-
-    getWorldRotation() {
-        this._object.getWorldQuaternion(this._quaternion);
-        this._quaternion.normalize();
-        this._euler.setFromQuaternion(this._quaternion);
-        return this._euler;
-    }
-
-    getWorldQuaternion() {
-        this._object.getWorldQuaternion(this._quaternion);
-        return this._quaternion;
-    }
-
-    setModelUrl(modelUrl) {
-        this._modelUrl = modelUrl;
-    }
-
-    setOwnerId(ownerId) {
-        this._ownerId = ownerId;
-    }
-
-    decrementTTL(timeDelta) {
-        this._ttl -= timeDelta;
-        if(this._ttl < 0) {
-            projectHandler.deleteAsset(this);
-        }
-    }
-
-    resetTTL() {
-        this._ttl = TTL;
-    }
-
-    static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';
-    static assetName = 'XR Device';
-}
-
-projectHandler.registerAsset(XRDevice);
-libraryHandler.loadBuiltIn(XRDevice);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class XRController extends XRDevice {
-    constructor(params = {}) {
-        params['assetId'] = XRController.assetId;
-        super(params);
-        let controllerModel = params['controllerModel'];
-        if(controllerModel) {
-            this._object.add(controllerModel);
-            this._modelObject = controllerModel;
-            this._modelUrl = controllerModel.motionController.assetUrl;
-        }
-        this._handedness = params['handedness'];
-        if(!this._handedness in Handedness) {
-            throw new Error("hand must be LEFT or RIGHT");
-        }
-        this._raycasterOrigin = new Vector3();
-        this._raycasterDirection = new Vector3();
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
-            owner.registerXRController(params['handedness'], this);
-        }
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['handedness'] = this._handedness;
-        return params;
-    }
-
-    addFromTargetRay(asset, position, rotation) {
-        let controller = inputHandler.getXRController(
-            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
-        let assetObject = asset.getObject();
-        if(!controller) return;
-        controller.add(assetObject);
-        if(position) assetObject.position.fromArray(position);
-        if(rotation) assetObject.rotation.fromArray(rotation);
-        asset.attachTo(this);
-    }
-
-    getHandedness() {
-        return this._handedness;
-    }
-
-    getTargetRayDirection() {
-        let xrController = inputHandler.getXRController(
-            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return this._raycasterDirection;
-    }
-
-    getRaycaster() {
-        let xrController = inputHandler.getXRController(
-            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldPosition(this._raycasterOrigin);
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
-    }
-
-    isButtonPressed(index) {
-        let gamepad = inputHandler.getXRGamepad(this._handedness);
-        return gamepad != null && gamepad.buttons[index].pressed;
-    }
-
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
-    }
-
-    static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
-    static assetName = 'XR Controller';
-}
-
-projectHandler.registerAsset(XRController);
-libraryHandler.loadBuiltIn(XRController);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
-
-class XRHand extends XRDevice {
-    constructor(params = {}) {
-        params['assetId'] = XRHand.assetId;
-        super(params);
-        this._handedness = params['handedness'];
-        if(!this._handedness in Handedness) {
-            throw new Error("hand must be LEFT or RIGHT");
-        }
-        let controllerModel = params['controllerModel'];
-        if(controllerModel) {
-            this._object.add(controllerModel);
-            this._modelObject = controllerModel;
-            this._modelUrl = DEFAULT_HAND_PROFILE_PATH
-                + this._handedness.toLowerCase() + '.glb';
-            this._isUsers = true;
-        }
-        this._palmDirection = new Vector3();
-        this._raycasterOrigin = new Vector3();
-        this._raycasterDirection = new Vector3();
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
-            owner.registerXRHand(params['handedness'], this);
-        }
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['handedness'] = this._handedness;
-        return params;
-    }
-
-    addFromTargetRay(asset, position, rotation) {
-        let hand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
-            this._handedness, 'targetRay');
-        let assetObject = asset.getObject();
-        if(!hand) return;
-        hand.add(assetObject);
-        if(position) assetObject.position.fromArray(position);
-        if(rotation) assetObject.rotation.fromArray(rotation);
-        asset.attachTo(this);
-    }
-
-    getHandedness() {
-        return this._handedness;
-    }
-
-    getTargetRayDirection() {
-        let xrController = inputHandler.getXRController(XRInputDeviceTypes.HAND,
-            this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return this._raycasterDirection;
-    }
-
-    getRaycaster() {
-        let xrHand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
-            this._handedness, 'targetRay');
-        if(!xrHand) return null;
-        xrHand.getWorldPosition(this._raycasterOrigin);
-        xrHand.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
-    }
-
-    getPalmDirection() {
-        if(this._isUsers) {
-            let model = inputHandler.getXRControllerModel(
-                XRInputDeviceTypes.HAND, this._handedness);
-            this._palmDirection.copy(model.motionController.palmDirection);
-        } else if(this._handedness == Handedness.LEFT) {
-            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
-                0.1958660688459766);
-            this._object.localToWorld(this._palmDirection)
-                .sub(this.getWorldPosition());
-        } else {
-            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
-                0.19586401335899684);
-            this._object.localToWorld(this._palmDirection)
-                .sub(this.getWorldPosition());
-        }
-        return this._palmDirection;
-    }
-
-    isButtonPressed(index) {
-        let model = inputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
-            this._handedness);
-        if(index == 0) {
-            return model.motionController.isPinching;
-        } else if(index == 1) {
-            return model.motionController.isGrabbing;
-        }
-        return false;
-    }
-
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
-    }
-
-    static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
-    static assetName = 'XR Hand';
-}
-
-projectHandler.registerAsset(XRHand);
-libraryHandler.loadBuiltIn(XRHand);
-
-const UserMessageCodes = {
-    AVATAR: 1,
-    LEFT_CONTROLLER: 2,
-    RIGHT_CONTROLLER: 4,
-    LEFT_HAND: 8,
-    RIGHT_HAND: 16,
-    USER_VELOCITY: 32,
-    USER_POSITION: 64,
+//Max number of ids supported is 255 as these are stored in a single byte
+const InternalMessageIds = {
+    ASSET_ADDED_PART: 1,
+    COMPONENT_ATTACHED: 2,
+    COMPONENT_DETACHED: 3,
+    ENTITY_ADDED: 4,
+    ENTITY_ATTACHED: 5,
+    ENTITY_POSITION: 6,
+    ENTITY_ROTATION: 7,
+    ENTITY_SCALE: 8,
+    ENTITY_TRANSFORMATION: 9,
+    PROJECT_PART: 10,
+    USER_PERSPECTIVE: 11,
 };
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const AVATAR_KEY = "DigitalBacon:Avatar";
-const USERNAME_KEY = "DigitalBacon:Username";
-const FADE_START = 0.6;
-const FADE_END = 0.2;
-//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
-const FADE_RANGE = FADE_START - FADE_END;
-const EPSILON = 0.00000000001;
-  
-class UserController extends InternalAssetEntity {
-    constructor(params = {}) {
-        params['assetId'] = UserController.assetId;
-        super(params);
-        this._isXR = false;
-        this._username = localStorage.getItem(USERNAME_KEY)
-            || generateRandomUsername$1();
-        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
-            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-        this._avatarFadeUpdateNumber = 0;
-        this._xrControllers = {};
-        this._xrHands = {};
-        this._xrDevices = new Set();
-    }
-
-    init() {
-        if(global$1.deviceType == 'XR') {
-            this.setIsXR(true);
-        }
-        let scale = settingsHandler.getUserScale();
-        this.setScale([scale, scale, scale]);
-        this._setup();
-    }
-
-    _setup() {
-        if(global$1.deviceType != "XR") {
-            this._avatar = new Avatar({
-                'avatarUrl': this._avatarUrl,
-                'parentId': this._id,
-                'verticalOffset': global$1.cameraFocus.position.y,
-            });
-            audioHandler.setListenerParent(this._avatar.getObject());
-        } else {
-            this._avatar = new Avatar({
-                'object': global$1.camera,
-                'parentId': this._id,
-                'avatarUrl': this._avatarUrl,
-            });
-        }
-        this._avatar.parent = this;
-        projectHandler.addAsset(this._avatar);
-        this._basicMovement = new BasicMovement({
-            'User Object': this._object,
-            'Avatar': this._avatar,
-        });
-    }
-
-    getAvatar() {
-        return this._avatar;
-    }
-
-    getIsXR() {
-        return this._isXR;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    setAvatarUrl(url, ignorePublish) {
-        localStorage.setItem(AVATAR_KEY, url);
-        this._avatarUrl = url;
-        this._avatar.updateSourceUrl(url);
-        if(ignorePublish) return;
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: this._avatar, fields: ['avatarUrl'] });
-    }
-
-    setIsXR(isXR) {
-        this._isXR = isXR;
-    }
-
-    setScale(scale, ignorePublish) {
-        super.setScale(scale);
-        if(ignorePublish) return;
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: this, fields: ['scale'] });
-    }
-    setUsername(username, ignorePublish) {
-        localStorage.setItem(USERNAME_KEY, username);
-        this._username = username;
-        if(ignorePublish) return;
-        pubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
-    }
-
-    getController(handedness) {
-        return this._xrControllers[handedness];
-    }
-
-    getHand(handedness) {
-        return this._xrHands[handedness];
-    }
-
-    getXRDevices() {
-        return this._xrDevices;
-    }
-
-    registerXRController(handedness, xrController) {
-        this._xrControllers[handedness] = xrController;
-        this._xrDevices.add(xrController);
-    }
-
-    registerXRHand(handedness, xrHand) {
-        this._xrHands[handedness] = xrHand;
-        this._xrDevices.add(xrHand);
-    }
-
-    registerXRDevice(xrDevice) {
-        this._xrDevices.add(xrDevice);
-    }
-
-    getDistanceBetweenHands() {
-        if(global$1.deviceType != 'XR') return;
-        let leftController = this._xrControllers[Handedness.LEFT];
-        let rightController = this._xrControllers[Handedness.RIGHT];
-        if(!leftController || !rightController) return;
-        if(!leftController.isInScene()) {
-            leftController = this._xrHands[Handedness.LEFT];
-            rightController = this._xrHands[Handedness.RIGHT];
-            if(!leftController || !rightController) return;
-        }
-
-        let leftPosition = leftController.getWorldPosition();
-        let rightPosition = rightController.getWorldPosition();
-        return leftPosition.distanceTo(rightPosition);
-    }
-
-    getDataForRTC() {
-        let codes = 0;
-        let data = [];
-        if(global$1.deviceType == "XR") {
-            codes += this._pushAvatarDataForRTC(data);
-            codes += this._pushHandsDataForRTC(data);
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            codes += this._pushAvatarDataForRTC(data);
-        }
-        let worldVelocity = this._basicMovement.getWorldVelocity();
-        if(worldVelocity.length() >= 0.00001) {
-            data.push(...this._basicMovement.getWorldVelocity().toArray());
-            codes += UserMessageCodes.USER_VELOCITY;
-        }
-        if(global$1.renderer.info.render.frame % 300 == 0) {
-            this._object.getWorldPosition(vector3s[0]);
-            data.push(...vector3s[0].toArray());
-            codes += UserMessageCodes.USER_POSITION;
-        }
-        let codesArray = new Uint8Array([codes]);
-        return [codesArray.buffer, Float32Array.from(data).buffer];
-    }
-
-    _pushAvatarDataForRTC(data) {
-        let position = global$1.camera.position.toArray();
-        let rotation = global$1.camera.rotation.toArray();
-        rotation.pop();
-
-        data.push(...position);
-        data.push(...rotation);
-        return UserMessageCodes.AVATAR;
-    }
-
-    _pushHandsDataForRTC(data, type) {
-        let codes = 0;
-        settingsHandler.getUserScale();
-        for(let type of ['CONTROLLER', 'HAND']) {
-            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
-            for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
-                let controller = this[map][handedness];
-                if(controller && controller.isInScene()) {
-                    controller.pushDataForRTC(data);
-                    codes += UserMessageCodes[handedness + '_' + type];
-                }
-            }
-        }
-        return codes;
-    }
-
-    hasChild(object) {
-        return object.parent == this._object;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['isXR'] = this._isXR;
-        params['username'] = this._username;
-        return params;
-    }
-
-    _updateAvatar() {
-        if(!this._avatar.isDisplayingAvatar()) {
-            let data = [];
-            this._pushAvatarDataForRTC(data);
-            let rotation = data.slice(3, 6);
-            this._avatar.getObject().rotation.fromArray(rotation);
-        }
-        let updateNumber = sessionHandler.getControlsUpdateNumber();
-        if(this._avatarFadeUpdateNumber == updateNumber) return;
-        this._avatarFadeUpdateNumber = updateNumber;
-        let cameraDistance = sessionHandler.getCameraDistance();
-        if(cameraDistance > FADE_START * 2) return;
-        let diff = cameraDistance - this._avatarFadeCameraDistance;
-        if(Math.abs(diff) < EPSILON) return;
-        //Fade Logic Start
-        this._avatarFadeCameraDistance = cameraDistance;
-        let fadePercent = Math.max(cameraDistance, FADE_END);
-        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
-        if(fadePercent == 0) {
-            if(this._avatar.isDisplayingAvatar()) {
-                this._basicMovement.setPerspective(1);
-                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
-                    1);
-                this._avatar.hideAvatar();
-            }
-            return;
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            this._basicMovement.setPerspective(3);
-            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
-            this._avatar.displayAvatar();
-        }
-        (fadePercent < 1)
-            ? this._avatar.fade(fadePercent)
-            : this._avatar.endFade();
-        //Fade Logic end
-
-        //Disappear Logic start
-        //let object = this._avatar.getObject();
-        //if(cameraDistance < FADE_MIDDLE) {
-        //    if(object.parent) this._avatar.removeFromScene();
-        //} else if(!object.parent) {
-        //    this._avatar.addToScene(global.cameraFocus,
-        //        this._pointerInteractable, this._gripInteractable);
-        //}
-        //Disappear Logic end
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updateHands(timeDelta);
-        } else if(this._avatar) {
-            this._updateAvatar();
-        }
-        this._basicMovement.update(timeDelta);
-    }
-
-    _getControllerModelUrl(object) {
-        if(object && object.motionController) {
-            return object.motionController.assetUrl;
-        }
-    }
-
-    _updateHands(timeDelta) {
-        for(let side in Handedness) {
-            this._updateHand(timeDelta, XRInputDeviceTypes.CONTROLLER, side);
-            this._updateHand(timeDelta, XRInputDeviceTypes.HAND, side);
-        }
-    }
-
-    _updateHand(timeDelta, type, handedness) {
-        let controller = (type == XRInputDeviceTypes.HAND)
-            ? this._xrHands[handedness]
-            : this._xrControllers[handedness];
-        let controllerModel = inputHandler.getXRControllerModel(type,
-            handedness);
-        let source = inputHandler.getXRInputSource(type, handedness);
-        if(controller && controller.isInScene()) {
-            if(source) {
-                controller.resetTTL();
-            } else {
-                controller.decrementTTL(timeDelta);
-            }
-        } else if(source && this._getControllerModelUrl(controllerModel)) {
-            if(!controller) {
-                let assetClass = (type == XRInputDeviceTypes.HAND)
-                    ? XRHand
-                    : XRController;
-                controller = new assetClass({
-                    handedness: handedness,
-                    ownerId: this._id,
-                    controllerModel: controllerModel,
-                    object: inputHandler.getXRController(type, handedness,
-                        'grip'),
-                });
-                projectHandler.addAsset(controller, true);
-                controller.attachTo(this);
-            } else {
-                projectHandler.addAsset(controller, true);
-            }
-        }
-    }
-
-    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
-    static assetName = 'User';
-}
-
-function generateRandomUsername$1() {
-    return String.fromCharCode(97+Math.floor(Math.random() * 26))
-            + Math.floor(Math.random() * 100);
-}
-
-let userController = new UserController();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const ERROR_FIX_FRAMES = 30;
-const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
-
-class PeerController extends InternalAssetEntity {
-    constructor(params = {}) {
-        params['assetId'] = PeerController.assetId;
-        super(params);
-        this._velocity = new THREE.Vector3();
-        this._positionError = new THREE.Vector3();
-        this._errorFixFrame = ERROR_FIX_FRAMES;
-        this._isXR = params['isXR'];
-        this._username = params['username'] || '...';
-        this._displayingUsername = params['displayingUsername'];
-        this._xrControllers = {};
-        this._xrHands = {};
-        this._xrDevices = new Set();
-        this._setup();
-    }
-
-    _setup() {
-        let usernameParams = {
-            'text': this._username, 
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'fontSize': 0.06,
-            'height': 0.04,
-            'width': 0.5,
-            'offset': 0,
-            'margin': 0,
-        };
-        this._usernameBlock = new THREE.Object3D();
-        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
-        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
-        usernameFront.rotateY(Math.PI);
-        this._usernameBlock.position.setY(1.85);
-        this._usernameBlock.add(usernameFront);
-        this._usernameBlock.add(usernameBack);
-        if(this._displayingUsername) {
-            this._object.add(this._usernameBlock);
-        }
-    }
-
-    _updateAvatarData(float32Array, index) {
-        if(!this._avatar) return;
-        let object = this._avatar.getObject();
-        if(this._isXR) object.position.fromArray(float32Array, index);
-        let rotation = float32Array.slice(index + 3, index + 6);
-        object.rotation.fromArray(rotation);
-    }
-
-    _updateHandData(float32Array, index, asset) {
-        if(!asset) return;
-        let peerHand = asset.getObject();
-        peerHand.position.fromArray(float32Array, index);
-        let rotation = float32Array.slice(index + 3, index + 6);
-        peerHand.rotation.fromArray(rotation);
-    }
-
-    _updateVelocity(float32Array, index) {
-        this._velocity.fromArray(float32Array, index);
-        if(!this._isXR && !this._firstPerson) {
-            if(!this._avatar) return;
-            let object = this._avatar.getObject();
-            vector3s[0].copy(this._velocity).setY(0).multiplyScalar(-1);
-            if(vector3s[0].length() < 0.001) return;
-            object.getWorldPosition(vector3s[1]).add(vector3s[0]);
-            object.lookAt(vector3s[1]);
-        }
-    }
-
-    _updatePosition(float32Array, index) {
-        this._positionError.fromArray(float32Array, index)
-            .sub(this._object.position);
-        this._errorFixFrame = 0;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['isXR'] = this._isXR;
-        params['username'] = this._username;
-        return params;
-    }
-
-    getAvatar() {
-        return this._avatar;
-    }
-
-    getIsXR() {
-        return this._isXR;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    setAvatar(avatar) {
-        this._avatar = avatar;
-    }
-
-    setIsXR(isXR) {
-        this._isXR = isXR;
-    }
-
-    setUsername(username) {
-        if(this._username == username) return;
-        this._username = username;
-        let shortName = username = stringWithMaxLength(username || '...', 17);
-        this._usernameBlock.children.forEach((block) => {
-            block.children[1].set({ content: shortName });
-        });
-    }
-
-    getController(hand) {
-        return this._xrControllers[hand];
-    }
-
-    getHand(hand) {
-        return this._xrHands[hand];
-    }
-
-    getXRDevices() {
-        return this._xrDevices;
-    }
-
-    registerAvatar(avatar) {
-        this._avatar = avatar;
-    }
-
-    registerXRController(hand, xrController) {
-        this._xrControllers[hand] = xrController;
-        this._xrDevices.add(xrController);
-    }
-
-    registerXRHand(hand, xrHand) {
-        this._xrHands[hand] = xrHand;
-        this._xrDevices.add(xrHand);
-    }
-
-    registerXRDevice(xrDevice) {
-        this._xrDevices.add(xrDevice);
-    }
-
-    setDisplayingUsername(displayingUsername) {
-        if(this._displayingUsername == displayingUsername) return;
-        this._displayingUsername = displayingUsername;
-        if(this._displayingUsername) {
-            this._object.add(this._usernameBlock);
-        } else {
-            this._object.remove(this._usernameBlock);
-        }
-    }
-
-    setFirstPerson(firstPerson) {
-        this._firstPerson = firstPerson;
-    }
-
-    update(timeDelta) {
-        this._object.position.addScaledVector(this._velocity, timeDelta);
-        if(this._errorFixFrame < ERROR_FIX_FRAMES) {
-            this._object.position.addScaledVector(this._positionError,
-                ERROR_FACTOR);
-            this._errorFixFrame++;
-        }
-    }
-
-    processMessage(message) {
-        let codes = new Uint8Array(message.slice(2, 3))[0];
-        let float32Array = new Float32Array(message.slice(3));
-        let index = 0;
-        if(UserMessageCodes.AVATAR & codes) {
-            this._updateAvatarData(float32Array, index);
-            index += 6;
-        }
-        if(UserMessageCodes.LEFT_CONTROLLER & codes) {
-            let asset = this._xrControllers[Handedness.LEFT];
-            this._updateHandData(float32Array, index, asset);
-            index += 6;
-        }
-        if(UserMessageCodes.RIGHT_CONTROLLER & codes) {
-            let asset = this._xrControllers[Handedness.RIGHT];
-            this._updateHandData(float32Array, index, asset);
-            index += 6;
-        }
-        if(UserMessageCodes.LEFT_HAND & codes) {
-            let asset = this._xrHands[Handedness.LEFT];
-            this._updateHandData(float32Array, index, asset);
-            index += 6;
-        }
-        if(UserMessageCodes.RIGHT_HAND & codes) {
-            let asset = this._xrHands[Handedness.RIGHT];
-            this._updateHandData(float32Array, index, asset);
-            index += 6;
-        }
-        if(UserMessageCodes.USER_VELOCITY & codes) {
-            this._updateVelocity(float32Array, index);
-            index += 3;
-        } else {
-            this._velocity.set(0, 0, 0);
-        }
-        if(UserMessageCodes.USER_POSITION & codes) {
-            this._updatePosition(float32Array, index);
-            index += 3;
-        }
-    }
-
-    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
-    static assetName = 'Peer';
-}
-
-projectHandler.registerAsset(PeerController);
-libraryHandler.loadBuiltIn(PeerController);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12838,11 +11292,16 @@ let party = new Party();
 
 
 const SIXTEEN_KB$1 = 1024 * 16;
-const BLOCKABLE_HANDLERS_MAP = {
-    component_attached: '_handleComponentAttached',
-    component_detached: '_handleComponentDetached',
-    entity_added: '_handleEntityAdded',
-    entity_attached: '_handleEntityAttached',
+const HANDLERS = {
+    asset_added: '_handleAssetAdded',
+    user_controller: '_handleUserController',
+    username: '_handleUsername',
+};
+const BUFFER_HANDLERS = {
+    [InternalMessageIds.ASSET_ADDED_PART]: '_handleBufferAssetAdded',
+    [InternalMessageIds.USER_PERSPECTIVE]: '_handleUserPerspective',
+};
+const BLOCKABLE_HANDLERS = {
     instance_added: '_handleInstanceAdded',
     instance_deleted: '_handleInstanceDeleted',
     instance_updated: '_handleInstanceUpdated',
@@ -12852,10 +11311,21 @@ const BLOCKABLE_HANDLERS_MAP = {
     sanitize_internals: '_handleSanitizeInternals',
     settings_updated: '_handleSettingsUpdated',
 };
+const BLOCKABLE_BUFFER_HANDLERS = {
+    [InternalMessageIds.ENTITY_POSITION]: '_handleEntityPosition',
+    [InternalMessageIds.ENTITY_ROTATION]: '_handleEntityRotation',
+    [InternalMessageIds.ENTITY_SCALE]: '_handleEntityScale',
+    [InternalMessageIds.ENTITY_TRANSFORMATION]: '_handleEntityTransformation',
+    [InternalMessageIds.COMPONENT_ATTACHED]: '_handleComponentAttached',
+    [InternalMessageIds.COMPONENT_DETACHED]: '_handleComponentDetached',
+    [InternalMessageIds.ENTITY_ADDED]: '_handleEntityAdded',
+    [InternalMessageIds.ENTITY_ATTACHED]: '_handleEntityAttached',
+};
 
 class PartyMessageHelper {
     constructor() {
-        this._id = uuidv4();
+        this._id = '44a9d6b3-2bf7-4e36-b8d1-10bb69de95cc';
+        this._idBytes = uuidToBytes$1(this._id);
         this._handlingLocks = new Set();
         this._handleQueue = new Queue();
         this._publishQueue = new Queue();
@@ -12863,30 +11333,37 @@ class PartyMessageHelper {
 
     init(PartyHandler) {
         this._partyHandler = PartyHandler;
-        let handlers = {
-            asset_added: (p, m) => { this._handleAssetAdded(p, m); },
-            username: (p, m) => { this._handleUsername(p, m); },
-            user_controller: (p, m) => { this._handleUserController(p, m); },
-            user_perspective: (p, m) => { this._handleUserPerspective(p,m); },
-        };
-        for(let topic in BLOCKABLE_HANDLERS_MAP) {
-            let handler = (p,m) => {this[BLOCKABLE_HANDLERS_MAP[topic]](p, m);};
-            handlers[topic] = (p, m) => { this._handleBlockable(handler,p,m); };
+        for(let id in HANDLERS) {
+            let handler = (p, m) => this[HANDLERS[id]](p, m);
+            this._partyHandler.addInternalMessageHandler(id, handler, true);
         }
-        this._partyHandler.addMessageHandlers(handlers);
+        for(let id in BUFFER_HANDLERS) {
+            let handler = (p, m) => this[BUFFER_HANDLERS[id]](p, m);
+            this._partyHandler.addInternalBufferMessageHandler(id,handler,true);
+        }
+        for(let id in BLOCKABLE_HANDLERS) {
+            let handler = (p, m) => this[BLOCKABLE_HANDLERS[id]](p, m);
+            this._partyHandler.addInternalMessageHandler(id, handler);
+        }
+        for(let id in BLOCKABLE_BUFFER_HANDLERS) {
+            let handler = (p, m) => this[BLOCKABLE_BUFFER_HANDLERS[id]](p, m);
+            this._partyHandler.addInternalBufferMessageHandler(id, handler);
+        }
     }
 
     registerHandler(topic, handler) {
+        console.warn('registerHandler(...) is deprecated');
         this._partyHandler.addMessageHandler(topic, handler);
     }
 
     registerBlockableHandler(topic, handler) {
+        console.warn('registerBlockableHandler(...) is deprecated');
         let blockableHandler = (p, m) => { this._handleBlockable(handler,p,m);};
         this._partyHandler.addMessageHandler(topic, blockableHandler);
     }
 
     publish(message) {
-        this._partyHandler.sendToAllPeers(message);
+        this._partyHandler._sendToAllPeers(message);
     }
 
     queuePublish(message) {
@@ -12894,7 +11371,7 @@ class PartyMessageHelper {
             this._publishQueue.enqueue(f);
         } else {
             this._publishQueue.enqueue(() => {
-                this._partyHandler.sendToAllPeers(message);
+                this._partyHandler._sendToAllPeers(message);
                 return Promise.resolve();
             });
         }
@@ -12929,30 +11406,32 @@ class PartyMessageHelper {
     }
 
     _handleAssetAdded(peer, message) {
-        let lock = uuidv4();
-        this._handlingLocks.add(lock);
-        let partsLength = message.parts;
-        let assetId = message.assetId;
-        let name = message.name;
-        let type = message.type;
-        let parts = [];
-        this._partyHandler.setEventBufferHandler(peer, (peer, message) => {
-            parts.push(message);
-            if(parts.length == partsLength) {
-                this._partyHandler.setEventBufferHandler(peer);
-                let blob = new Blob(parts, { type: 'application/javascript' });
-                let assetDetails = {
-                    Name: name,
-                    Type: type,
-                };
-                libraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
-                    .then(() => {
-                        pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId);
-                        this._removeHandlingLock(lock);
-                    });
-            }
-        });
+        uuidv4();
+        message.lock = this._partyHandler.addMessageHandlerLock();
+        message.parts = [];
+        peer.assetAddedDetails = message;
+    }
+
+    _handleBufferAssetAdded(peer, message) {
+        if(!peer.assetAddedDetails) {
+            console.error('Unexpected call to _handleBufferAssetAdded() before _handleAssetAdded()');
+            return;
+        }
+        let {parts,partsLength,assetId,name,type,lock} = peer.assetAddedDetails;
+        parts.push(message);
+        if(parts.length == partsLength) {
+            let blob = new Blob(parts, { type: 'application/javascript' });
+            let assetDetails = {
+                Name: name,
+                Type: type,
+            };
+            libraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
+                .then(() => {
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                        assetId);
+                    this._partyHandler.removeMessageHandlerLock(lock);
+                });
+        }
     }
 
     _handleBlockable(handler, peer, message) {
@@ -12966,6 +11445,12 @@ class PartyMessageHelper {
     }
 
     _handleComponentAttached(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            id: uuidFromBytes(messageBytes.subarray(0, 16)),
+            componentId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            componentAssetId: uuidFromBytes(messageBytes.subarray(32, 48)),
+        };
         let asset = projectHandler.getSessionAsset(message.id);
         if(asset) {
             if(asset.editorHelper) {
@@ -12973,13 +11458,18 @@ class PartyMessageHelper {
             } else {
                 asset.addComponent(message.componentId, true);
             }
-            delete message['topic'];
             pubSub.publish(this._id, PubSubTopics.COMPONENT_ATTACHED + ':'
                 + message.componentAssetId, message);
         }
     }
 
     _handleComponentDetached(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            id: uuidFromBytes(messageBytes.subarray(0, 16)),
+            componentId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            componentAssetId: uuidFromBytes(messageBytes.subarray(32, 48)),
+        };
         let asset = projectHandler.getSessionAsset(message.id);
         if(asset) {
             if(asset.editorHelper) {
@@ -12988,13 +11478,19 @@ class PartyMessageHelper {
             } else {
                 asset.removeComponent(message.componentId, true);
             }
-            delete message['topic'];
             pubSub.publish(this._id, PubSubTopics.COMPONENT_DETACHED + ':'
                 + message.componentAssetId, message);
         }
     }
 
     _handleEntityAdded(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            parentId: uuidFromBytes(messageBytes.subarray(0, 16)),
+            childId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            position: Array.from(new Float64Array(message, 32, 3)),
+            rotation: Array.from(new Float64Array(message, 56, 3)),
+        };
         let parentAsset = projectHandler.getSessionAsset(message.parentId);
         let childAsset = projectHandler.getSessionAsset(message.childId);
         if(childAsset) {
@@ -13006,15 +11502,20 @@ class PartyMessageHelper {
             let object = childAsset.getObject();
             object.position.fromArray(message.position);
             object.rotation.fromArray(message.rotation);
-            delete message['topic'];
             pubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, message);
         } else {
-            console.error(
-                "Missing child from entity_added message");
+            console.error("Missing child in message for _handleEntityAdded()");
         }
     }
 
     _handleEntityAttached(peer, message) {
+        let messageBytes = new Uint8Array(message);
+        message = {
+            parentId: uuidFromBytes(messageBytes.subarray(0, 16)),
+            childId: uuidFromBytes(messageBytes.subarray(16, 32)),
+            position: Array.from(new Float64Array(message, 32, 3)),
+            rotation: Array.from(new Float64Array(message, 56, 3)),
+        };
         let parentAsset = projectHandler.getSessionAsset(message.parentId);
         let childAsset = projectHandler.getSessionAsset(message.childId);
         if(childAsset) {
@@ -13026,11 +11527,57 @@ class PartyMessageHelper {
             let object = childAsset.getObject();
             object.position.fromArray(message.position);
             object.rotation.fromArray(message.rotation);
-            delete message['topic'];
             pubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, message);
         } else {
-            console.error(
-                "Missing child from entity_attached message");
+            console.error("Missing child from entity_attached message");
+        }
+    }
+
+    _handleEntityPosition(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let position = Array.from(new Float64Array(message, 16, 3));
+        let asset = projectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setPosition(position);
+        } else {
+            console.error("Missing asset in message for _handleEntityPosition()");
+        }
+    }
+
+    _handleEntityRotation(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let rotation = Array.from(new Float64Array(message, 16, 3));
+        let asset = projectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setRotation(rotation);
+        } else {
+            console.error("Missing asset in message for _handleEntityRotation()");
+        }
+    }
+
+    _handleEntityScale(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let scale = Array.from(new Float64Array(message, 16, 3));
+        let asset = projectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setScale(scale);
+        } else {
+            console.error("Missing asset in message for _handleEntityScale()");
+        }
+    }
+
+    _handleEntityTransformation(peer, message) {
+        let id = uuidFromBytes(new Uint8Array(message, 0, 16));
+        let position = Array.from(new Float64Array(message, 16, 3));
+        let rotation = Array.from(new Float64Array(message, 40, 3));
+        let scale = Array.from(new Float64Array(message, 64, 3));
+        let asset = projectHandler.getSessionAsset(id);
+        if(asset) {
+            asset.setPosition(position);
+            asset.setRotation(rotation);
+            asset.setScale(scale);
+        } else {
+            console.error("Missing asset in message for _handleEntityTransformation()");
         }
     }
 
@@ -13094,8 +11641,7 @@ class PartyMessageHelper {
         pubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
     }
 
-    _handleSettingsUpdated(peer, message) {
-        let settings = message.settings;
+    _handleSettingsUpdated(peer, settings) {
         for(let setting in settings) {
             let handler;
             if(setting == 'User Settings') {
@@ -13131,8 +11677,7 @@ class PartyMessageHelper {
         pubSub.publish(this._id, topic, message);
     }
 
-    _handleUsername(peer, message) {
-        let username = message.username;
+    _handleUsername(peer, username) {
         if(peer.username == username) return;
         peer.username = username;
         if(peer.controller) peer.controller.setUsername(username);
@@ -13142,7 +11687,7 @@ class PartyMessageHelper {
     }
 
     _handleUserPerspective(peer, message) {
-        let perspective = message.perspective;
+        let perspective = new Uint8Array(message)[0];
         if(peer.controller) peer.controller.setFirstPerson(perspective == 1);
     }
 
@@ -13163,7 +11708,7 @@ class PartyMessageHelper {
     }
 
     handleDiffLoaded() {
-        this._partyHandler.sendToAllPeers(JSON.stringify({
+        this._partyHandler._sendToAllPeers(JSON.stringify({
             topic: 'loaded_diff',
         }));
         pubSub.publish(this._id, PubSubTopics.USER_READY);
@@ -13177,100 +11722,83 @@ class PartyMessageHelper {
     }
 
     _publishAssetAdded(assetId) {
-        return new Promise((resolve) => {
-            let libraryDetails = libraryHandler.getLibrary()[assetId];
-            let blob = libraryDetails['Blob'];
-            blob.arrayBuffer().then((buffer) => {
-                let parts = [];
-                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB$1);
-                for(let i = 0; i < n; i++) {
-                    let chunkStart = i * SIXTEEN_KB$1;
-                    let chunkEnd = (i + 1) * SIXTEEN_KB$1;
-                    parts.push(buffer.slice(chunkStart, chunkEnd));
-                }
-                this._partyHandler.sendToAllPeers(JSON.stringify({
-                    topic: 'asset_added',
-                    assetId: assetId,
-                    name: libraryDetails['Name'],
-                    type: libraryDetails['Type'],
-                    parts: parts.length,
-                }));
-                for(let part of parts) {
-                    this._partyHandler.sendToAllPeers(part);
-                }
-                resolve();
+        this._partyHandler.publishFromFunction(() => {
+            return new Promise((resolve) => {
+                let libraryDetails = libraryHandler.getLibrary()[assetId];
+                let blob = libraryDetails['Blob'];
+                blob.arrayBuffer().then((buffer) => {
+                    let parts = [];
+                    let n = Math.ceil(buffer.byteLength / SIXTEEN_KB$1);
+                    for(let i = 0; i < n; i++) {
+                        let chunkStart = i * SIXTEEN_KB$1;
+                        let chunkEnd = (i + 1) * SIXTEEN_KB$1;
+                        parts.push(buffer.slice(chunkStart, chunkEnd));
+                    }
+                    this._partyHandler.publishInternalMessage('asset_added', {
+                        assetId: assetId,
+                        name: libraryDetails['Name'],
+                        type: libraryDetails['Type'],
+                        partsLength: parts.length,
+                    }, true);
+                    for(let part of parts) {
+                        this._partyHandler.publishInternalBufferMessage(
+                            InternalMessageIds.ASSET_ADDED_PART, part, true);
+                    }
+                    resolve();
+                });
             });
         });
     }
 
-    _publishComponentAttachedDetached(topic, message) {
-        let peerMessage = {
-            topic: topic,
-            id: message.id,
-            assetId: message.assetId,
-            assetType: message.assetType,
-            componentId: message.componentId,
-            componentAssetId: message.componentAssetId,
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+    _publishComponentAttachedDetached(internalMessageId, message) {
+        let peerMessage = concatenateArrayBuffers(
+            uuidToBytes$1(message.id),
+            uuidToBytes$1(message.componentId),
+            uuidToBytes$1(message.componentAssetId)
+        );
+        this._partyHandler.publishInternalBufferMessage(internalMessageId,
+            peerMessage);
     }
 
     _publishEntityAdded(message) {
         let childAsset = projectHandler.getSessionAsset(message.childId);
-        let peerMessage = {
-            topic: 'entity_added',
-            parentId: message.parentId,
-            childId: message.childId,
-            position: childAsset.getObject().position.toArray(),
-            rotation: childAsset.getObject().rotation.toArray(),
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+        let peerMessage = concatenateArrayBuffers(
+            uuidToBytes$1(message.parentId),
+            uuidToBytes$1(message.childId),
+            new Float64Array(childAsset.getPosition()),
+            new Float64Array(childAsset.getRotation()),
+        );
+        this._partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_ADDED, peerMessage);
     }
 
     _publishEntityAttached(message) {
         let childAsset = projectHandler.getSessionAsset(message.childId);
-        let peerMessage = {
-            topic: 'entity_attached',
-            parentId: message.parentId,
-            childId: message.childId,
-            position: childAsset.getObject().position.toArray(),
-            rotation: childAsset.getObject().rotation.toArray(),
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+        let peerMessage = concatenateArrayBuffers(
+            uuidToBytes$1(message.parentId),
+            uuidToBytes$1(message.childId),
+            new Float64Array(childAsset.getPosition()),
+            new Float64Array(childAsset.getRotation()),
+        );
+        this._partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_ATTACHED, peerMessage);
     }
 
     _publishInstanceAdded(asset, assetType) {
         let message = {
-            topic: 'instance_added',
             asset: asset.exportParams(),
             assetType: assetType,
         };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_added', message);
     }
 
     _publishInstanceDeleted(asset, assetType) {
         let message = {
-            topic: 'instance_deleted',
             id: asset.getId(),
             assetId: asset.getAssetId(),
             assetType: assetType,
         };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_deleted', message);
     }
 
     _publishInstanceUpdated(updateMessage, assetType) {
@@ -13279,22 +11807,18 @@ class PartyMessageHelper {
         for(let param of updateMessage.fields) {
             let capitalizedParam = capitalizeFirstLetter(param);
             asset[param] = updateMessage.asset['get' + capitalizedParam]();
+            if(asset[param] === undefined) asset[param] = null;
         }
         let peerMessage = {
-            topic: "instance_updated",
             params: asset,
             assetType: assetType,
         };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(
-                JSON.stringify(peerMessage, (k, v) => v === undefined ?null:v));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_updated',
+            peerMessage);
     }
 
     _publishInstanceAttached(data) {
         let message = {
-            topic: 'instance_attached',
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
@@ -13307,15 +11831,11 @@ class PartyMessageHelper {
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_attached', message);
     }
 
     _publishInstanceDetached(data) {
         let message = {
-            topic: 'instance_detached',
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
             option: data.option,
@@ -13328,54 +11848,31 @@ class PartyMessageHelper {
             message['twoHandScaling'] = data.twoHandScaling;
             message['isXR'] = true;
         }
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('instance_detached', message);
     }
 
-    _publishSettingsUpdate(updateMessage) {
+    _publishSettingsUpdated(updateMessage) {
         let settings = updateMessage.settings;
         let keys = updateMessage.keys;
-        let peerMessage = {
-            topic: 'settings_updated',
-            settings: {},
-        };
-        peerMessage.settings[keys[0]] = {};
-        peerMessage.settings[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(peerMessage));
-            return Promise.resolve();
-        });
+        let message = {};
+        message[keys[0]] = {};
+        message[keys[0]][keys[1]] = settings[keys[0]][keys[1]];
+        this._partyHandler.publishInternalMessage('settings_updated', message);
     }
 
     _publishUserPerspectiveChanged(perspective) {
-        let message = {
-            topic: 'user_perspective',
-            perspective: perspective,
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        let message = new Uint8Array([perspective]);
+        this._partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.USER_PERSPECTIVE, message);
     }
 
     _publishUsernameUpdated(username) {
-        let message = {
-            topic: 'username',
-            username: username,
-        };
-        this._publishQueue.enqueue(() => {
-            this._partyHandler.sendToAllPeers(JSON.stringify(message));
-            return Promise.resolve();
-        });
+        this._partyHandler.publishInternalMessage('username', username);
     }
 
     addSubscriptions() {
         pubSub.subscribe(this._id, PubSubTopics.ASSET_ADDED, (assetId) => {
-            this._publishQueue.enqueue(() => {
-                return this._publishAssetAdded(assetId);
-            });
+            this._publishAssetAdded(assetId);
         });
         pubSub.subscribe(this._id, PubSubTopics.BECOME_PARTY_HOST, () => {
             this._partyHandler.setIsHost(true);
@@ -13384,12 +11881,12 @@ class PartyMessageHelper {
             this._partyHandler.bootPeer(peerId);
         });
         pubSub.subscribe(this._id, PubSubTopics.COMPONENT_ATTACHED, (message)=>{
-            this._publishComponentAttachedDetached('component_attached',
-                message);
+            this._publishComponentAttachedDetached(
+                InternalMessageIds.COMPONENT_ATTACHED, message);
         });
         pubSub.subscribe(this._id, PubSubTopics.COMPONENT_DETACHED, (message)=>{
-            this._publishComponentAttachedDetached('component_detached',
-                message);
+            this._publishComponentAttachedDetached(
+                InternalMessageIds.COMPONENT_DETACHED, message);
         });
         pubSub.subscribe(this._id, PubSubTopics.ENTITY_ADDED, (message) => {
             this._publishEntityAdded(message);
@@ -13405,13 +11902,13 @@ class PartyMessageHelper {
         });
         pubSub.subscribe(this._id, PubSubTopics.SANITIZE_INTERNALS, () => {
             this._publishQueue.enqueue(() => {
-                this._partyHandler.sendToAllPeers(
+                this._partyHandler._sendToAllPeers(
                     JSON.stringify({ topic: 'sanitize_internals' }));
                 return Promise.resolve();
             });
         });
         pubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
-            this._publishSettingsUpdate(message);
+            this._publishSettingsUpdated(message);
         });
         pubSub.subscribe(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, (n)=>{
             this._publishUserPerspectiveChanged(n);
@@ -13442,6 +11939,7 @@ class PartyMessageHelper {
         pubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_ATTACHED);
         pubSub.unsubscribe(this._id, PubSubTopics.COMPONENT_DETACHED);
         pubSub.unsubscribe(this._id, PubSubTopics.ENTITY_ADDED);
+        pubSub.unsubscribe(this._id, PubSubTopics.ENTITY_ATTACHED);
         pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
         pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_DETACHED);
         pubSub.unsubscribe(this._id, PubSubTopics.SANITIZE_INTERNALS);
@@ -13474,16 +11972,23 @@ let partyMessageHelper = new PartyMessageHelper();
 const SIXTEEN_KB = 1024 * 16;
 const TWO_BYTE_MOD = 2 ** 16;
 const JITTER_DELAY = 50;
+const USER_HEADER = new Uint8Array([0]);
 
 class PartyHandler {
     constructor() {
         this._peers = {};
         this._partyActive = false;
         this._displayingUsernames = false;
-        this._username = generateRandomUsername();
-        this._messageHandlers = {
-            project: (p, m) => { this._handleProject(p, m); },
-        };
+        this._username = generateRandomUsername$1();
+        this._handleLocks = new Set();
+        this._handleQueue = new Queue();
+        this._publishQueue = new Queue();
+        this._messageHandlers = {};
+        this._bufferMessageHandlers = {};
+        this.addInternalMessageHandler('project',
+            (p, m) => this._handleProject(p, m), true);
+        this.addInternalBufferMessageHandler(InternalMessageIds.PROJECT_PART,
+            (p, m) => this._handleProjectPart(p, m), true);
         partyMessageHelper.init(this);
         party.setOnPeerIdUpdate((o, n) => { this._updatePeerId(o, n); });
         party.setOnSetupPeer((rtc) => { this._registerPeer(rtc); });
@@ -13513,6 +12018,7 @@ class PartyHandler {
         let peer = {
             id: rtc.getPeerId(),
             jitterBuffer: new Queue(),
+            messageBacklog: [],
             readyForUpdates: false,
         };
         this._peers[peer.id] = peer;
@@ -13525,7 +12031,7 @@ class PartyHandler {
                 let zip = (global$1.isEditor)
                     ? projectHandler.exportProject(true)
                     : projectHandler.exportDiff();
-                this._sendProjectZip(zip, [rtc]);
+                this._sendProjectZip(zip, peer);
             }
         });
         rtc.setOnSendDataChannelClose(() => {
@@ -13561,15 +12067,19 @@ class PartyHandler {
 
     _sendUserInfo(rtc) {
         rtc.sendData(JSON.stringify({
-            "topic": "user_controller",
-            "controllerParams": global$1.userController.exportParams(),
-            "isXR": global$1.deviceType == "XR",
+            id: 'Iuser_controller',
+            body: {
+                "controllerParams": global$1.userController.exportParams(),
+                "isXR": global$1.deviceType == "XR",
+            }
         }));
         let avatar = global$1.userController.getAvatar();
         rtc.sendData(JSON.stringify({
-            "topic": "instance_added",
-            "asset": avatar.exportParams(),
-            "assetType": avatar.constructor.assetType,
+            id: 'Iinstance_added',
+            body: {
+                "asset": avatar.exportParams(),
+                "assetType": avatar.constructor.assetType,
+            }
         }));
         for(let hand in Handedness) {
             let xrController = global$1.userController.getController(hand);
@@ -13577,17 +12087,15 @@ class PartyHandler {
             for(let controller of [xrController, xrHand]) {
                 if(controller && controller.isInScene()) {
                     rtc.sendData(JSON.stringify({
-                        "topic": "instance_added",
-                        "asset": controller.exportParams(),
-                        "assetType": controller.constructor.assetType,
+                        id: 'Iinstance_added',
+                        body: {
+                            "asset": controller.exportParams(),
+                            "assetType": controller.constructor.assetType,
+                        }
                     }));
                 }
             }
         }
-        rtc.sendData(JSON.stringify({
-            topic: 'user_scale',
-            scale: settingsHandler.getUserScale(),
-        }));
     }
 
     _updatePeerId(oldPeerId, newPeerId) {
@@ -13597,8 +12105,8 @@ class PartyHandler {
     }
 
     _handleJSON(peer, message) {
-        if(message.topic in this._messageHandlers)
-            this._messageHandlers[message.topic](peer, message);
+        if(message.id in this._messageHandlers)
+            this._messageHandlers[message.id](peer, message.body);
     }
 
     _handleArrayBuffer(peer, message) {
@@ -13606,7 +12114,21 @@ class PartyHandler {
             peer.handleEventArrayBuffer(peer, message);
             return;
         }
-        peer.jitterBuffer.enqueue(message);
+        let id;
+        let type = new Uint8Array(message, 0, 1)[0];
+        if(type == 0) {
+            peer.jitterBuffer.enqueue(message.slice(1));
+            return;
+        } else if(type % 2 == 0) {
+            id = new Uint8Array(message, 1, 1)[0];
+            message = message.slice(2);
+        } else {
+            id = uuidFromBytes(new Uint8Array(message, 1, 16));
+            message = message.slice(17);
+        }
+        id = (type < 3 ? 'I' : 'U') + id;
+        if(id in this._bufferMessageHandlers)
+            this._bufferMessageHandlers[id](peer, message);
     }
 
     _getNextJitterBufferMessage(jitterBuffer, timestamp) {
@@ -13635,7 +12157,7 @@ class PartyHandler {
         return uint16array[0];
     }
 
-    _sendProjectZip(zip, rtcs) {
+    _sendProjectZip(zip, ...peerList) {
         zip.generateAsync({ type: 'arraybuffer' }).then((buffer) => {
             let parts = [];
             let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
@@ -13644,68 +12166,169 @@ class PartyHandler {
                 let chunkEnd = (i + 1) * SIXTEEN_KB;
                 parts.push(buffer.slice(chunkStart, chunkEnd));
             }
-            this._sendProjectParts(rtcs, parts);
+            this._sendProjectParts(parts, ...peerList);
         });
     }
 
-    _sendProjectParts(rtcs, parts) {
-        rtcs.forEach((rtc) => rtc.sendData(JSON.stringify({
-            "topic": "project",
-            "parts": parts.length,
-        })));
+    _sendProjectParts(parts, ...peerList) {
+        for(let peer of peerList) {
+            if(peer.rtc) peer.rtc.sendData(JSON.stringify({
+                    id: 'Iproject',
+                    body: { "partsLength": parts.length },
+                }));
+        }
         for(let part of parts) {
-            rtcs.forEach((rtc) => rtc.sendData(part));
+            let message = concatenateArrayBuffers(
+                new Uint8Array([2, InternalMessageIds.PROJECT_PART]), part);
+            for(let peer of peerList) {
+                if(peer.rtc) peer.rtc.sendData(message);
+            }
         }
     }
 
     _handleProject(peer, message) {
-        let partsLength = message.parts;
-        let parts = [];
-        peer.handleEventArrayBuffer = (peer, message) => {
-            parts.push(message);
-            if(parts.length == partsLength) {
-                peer.handleEventArrayBuffer = null;
-                let buffer = concatenateArrayBuffers(parts);
-                let zip = new JSZip();
-                zip.loadAsync(buffer).then((zip) => {
-                    if(global$1.isEditor) {
-                        projectHandler.loadZip(zip, () => {
-                            this.sendToAllPeers(JSON.stringify({
-                                topic: 'loaded_diff',
-                            }));
-                            for(let peerId in this._peers) {
-                                this._peers[peerId].readyForUpdates = true;
-                            }
-                        }, () => {
-                            party.disconnect();
-                            partyMessageHelper.notifyDiffError();
-                        });
-                    } else {
-                        projectHandler.loadDiffZip(zip, () => {
-                            this.sendToAllPeers(JSON.stringify({
-                                topic: 'loaded_diff',
-                            }));
-                            for(let peerId in this._peers) {
-                                this._peers[peerId].readyForUpdates = true;
-                            }
-                        }, () => {
-                            party.disconnect();
-                            partyMessageHelper.notifyDiffError();
-                        });
-                    }
-                });
-            }
-        };
+        uuidv4();
+        message.lock = this.addMessageHandlerLock();
+        message.parts = [];
+        peer.incomingProjectDetails = message;
     }
 
-    addMessageHandler(topic, messageHandler) {
-        this._messageHandlers[topic] = messageHandler;
-    }
-
-    addMessageHandlers(messageHandlers) {
-        for(let key in messageHandlers) {
-            this._messageHandlers[key] = messageHandlers[key];
+    _handleProjectPart(peer, message) {
+        if(!peer.incomingProjectDetails) {
+            console.error('Unexpected call to _handleProjectPart() before _handleProject()');
+            return;
         }
+        let {parts, partsLength, lock} = peer.incomingProjectDetails;
+        parts.push(message);
+        if(parts.length == partsLength) {
+            let buffer = concatenateArrayBuffersFromList(parts);
+            let zip = new JSZip();
+            zip.loadAsync(buffer).then((zip) => {
+                if(global$1.isEditor) {
+                    projectHandler.loadZip(zip, () => {
+                        this.publishInternalMessage('loaded_diff');
+                        for(let peerId in this._peers) {
+                            this._peers[peerId].readyForUpdates = true;
+                        }
+                        this.removeMessageHandlerLock(lock);
+                    }, () => {
+                        this.removeMessageHandlerLock(lock);
+                        party.disconnect();
+                        partyMessageHelper.notifyDiffError();
+                    });
+                } else {
+                    projectHandler.loadDiffZip(zip, () => {
+                        this.publishInternalMessage('loaded_diff');
+                        for(let peerId in this._peers) {
+                            this._peers[peerId].readyForUpdates = true;
+                        }
+                        this.removeMessageHandlerLock(lock);
+                    }, () => {
+                        this.removeMessageHandlerLock(lock);
+                        party.disconnect();
+                        partyMessageHelper.notifyDiffError();
+                    });
+                }
+            });
+        }
+    }
+
+    addMessageHandlerLock() {
+        let lock = uuidv4();
+        this._handleLocks.add(lock);
+        return lock;
+    }
+
+    removeMessageHandlerLock(lock) {
+        this._handleLocks.delete(lock);
+        while(this._handleQueue.length > 0 && this._handleLocks.size == 0) {
+            this._handleQueue.dequeue()();
+        }
+    }
+
+    _handleBlockable(handler, peer, message) {
+        if(this._handleLocks.size > 0) {
+            this._handleQueue.enqueue(() => handler(peer, message));
+            return;
+        }
+        handler(peer, message);
+    }
+
+    addMessageHandler(id, handler, skipQueue) {
+        this._messageHandlers['U' + id] = (skipQueue)
+            ? handler
+            : (p, m) => this._handleBlockable(handler,p,m);
+    }
+
+    addInternalMessageHandler(id, handler, skipQueue) {
+        this._messageHandlers['I' + id] = (skipQueue)
+            ? handler
+            : (p, m) => this._handleBlockable(handler,p,m);
+    }
+
+    addBufferMessageHandler(id, handler, skipQueue) {
+        this._bufferMessageHandlers['U' + id] = (skipQueue)
+            ? handler
+            : (p, m) => this._handleBlockable(handler,p,m);
+    }
+
+    addInternalBufferMessageHandler(id, handler, skipQueue) {
+        this._bufferMessageHandlers['I' + id] = (skipQueue)
+            ? handler
+            : (p, m) => this._handleBlockable(handler,p,m);
+    }
+
+    publishFromFunction(publishFunction, skipQueue) {
+        if(skipQueue) {
+            publishFunction();
+        } else {
+            this._publishQueue.enqueue(publishFunction);
+        }
+    }
+
+    _publishMessage(message, skipQueue, ...peerList) {
+        if(skipQueue) {
+            this._sendToPeers(message, ...peerList);
+        } else {
+            this._publishQueue.enqueue({ message: message, peerList: peerList});
+        }
+    }
+
+    publishMessage(id, message, skipQueue, ...peerList) {
+        this._publishMessage(JSON.stringify({
+            id: 'U' + id,
+            body: message,
+        }), skipQueue, ...peerList);
+    }
+
+    publishInternalMessage(id, message, skipQueue, ...peerList) {
+        this._publishMessage(JSON.stringify({
+            id: 'I' + id,
+            body: message,
+        }), skipQueue, ...peerList);
+    }
+
+    _publishBufferMessage(id, message, skipQueue, headerOffset, ...peerList) {
+        let header = new Uint8Array(1);
+        if(id instanceof Uint8Array) {
+            header[0] = headerOffset;
+        } else if(typeof id == 'number') {
+            header[0] = headerOffset + 1;
+            id = new Uint8Array([id]);
+        } else {
+            header[0] = headerOffset;
+            id = uuidToBytes(id);
+        }
+        message = concatenateArrayBuffers(header, id, message);
+        this._publishMessage(message, skipQueue, ...peerList);
+    }
+
+    publishBufferMessage(id, message, skipQueue, ...peerList) {
+        this._publishBufferMessage(id, message, skipQueue, 3, ...peerList);
+    }
+
+    publishInternalBufferMessage(id, message, skipQueue, ...peerList) {
+        this._publishBufferMessage(id, message, skipQueue, 1, ...peerList);
     }
 
     bootPeer(peerId) {
@@ -13730,12 +12353,12 @@ class PartyHandler {
     }
 
     sendProject() {
-        let rtcs = [];
+        let peerList = [];
         for(let peerId in this._peers) {
-            if(this._peers[peerId].rtc) rtcs.push(this._peers[peerId].rtc);
+            peerList.push(this._peers[peerId]);
         }
         let zip = projectHandler.exportProject(true);
-        this._sendProjectZip(zip, rtcs);
+        this._sendProjectZip(zip, ...peerList);
     }
 
     setDisplayingUsernames(displayingUsernames) {
@@ -13750,14 +12373,6 @@ class PartyHandler {
 
     setIsHost(isHost) {
         this._isHost = isHost;
-    }
-
-    setUsername(username) {
-        this._username = username;
-        this.sendToAllPeers(JSON.stringify({
-            topic: 'username',
-            username: username,
-        }));
     }
 
     isHost() {
@@ -13788,10 +12403,15 @@ class PartyHandler {
         partyMessageHelper.handlePartyStarted();
     }
 
-    sendToAllPeers(data) {
+    _sendToPeers(data, ...peerList) {
+        if(peerList.length == 0) peerList = this._peers;
         for(let peerId in this._peers) {
-            let rtc = this._peers[peerId].rtc;
-            if(rtc) rtc.sendData(data);
+            if(this._peers[peerId].readyForUpdates) {
+                let rtc = this._peers[peerId].rtc;
+                if(rtc) rtc.sendData(data);
+            } else {
+                this._peers[peerId].messageBacklog.push(data);
+            }
         }
     }
 
@@ -13804,7 +12424,7 @@ class PartyHandler {
         let timestamp = new Date().getTime() % TWO_BYTE_MOD;
         let buffer = new Uint16Array([timestamp]).buffer;
         buffer = concatenateArrayBuffers(
-            [buffer, ...global$1.userController.getDataForRTC()]);
+            USER_HEADER, buffer, ...global$1.userController.getDataForRTC());
         for(let peerId in this._peers) {
             let peer = this._peers[peerId];
             if(peer.controller) {
@@ -13813,13 +12433,35 @@ class PartyHandler {
                 if(message) peer.controller.processMessage(message);
                 peer.controller.update(timeDelta);
             }
-            if(peer.rtc && peer.readyForUpdates) peer.rtc.sendData(buffer);
+            if(peer.rtc && peer.readyForUpdates) {
+                if(peer.messageBacklog.length > 0) {
+                    for(let message of peer.messageBacklog) {
+                        peer.rtc.sendData(message);
+                    }
+                    peer.messageBacklog = [];
+                }
+                peer.rtc.sendData(buffer);
+            }
         }
-        partyMessageHelper.update();
+        while(this._publishQueue.length > 0 && !this._isPublishing) {
+            let details = this._publishQueue.dequeue();
+            if(typeof details == 'function') {
+                this._isPublishing = true;
+                let promise = details();
+                if(promise instanceof Promise) {
+                    promise.then(() => this._isPublishing = false);
+                } else {
+                    console.error('PartyHandler.publishFromFunction(<function>, true) expects a function that returns a Promise object. No Promise object found');
+                    this._isPublishing = false;
+                }
+            } else {
+                this._sendToPeers(details.message, ...details.peerList);
+            }
+        }
     }
 }
 
-function generateRandomUsername() {
+function generateRandomUsername$1() {
     return String.fromCharCode(97+Math.floor(Math.random() * 26))
             + Math.floor(Math.random() * 100);
 }
@@ -13833,7 +12475,1536 @@ let partyHandler = new PartyHandler();
  */
 
 
-const PLAY_TOPIC_PREFIX = 'PLAY_AUDIO_ASSET:';
+class AssetEntity extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._object = params['object'] || new THREE.Object3D();
+        this._object.asset = this;
+        if('parentId' in params) {
+            this._parentId = params['parentId'];
+        } else {
+            this._parentId = scene.getId();
+        }
+        this.children = new Set();
+        this.parent = projectHandler.getSessionAsset(this._parentId);
+        if(this.parent) this.parent.children.add(this);
+        let position = (params['position']) ? params['position'] : [0,0,0];
+        let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
+        let scale = (params['scale']) ? params['scale'] : [1,1,1];
+        this.visualEdit = params['visualEdit'] || false;
+        this._object.position.fromArray(position);
+        this._object.rotation.fromArray(rotation);
+        this._object.scale.fromArray(scale);
+        this._gripInteractable = new GripInteractable(this._object);
+        this._pointerInteractable = new PointerInteractable(this._object);
+        this._deleteCallbacks = {};
+        this._positionBytes = new Float64Array(3);
+        this._rotationBytes = new Float64Array(3);
+        this._scaleBytes = new Float64Array(3);
+        this._transformationBytes = new Float64Array(9);
+    }
+
+    _getDefaultName() {
+        return 'Object';
+    }
+
+    _fetchCloneParams(visualEditOverride) {
+        let params = this.exportParams();
+        let visualEdit = (visualEditOverride != null)
+            ? visualEditOverride
+            : this.visualEdit;
+        params['visualEdit'] = visualEdit;
+        delete params['id'];
+        return params;
+    }
+
+    clone(visualEditOverride) {
+        let params = this._fetchCloneParams(visualEditOverride);
+        return projectHandler.addNewAsset(this._assetId, params);
+    }
+
+    preview() {
+        let params = this.exportParams();
+        params['visualEdit'] = false;
+        params['isPreview'] = true;
+        delete params['id'];
+        return new this.constructor(params);
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['parentId'] = this._parentId;
+        params['position'] = this.getPosition();
+        params['rotation'] = this.getRotation();
+        params['scale'] = this.getScale();
+        params['visualEdit'] = this.getVisualEdit();
+        return params;
+    }
+
+    addGripAction(selectedFunc, releasedFunc, tool, option){
+        let action = this._gripInteractable.addAction(selectedFunc,
+            releasedFunc, tool, option);
+        return action;
+    }
+
+    addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
+        let action = this._pointerInteractable.addAction(actionFunc,
+            draggableActionFunc, maxDistance, tool, option);
+        return action;
+    }
+
+    getGripInteractable() {
+        return this._gripInteractable;
+    }
+
+    getPointerInteractable() {
+        return this._pointerInteractable;
+    }
+
+    removeGripAction(id) {
+        this._gripInteractable.removeAction(id);
+    }
+
+    removePointerAction(id) {
+        this._pointerInteractable.removeAction(id);
+    }
+
+    addDeleteCallback(id, handler) {
+        this._deleteCallbacks[id] = handler;
+    }
+
+    removeDeleteCallback(id) {
+        delete this._deleteCallbacks[id];
+    }
+
+    getObject() {
+        return this._object;
+    }
+
+    getParentId() {
+        return this._parentId;
+    }
+
+    getPosition() {
+        return this._object.position.toArray();
+    }
+
+    getRotation() {
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        return rotation;
+    }
+
+    getScale() {
+        return this._object.scale.toArray();
+    }
+
+    getVisualEdit() {
+        return this.visualEdit;
+    }
+
+    getWorldPosition(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldPosition(vector3);
+        return vector3;
+    }
+
+    getWorldQuaternion(quat) {
+        if(!quat) quat = quaternion;
+        this._object.getWorldQuaternion(quat);
+        return quat;
+    }
+
+    getWorldScale(vector3) {
+        if(!vector3) vector3 = vector3s[0];
+        this._object.getWorldScale(vector3);
+        return vector3;
+    }
+
+    setParentId(parentId) {
+        if(this._parentId == parentId) return;
+        this.parent = projectHandler.getSessionAsset(parentId);
+        if(!this.parent) {
+            this.removeFromScene();
+        } else if(this._parentId != null) {
+            this.attachTo(this.parent, true);
+        } else {
+            this.addTo(this.parent, true);
+        }
+        this._parentId = parentId;
+    }
+
+    setPosition(position) {
+        this._object.position.fromArray(position);
+    }
+
+    setRotation(rotation) {
+        this._object.rotation.fromArray(rotation);
+    }
+
+    setRotationFromQuaternion(quat) {
+        quaternion.fromArray(quat);
+        this._object.setRotationFromQuaternion(quaternion);
+    }
+
+    setScale(scale) {
+        this._object.scale.fromArray(scale);
+    }
+
+    setVisualEdit(visualEdit) {
+        this.visualEdit = visualEdit;
+    }
+
+    publishPosition() {
+        this._positionBytes.set(this._object.position.toArray());
+        let message =concatenateArrayBuffers(this._idBytes,this._positionBytes);
+        partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_POSITION, message);
+    }
+
+    publishRotation() {
+        this._rotationBytes.set(this.getRotation());
+        let message =concatenateArrayBuffers(this._idBytes,this._rotationBytes);
+        partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_ROTATION, message);
+    }
+
+    publishScale() {
+        this._scaleBytes.set(this._object.scale.toArray());
+        let message = concatenateArrayBuffers(this._idBytes, this._scaleBytes);
+        partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_SCALE, message);
+    }
+
+    publishTransformation() {
+        this._transformationBytes.set(this._object.position.toArray());
+        this._transformationBytes.set(this.getRotation(), 3);
+        this._transformationBytes.set(this._object.scale.toArray(), 6);
+        let message = concatenateArrayBuffers(this._idBytes,
+            this._transformationBytes);
+        partyHandler.publishInternalBufferMessage(
+            InternalMessageIds.ENTITY_TRANSFORMATION, message);
+    }
+
+    add(child, ignorePublish) {
+        child.addTo(this, ignorePublish);
+    }
+
+    addTo(newParent, ignorePublish) {
+        if(!newParent) return;
+        if(this.parent) this.parent.children.delete(this);
+        this.parent = newParent;
+        newParent.children.add(this);
+        this._parentId = newParent.getId();
+        if(projectHandler.getAsset(this._id)) {
+            this.addToScene(newParent.getObject(),
+                newParent.getPointerInteractable(),
+                newParent.getGripInteractable());
+        }
+        if(!ignorePublish) {
+            pubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
+                parentId: newParent.getId(),
+                childId: this._id,
+            }, true);
+        }
+    }
+
+    attach(child, ignorePublish) {
+        child.attachTo(this, ignorePublish);
+    }
+
+    attachTo(newParent, ignorePublish) {
+        if(!newParent) return;
+        if(this.parent) this.parent.children.delete(this);
+        this.parent = newParent;
+        newParent.children.add(this);
+        this._parentId = newParent.getId();
+        if(projectHandler.getAsset(this._id)) {
+            this.attachToScene(newParent.getObject(),
+                newParent.getPointerInteractable(),
+                newParent.getGripInteractable());
+        }
+        if(!ignorePublish) {
+            pubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
+                parentId: newParent.getId(),
+                childId: this._id,
+            }, true);
+        }
+    }
+
+    addToScene(scene, pointerInteractable, gripInteractable) {
+        if(scene) scene.add(this._object);
+        if(pointerInteractable)
+            pointerInteractable.addChild(this._pointerInteractable);
+        if(gripInteractable)
+            gripInteractable.addChild(this._gripInteractable);
+    }
+
+    attachToScene(scene, pointerInteractable, gripInteractable) {
+        if(scene) scene.attach(this._object);
+        if(pointerInteractable)
+            pointerInteractable.addChild(this._pointerInteractable);
+        if(gripInteractable)
+            gripInteractable.addChild(this._gripInteractable);
+    }
+
+    removeFromScene() {
+        if(this._gripInteractable.parent) {
+            this._gripInteractable.parent.removeChild(this._gripInteractable);
+        }
+        if(this._pointerInteractable.parent) {
+            this._pointerInteractable.parent.removeChild(
+                this._pointerInteractable);
+        }
+        if(this._object.parent) {
+            this._object.parent.remove(this._object);
+            fullDispose(this._object);
+        }
+        for(let id in this._deleteCallbacks) {
+            if(this._deleteCallbacks[id]) this._deleteCallbacks[id]();
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class InternalAssetEntity extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+    }
+
+    removeFromScene() {
+        let inheritor = this.parent;
+        while(inheritor.constructor.assetType == AssetTypes.INTERNAL) {
+            inheritor = inheritor.parent;
+        }
+        this.promoteExternalAssets(inheritor, this.children);
+        super.removeFromScene();
+    }
+
+    promoteExternalAssets(inheritor, children) {
+        for(let child of children) {
+            if(child.constructor.assetType == AssetTypes.INTERNAL) {
+                this.promoteExternalAssets(inheritor, child.children);
+            } else {
+                child.attachTo(inheritor, true);
+            }
+        }
+    }
+
+    static assetType = AssetTypes.INTERNAL;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+  
+class Avatar extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = Avatar.assetId;
+        super(params);
+        if(params == null) {
+            params = {};
+        }
+        this._avatarParent = new THREE.Object3D();
+        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
+        this._verticalOffset = params['verticalOffset'] || 0;
+        this._object.position.setY(this._verticalOffset);
+        this._object.add(this._avatarParent);
+
+        this._createMesh(this._avatarUrl);
+        let parentAsset = projectHandler.getSessionAsset(this._parentId);
+        if(parentAsset && parentAsset.registerAvatar) {
+            parentAsset.registerAvatar(this);
+        }
+    }
+
+    _createMesh(filename) {
+        if(/\.glb/.test(filename)) {
+            let gltfLoader = new GLTFLoader();
+            gltfLoader.load(filename, (gltf) => {
+                gltf.scene.rotateY(Math.PI);
+                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
+                    let hands = new Set();
+                    gltf.scene.traverse((child) => {
+                        if(child.name.toLowerCase().includes("hand")) {
+                            hands.add(child);
+                        }
+                    });
+                    hands.forEach((hand) => { hand.parent.remove(hand); });
+                    gltf.scene.position.setY(-0.65);
+                }
+                this._avatarParent.add(gltf.scene);
+                this._saveOriginalTransparencyStates();
+                this._dimensions = 3;
+            }, () => {}, (error) => {
+                console.log(error);
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
+            new THREE.TextureLoader().load(filename, (texture) => {
+                let width = texture.image.width;
+                let height = texture.image.height;
+                if(width > height) {
+                    let factor = 0.3 / width;
+                    width = 0.3;
+                    height *= factor;
+                } else {
+                    let factor = 0.3 / height;
+                    height = 0.3;
+                    width *= factor;
+                }
+                let material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                });
+                let geometry = new THREE.PlaneGeometry(width, height);
+                geometry.rotateY(Math.PI);
+                let mesh = new THREE.Mesh(geometry, material);
+                this._avatarParent.add(mesh);
+                this._saveOriginalTransparencyStates();
+                //let sprite = new THREE.Sprite(material);
+                //this._avatarParent.add(sprite);
+                this._dimensions = 2;
+            }, () => {}, () => {
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else {
+            if(filename != DEFAULT_URL) {
+                this._createMesh(DEFAULT_URL);
+            } else {
+                console.error("Default avatar URL is invalid :(");
+            }
+        }
+    }
+
+    _saveOriginalTransparencyStates() {
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.userData['transparent'] = material.transparent;
+                        material.userData['opacity'] = material.opacity;
+                    }
+                } else {
+                    let material = node.material;
+                    material.userData['transparent'] = material.transparent;
+                    material.userData['opacity'] = material.opacity;
+                }
+            }
+        });
+    }
+
+    fade(percent) {
+        this._isFading = true;
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                node.renderOrder = Infinity;
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        if(!material.transparent) {
+                            material.transparent = true;
+                            material.needsUpdate = true;
+                        }
+                        material.opacity = material.userData['opacity']*percent;
+                    }
+                } else {
+                    let material = node.material;
+                    if(!material.transparent) {
+                        material.transparent = true;
+                        material.needsUpdate = true;
+                    }
+                    material.opacity = material.userData['opacity'] * percent;
+                }
+            }
+        });
+    }
+
+    endFade() {
+        if(!this._isFading) return;
+        this._isFading = false;
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let mtrl = node.material[i];
+                        if(mtrl.transparent != mtrl.userData['transparent']) {
+                            mtrl.transparent = mtrl.userData['transparent'];
+                            mtrl.needsUpdate = true;
+                        }
+                        mtrl.opacity = mtrl.userData['opacity'];
+                    }
+                } else {
+                    let mtrl = node.material;
+                    if(mtrl.transparent != mtrl.userData['transparent']) {
+                        mtrl.transparent = mtrl.userData['transparent'];
+                        mtrl.needsUpdate = true;
+                    }
+                    mtrl.opacity = mtrl.userData['opacity'];
+                }
+            }
+        });
+    }
+
+    lookAtLocal(point) {
+        if(this._object.parent) {
+            vector3s[0].copy(point);
+            this._object.parent.localToWorld(vector3s[0]);
+            this._object.lookAt(vector3s[0]);
+        }
+    }
+
+    updateSourceUrl(url) {
+        while(this._avatarParent.children[0]) {
+            let child = this._avatarParent.children[0];
+            this._avatarParent.remove(child);
+            fullDispose(child, true);
+        }
+        this._avatarUrl = url;
+        this._createMesh(url);
+    }
+
+    getAvatarUrl() {
+        return this._avatarUrl;
+    }
+
+    getVerticalOffset(verticalOffset) {
+        return this._verticalOffset;
+    }
+
+    setAvatarUrl(avatarUrl) {
+        this.updateSourceUrl(avatarUrl);
+    }
+
+    setVerticalOffset(verticalOffset) {
+        this._verticalOffsert = verticalOffset;
+        this._object.position.setY(verticalOffset);
+    }
+
+    displayAvatar() {
+        this._object.add(this._avatarParent);
+    }
+
+    hideAvatar() {
+        this._object.remove(this._avatarParent);
+    }
+
+    isDisplayingAvatar() {
+        return this._avatarParent.parent == this._object;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['avatarUrl'] = this._avatarUrl;
+        params['verticalOffset'] = this._verticalOffset;
+        return params;
+    }
+
+    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
+    static assetName = 'Avatar';
+}
+
+projectHandler.registerAsset(Avatar);
+libraryHandler.loadBuiltIn(Avatar);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class BasicMovement {
+    constructor(params) {
+        if(params == null) {
+            params = {};
+        }
+        this._avatar = params['Avatar'];
+        this._userObj = params['User Object'];
+        this._velocity = new THREE.Vector3();
+        this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
+        this._snapRotationTriggered = false;
+        this._disabled = false;
+    }
+
+    _setupMobileFlyingButtons() {
+        this._mobileUp = false;
+        this._mobileDown = false;
+        let upButton = inputHandler.addExtraControlsButton(
+            'mobile-flying-up-button', 'UP');
+        let downButton = inputHandler.addExtraControlsButton(
+            'mobile-flying-down-button', 'DOWN');
+        upButton.addEventListener('touchstart',
+            () => { this._mobileUp = true; });
+        upButton.addEventListener('touchend',
+            () => { this._mobileUp = false; });
+        downButton.addEventListener('touchstart',
+            () => { this._mobileDown = true; });
+        downButton.addEventListener('touchend',
+            () => { this._mobileDown = false; });
+    }
+
+    _moveForward(velocity, timeDelta) {
+        // move forward parallel to the xz-plane
+        // assumes camera.up is y-up
+        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
+        // not using addScaledVector because we use vector3s[0] later
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s[0]);
+    };
+
+    _moveRight(velocity, timeDelta) {
+        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s[0].y = 0;
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s[0]);
+    };
+
+    _moveUp(velocity, timeDelta) {
+        velocity = this._userObj.scale.y * velocity;
+        this._worldVelocity.setY(velocity);
+        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
+        this._userObj.position.add(vector3s[0]);
+    }
+
+    _snapLeft() {
+        this._userObj.rotateY(Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
+    }
+
+    _snapRight() {
+        this._userObj.rotateY(-Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
+    }
+
+    disable() {
+        this._disabled = true;
+    }
+
+    enable() {
+        this._enabled = true;
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
+    }
+
+    setPerspective(perspective) {
+        this._perspective = perspective;
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updatePositionVR(timeDelta);
+            this.update = this._updatePositionVR;
+        } else if(global$1.deviceType == "POINTER") {
+            this._updatePosition(timeDelta);
+            this.update = this._updatePosition;
+        } else if(global$1.deviceType == "MOBILE") {
+            this._setupMobileFlyingButtons();
+            this._updatePositionMobile(timeDelta);
+            this.update = this._updatePositionMobile;
+        }
+    }
+
+    _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        // Decrease the velocity.
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
+        if(flightEnabled)
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
+
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            if (inputHandler.isKeyCodePressed("ArrowUp")
+                    || inputHandler.isKeyCodePressed("KeyW"))
+                this._velocity.z += movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowDown")
+                    || inputHandler.isKeyCodePressed("KeyS"))
+                this._velocity.z -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowLeft")
+                    || inputHandler.isKeyCodePressed("KeyA"))
+                this._velocity.x -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowRight")
+                    || inputHandler.isKeyCodePressed("KeyD"))
+                this._velocity.x += movementSpeed / 4;
+            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
+                    != inputHandler.isKeyPressed("Shift")
+                    && !inputHandler.isKeyPressed("Meta")) {
+                this._verticalVelocity =
+                    (inputHandler.isKeyCodePressed("Space"))
+                        ? movementSpeed
+                        : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s[1].copy(vector3s[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s[1].add(vector3s[0]);
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * settingsHandler.getUserScale()) {
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.getObject().position);
+                this._avatar.lookAtLocal(vector3s[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        this._velocity.x = 0;
+        if(flightEnabled)
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
+        this._velocity.z = 0;
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            let joystickAngle = inputHandler.getJoystickAngle();
+            let joystickDistance = inputHandler.getJoystickDistance();
+            let movingDistance = movementSpeed * joystickDistance;
+            this._velocity.x = movingDistance * Math.cos(joystickAngle);
+            this._velocity.z = movingDistance * Math.sin(joystickAngle);
+            if(flightEnabled && this._mobileUp != this._mobileDown) {
+                this._verticalVelocity = (this._mobileUp)
+                    ? movementSpeed
+                    : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s[1].copy(vector3s[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s[1].add(vector3s[0]);
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * settingsHandler.getUserScale()) {
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.getObject().position);
+                this._avatar.lookAtLocal(vector3s[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || global$1.xrSessionType=='AR' || timeDelta >1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        let movementGamepad;
+        let rotationGamepad;
+        if(settingsHandler.areJoysticksSwapped()) {
+            movementGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
+            rotationGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
+        } else {
+            movementGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
+            rotationGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
+        }
+        this._velocity.x = 0;
+        this._velocity.y = 0;
+        this._velocity.z = 0;
+        if(movementGamepad) {
+            let axes = movementGamepad.axes;
+            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
+            this._velocity.x = movementSpeed * axes[2];//Left/Right
+
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        if(rotationGamepad) {
+            let verticalForce = rotationGamepad.axes[3];
+            let rotationForce = rotationGamepad.axes[2];
+            if(Math.abs(rotationForce) > 0.7) {
+                if(!this._snapRotationTriggered) {
+                    this._snapRotationTriggered = true; 
+                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
+                }
+            } else {
+                this._snapRotationTriggered = false;
+            }
+            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
+                this._velocity.y = -1 * movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+        } else {
+            this._snapRotationTriggered = false;
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const TTL = 5;
+
+class XRDevice extends InternalAssetEntity {
+    constructor(params = {}) {
+        if(!params['assetId']) params['assetId'] = XRDevice.assetId;
+        super(params);
+        this._ttl = TTL;
+        this._ownerId = params['ownerId'];
+        this._modelUrl = params['modelUrl'];
+        if(this._modelUrl) {
+            this._loadModelFromUrl();
+        }
+        this._vector3 = new Vector3();
+        this._euler = new Euler();
+        this._quaternion = new Quaternion();
+        this._registerOwner(params);
+    }
+
+    _loadModelFromUrl() {
+        let gltfLoader = new GLTFLoader();
+        gltfLoader.load(this._modelUrl, (gltf) => {
+            this._modelObject = gltf.scene;
+            this._object.add(gltf.scene);
+        });
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRDevice(this);
+        }
+    }
+
+    _enableARMask() {
+        this._isAR = global$1.xrSessionType == 'AR';
+        if(this._isAR) this._setARMask();
+        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            let isAR = global$1.xrSessionType == 'AR';
+            if(this._isAR == isAR) return;
+            this._isAR = isAR;
+            if(isAR) {
+                this._setARMask();
+            } else {
+                this._removeARMask();
+            }
+        });
+    }
+
+    _setARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = -Infinity;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = false;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = false;
+                    }
+                }
+            }
+        });
+    }
+
+    _removeARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = 0;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = true;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = true;
+                    }
+                }
+            }
+        });
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['ownerId'] = this._ownerId;
+        params['modelUrl'] = this._modelUrl;
+        return params;
+    }
+
+    isInScene() {
+        return this._object.parent != null;
+    }
+
+    getModelObject() {
+        return this._modelObject;
+    }
+
+    getModelUrl() {
+        return this._modelUrl;
+    }
+
+    getOwnerId() {
+        return this._ownerId;
+    }
+
+    getWorldPosition() {
+        this._object.getWorldPosition(this._vector3);
+        return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._object.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._object.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
+    }
+
+    setModelUrl(modelUrl) {
+        this._modelUrl = modelUrl;
+    }
+
+    setOwnerId(ownerId) {
+        this._ownerId = ownerId;
+    }
+
+    decrementTTL(timeDelta) {
+        this._ttl -= timeDelta;
+        if(this._ttl < 0) {
+            projectHandler.deleteAsset(this);
+        }
+    }
+
+    resetTTL() {
+        this._ttl = TTL;
+    }
+
+    static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';
+    static assetName = 'XR Device';
+}
+
+projectHandler.registerAsset(XRDevice);
+libraryHandler.loadBuiltIn(XRDevice);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class XRController extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRController.assetId;
+        super(params);
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = controllerModel.motionController.assetUrl;
+        }
+        this._handedness = params['handedness'];
+        if(!this._handedness in Handedness) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRController(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let controller = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        let assetObject = asset.getObject();
+        if(!controller) return;
+        controller.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    getHandedness() {
+        return this._handedness;
+    }
+
+    getTargetRayDirection() {
+        let xrController = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrController = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldPosition(this._raycasterOrigin);
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    isButtonPressed(index) {
+        let gamepad = inputHandler.getXRGamepad(this._handedness);
+        return gamepad != null && gamepad.buttons[index].pressed;
+    }
+
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
+    static assetName = 'XR Controller';
+}
+
+projectHandler.registerAsset(XRController);
+libraryHandler.loadBuiltIn(XRController);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
+
+class XRHand extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRHand.assetId;
+        super(params);
+        this._handedness = params['handedness'];
+        if(!this._handedness in Handedness) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = DEFAULT_HAND_PROFILE_PATH
+                + this._handedness.toLowerCase() + '.glb';
+            this._isUsers = true;
+            this._enableARMask();
+        }
+        this._palmDirection = new Vector3();
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRHand(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let hand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        let assetObject = asset.getObject();
+        if(!hand) return;
+        hand.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    getHandedness() {
+        return this._handedness;
+    }
+
+    getTargetRayDirection() {
+        let xrController = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrHand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        if(!xrHand) return null;
+        xrHand.getWorldPosition(this._raycasterOrigin);
+        xrHand.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    getPalmDirection() {
+        if(this._isUsers) {
+            let model = inputHandler.getXRControllerModel(
+                XRInputDeviceTypes.HAND, this._handedness);
+            this._palmDirection.copy(model.motionController.palmDirection);
+        } else if(this._handedness == Handedness.LEFT) {
+            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
+                0.1958660688459766);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        } else {
+            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
+                0.19586401335899684);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        }
+        return this._palmDirection;
+    }
+
+    isButtonPressed(index) {
+        let model = inputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
+            this._handedness);
+        if(index == 0) {
+            return model.motionController.isPinching;
+        } else if(index == 1) {
+            return model.motionController.isGrabbing;
+        }
+        return false;
+    }
+
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
+    static assetName = 'XR Hand';
+}
+
+projectHandler.registerAsset(XRHand);
+libraryHandler.loadBuiltIn(XRHand);
+
+const UserMessageCodes = {
+    AVATAR: 1,
+    LEFT_CONTROLLER: 2,
+    RIGHT_CONTROLLER: 4,
+    LEFT_HAND: 8,
+    RIGHT_HAND: 16,
+    USER_VELOCITY: 32,
+    USER_POSITION: 64,
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const AVATAR_KEY = "DigitalBacon:Avatar";
+const USERNAME_KEY = "DigitalBacon:Username";
+const FADE_START = 0.6;
+const FADE_END = 0.2;
+//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
+const FADE_RANGE = FADE_START - FADE_END;
+const EPSILON = 0.00000000001;
+  
+class UserController extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = UserController.assetId;
+        super(params);
+        this._isXR = false;
+        this._username = localStorage.getItem(USERNAME_KEY)
+            || generateRandomUsername();
+        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
+            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._avatarFadeUpdateNumber = 0;
+        this._xrControllers = {};
+        this._xrHands = {};
+        this._xrDevices = new Set();
+    }
+
+    init() {
+        if(global$1.deviceType == 'XR') {
+            this.setIsXR(true);
+        }
+        let scale = settingsHandler.getUserScale();
+        this.setScale([scale, scale, scale]);
+        this._setup();
+    }
+
+    _setup() {
+        if(global$1.deviceType != "XR") {
+            this._avatar = new Avatar({
+                'avatarUrl': this._avatarUrl,
+                'parentId': this._id,
+                'verticalOffset': global$1.cameraFocus.position.y,
+            });
+            audioHandler.setListenerParent(this._avatar.getObject());
+        } else {
+            this._avatar = new Avatar({
+                'object': global$1.camera,
+                'parentId': this._id,
+                'avatarUrl': this._avatarUrl,
+            });
+        }
+        this._avatar.parent = this;
+        projectHandler.addAsset(this._avatar);
+        this._basicMovement = new BasicMovement({
+            'User Object': this._object,
+            'Avatar': this._avatar,
+        });
+    }
+
+    getAvatar() {
+        return this._avatar;
+    }
+
+    getIsXR() {
+        return this._isXR;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    setAvatarUrl(url, ignorePublish) {
+        localStorage.setItem(AVATAR_KEY, url);
+        this._avatarUrl = url;
+        this._avatar.updateSourceUrl(url);
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this._avatar, fields: ['avatarUrl'] });
+    }
+
+    setIsXR(isXR) {
+        this._isXR = isXR;
+    }
+
+    setScale(scale, ignorePublish) {
+        super.setScale(scale);
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this, fields: ['scale'] });
+    }
+    setUsername(username, ignorePublish) {
+        localStorage.setItem(USERNAME_KEY, username);
+        this._username = username;
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
+    }
+
+    getController(handedness) {
+        return this._xrControllers[handedness];
+    }
+
+    getHand(handedness) {
+        return this._xrHands[handedness];
+    }
+
+    getXRDevices() {
+        return this._xrDevices;
+    }
+
+    registerXRController(handedness, xrController) {
+        this._xrControllers[handedness] = xrController;
+        this._xrDevices.add(xrController);
+    }
+
+    registerXRHand(handedness, xrHand) {
+        this._xrHands[handedness] = xrHand;
+        this._xrDevices.add(xrHand);
+    }
+
+    registerXRDevice(xrDevice) {
+        this._xrDevices.add(xrDevice);
+    }
+
+    disableBasicMovement() {
+        this._basicMovement.disable();
+    }
+
+    enableBasicMovement() {
+        this._basicMovement.enable();
+    }
+
+    getDistanceBetweenHands() {
+        if(global$1.deviceType != 'XR') return;
+        let leftController = this._xrControllers[Handedness.LEFT];
+        let rightController = this._xrControllers[Handedness.RIGHT];
+        if(!leftController || !rightController) return;
+        if(!leftController.isInScene()) {
+            leftController = this._xrHands[Handedness.LEFT];
+            rightController = this._xrHands[Handedness.RIGHT];
+            if(!leftController || !rightController) return;
+        }
+
+        let leftPosition = leftController.getWorldPosition();
+        let rightPosition = rightController.getWorldPosition();
+        return leftPosition.distanceTo(rightPosition);
+    }
+
+    getDataForRTC() {
+        let codes = 0;
+        let data = [];
+        if(global$1.deviceType == "XR") {
+            codes += this._pushAvatarDataForRTC(data);
+            codes += this._pushHandsDataForRTC(data);
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            codes += this._pushAvatarDataForRTC(data);
+        }
+        let worldVelocity = this._basicMovement.getWorldVelocity();
+        if(worldVelocity.length() >= 0.00001) {
+            data.push(...this._basicMovement.getWorldVelocity().toArray());
+            codes += UserMessageCodes.USER_VELOCITY;
+        }
+        if(global$1.renderer.info.render.frame % 300 == 0) {
+            this._object.getWorldPosition(vector3s[0]);
+            data.push(...vector3s[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
+    }
+
+    _pushAvatarDataForRTC(data) {
+        let position = global$1.camera.position.toArray();
+        let rotation = global$1.camera.rotation.toArray();
+        rotation.pop();
+
+        data.push(...position);
+        data.push(...rotation);
+        return UserMessageCodes.AVATAR;
+    }
+
+    _pushHandsDataForRTC(data, type) {
+        let codes = 0;
+        settingsHandler.getUserScale();
+        for(let type of ['CONTROLLER', 'HAND']) {
+            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
+            for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
+                let controller = this[map][handedness];
+                if(controller && controller.isInScene()) {
+                    controller.pushDataForRTC(data);
+                    codes += UserMessageCodes[handedness + '_' + type];
+                }
+            }
+        }
+        return codes;
+    }
+
+    hasChild(object) {
+        return object.parent == this._object;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['isXR'] = this._isXR;
+        params['username'] = this._username;
+        return params;
+    }
+
+    _updateAvatar() {
+        if(!this._avatar.isDisplayingAvatar()) {
+            let data = [];
+            this._pushAvatarDataForRTC(data);
+            let rotation = data.slice(3, 6);
+            this._avatar.getObject().rotation.fromArray(rotation);
+        }
+        let updateNumber = sessionHandler.getControlsUpdateNumber();
+        if(this._avatarFadeUpdateNumber == updateNumber) return;
+        this._avatarFadeUpdateNumber = updateNumber;
+        let cameraDistance = sessionHandler.getCameraDistance();
+        if(cameraDistance > FADE_START * 2) return;
+        let diff = cameraDistance - this._avatarFadeCameraDistance;
+        if(Math.abs(diff) < EPSILON) return;
+        //Fade Logic Start
+        this._avatarFadeCameraDistance = cameraDistance;
+        let fadePercent = Math.max(cameraDistance, FADE_END);
+        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
+        if(fadePercent == 0) {
+            if(this._avatar.isDisplayingAvatar()) {
+                this._basicMovement.setPerspective(1);
+                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
+                    1);
+                this._avatar.hideAvatar();
+            }
+            return;
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            this._basicMovement.setPerspective(3);
+            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
+            this._avatar.displayAvatar();
+        }
+        (fadePercent < 1)
+            ? this._avatar.fade(fadePercent)
+            : this._avatar.endFade();
+        //Fade Logic end
+
+        //Disappear Logic start
+        //let object = this._avatar.getObject();
+        //if(cameraDistance < FADE_MIDDLE) {
+        //    if(object.parent) this._avatar.removeFromScene();
+        //} else if(!object.parent) {
+        //    this._avatar.addToScene(global.cameraFocus,
+        //        this._pointerInteractable, this._gripInteractable);
+        //}
+        //Disappear Logic end
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updateHands(timeDelta);
+        } else if(this._avatar) {
+            this._updateAvatar();
+        }
+        this._basicMovement.update(timeDelta);
+    }
+
+    _getControllerModelUrl(object) {
+        if(object && object.motionController) {
+            return object.motionController.assetUrl;
+        }
+    }
+
+    _updateHands(timeDelta) {
+        for(let side in Handedness) {
+            this._updateHand(timeDelta, XRInputDeviceTypes.CONTROLLER, side);
+            this._updateHand(timeDelta, XRInputDeviceTypes.HAND, side);
+        }
+    }
+
+    _updateHand(timeDelta, type, handedness) {
+        let controller = (type == XRInputDeviceTypes.HAND)
+            ? this._xrHands[handedness]
+            : this._xrControllers[handedness];
+        let controllerModel = inputHandler.getXRControllerModel(type,
+            handedness);
+        let source = inputHandler.getXRInputSource(type, handedness);
+        if(controller && controller.isInScene()) {
+            if(source) {
+                controller.resetTTL();
+            } else {
+                controller.decrementTTL(timeDelta);
+            }
+        } else if(source && this._getControllerModelUrl(controllerModel)) {
+            if(!controller) {
+                if(controllerModel.children.length == 0) return;
+                let assetClass = (type == XRInputDeviceTypes.HAND)
+                    ? XRHand
+                    : XRController;
+                controller = new assetClass({
+                    handedness: handedness,
+                    ownerId: this._id,
+                    controllerModel: controllerModel,
+                    object: inputHandler.getXRController(type, handedness,
+                        'grip'),
+                });
+                projectHandler.addAsset(controller, false, true);
+                controller.attachTo(this);
+            } else {
+                projectHandler.addAsset(controller, false, true);
+            }
+        }
+    }
+
+    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
+    static assetName = 'User';
+}
+
+function generateRandomUsername() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
+}
+
+let userController = new UserController();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const PLAY = 0;
+const PAUSE = 1;
+const STOP = 2;
 
 class AudioAsset extends AssetEntity {
     constructor(params = {}) {
@@ -13996,8 +14167,7 @@ class AudioAsset extends AssetEntity {
         this._playTopic = playTopic;
         if(this._playTopic) {
             pubSub.subscribe(this._id, this._playTopic, (message) => {
-                if(!global$1.isEditor)
-                    this.play(null, message.userController == userController);
+                if(!global$1.isEditor) this._audio.play();
             });
         }
     }
@@ -14048,11 +14218,29 @@ class AudioAsset extends AssetEntity {
         }
         this._audio.play();
         if(ignorePublish) return;
-        let message = {
-            topic: PLAY_TOPIC_PREFIX + this._id,
-            position: this._audio._progress,
-        };
-        partyMessageHelper.queuePublish(JSON.stringify(message));
+        let type = new Uint8Array([PLAY]);
+        position = new Float64Array([this._audio._progress]);
+        let message = concatenateArrayBuffers(type, position);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message);
+    }
+
+    pause(position, ignorePublish) {
+        this._audio.pause();
+        if(position != null) {
+            this._audio._progress = position || 0;
+        }
+        if(ignorePublish) return;
+        let type = new Uint8Array([PAUSE]);
+        position = new Float64Array([this._audio._progress]);
+        let message = concatenateArrayBuffers(type, position);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message);
+    }
+
+    stop(ignorePublish) {
+        this._audio.stop();
+        if(ignorePublish) return;
+        let message = new Uint8Array([STOP]);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message);
     }
 
     _addPartySubscriptions() {
@@ -14062,22 +14250,29 @@ class AudioAsset extends AssetEntity {
         pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(partyHandler.isHost());
         });
-        let playTopic = PLAY_TOPIC_PREFIX + this._id;
-        partyMessageHelper.registerBlockableHandler(playTopic, (p, m) => {
-            this.play(m.position, true);
+        partyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
+            let type = new Uint8Array(m, 0, 1);
+            if(type[0] == PLAY) {
+                let message = new Float64Array(m.slice(1));
+                this.play(message[0], true);
+            } else if(type[0] == PAUSE) {
+                let message = new Float64Array(m.slice(1));
+                this.pause(message[0], true);
+            } else if(type[0] == STOP) {
+                this.stop(true);
+            }
         });
     }
 
-    _onPeerReady() {
+    _onPeerReady(peer) {
         if(!partyHandler.isHost()) return;
         if(!this._audio.isPlaying) return;
         this._audio.pause();//pause() update audio._progress
         this._audio.play();
-        let message = {
-            topic: PLAY_TOPIC_PREFIX + this._id,
-            position: this._audio._progress,
-        };
-        partyMessageHelper.queuePublish(JSON.stringify(message));
+        let type = new Uint8Array([PLAY]);
+        let position = new Float64Array([this._audio._progress]);
+        let message = concatenateArrayBuffers(type, position);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
     }
 
     _onPartyStarted(isHost) {
@@ -14101,9 +14296,9 @@ class AudioHandler extends AssetsHandler {
             AssetTypes.AUDIO);
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let asset = new AudioAsset(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
 
@@ -14225,9 +14420,9 @@ class ImagesHandler extends AssetsHandler {
             AssetTypes.IMAGE);
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let asset = new ClampedTexturePlane(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
 
@@ -14303,13 +14498,13 @@ class MaterialsHandler extends AssetsHandler {
             AssetTypes.MATERIAL);
     }
 
-    addAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.addAsset(asset, ignoreUndoRedo, ignorePublish);
+    addAsset(asset, ignorePublish, ignoreUndoRedo) {
+        super.addAsset(asset, ignorePublish, ignoreUndoRedo);
         if(asset.editorHelper) asset.editorHelper.undoDispose();
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
+        super.deleteAsset(asset, ignorePublish, ignoreUndoRedo);
         asset.dispose();
         if(asset.editorHelper) asset.editorHelper.dispose();
     }
@@ -14356,9 +14551,9 @@ class ModelsHandler extends AssetsHandler {
             AssetTypes.MODEL);
     }
 
-    addNewAsset(assetId, params, ignoreUndoRedo, ignorePublish) {
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
         let asset = new GLTFAsset(params || { assetId: assetId });
-        this.addAsset(asset, ignoreUndoRedo, ignorePublish);
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
 
@@ -14450,8 +14645,8 @@ class TexturesHandler extends AssetsHandler {
             AssetTypes.TEXTURE);
     }
 
-    deleteAsset(asset, ignoreUndoRedo, ignorePublish) {
-        super.deleteAsset(asset, ignoreUndoRedo, ignorePublish);
+    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
+        super.deleteAsset(asset, ignorePublish, ignoreUndoRedo);
         asset.dispose();
     }
 
@@ -14473,6 +14668,229 @@ class TexturesHandler extends AssetsHandler {
 }
 
 let texturesHandler = new TexturesHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const ERROR_FIX_FRAMES = 30;
+const ERROR_FACTOR = 1 / ERROR_FIX_FRAMES;
+
+class PeerController extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = PeerController.assetId;
+        super(params);
+        this._velocity = new THREE.Vector3();
+        this._positionError = new THREE.Vector3();
+        this._errorFixFrame = ERROR_FIX_FRAMES;
+        this._isXR = params['isXR'];
+        this._username = params['username'] || '...';
+        this._displayingUsername = params['displayingUsername'];
+        this._xrControllers = {};
+        this._xrHands = {};
+        this._xrDevices = new Set();
+        this._setup();
+    }
+
+    _setup() {
+        let usernameParams = {
+            'text': this._username, 
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'fontSize': 0.06,
+            'height': 0.04,
+            'width': 0.5,
+            'offset': 0,
+            'margin': 0,
+        };
+        this._usernameBlock = new THREE.Object3D();
+        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        usernameFront.rotateY(Math.PI);
+        this._usernameBlock.position.setY(0.15);
+        this._usernameBlock.add(usernameFront);
+        this._usernameBlock.add(usernameBack);
+        if(this._displayingUsername && this._avatar) {
+            this._avatar.getObject().add(this._usernameBlock);
+        }
+    }
+
+    _updateAvatarData(float32Array, index) {
+        if(!this._avatar) return;
+        let object = this._avatar.getObject();
+        if(this._isXR) object.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        object.rotation.fromArray(rotation);
+    }
+
+    _updateHandData(float32Array, index, asset) {
+        if(!asset) return;
+        let peerHand = asset.getObject();
+        peerHand.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        peerHand.rotation.fromArray(rotation);
+    }
+
+    _updateVelocity(float32Array, index) {
+        this._velocity.fromArray(float32Array, index);
+        if(!this._isXR && !this._firstPerson) {
+            if(!this._avatar) return;
+            let object = this._avatar.getObject();
+            vector3s[0].copy(this._velocity).setY(0).multiplyScalar(-1);
+            if(vector3s[0].length() < 0.001) return;
+            object.getWorldPosition(vector3s[1]).add(vector3s[0]);
+            object.lookAt(vector3s[1]);
+        }
+    }
+
+    _updatePosition(float32Array, index) {
+        this._positionError.fromArray(float32Array, index)
+            .sub(this._object.position);
+        this._errorFixFrame = 0;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['isXR'] = this._isXR;
+        params['username'] = this._username;
+        return params;
+    }
+
+    getAvatar() {
+        return this._avatar;
+    }
+
+    getIsXR() {
+        return this._isXR;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    setAvatar(avatar) {
+        this._avatar = avatar;
+    }
+
+    setIsXR(isXR) {
+        this._isXR = isXR;
+    }
+
+    setUsername(username) {
+        if(this._username == username) return;
+        this._username = username;
+        let shortName = username = stringWithMaxLength(username || '...', 17);
+        this._usernameBlock.children.forEach((block) => {
+            block.children[1].set({ content: shortName });
+        });
+    }
+
+    getController(hand) {
+        return this._xrControllers[hand];
+    }
+
+    getHand(hand) {
+        return this._xrHands[hand];
+    }
+
+    getXRDevices() {
+        return this._xrDevices;
+    }
+
+    registerAvatar(avatar) {
+        this._avatar = avatar;
+        if(this._displayingUsername && this._avatar) {
+            this._avatar.getObject().add(this._usernameBlock);
+        }
+    }
+
+    registerXRController(hand, xrController) {
+        this._xrControllers[hand] = xrController;
+        this._xrDevices.add(xrController);
+    }
+
+    registerXRHand(hand, xrHand) {
+        this._xrHands[hand] = xrHand;
+        this._xrDevices.add(xrHand);
+    }
+
+    registerXRDevice(xrDevice) {
+        this._xrDevices.add(xrDevice);
+    }
+
+    setDisplayingUsername(displayingUsername) {
+        if(this._displayingUsername == displayingUsername) return;
+        this._displayingUsername = displayingUsername;
+        if(!this._avatar) return;
+        if(this._displayingUsername) {
+            this._avatar.getObject().add(this._usernameBlock);
+        } else {
+            this._avatar.getObject().remove(this._usernameBlock);
+        }
+    }
+
+    setFirstPerson(firstPerson) {
+        this._firstPerson = firstPerson;
+    }
+
+    update(timeDelta) {
+        this._object.position.addScaledVector(this._velocity, timeDelta);
+        if(this._errorFixFrame < ERROR_FIX_FRAMES) {
+            this._object.position.addScaledVector(this._positionError,
+                ERROR_FACTOR);
+            this._errorFixFrame++;
+        }
+    }
+
+    processMessage(message) {
+        let codes = new Uint8Array(message.slice(2, 3))[0];
+        let float32Array = new Float32Array(message.slice(3));
+        let index = 0;
+        if(UserMessageCodes.AVATAR & codes) {
+            this._updateAvatarData(float32Array, index);
+            index += 6;
+        }
+        if(UserMessageCodes.LEFT_CONTROLLER & codes) {
+            let asset = this._xrControllers[Handedness.LEFT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.RIGHT_CONTROLLER & codes) {
+            let asset = this._xrControllers[Handedness.RIGHT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.LEFT_HAND & codes) {
+            let asset = this._xrHands[Handedness.LEFT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.RIGHT_HAND & codes) {
+            let asset = this._xrHands[Handedness.RIGHT];
+            this._updateHandData(float32Array, index, asset);
+            index += 6;
+        }
+        if(UserMessageCodes.USER_VELOCITY & codes) {
+            this._updateVelocity(float32Array, index);
+            index += 3;
+        } else {
+            this._velocity.set(0, 0, 0);
+        }
+        if(UserMessageCodes.USER_POSITION & codes) {
+            this._updatePosition(float32Array, index);
+            index += 3;
+        }
+    }
+
+    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
+    static assetName = 'Peer';
+}
+
+projectHandler.registerAsset(PeerController);
+libraryHandler.loadBuiltIn(PeerController);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -14520,41 +14938,6 @@ class Light extends AssetEntity {
     }
 
     static assetType = AssetTypes.LIGHT;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class Entity {
-    constructor() {
-        this._id = uuidv4();
-        this._object = new Object3D();
-    }
-    
-    getId() {
-        return this._id;
-    }
-
-    getObject() {
-        return this._object;
-    }
-
-    addToScene(scene) {
-        if(scene) {
-            scene.add(this._object);
-        }
-    }
-
-    removeFromScene() {
-        if(this._object.parent) { 
-            this._object.parent.remove(this._object);
-            fullDispose(this._object);
-        }
-    }
 }
 
 /*
@@ -14971,7 +15354,6 @@ class PointerInteractableHandler extends InteractableHandler {
 
     _squashInteractables(option, interactables, objects) {
         for(let interactable of interactables) {
-            if(!interactable.supportsOwner(option)) continue;
             let object = interactable.getThreeObj();
             if(object && !interactable.isOnlyGroup()) objects.push(object);
             if(interactable.children.size != 0) {
@@ -16765,6 +17147,7 @@ libraryHandler.loadBuiltIn(TorusShape);
 class Material extends Asset {
     constructor(params = {}) {
         super(params);
+        this._textureSubscriptions = {};
         this._opacity = numberOr(params['opacity'], 1);
         this._side = params['side'] || THREE.FrontSide;
         this._transparent = params['transparent'] || false;
@@ -16780,12 +17163,40 @@ class Material extends Asset {
     }
 
     _setTexture(param, newValue) {
+        let oldValue = this['_' + param];
         this['_' + param] = newValue;
         let texture = projectHandler.getAsset(newValue);
         this._material[param] = (texture)
             ? texture.getTexture()
             : null;
         this._material.needsUpdate = true;
+        if(oldValue == newValue) return;
+        if(oldValue && oldValue in this._textureSubscriptions) {
+            this._textureSubscriptions[oldValue].delete(param);
+            if(this._textureSubscriptions[oldValue].size == 0) {
+                let topic = PubSubTopics.TEXTURE_RECREATED + ':' + oldValue;
+                pubSub.unsubscribe(this._id, topic);
+                delete this._textureSubscriptions[oldValue];
+            }
+        }
+        if(newValue) this._subscribeFor(param, newValue);
+    }
+
+    _subscribeFor(param, id) {
+        if(!this._textureSubscriptions[id]) {
+            let topic = PubSubTopics.TEXTURE_RECREATED + ':' + id;
+            pubSub.subscribe(this._id, topic,
+                () => this._updateRecreatedTextures(id));
+            this._textureSubscriptions[id] = new Set();
+        }
+        this._textureSubscriptions[id].add(param);
+    }
+
+    _updateRecreatedTextures(id) {
+        if(!this._textureSubscriptions[id]) return;
+        for(let param of this._textureSubscriptions[id]) {
+            this._setTexture(param, id);
+        }
     }
 
     exportParams() {
@@ -16800,7 +17211,10 @@ class Material extends Asset {
         for(let map of maps) {
             if(this['_' + map]) {
                 let texture = projectHandler.getAsset(this['_' + map]);
-                if(texture) params[map] = texture.getTexture();
+                if(texture) {
+                    params[map] = texture.getTexture();
+                    this._subscribeFor(map, this['_' + map]);
+                }
             }
         }
     }
@@ -17596,6 +18010,8 @@ class Texture extends Asset {
         setTimeout(() => {
             oldTexture.dispose();
         }, 20);
+        console.log('Publishing to ' + PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
+        pubSub.publish(this._id, PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
     }
 
     dispose() {
@@ -17735,13 +18151,15 @@ class BasicTexture extends Texture {
     setWrapS(wrapS) {
         if(this._wrapS == wrapS) return;
         this._wrapS = wrapS;
-        this._updateTexture();
+        this._texture.wrapS = wrapS;
+        this._texture.needsUpdate = true;
     }
 
     setWrapT(wrapT) {
         if(this._wrapT == wrapT) return;
         this._wrapT = wrapT;
-        this._updateTexture();
+        this._texture.wrapT = wrapT;
+        this._texture.needsUpdate = true;
     }
 
     static assetId = '95f63d4b-06d1-4211-912b-556b6ce7bf5f';
@@ -17931,10 +18349,7 @@ class GripInteractableHandler extends InteractableHandler {
             if(interactable.children.size != 0)
                 this._scopeInteractables(controller, interactable.children);
             let threeObj = interactable.getThreeObj();
-            if(threeObj == null || interactable.isOnlyGroup()
-                    || !interactable.supportsOwner(controller.option)) {
-                continue;
-            }
+            if(threeObj == null || interactable.isOnlyGroup()) continue;
             let intersects = interactable.intersectsSphere(boundingSphere);
             if(intersects) {
                 let distance = interactable.distanceToSphere(boundingSphere);
@@ -18042,21 +18457,18 @@ let gripInteractableHandler = new GripInteractableHandler();
 class CopyPasteControlsHandler {
     constructor() {
         this._id = uuidv4();
-        this._assetAlreadyPastedByTrigger = false;
-        this._assetAlreadyPastedByGrip = false;
+        this._assetAlreadyPastedByGrip = {};
         this._copiedAssets = {};
         this._previewAssets = {};
         gripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
             (controller) => { return this._toolHandler(controller); });
         pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
+            this._assetAlreadyPastedByGrip = {};
         });
         pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
-            this._assetAlreadyPastedByTrigger = false;
-            this._assetAlreadyPastedByGrip = false;
+            this._assetAlreadyPastedByGrip = {};
         });
     }
 
@@ -18076,15 +18488,16 @@ class CopyPasteControlsHandler {
         previewAsset.parent.getObject().attach(previewObject);
         previewAsset.clone(this._copiedAssets[ownerId].visualEdit);
         projectHandler.getAsset(ownerId).getObject().attach(previewObject);
-        this._assetAlreadyPastedByGrip = true;
+        this._assetAlreadyPastedByGrip[ownerId] = true;
     }
 
     _toolHandler(controller) {
         let ownerId = controller.option;
         if(!this._copiedAssets[ownerId]) return false;
-        if(controller.isPressed != this._assetAlreadyPastedByGrip) {
+        let alreadyPasted = Boolean(this._assetAlreadyPastedByGrip[ownerId]);
+        if(controller.isPressed != alreadyPasted) {
             if(controller.isPressed) this._paste(ownerId);
-            else this._assetAlreadyPastedByGrip = false;
+            else this._assetAlreadyPastedByGrip[ownerId] = false;
         }
         return true;
     }
@@ -19939,7 +20352,7 @@ class TransformControlsHandler {
             instanceHelper.setObjectTransformation(preState, postState);
         });
         this._transformControls.addEventListener('objectChange', () => {
-            if(global$1.renderer.info.render.frame % 6 == 0) {
+            if(global$1.renderer.info.render.frame % 3 == 0) {
                 this._attachedAssets[global$1.deviceType].editorHelper
                     .roundAttributes();
             }
@@ -20071,8 +20484,8 @@ class TransformControlsHandler {
         vector3s[1].setLength(0.2);
         vector3s[1].applyAxisAngle(vector3s[0], -Math.PI / 4);
         object.position.add(vector3s[1]);
-
         instance.editorHelper.roundAttributes(true);
+        instance.publishPosition();
     }
 
     _delete(option) {
@@ -20441,7 +20854,7 @@ class RotateHandler {
     }
 
     attach(owner, asset, rotationDifference) {
-        let otherOwner = this._otherOwner(owner);
+        let otherOwner = this._otherOwner(owner, asset);
         if(otherOwner) {
             this._swapToOwner(owner, otherOwner, rotationDifference);
         } else {
@@ -20453,7 +20866,8 @@ class RotateHandler {
                 heldAsset.rotationDifference = rotationDifference;
             } else {
                 let rotation = asset.getWorldQuaternion();
-                heldAsset.preTransformState = rotation.toArray();
+                heldAsset.preTransformState = asset.getObject().quaternion
+                    .toArray();
                 heldAsset.rotationDifference = projectHandler.getAsset(owner)
                     .getWorldQuaternion().conjugate().multiply(rotation)
                     .toArray();
@@ -20484,9 +20898,8 @@ class RotateHandler {
             this._euler2.setFromQuaternion(this._quaternion);
             let preState = this._euler1.toArray();
             let postState = this._euler2.toArray();
-            assetHelper._updateEuler('rotation', postState, false, true,
+            assetHelper._updateEuler('rotation', postState, false, false,
                 preState);
-            assetHelper._publish(['rotation']);
             pubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
                 option: owner,
@@ -20507,17 +20920,20 @@ class RotateHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
-        //Eventually we'll need to set the world rotation of the asset once
-        //we support parent child relationships
         let handRotation = projectHandler.getAsset(heldAsset.ownerId)
             .getWorldQuaternion();
         this._quaternion.fromArray(heldAsset.rotationDifference);
-        let newRotation = handRotation.multiply(this._quaternion).toArray();
-        heldAsset.asset.setRotationFromQuaternion(newRotation);
-        return newRotation;
+        let newRotation = handRotation.multiply(this._quaternion);
+        if(heldAsset.asset.parent) {
+            let parentObject = heldAsset.asset.parent.getObject();
+            parentObject.getWorldQuaternion(this._quaternion).conjugate();
+            this._quaternion.multiply(newRotation);
+        }
+        heldAsset.asset.setRotationFromQuaternion(this._quaternion.toArray());
+        return this._quaternion.toArray();
     }
 
-    _swapToOwner(newOwner, newHand, rotationDifference) {
+    _swapToOwner(newOwner, oldOwner, rotationDifference) {
         let heldAsset = this._heldAssets[oldOwner];
         heldAsset.ownerId = newOwner;
         this._heldAssets[newOwner] = heldAsset;
@@ -20607,7 +21023,7 @@ class ScaleHandler {
     }
 
     attach(owner, asset, scaleIdentity) {
-        let otherOwner = this._otherOwner(owner);
+        let otherOwner = this._otherOwner(owner, asset);
         if(otherOwner) {
             this._swapToOwner(owner, otherOwner, scaleIdentity);
         } else {
@@ -20621,7 +21037,7 @@ class ScaleHandler {
                 let distance = projectHandler.getAsset(owner).getWorldPosition()
                     .distanceTo(asset.getWorldPosition());
                 let scale = asset.getWorldScale();
-                heldAsset.preTransformState = scale.toArray();
+                heldAsset.preTransformState = asset.getScale();
                 heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
             }
             this._heldAssets[owner] = heldAsset;
@@ -20646,9 +21062,8 @@ class ScaleHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = scale;
-            assetHelper._updateVector3('scale', postState, false, true,
+            assetHelper._updateVector3('scale', postState, false, false,
                 preState);
-            assetHelper._publish(['scale']);
             pubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
                 option: owner,
@@ -20669,8 +21084,6 @@ class ScaleHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
-        //Eventually we'll need to set the world scale of the asset once
-        //we support parent child relationships
         let distance = heldAsset.asset.getWorldPosition().distanceTo(
             projectHandler.getAsset(heldAsset.ownerId).getWorldPosition());
         let newScale = [
@@ -20679,6 +21092,11 @@ class ScaleHandler {
             heldAsset.scaleIdentity[2] * distance
         ];
         heldAsset.asset.setScale(newScale);
+        if(heldAsset.asset.parent) {
+            let parentScale = heldAsset.asset.parent.getWorldScale();
+            heldAsset.asset.getObject().scale.divide(parentScale);
+            newScale = heldAsset.asset.getScale();
+        }
         return newScale;
     }
 
@@ -20775,7 +21193,7 @@ class TranslateHandler {
     }
 
     attach(owner, asset, positionDifference) {
-        let otherOwner = this._otherOwner(owner);
+        let otherOwner = this._otherOwner(owner, asset);
         if(otherOwner) {
             this._swapToOwner(owner, otherOwner, positionDifference);
         } else {
@@ -20787,7 +21205,7 @@ class TranslateHandler {
                 heldAsset.positionDifference = positionDifference;
             } else {
                 let position = asset.getWorldPosition();
-                heldAsset.preTransformState = position.toArray();
+                heldAsset.preTransformState = asset.getPosition();
                 heldAsset.positionDifference = position.sub(projectHandler
                     .getAsset(owner).getWorldPosition()).toArray();
             }
@@ -20813,9 +21231,8 @@ class TranslateHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = position;
-            assetHelper._updateVector3('position', postState, false, true,
+            assetHelper._updateVector3('position', postState, false, false,
                 preState);
-            assetHelper._publish(['position']);
             pubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
                 option: owner,
@@ -20836,8 +21253,6 @@ class TranslateHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
-        //Eventually we'll need to set the world position of the asset once
-        //we support parent child relationships
         let handPosition = projectHandler.getAsset(heldAsset.ownerId)
             .getWorldPosition();
         let newPosition = [
@@ -20846,6 +21261,11 @@ class TranslateHandler {
             heldAsset.positionDifference[2] + handPosition.z
         ];
         heldAsset.asset.setPosition(newPosition);
+        if(heldAsset.asset.parent) {
+            let parentObject = heldAsset.asset.parent.getObject();
+            parentObject.worldToLocal(heldAsset.asset.getObject().position);
+            newPosition = heldAsset.asset.getPosition();
+        }
         return newPosition;
     }
 
@@ -22754,7 +23174,7 @@ class EditorHelper {
         pubSub.publish(this._id, this._updatedTopic, message);
     }
 
-    _updateCubeImage(param, side, newValue, ignoreUndoRedo, ignorePublish,
+    _updateCubeImage(param, side, newValue, ignorePublish, ignoreUndoRedo,
                      oldValue) {
         let capitalizedParam = capitalizeFirstLetter(param);
         let currentValue = this._asset['get' + capitalizedParam]()[side];
@@ -22766,28 +23186,26 @@ class EditorHelper {
         if(!oldValue) oldValue = currentValue;
         if(!ignoreUndoRedo && oldValue != newValue) {
             undoRedoHandler.addAction(() => {
-                this._updateCubeImage(param, side, oldValue, true,
-                                      ignorePublish);
+                this._updateCubeImage(param, side, oldValue,ignorePublish,true);
                 this.updateMenuField(param);
             }, () => {
-                this._updateCubeImage(param, side, newValue, true,
-                                      ignorePublish);
+                this._updateCubeImage(param, side, newValue,ignorePublish,true);
                 this.updateMenuField(param);
             });
         }
     }
 
-    _updateEuler(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
-        this._updateVector3(param, newValue, ignoreUndoRedo, ignorePublish,
+    _updateEuler(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
+        this._updateVector3(param, newValue, ignorePublish, ignoreUndoRedo,
             oldValue);
     }
 
-    _updateVector2(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
-        this._updateVector3(param, newValue, ignoreUndoRedo, ignorePublish,
+    _updateVector2(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
+        this._updateVector3(param, newValue, ignorePublish, ignoreUndoRedo,
             oldValue);
     }
 
-    _updateVector3(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+    _updateVector3(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
         let capitalizedParam = capitalizeFirstLetter(param);
         let currentValue = this._asset['get' + capitalizedParam]();
         if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
@@ -22800,16 +23218,16 @@ class EditorHelper {
                 .reduce((a,v,i) => a && newValue[i] == v,true))
         {
             undoRedoHandler.addAction(() => {
-                this._updateVector3(param, oldValue, true, ignorePublish);
+                this._updateVector3(param, oldValue, ignorePublish, true);
                 this.updateMenuField(param);
             }, () => {
-                this._updateVector3(param, newValue, true, ignorePublish);
+                this._updateVector3(param, newValue, ignorePublish, true);
                 this.updateMenuField(param);
             });
         }
     }
 
-    _updateParameter(param, newValue, ignoreUndoRedo, ignorePublish, oldValue) {
+    _updateParameter(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
         let capitalizedParam = capitalizeFirstLetter(param);
         let currentValue = this._asset['get' + capitalizedParam]();
         if(currentValue != newValue) {
@@ -22820,10 +23238,10 @@ class EditorHelper {
         if(oldValue == null) oldValue = currentValue;
         if(!ignoreUndoRedo && oldValue != newValue) {
             undoRedoHandler.addAction(() => {
-                this._updateParameter(param, oldValue, true, ignorePublish);
+                this._updateParameter(param, oldValue, ignorePublish, true);
                 this.updateMenuField(param);
             }, () => {
-                this._updateParameter(param, newValue, true, ignorePublish);
+                this._updateParameter(param, newValue, ignorePublish, true);
                 this.updateMenuField(param);
             });
         }
@@ -22867,6 +23285,7 @@ class EditorHelper {
                 this.addComponent(componentId, ignorePublish, true);
             });
         }
+        return component;
     }
 
     removeComponent(componentId, ignorePublish, ignoreUndoRedo) {
@@ -22887,6 +23306,7 @@ class EditorHelper {
                 this.removeComponent(componentId, ignorePublish, true);
             });
         }
+        return component;
     }
 
     _publishComponentAttachment(topicPrefix, component) {
@@ -22894,8 +23314,6 @@ class EditorHelper {
         let topic = topicPrefix + ':' + componentAssetId;
         pubSub.publish(this._id, topic, {
             id: this._id,
-            assetId: this._asset.getAssetId(),
-            assetType: this._asset.constructor.assetType,
             componentId: component.getId(),
             componentAssetId: componentAssetId,
         });
@@ -23006,7 +23424,7 @@ class EditorHelper {
                                       oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateParameter(field.parameter, newValue, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
@@ -23051,7 +23469,7 @@ class EditorHelper {
                                   oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateEuler(field.parameter, newValue, true);
+                this._updateEuler(field.parameter, newValue, false, true);
             },
         });
     }
@@ -23093,7 +23511,7 @@ class EditorHelper {
                                       oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateParameter(field.parameter, newValue, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
@@ -23109,7 +23527,7 @@ class EditorHelper {
                                       oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateParameter(field.parameter, newValue, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
@@ -23138,7 +23556,7 @@ class EditorHelper {
                                   oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateVector2(field.parameter, newValue, true);
+                this._updateVector2(field.parameter, newValue, false, true);
             },
         });
     }
@@ -23154,7 +23572,7 @@ class EditorHelper {
                                   oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateVector3(field.parameter, newValue, true);
+                this._updateVector3(field.parameter, newValue, false, true);
             },
         });
     }
@@ -23176,6 +23594,11 @@ editorHelperFactory.registerEditorHelper(EditorHelper, Asset);
 
 
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
+const TRANSFORM_PUBLISH_FUNCTIONS = {
+    position: 'publishPosition',
+    rotation: 'publishRotation',
+    scale: 'publishScale',
+};
 const TRS_HANDLERS = [{ handler: translateHandler, tool: HandTools.TRANSLATE },
     { handler: rotateHandler, tool: HandTools.ROTATE },
     { handler: scaleHandler, tool: HandTools.SCALE },
@@ -23329,8 +23752,7 @@ class AssetEntityHelper extends EditorHelper {
                             newMaterial.userData['oldMaterial'] = mtrl;
                             node.material[i] = newMaterial;
                         }
-                    }
-                    else {
+                    } else {
                         let newMaterial = node.material.clone();
                         makeMaterialTranslucent(newMaterial);
                         newMaterial.userData['oldMaterial'] = node.material;
@@ -23348,15 +23770,19 @@ class AssetEntityHelper extends EditorHelper {
                     if (Array.isArray(node.material)) {
                         for(let i = 0; i < node.material.length; i++) {
                             let mtrl = node.material[i];
-                            node.material[i] =
-                                mtrl.userData['oldMaterial'];
-                            disposeMaterial(mtrl);
+                            if(mtrl.userData['oldMaterial']) {
+                                node.material[i] =
+                                    mtrl.userData['oldMaterial'];
+                                disposeMaterial(mtrl);
+                            }
                         }
-                    }
-                    else {
+                    } else {
                         let oldMaterial = node.material;
-                        node.material = node.material.userData['oldMaterial'];
-                        disposeMaterial(oldMaterial);
+                        let userData = node.material.userData;
+                        if(userData['oldMaterial']) {
+                            node.material = userData['oldMaterial'];
+                            disposeMaterial(oldMaterial);
+                        }
                     }
                 }
             }
@@ -23371,8 +23797,7 @@ class AssetEntityHelper extends EditorHelper {
         };
     }
 
-    setObjectTransformation(oldValues, newValues, ignoreUndoRedo,
-                            ignorePublish) {
+    setObjectTransformation(oldValues, newValues, ignorePublish,ignoreUndoRedo){
         let updated = [];
         for(let param of OBJECT_TRANSFORM_PARAMS) {
             let oldValue = (oldValues)
@@ -23389,11 +23814,9 @@ class AssetEntityHelper extends EditorHelper {
             this._publish(updated);
         if(!ignoreUndoRedo) {
             undoRedoHandler.addAction(() => {
-                this.setObjectTransformation(null, oldValues, true,
-                    ignorePublish);
+                this.setObjectTransformation(null,oldValues,ignorePublish,true);
             }, () => {
-                this.setObjectTransformation(null, newValues, true,
-                    ignorePublish);
+                this.setObjectTransformation(null,newValues,ignorePublish,true);
             });
         }
     }
@@ -23407,8 +23830,13 @@ class AssetEntityHelper extends EditorHelper {
             }
         }
         if(updated.length == 0) return;
-        if(!ignorePublish)
-            this._publish(updated);
+        if(!ignorePublish) {
+            if(updated.length == 1) {
+                this._asset[TRANSFORM_PUBLISH_FUNCTIONS[updated[0]]]();
+            } else {
+                this._asset.publishTransformation();
+            }
+        }
     }
 
     place(intersection) {
@@ -23473,9 +23901,15 @@ class AssetEntityHelper extends EditorHelper {
     }
 
     _demoteChildren(action) {
+        let invertedMatrix = this._object.matrix.clone().invert();
         for(let child of action.promotedChildren) {
-            if(child.parent == this._asset.parent)
+            if(child.parent == this._asset.parent) {
                 child.attachTo(this._asset);
+                let childObject = child.getObject();
+                if(!childObject.parent) {
+                    childObject.applyMatrix4(invertedMatrix);
+                }
+            }
         }
     }
 
@@ -23634,7 +24068,7 @@ class MaterialHelper extends EditorHelper {
             for(let map of maps) {
                 let capitalizedMap = capitalizeFirstLetter(map);
                 if(this._asset['get' + capitalizedMap]() == e.asset.getId()) {
-                    this._updateParameter(map, null, true);
+                    this._updateParameter(map, null, false, true);
                     this.updateMenuField(map);
                     updatedMaps.push(map);
                 }
@@ -23644,7 +24078,7 @@ class MaterialHelper extends EditorHelper {
                 e.undoRedoAction.undo = () => {
                     undo();
                     for(let map of updatedMaps) {
-                        this._updateParameter(map, e.asset.getId(), true);
+                        this._updateParameter(map, e.asset.getId(), false,true);
                         this.updateMenuField(map);
                     }
                 };
@@ -24026,14 +24460,14 @@ class ShapeHelper extends AssetEntityHelper {
     _addSubscriptions() {
         pubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
             if(this._asset.getMaterial() == e.asset.getId()) {
-                this._updateParameter('material', null, true);
+                this._updateParameter('material', null, false, true);
                 this.updateMenuField('material');
                 if(e.undoRedoAction) {
                     let undo = e.undoRedoAction.undo;
                     e.undoRedoAction.undo = () => {
                         undo();
                         this._updateParameter('material', e.asset.getId(),
-                            true);
+                            false, true);
                         this.updateMenuField('material');
                     };
                 }
@@ -24583,8 +25017,19 @@ class System extends Asset {
     _onUserReady() {}
     _onPeerReady() {}
     _onPeerDisconnected() {}
+    _onPeerMessage(p, m) {}
+    _onPeerBufferMessage(p, m) {}
     _onPartyStarted() {}
     _onPartyEnded() {}
+
+    _publishPeerMessage(message, skipQueue) {
+        partyHandler.publishInternalMessage(this._id, message, skipQueue);
+    }
+
+    _publishPeerBufferMessage(message, skipQueue) {
+        partyHandler.publishInternalBufferMessage(this._idBytes, message,
+            skipQueue);
+    }
 
     getDescription() {
         console.error("System.getDescription() should be overridden");
@@ -24597,6 +25042,10 @@ class System extends Asset {
 
     addToScene() {
         this._addSystemSubscriptions();
+        partyHandler.addInternalMessageHandler(this._id,
+            (p, m) => this._onPeerMessage(p, m));
+        partyHandler.addInternalBufferMessageHandler(this._id,
+            (p, m) => this._onPeerBufferMessage(p, m));
     }
 
     removeFromScene() {
@@ -41176,7 +41625,7 @@ class ProjectPage extends PaginatedPage$1 {
         let ambientLight = new AmbientLight({
             'visualEdit': false,
         });
-        projectHandler.addAsset(ambientLight, true);
+        projectHandler.addAsset(ambientLight, false, true);
         googleDrive.clearActiveFile();
         if(partyHandler.isPartyActive() && partyHandler.isHost()) {
             partyHandler.sendProject();
@@ -41813,13 +42262,11 @@ class PaginatedIconsPage extends MenuPage {
             this._updateItemsGUI();
         });
         this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextInteractable.addAction(() => {
+        this._nextAction = this._nextInteractable.addAction(() => {
             this._page += 1;
             this._updateItemsGUI();
         });
-        this._fetchNextInteractable = new PointerInteractable(this._nextButton,
-            true);
-        this._fetchNextInteractable.addAction(() => {
+        this._fetchNextAction = this._nextInteractable.addAction(() => {
             this._page += 1;
             this._fetchNextItems();
             this._updateItemsGUI();
@@ -41852,18 +42299,26 @@ class PaginatedIconsPage extends MenuPage {
         if(this._items.length > firstIndex + ROWS * OPTIONS$1) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
-            this._optionsInteractable.removeChild(this._fetchNextInteractable);
+            this._nextInteractable.addAction(this._nextAction);
+            this._nextInteractable.removeAction(this._fetchNextAction.id);
         } else if(this._items.length == firstIndex + ROWS * OPTIONS$1
                 && this._canFetchMore) {
             this._nextButton.visible = true;
-            this._optionsInteractable.addChild(this._fetchNextInteractable);
-            this._optionsInteractable.removeChild(this._nextInteractable);
+            this._optionsInteractable.addChild(this._nextInteractable);
+            this._nextInteractable.addAction(this._fetchNextAction);
+            this._nextInteractable.removeAction(this._nextAction.id);
         } else {
             this._nextButton.visible = false;
             this._optionsInteractable.removeChild(this._nextInteractable);
-            this._optionsInteractable.removeChild(this._fetchNextInteractable);
         }
         //this._container.update(false, true, false);
+    }
+
+    //Needs to be overridden
+    _fetchNextItems() {
+        console.error(
+            "PaginatedIconsPage._fetchNextItems() should be overridden");
+        return "";
     }
 
     //Needs to be overridden
@@ -42993,6 +43448,7 @@ class Main {
                 return;
             } else if(global$1.deviceType == "XR") {
                 this._renderer.setAnimationLoop((time, frame) => {
+                    global$1.frame = frame;
                     inputHandler.update(frame);
                     this._update();
                 });
@@ -43089,6 +43545,26 @@ function checkIfPointer() {
     if(hasPointerLock() && !detectMobile()) {
         global$1.deviceType = "POINTER";
     }
+}
+
+function isARSupported() {
+    return navigator.xr.isSessionSupported('immersive-ar')
+        .then(function (supported) {
+            if(supported) global$1.arSessionSupported = true;
+            return supported;
+        }).catch(function() {
+            return false;
+        });
+}
+
+function isVRSupported() {
+    return navigator.xr.isSessionSupported('immersive-vr')
+        .then(function (supported) {
+            if(supported) global$1.vrSessionSupported = true;
+            return supported;
+        }).catch(function() {
+            return false;
+        });
 }
 
 //Yuck, css and html through javascript. But it's easier to import the project
@@ -43290,18 +43766,17 @@ function setup(containerId, params) {
             return;
         }
         if('xr' in navigator) {
-            navigator.xr.isSessionSupported( 'immersive-vr' )
-                .then(function (supported) {
-                    if (supported) {
+            isVRSupported().then((vrSupported) => {
+                isARSupported().then((arSupported) => {
+                    if(vrSupported || arSupported) {
                         global$1.deviceType = "XR";
                     } else {
                         checkIfPointer();
                     }
-                }).catch(function() {
-                    checkIfPointer();
                 }).finally(function() {
                     start(resolve, containerId, params);
                 });
+            });
         } else {
             checkIfPointer();
             start(resolve, containerId, params);
@@ -43424,7 +43899,7 @@ var MenuInputs = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.1.9";
+const version = "0.2.0";
 
 global$1.version = version;
 
