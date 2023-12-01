@@ -23,6 +23,23 @@ class Sketchfab {
     constructor() {
         this._authToken = localStorage.getItem(AUTH_KEY);
         this._authExpiry = localStorage.getItem(AUTH_EXPIRY_KEY);
+        this._listenForMessages();
+    }
+
+    _listenForMessages() {
+        window.addEventListener('message', (event) => {
+            if(event.origin != VALID_CALLBACK_ORIGIN) return;
+            if(event.data.topic != 'sketchfab_auth_token') return;
+            clearInterval(this._intervalId);
+            this._tab.postMessage('close_tab', VALID_CALLBACK_ORIGIN);
+            this._authToken = event.data.authToken;
+            this._authExpiry = event.data.authExpiry;
+            if(this._staySignedIn) {
+                localStorage.setItem(AUTH_KEY, this._authToken);
+                localStorage.setItem(AUTH_EXPIRY_KEY, this._authExpiry);
+            }
+            if(this._callback) this._callback();
+        });
     }
 
     isSignedIn() {
@@ -31,37 +48,24 @@ class Sketchfab {
     }
 
     signIn(staySignedIn, callback) {
+        this._staySignedIn = staySignedIn;
+        this._callback = callback;
         if(this._intervalId) {
             clearInterval(this._intervalId);
             this._intervalId = null;
         }
 
-        let tab = window.open(AUTH_URL, '_blank');
-        if(!tab) {
+        this._tab = window.open(AUTH_URL, '_blank');
+        if(!this._tab) {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Please check your popup blocker settings',
             });
             return;
         }
-        tab.focus();
-        window._tab = tab;
+        this._tab.focus();
         this._intervalId = setInterval(() => {
-            tab.postMessage('fetch_auth_token', VALID_CALLBACK_ORIGIN);
+            this._tab.postMessage('fetch_auth_token', VALID_CALLBACK_ORIGIN);
         }, 1000);
-
-        window.addEventListener('message', (event) => {
-            if(event.origin != VALID_CALLBACK_ORIGIN) return;
-            if(event.data.topic != 'sketchfab_auth_token') return;
-            clearInterval(this._intervalId);
-            tab.postMessage('close_tab', VALID_CALLBACK_ORIGIN);
-            this._authToken = event.data.authToken;
-            this._authExpiry = event.data.authExpiry;
-            if(staySignedIn) {
-                localStorage.setItem(AUTH_KEY, this._authToken);
-                localStorage.setItem(AUTH_EXPIRY_KEY, this._authExpiry);
-            }
-            if(callback) callback();
-        });
     }
 
     search(query, successCallback, errorCallback) {

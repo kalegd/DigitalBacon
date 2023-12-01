@@ -20,6 +20,8 @@ import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
+const PREVIEW_URL = 'https://digitalbacon.io/preview';
+const PREVIEW_ORIGIN = 'https://digitalbacon.io';
 const OPTIONS = {
     'New Project': '_newProject',
     'Load from Device': '_localLoad',
@@ -27,7 +29,8 @@ const OPTIONS = {
     'Save to Device': '_localSave',
     'Save to Google Drive': '_googleDriveSave',
     'Sign out of Google Drive': '_googleDriveSignout',
-}
+    'Preview Live': '_previewLive',
+};
 
 class ProjectPage extends PaginatedPage {
     constructor(controller) {
@@ -67,11 +70,12 @@ class ProjectPage extends PaginatedPage {
     }
 
     _refreshItems() {
-        if(GoogleDrive.isSignedIn()) {
-            this._items = Object.keys(OPTIONS);
-        } else {
-            this._items = Object.keys(OPTIONS).slice(0, -1);
-        }
+        let isSignedIn = GoogleDrive.isSignedIn();
+        this._items = Object.keys(OPTIONS).filter((v, i) => {
+            if((!isSignedIn && i == 5) || (this._isLoadingPreview && i == 6))
+                return false;
+            return true;
+        });
     }
 
     _newProject() {
@@ -214,6 +218,51 @@ class ProjectPage extends PaginatedPage {
         this._updateItemsGUI();
     }
 
+    _previewLive() {
+        this._stopPreviewAttempt();
+        this._isLoadingPreview = true;
+        this._refreshItems();
+        this._updateItemsGUI();
+        let jsZip = ProjectHandler.exportProject();
+        jsZip.generateAsync({type:"blob"}).then((blob) => {
+            let reader = new FileReader();
+            reader.onloadend = () => {
+                this._previewBlob = reader.result;
+                this._tab = window.open(PREVIEW_URL, '_blank');
+                if(!this._tab) {
+                    this._stopPreviewAttempt();
+                    PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Please check your popup blocker settings',
+                    });
+                    return;
+                }
+                this._tab.focus();
+                this._intervalCount = 0;
+                this._intervalId = setInterval(() => {
+                    this._tab.postMessage({ topic: 'PREVIEW' }, PREVIEW_ORIGIN);
+                    this._intervalCount++;
+                    if(this._intervalCount > 10) this._stopPreviewAttempt();
+                }, 1000);
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    _stopPreviewAttempt() {
+        if(this._intervalId) {
+            clearInterval(this._intervalId);
+            this._intervalId = null;
+        }
+        if(this._tab) {
+            this._tab.close();
+            this._tab = null;
+        }
+        this._previewBlob = null;
+        this._isLoadingPreview = false;
+        this._refreshItems();
+        this._updateItemsGUI();
+    }
+
     _handleLocalFile(file) {
         this._updateLoading(false);
         JSZip.loadAsync(file).then((jsZip) => {
@@ -277,6 +326,19 @@ class ProjectPage extends PaginatedPage {
             (finished) => { this._updateLoading(finished); });
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_SAVING,
             (finished) => { this._updateSaving(finished); });
+        window.addEventListener('message', (event) => {
+            if(event.origin != PREVIEW_ORIGIN) return;
+            if(event.data != 'READY_FOR_PREVIEW_PROJECT') return;
+            clearInterval(this._intervalId);
+            if(!this._previewBlob || !this._tab) return;
+            this._tab.postMessage({
+                topic: 'PREVIEW_PROJECT',
+                blob: this._previewBlob,
+            }, PREVIEW_ORIGIN);
+            this._isLoadingPreview = false;
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
     }
 
     _updateLoading(finished) {
