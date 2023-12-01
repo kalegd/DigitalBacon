@@ -29,12 +29,6 @@ export default class PointLight extends Light {
         return PointLight.assetName;
     }
 
-    _updateLight() {
-        super._updateLight();
-        this._light.distance = this._distance;
-        this._light.decay = this._decay;
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['distance'] = this._distance;

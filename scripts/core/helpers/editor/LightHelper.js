@@ -6,7 +6,6 @@
 
 import Light from '/scripts/core/assets/primitives/Light.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
@@ -15,23 +14,6 @@ import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 export default class LightHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.LIGHT_UPDATED);
-        this._createMesh();
-    }
-
-    _createMesh() {
-        console.error(
-            "LightHelper._createMesh() should be overridden");
-        return;
-    }
-
-    updateVisualEdit(isVisualEdit) {
-        if(isVisualEdit) {
-            this._object.add(this._mesh);
-        } else {
-            this._object.remove(this._mesh);
-            fullDispose(this._mesh);
-        }
-        super.updateVisualEdit(isVisualEdit);
     }
 
     static fields = [

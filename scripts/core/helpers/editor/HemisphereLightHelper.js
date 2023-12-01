@@ -4,13 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
-import { Colors } from '/scripts/core/helpers/constants.js';
+import HemisphereLight from '/scripts/core/assets/primitives/HemisphereLight.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
+import ColorInput from '/scripts/core/menu/input/ColorInput.js';
 import * as THREE from 'three';
 
-export default class AmbientLightHelper extends LightHelper {
+export default class HemisphereLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
     }
@@ -18,7 +18,8 @@ export default class AmbientLightHelper extends LightHelper {
     static fields = [
         { "parameter": "intensity" },
         { "parameter": "color" },
+        { "parameter": "groundColor", "name": "Ground Color", "type": ColorInput },
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(AmbientLightHelper, AmbientLight);
+EditorHelperFactory.registerEditorHelper(HemisphereLightHelper, HemisphereLight);

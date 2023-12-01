@@ -7,15 +7,12 @@
 import Light from '/scripts/core/assets/primitives/Light.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import ColorInput from '/scripts/core/menu/input/ColorInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import { Colors } from '/scripts/core/helpers/constants.js';
-import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 export default class AmbientLight extends Light {
     constructor(params = {}) {
         params['assetId'] = AmbientLight.assetId;
+        params['visualEdit'] = false;
         super(params);
         this._createLight();
     }
