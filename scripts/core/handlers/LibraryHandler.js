@@ -6,7 +6,9 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AssetScriptTypes from '/scripts/core/enums/AssetScriptTypes.js';
+import AudioFileTypes from '/scripts/core/enums/AudioFileTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
+import ModelFileTypes from '/scripts/core/enums/ModelFileTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { defaultImageSize } from '/scripts/core/helpers/constants.js';
@@ -15,7 +17,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 
-const OPTIONAL_PARAMS = ['Sketchfab ID'];
+const OPTIONAL_PARAMS = ['SketchfabID'];
 
 class LibraryHandler {
     constructor() {
@@ -36,12 +38,17 @@ class LibraryHandler {
                 'Blob': blob,
                 'Name': name,
                 'Type': type,
+                'Hash': hash,
             }
             this._loadAsset(assetId, blob).then(() => { callback(assetId) });
         });
     }
 
     addNewScript(blob, successCallback, errorCallback) {
+        this._addNewScript(false, blob, successCallback, errorCallback);
+    }
+
+    _addNewScript(externalURL, blob, successCallback, errorCallback) {
         blobToHash(blob).then((hash) => {
             if(hash in this._blobHashMap) {
                 if(successCallback) successCallback(this._blobHashMap[hash]);
@@ -59,10 +66,16 @@ class LibraryHandler {
                 }
                 this._blobHashMap[hash] = assetId;
                 this.library[assetId] = {
-                    'Blob': blob,
                     'Name': assetName,
                     'Type': assetType,
+                    'Hash': hash,
                 };
+                if(externalURL) {
+                    this.library[assetId]['URL'] = externalURL;
+                    this.library[assetId]['IsExternal'] = true;
+                } else {
+                    this.library[assetId]['Blob'] = blob;
+                }
                 PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
                     true);
                 if(successCallback) successCallback(assetId);
@@ -74,17 +87,20 @@ class LibraryHandler {
         try {
             let loadPromises = [];
             for(let assetId in library) {
+                let promise;
                 let assetDetails = library[assetId];
                 let type = assetDetails['Type'];
-                let assetPath = assetDetails['Filepath'];
-                let promise = jsZip.file(assetPath).async('arraybuffer')
-                    .then((arraybuffer)=>{
-                        let options;
-                        if(type in AssetScriptTypes)
-                            options = { type: 'application/javascript' };
-                        let blob = new Blob([arraybuffer], options);
-                        return this.loadLibraryAsset(assetId, assetDetails, blob);
-                    });
+                if(assetDetails['IsExternal']) {
+                    promise = this.loadLibraryExternalAsset(assetId,
+                        assetDetails);
+                } else {
+                    let assetPath = assetDetails['Filepath'];
+                    promise = jsZip.file(assetPath).async('arraybuffer')
+                        .then((arraybuffer)=>{
+                            return this.loadLibraryAssetFromArrayBuffer(assetId,
+                                assetDetails, [arraybuffer]);
+                        });
+                }
                 loadPromises.push(promise);
             }
             Promise.all(loadPromises).then(successCallback).catch(error => {
@@ -97,54 +113,54 @@ class LibraryHandler {
         }
     }
 
+    loadLibraryExternalAsset(assetId, assetDetails) {
+        return fetch(assetDetails['URL']).then((response) => {
+            return response.arrayBuffer();
+        }).then((arraybuffer) => {
+            return this.loadLibraryAssetFromArrayBuffer(assetId, assetDetails,
+                [arraybuffer]);
+        });
+    }
+
+    loadLibraryAssetFromArrayBuffer(assetId, assetDetails, arraybuffers) {
+        let options;
+        if(assetDetails['Type'] in AssetScriptTypes)
+            options = { type: 'application/javascript' };
+        let blob = new Blob(arraybuffers, options);
+        return this.loadLibraryAsset(assetId, assetDetails, blob);
+    }
+
     loadLibraryAsset(assetId, assetDetails, blob) {
         return blobToHash(blob).then((hash) => {
             if(hash in this._blobHashMap) return;
             this._blobHashMap[hash] = assetId;
             this.library[assetId] = {
-                'Blob': blob,
                 'Name': assetDetails['Name'],
                 'Type': assetDetails['Type'],
+                'Hash': hash,
+            }
+            if(assetDetails['IsExternal']) {
+                this.library[assetId]['URL'] = assetDetails['URL'];
+                this.library[assetId]['IsExternal'] = true;
+            } else {
+                this.library[assetId]['Blob'] = blob;
             }
             for(let key of OPTIONAL_PARAMS) {
                 if(assetDetails[key])
                     this.library[assetId][key] = assetDetails[key];
             }
-            if(assetDetails['Sketchfab ID'])
-                this._sketchfabIdMap[assetDetails['Sketchfab ID']] = assetId;
+            if(assetDetails['SketchfabID'])
+                this._sketchfabIdMap[assetDetails['SketchfabID']] = assetId;
             return this._loadAsset(assetId, blob, true);
         });
     }
 
-    loadAsset(filepath, callback) {
-        let name = filepath.split('/').pop();
-        let assetId = uuidv4();
-        let extension = name.split('.').pop().toLowerCase();
-        let type;
-        if(extension in ImageFileTypes) {
-            type = AssetTypes.IMAGE;
-        } else if(extension == "glb") {
-            type = AssetTypes.MODEL;
-        }
-        fetch(filepath).then(response => response.blob()).then((blob) => {
-            if(extension == 'js') {
-                this.addNewScript(blob, callback);
-                return;
-            }
-            blobToHash(blob).then((hash) => {
-                if(hash in this._blobHashMap) {
-                    if(callback) callback(this._blobHashMap[hash]);
-                    return;
-                }
-                this._blobHashMap[hash] = assetId;
-                this.library[assetId] = {
-                    'Blob': blob,
-                    'Name': name,
-                    'Type': type,
-                };
-                this._loadAsset(assetId, blob).then(() => { callback(assetId)});
-            });
-        });
+    loadAsset(filepath, successCallback, errorCallback) {
+        this._loadAssetFromURL(false, filepath, successCallback, errorCallback);
+    }
+
+    loadExternalAsset(url, successCallback, errorCallback) {
+        this._loadAssetFromURL(true, url, successCallback, errorCallback);
     }
 
     loadBuiltIn(assetClass) {
@@ -152,7 +168,53 @@ class LibraryHandler {
         this.library[assetClass.assetId] = {
             'Name': assetClass.assetName,
             'Type': assetClass.assetType,
+            'IsBuiltIn': true,
         }
+    }
+
+    _loadAssetFromURL(isExternal, url, successCallback, errorCallback) {
+        let name = url.split('/').pop();
+        let assetId = uuidv4();
+        let extension = name.split('.').pop().toLowerCase();
+        let type;
+        if(extension in AudioFileTypes) {
+            type = AssetTypes.AUDIO;
+        } else if(extension in ImageFileTypes) {
+            type = AssetTypes.IMAGE;
+        } else if(extension in ModelFileTypes) {
+            type = AssetTypes.MODEL;
+        }
+        fetch(url).then(response => response.blob()).then((blob) => {
+            if(extension == 'js') {
+                this._addNewScript(isExternal && url, blob, successCallback,
+                    errorCallback)
+                return;
+            }
+            blobToHash(blob).then((hash) => {
+                if(hash in this._blobHashMap) {
+                    if(successCallback)
+                        successCallback(this._blobHashMap[hash]);
+                    return;
+                }
+                this._blobHashMap[hash] = assetId;
+                this.library[assetId] = {
+                    'Name': name,
+                    'Type': type,
+                    'Hash': hash,
+                };
+                if(isExternal) {
+                    this.library[assetId]['URL'] = url;
+                    this.library[assetId]['IsExternal'] = true;
+                } else {
+                    this.library[assetId]['Blob'] = blob;
+                }
+                this._loadAsset(assetId, blob).then(() => {
+                    if(successCallback) successCallback(assetId);
+                });
+            });
+        }).catch((error) => {
+            if(errorCallback) errorCallback(error);
+        });
     }
 
     _loadAsset(assetId, blob, ignorePublish) {
@@ -270,6 +332,17 @@ class LibraryHandler {
         return assetDetails['Mesh'].material.map.clone();
     }
 
+    filterAssets(assetIds) {
+        for(let assetId in this.library) {
+            let asset = this.library[assetId];
+            if(!assetIds.has(assetId) && !asset['IsBuiltIn']) {
+                delete this.library[assetId];
+                delete this._blobHashMap[asset.Hash];
+                delete this._sketchfabIdMap[asset['SketchfabID']];
+            }
+        }
+    }
+
     getImage(assetId) {
         let assetDetails = this.library[assetId];
         return assetDetails['Mesh'].material.map.image;
@@ -300,7 +373,7 @@ class LibraryHandler {
             return;
         }
         if(sketchfabAsset.uid) {
-            asset['Sketchfab ID'] = sketchfabAsset.uid;
+            asset['SketchfabID'] = sketchfabAsset.uid;
             this._sketchfabIdMap[sketchfabAsset.uid] = assetId;
         }
     }
@@ -308,7 +381,7 @@ class LibraryHandler {
     reset() {
         let newLibrary = {};
         for(let assetId in this.library) {
-            if(!this.library[assetId]['Blob']) {
+            if(this.library[assetId]['IsBuiltIn']) {
                 newLibrary[assetId] = this.library[assetId];
             }
         }
@@ -321,15 +394,20 @@ class LibraryHandler {
         let libraryDetails = {};
         for(let assetId of assetIds) {
             let assetDetails = this.library[assetId];
-            if(!assetDetails['Blob']) continue;//Built-in asset
+            if(assetDetails['IsBuiltIn']) continue;//Built-in asset
             let assetType = assetDetails['Type'];
             libraryDetails[assetId] = {
                 'Name': assetDetails['Name'],
                 'Type': assetType,
-            }
+            };
             for(let key of OPTIONAL_PARAMS) {
                 if(assetDetails[key])
                     libraryDetails[assetId][key] = assetDetails[key];
+            }
+            if(assetDetails['IsExternal']) {
+                libraryDetails[assetId]['URL'] = assetDetails['URL'];
+                libraryDetails[assetId]['IsExternal'] = true;
+                continue;
             }
             let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];
             libraryDetails[assetId]['Filepath'] = filepath;

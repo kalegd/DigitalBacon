@@ -13,7 +13,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import { uuidv4, capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, capitalizeFirstLetter, storeStringValuesInSet } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 class ProjectHandler {
@@ -90,6 +90,10 @@ class ProjectHandler {
                     if(errorCallback) errorCallback();
                     return;
                 }
+                let assetIds = Object.keys(this._projectDetails.library);
+                assetIds.push(...Object.keys(projectDetails.library));
+                assetIds = new Set(assetIds);
+                LibraryHandler.filterAssets(assetIds);
                 LibraryHandler.load(projectDetails['library'], jsZip,()=>{
                     try {
                         for(let key in this._assetHandlers) {
@@ -348,23 +352,17 @@ class ProjectHandler {
     }
 
     exportDiff() {
-        let assetIds = [];
-        let projectDetails = this._getProjectDetails(true);
-        for(let key in this._assetHandlers) {
-            key = key.toLowerCase() + 's';
-            for(let assetId in projectDetails[key]) {
-                if(!this._projectDetails[key]
-                        || !(assetId in this._projectDetails[key])) {
-                    assetIds.push(assetId);
-                }
-            }
+        let oldValues = new Set();
+        let projectDetails = this._getProjectDetails();
+        storeStringValuesInSet(this._projectDetails, oldValues);
+        for(let assetId in projectDetails.library) {
+            if(oldValues.has(assetId)) delete projectDetails.library[assetId];
         }
-        projectDetails['library'] = LibraryHandler.getLibraryDetails(assetIds);
         return this._exportBlob(projectDetails);
     }
 
     exportProject(includeInternals) {
-        let projectDetails = this._getProjectDetails(false, !includeInternals);
+        let projectDetails = this._getProjectDetails(!includeInternals);
         return this._exportBlob(projectDetails);
     }
 
@@ -374,8 +372,8 @@ class ProjectHandler {
         let library = LibraryHandler.getLibrary();
         for(let assetId in projectDetails['library']) {
             let assetType = projectDetails['library'][assetId]['Type'];
-            if(assetType != AssetTypes.PRIMITVE
-                    && assetType != AssetTypes.INTERNAL) {
+            let isExternal = library[assetId]['IsExternal'];
+            if(assetType != AssetTypes.INTERNAL && !isExternal) {
                 let filename = projectDetails['library'][assetId]['Filepath'];
                 zip.file(filename, library[assetId]['Blob']);
             }
@@ -383,10 +381,11 @@ class ProjectHandler {
         return zip;
     }
 
-    _getProjectDetails(skipLibrary, skipInternals) {
-        let assetIds = [];
+    _getProjectDetails(skipInternals) {
+        let assetIds = Object.keys(LibraryHandler.library);
         let settings = SettingsHandler.getSettings();
         let projectDetails = { settings: settings, version: global.version };
+        let values = new Set();
         if(skipInternals)
             PubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
         for(let type in this._assetHandlers) {
@@ -395,22 +394,12 @@ class ProjectHandler {
             let details = handler.getAssetsDetails();
             if(!details) continue;
             projectDetails[type.toLowerCase() + 's'] = details;
-            if(type == AssetTypes.TEXTURE) {
-                let texturesAssetIds = handler.getTexturesAssetIds();
-                for(let assetId of texturesAssetIds) assetIds.push(assetId);
-            } else {
-                for(let assetId in details) assetIds.push(assetId);
-            }
-        }
-        for(let side in settings['Skybox']) {
-            let assetId = settings['Skybox'][side];
-            if(assetId) assetIds.push(assetId);
         }
 
-        if(!skipLibrary) {
-            projectDetails['library'] = LibraryHandler.getLibraryDetails(
-                assetIds);
-        }
+        storeStringValuesInSet(projectDetails, values);
+        assetIds.filter((assetId) => values.has(assetId));
+        projectDetails['library'] = LibraryHandler.getLibraryDetails(
+            assetIds);
         return projectDetails;
     }
 }

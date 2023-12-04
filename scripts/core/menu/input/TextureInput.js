@@ -116,6 +116,7 @@ class TextureInput extends PointerInteractableEntity {
     }
 
     _selectNewTexture() {
+        let currentPage = global.menuController.getCurrentPage();
         let options = TexturesHandler.getAssetClasses();
         if(this._filter)
             options = options.filter(o => o.textureType == this._filter);
@@ -130,7 +131,8 @@ class TextureInput extends PointerInteractableEntity {
             let newTexturePage = global.menuController.getPage(
                 MenuPages.NEW_TEXTURE);
             newTexturePage.setContent((texture) => {
-                this._handleTextureSelection(texture.getId());
+                this._handleTextureSelection(texture.getId(), currentPage);
+                if(currentPage != global.menuController.getCurrentPage())return;
                 let texturePage = global.menuController.getPage(
                     MenuPages.TEXTURE);
                 texturePage.setAsset(texture);
@@ -140,13 +142,14 @@ class TextureInput extends PointerInteractableEntity {
         }
     }
 
-    _handleTextureSelection(textureId) {
+    _handleTextureSelection(textureId, callingPage) {
         if(textureId == "null\n") textureId = null;
         if(this._lastValue != textureId) {
             if(this._onUpdate) this._onUpdate(textureId);
             this._updateTexture(textureId);
         }
-        global.menuController.back();
+        if(!callingPage || callingPage ==global.menuController.getCurrentPage())
+            global.menuController.back();
         PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,

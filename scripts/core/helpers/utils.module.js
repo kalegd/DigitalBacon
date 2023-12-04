@@ -228,6 +228,16 @@ export const typedArrayToArray = (typedArray) => {
     return [].slice.call(typedArray);
 }
 
+export const storeStringValuesInSet = (object, set) => {
+    if(typeof object != 'object') return;
+    for(let key in object) {
+        let value = object[key];
+        (typeof value == 'string')
+            ? set.add(value)
+            : storeStringValuesInSet(value, set);
+    }
+}
+
 //https://dmitripavlutin.com/javascript-queue/
 export class Queue {
     constructor() {

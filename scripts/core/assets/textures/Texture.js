@@ -38,7 +38,6 @@ export default class Texture extends Asset {
         setTimeout(() => {
             oldTexture.dispose();
         }, 20);
-        console.log('Publishing to ' + PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
         PubSub.publish(this._id, PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
     }
 

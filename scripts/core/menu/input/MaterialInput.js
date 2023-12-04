@@ -115,10 +115,12 @@ class MaterialInput extends PointerInteractableEntity {
     }
 
     _selectNewMaterial() {
+        let currentPage = global.menuController.getCurrentPage();
         let newMaterialPage = global.menuController.getPage(
             MenuPages.NEW_MATERIAL);
         newMaterialPage.setContent((material) => {
-            this._handleMaterialSelection(material.getId());
+            this._handleMaterialSelection(material.getId(), currentPage);
+            if(currentPage != global.menuController.getCurrentPage()) return;
             let materialPage = global.menuController.getPage(
                 MenuPages.MATERIAL);
             materialPage.setAsset(material);
@@ -127,13 +129,14 @@ class MaterialInput extends PointerInteractableEntity {
         global.menuController.pushPage(MenuPages.NEW_MATERIAL);
     }
 
-    _handleMaterialSelection(materialId) {
+    _handleMaterialSelection(materialId, callingPage) {
         if(materialId == "null\n") materialId = null;
         if(this._lastValue != materialId) {
             if(this._onUpdate) this._onUpdate(materialId);
             this._updateMaterial(materialId);
         }
-        global.menuController.back();
+        if(!callingPage || callingPage ==global.menuController.getCurrentPage())
+            global.menuController.back();
         PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,

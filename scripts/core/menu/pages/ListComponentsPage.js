@@ -86,6 +86,7 @@ class ListComponentsPage extends PaginatedListPage {
     }
 
     _selectNewComponent() {
+        let currentPage = this._controller.getCurrentPage();
         let page = this._controller.getPage(MenuPages.NEW_COMPONENT);
         page.setContent((component) => {
             if(!component.supports(this._asset)) {
@@ -95,6 +96,7 @@ class ListComponentsPage extends PaginatedListPage {
                 return;
             }
             this._asset.editorHelper.addComponent(component.getId());
+            if(currentPage != this._controller.getCurrentPage()) return;
             this._controller.back();
             let componentPage = this._controller.getPage(MenuPages.COMPONENT);
             componentPage.setAsset(component);

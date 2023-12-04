@@ -60,7 +60,8 @@ class AssetsPage extends PaginatedPage {
         interactable.addAction(() => {
             let page = this._controller.getPage('NEW_' + this._assetType);
             page.setContent((asset) => {
-                this._handleItemInteraction(asset.getId());
+                if(asset.constructor.assetType == this._assetType)
+                    this._handleItemInteraction(asset.getId());
             });
             this._controller.pushPage('NEW_' + this._assetType);
         });

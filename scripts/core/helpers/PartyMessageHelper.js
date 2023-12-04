@@ -129,8 +129,25 @@ class PartyMessageHelper {
     }
 
     _handleAssetAdded(peer, message) {
-        let lock = uuidv4();
-        message.lock = this._partyHandler.addMessageHandlerLock();
+        let lock = this._partyHandler.addMessageHandlerLock();
+        if(message.isExternal) {
+            let { assetId, name, type, url, sketchfabId } = message;
+            let assetDetails = {
+                Name: name,
+                Type: type,
+                IsExternal: true,
+                URL: url,
+                SketchfabID: sketchfabId,
+            };
+            LibraryHandler.loadLibraryExternalAsset(assetId, assetDetails)
+                .then(() => {
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                        assetId);
+                    this._partyHandler.removeMessageHandlerLock(lock);
+                });
+            return;
+        }
+        message.lock = lock;
         message.parts = [];
         peer.assetAddedDetails = message;
     }
@@ -140,16 +157,17 @@ class PartyMessageHelper {
             console.error('Unexpected call to _handleBufferAssetAdded() before _handleAssetAdded()');
             return;
         }
-        let {parts,partsLength,assetId,name,type,lock} = peer.assetAddedDetails;
+        let { parts, partsLength, assetId, name, type, lock, sketchfabId }
+            = peer.assetAddedDetails;
         parts.push(message);
         if(parts.length == partsLength) {
-            let blob = new Blob(parts, { type: 'application/javascript' });
             let assetDetails = {
                 Name: name,
                 Type: type,
+                SketchfabID: sketchfabId,
             };
-            LibraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
-                .then(() => {
+            LibraryHandler.loadLibraryAssetFromArrayBuffer(assetId,
+                assetDetails, parts).then(() => {
                     PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
                         assetId);
                     this._partyHandler.removeMessageHandlerLock(lock);
@@ -445,6 +463,18 @@ class PartyMessageHelper {
     }
 
     _publishAssetAdded(assetId) {
+        let libraryDetails = LibraryHandler.getLibrary()[assetId];
+        if(libraryDetails['IsExternal']) {
+            this._partyHandler.publishInternalMessage('asset_added', {
+                assetId: assetId,
+                name: libraryDetails['Name'],
+                type: libraryDetails['Type'],
+                url: libraryDetails['URL'],
+                sketchfabId: libraryDetails['SketchfabID'],
+                isExternal: true,
+            }, true);
+            return;
+        }
         this._partyHandler.publishFromFunction(() => {
             return new Promise((resolve) => {
                 let libraryDetails = LibraryHandler.getLibrary()[assetId];
@@ -461,6 +491,7 @@ class PartyMessageHelper {
                         assetId: assetId,
                         name: libraryDetails['Name'],
                         type: libraryDetails['Type'],
+                        sketchfabId: libraryDetails['SketchfabID'],
                         partsLength: parts.length,
                     }, true);
                     for(let part of parts) {

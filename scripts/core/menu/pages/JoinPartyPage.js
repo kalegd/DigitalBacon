@@ -95,7 +95,7 @@ class JoinPartyPage extends MenuPage {
         this._container.remove(this._connectingBlock);
         this._container.add(this._contentBlock);
         this._container.update(false, false, true);
-        if(this._controller._getCurrentPage() == this) this._controller.back();
+        if(this._controller.getCurrentPage() == this) this._controller.back();
         PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
             text: 'Party Joined',
         });

@@ -48,7 +48,7 @@ export default class MenuController extends PointerInteractableEntity {
         this._notificationHub.setNotificationHeight(0.18);
     }
 
-    _getCurrentPage() {
+    getCurrentPage() {
         return this._pages[this._pageCalls[this._pageCalls.length-1]];
     }
 
@@ -57,16 +57,16 @@ export default class MenuController extends PointerInteractableEntity {
     }
 
     setPage(page) {
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         this._pageCalls = [page];
-        currentPage = this._getCurrentPage();
+        currentPage = this.getCurrentPage();
         currentPage.addToScene(this._object, this._pointerInteractable);
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     pushPage(page) {
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         this._pageCalls.push(page);
         this._pages[page].addToScene(this._object, this._pointerInteractable);
@@ -74,10 +74,10 @@ export default class MenuController extends PointerInteractableEntity {
     }
 
     popPage() {
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         this._pageCalls.pop();
-        currentPage = this._getCurrentPage();
+        currentPage = this.getCurrentPage();
         currentPage.addToScene(this._object, this._pointerInteractable);
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
@@ -85,7 +85,7 @@ export default class MenuController extends PointerInteractableEntity {
     popPagesPast(page) {
         let poppedPage, currentPage;
         do {
-            currentPage = this._getCurrentPage();
+            currentPage = this.getCurrentPage();
             poppedPage = this._pageCalls[this._pageCalls.length-1];
             currentPage.back();
         } while(poppedPage != page);
@@ -94,14 +94,14 @@ export default class MenuController extends PointerInteractableEntity {
 
     popAllPages() {
         while(this._pageCalls.length > 1) {
-            let currentPage = this._getCurrentPage();
+            let currentPage = this.getCurrentPage();
             currentPage.back();
         }
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     back() {
-        this._getCurrentPage().back();
+        this.getCurrentPage().back();
     }
 
     _createBorder() {
@@ -226,7 +226,7 @@ export default class MenuController extends PointerInteractableEntity {
         if(this._object.parent == scene) return;
         super.addToScene(scene);
         this._scene = scene;
-        this._getCurrentPage().addToScene(this._object,
+        this.getCurrentPage().addToScene(this._object,
             this._pointerInteractable);
         if(global.deviceType == "XR")
             GripInteractableHandler.addInteractable(this._gripInteractable);
@@ -235,7 +235,7 @@ export default class MenuController extends PointerInteractableEntity {
 
     removeFromScene() {
         super.removeFromScene();
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         if(global.deviceType == "XR")
             GripInteractableHandler.removeInteractable(this._gripInteractable);
