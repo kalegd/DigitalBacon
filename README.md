@@ -1,16 +1,18 @@
 # DigitalBacon
-Content Management System for 3D Websites
+Create 3D websites easily that run on AR, VR, Desktop, and Mobile devices with Digital Bacon. No coding required, but supports an API to create plugins for advanced customizations
+
+[![NPM Package](https://img.shields.io/npm/v/digitalbacon)](https://www.npmjs.com/package/digitalbacon) [![Build Size](https://badgen.net/bundlephobia/minzip/digitalbacon)](https://bundlephobia.com/result?p=digitalbacon) [![NPM Downloads](https://img.shields.io/npm/dw/digitalbacon)](https://www.npmtrends.com/digitalbacon)
 
 #### How to use
-The following code snippet assumes dependencies have been downloaded using npm. three, three-mesh-ui, and three-mesh-bvh are all required dependencies
+Go to [Digital Bacon](https://digitalbacon.io) to create you own 3D website and then save your project zip file. You can then use host your project using the below html snippet
 ```html
 <html>
   <head>
     <script type="importmap">
       {
         "imports": {
-          "DigitalBacon": "https://cdn.jsdelivr.net/npm/digitalbacon@0.1.3/build/DigitalBacon.min.js",
-          "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
+          "DigitalBacon": "https://cdn.jsdelivr.net/npm/digitalbacon@latest/build/DigitalBacon.min.js",
+          "three": "https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.module.js",
           "three-mesh-ui": "https://cdn.jsdelivr.net/npm/three-mesh-ui@6.5.4/build/three-mesh-ui.module.js",
           "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.6.1/src/index.min.js"
         }
