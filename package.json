@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "build": "rollup -c --bundleConfigAsCjs",
-    "start": "http-server -c-1 -p 8000"
+    "start": "http-server -c-1 -p 8000",
+    "lint": "eslint . --ext .js"
   },
   "dependencies": {
     "file-saver": "2.0.5",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@rollup/plugin-replace": "5.0.2",
     "@rollup/plugin-terser": "^0.3.0",
+    "eslint": "^8.55.0",
     "http-server": "14.1.0",
     "mime": "3.0.0",
     "rollup": "^3.9.1",
