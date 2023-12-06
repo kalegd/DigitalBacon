@@ -41,10 +41,10 @@ const ASSETS = [{
         'icon': Textures.audioIcon,
         'assetType': AssetTypes.AUDIO,
     }, {
-//        'text': 'Video',
-//        'icon': Textures.videoIcon,
-//        'assetType': AssetTypes.VIDEO,
-//    }, {
+        'text': 'Video',
+        'icon': Textures.videoIcon,
+        'assetType': AssetTypes.VIDEO,
+    }, {
         'text': 'Components',
         'icon': Textures.componentIcon,
         'assetType': AssetTypes.COMPONENT,

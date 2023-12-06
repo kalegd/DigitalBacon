@@ -10,6 +10,7 @@ const AssetTypes = {
     SHAPE: "SHAPE",
     SYSTEM: "SYSTEM",
     TEXTURE: "TEXTURE",
+    VIDEO: "VIDEO",
 };
 
 export default AssetTypes;

@@ -9,6 +9,7 @@ import AssetScriptTypes from '/scripts/core/enums/AssetScriptTypes.js';
 import AudioFileTypes from '/scripts/core/enums/AudioFileTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import ModelFileTypes from '/scripts/core/enums/ModelFileTypes.js';
+import VideoFileTypes from '/scripts/core/enums/VideoFileTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { defaultImageSize } from '/scripts/core/helpers/constants.js';
@@ -114,11 +115,30 @@ class LibraryHandler {
     }
 
     loadLibraryExternalAsset(assetId, assetDetails) {
+        if(assetDetails['Type'] == AssetTypes.VIDEO) {
+            return this.loadLibraryExternalVideoAsset(assetId, assetDetails);
+        }
         return fetch(assetDetails['URL']).then((response) => {
             return response.arrayBuffer();
         }).then((arraybuffer) => {
             return this.loadLibraryAssetFromArrayBuffer(assetId, assetDetails,
                 [arraybuffer]);
+        });
+    }
+
+    loadLibraryExternalVideoAsset(assetId, assetDetails) {
+        let url = assetDetails.URL;
+        if(url in this._blobHashMap) return;
+        return fetch(url, { method: 'HEAD' }).then((response) => {
+            if(!response.ok) throw new Error('URL could not be fetched');
+            this._blobHashMap[url] = assetId;
+            this.library[assetId] = {
+                'Name': assetDetails['Name'],
+                'Type': assetDetails['Type'],
+                'Hash': url,
+                'IsExternal': true,
+                'URL': url,
+            };
         });
     }
 
@@ -183,8 +203,18 @@ class LibraryHandler {
             type = AssetTypes.IMAGE;
         } else if(extension in ModelFileTypes) {
             type = AssetTypes.MODEL;
+        } else if(extension in VideoFileTypes) {
+            type = AssetTypes.VIDEO;
+            if(isExternal) {
+                this._loadExternalVideo(assetId, url, name, successCallback,
+                    errorCallback);
+                return;
+            }
         }
-        fetch(url).then(response => response.blob()).then((blob) => {
+        fetch(url).then((response) => {
+            if(!response.ok) throw new Error('URL could not be fetched');
+            return response.blob();
+        }).then((blob) => {
             if(extension == 'js') {
                 this._addNewScript(isExternal && url, blob, successCallback,
                     errorCallback)
@@ -217,6 +247,28 @@ class LibraryHandler {
         });
     }
 
+    _loadExternalVideo(assetId, url, name, successCallback, errorCallback) {
+        if(url in this._blobHashMap) {
+            if(successCallback) successCallback(this._blobHashMap[url]);
+            return;
+        }
+        fetch(url, { method: 'HEAD' }).then((response) => {
+            if(!response.ok) throw new Error('URL could not be fetched');
+            this._blobHashMap[url] = assetId;
+            this.library[assetId] = {
+                'Name': name,
+                'Type': AssetTypes.VIDEO,
+                'Hash': url,
+                'IsExternal': true,
+                'URL': url,
+            };
+            PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId, true);
+            if(successCallback) successCallback(assetId);
+        }).catch((error) => {
+            if(errorCallback) errorCallback(error);
+        });
+    }
+
     _loadAsset(assetId, blob, ignorePublish) {
         if(this.library[assetId]['Type'] == AssetTypes.MODEL) {
             return this._loadGLB(assetId, blob, ignorePublish);
@@ -224,6 +276,8 @@ class LibraryHandler {
             return this._loadImage(assetId, blob, ignorePublish);
         } else if(this.library[assetId]['Type'] == AssetTypes.AUDIO) {
             return this._loadAudio(assetId, blob, ignorePublish);
+        } else if(this.library[assetId]['Type'] == AssetTypes.VIDEO) {
+            return this._loadVideo(assetId, blob, ignorePublish);
         } else {
             return this._loadScript(assetId, blob, ignorePublish);
         }
@@ -293,6 +347,16 @@ class LibraryHandler {
         });
     }
 
+    _loadVideo(assetId, blob, ignorePublish) {
+        return new Promise((resolve, reject) => {
+            let objectURL = URL.createObjectURL(blob);
+            this.library[assetId]['URL'] = objectURL;
+            PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                assetId, true);
+            resolve();
+        });
+    }
+
     _loadScript(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
@@ -343,6 +407,15 @@ class LibraryHandler {
         }
     }
 
+    getAssetName(assetId) {
+        if(assetId in this.library) return this.library[assetId]['Name'];
+        return null;
+    }
+
+    getAssetIdFromSketchfabId(sketchfabId) {
+        return this._sketchfabIdMap[sketchfabId];
+    }
+
     getImage(assetId) {
         let assetDetails = this.library[assetId];
         return assetDetails['Mesh'].material.map.image;
@@ -357,13 +430,9 @@ class LibraryHandler {
         return null;
     }
 
-    getAssetName(assetId) {
-        if(assetId in this.library) return this.library[assetId]['Name'];
+    getUrl(assetId) {
+        if(assetId in this.library) return this.library[assetId]['URL'];
         return null;
-    }
-
-    getAssetIdFromSketchfabId(sketchfabId) {
-        return this._sketchfabIdMap[sketchfabId];
     }
 
     registerSketchfabAsset(assetId, sketchfabAsset) {

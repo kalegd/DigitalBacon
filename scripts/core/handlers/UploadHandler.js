@@ -10,6 +10,7 @@ import FileTypes from '/scripts/core/enums/FileTypes.js';
 import AudioFileTypes from '/scripts/core/enums/AudioFileTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import ModelFileTypes from '/scripts/core/enums/ModelFileTypes.js';
+import VideoFileTypes from '/scripts/core/enums/VideoFileTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
@@ -84,6 +85,8 @@ class UploadHandler {
                         assetType = AssetTypes.MODEL;
                     } else if(extension in AudioFileTypes) {
                         assetType = AssetTypes.AUDIO;
+                    } else if(extension in VideoFileTypes) {
+                        assetType = AssetTypes.VIDEO;
                     }
                     this._locks.add(lock);
                     LibraryHandler.addNewAsset(file, file.name, assetType,
