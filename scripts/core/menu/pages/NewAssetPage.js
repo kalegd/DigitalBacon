@@ -11,6 +11,7 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AudioFileTypes from '/scripts/core/enums/AudioFileTypes.js';
 import ImageFileTypes from '/scripts/core/enums/ImageFileTypes.js';
 import ModelFileTypes from '/scripts/core/enums/ModelFileTypes.js';
+import VideoFileTypes from '/scripts/core/enums/VideoFileTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
@@ -127,6 +128,13 @@ class NewAssetPage extends PaginatedPage {
             if(!(extension in AudioFileTypes)) {
                 PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                     text: 'File type not supported for Audio'
+                });
+                return false;
+            }
+        } else if(this._assetType == AssetTypes.VIDEO) {
+            if(!(extension in VideoFileTypes)) {
+                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'File type not supported for Video'
                 });
                 return false;
             }

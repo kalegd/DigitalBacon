@@ -4,20 +4,20 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
+import ClampedVideoTexturePlane from '/scripts/core/assets/ClampedVideoTexturePlane.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 
-class ModelsHandler extends AssetsHandler {
+class VideosHandler extends AssetsHandler {
     constructor() {
-        super(PubSubTopics.MODEL_ADDED, PubSubTopics.MODEL_DELETED,
-            AssetTypes.MODEL);
+        super(PubSubTopics.VIDEO_ADDED, PubSubTopics.VIDEO_DELETED,
+            AssetTypes.VIDEO);
     }
 
     addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
-        let asset = new GLTFAsset(params || { assetId: assetId });
+        let asset = new ClampedVideoTexturePlane(params || { assetId: assetId});
         this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
@@ -34,5 +34,5 @@ class ModelsHandler extends AssetsHandler {
     }
 }
 
-let modelsHandler = new ModelsHandler();
-export default modelsHandler;
+let videosHandler = new VideosHandler();
+export default videosHandler;

@@ -7,16 +7,16 @@
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 export default class ClampedTexturePlane extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);
-        this._doubleSided = !(params.doubleSided == false);
-        if(!this._doubleSided) this._updateDoubleSided(false);
-        this._transparent = params['transparent'] != false;
-        if(!this._transparent) this._updateTransparent(false);
+        let side = numberOr(params['side'], THREE.DoubleSide);
+        if(side != THREE.DoubleSide) this.setSide(side);
+        this._side = side;
     }
 
     _createMesh(assetId) {
@@ -25,40 +25,28 @@ export default class ClampedTexturePlane extends AssetEntity {
     }
 
     _getDefaultName() {
-        return LibraryHandler.getAssetName(this._assetId)
-            || super._getDefaultName();
+        return LibraryHandler.getAssetName(this._assetId) || 'Image';
     }
-
-    _updateTransparent(isTransparent) {
-        if(!this._materialAlreadyCloned) {
-            this._mesh.material = this._mesh.material.clone();
-            this._materialAlreadyCloned = true;
-        }
-        this._mesh.material.transparent = isTransparent;
-        this._transparent = isTransparent;
-     }
 
     exportParams() {
         let params = super.exportParams();
-        params['doubleSided'] = this._mesh.material.side == THREE.DoubleSide;
-        params['transparent'] = this._transparent;
+        params['side'] = this._mesh.material.side;
         return params;
     }
 
-    getDoubleSided() {
-        return this._mesh.material.side == THREE.DoubleSide;
+    getSide() {
+        return this._mesh.material.side;
     }
 
-    setDoubleSided(doubleSided) {
-        if(doubleSided == this._doubleSided) return;
+    setSide(side) {
+        if(side == this._side) return;
         if(!this._materialAlreadyCloned) {
             this._mesh.material = this._mesh.material.clone();
             this._materialAlreadyCloned = true;
         }
-        this._mesh.material.side = (doubleSided)
-            ? THREE.DoubleSide
-            : THREE.FrontSide;
-        this._doubleSided = doubleSided;
+        this._side = side;
+        this._mesh.material.side = side;
+        this._mesh.material.needsUpdate = true;
     }
 
     static assetType = AssetTypes.IMAGE;

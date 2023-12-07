@@ -5,6 +5,7 @@ const AssetEntityTypes = {
     LIGHT: "LIGHT",
     MODEL: "MODEL",
     SHAPE: "SHAPE",
+    VIDEO: "VIDEO",
 };
 
 export default AssetEntityTypes;

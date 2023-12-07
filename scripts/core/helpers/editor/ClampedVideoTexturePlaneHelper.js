@@ -5,16 +5,32 @@
  */
 
 import global from '/scripts/core/global.js';
-import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
+import ClampedVideoTexturePlane from '/scripts/core/assets/ClampedVideoTexturePlane.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
+import TextInput from '/scripts/core/menu/input/TextInput.js';
 
-export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
+export default class ClampedVideoTexturePlaneHelper extends AssetEntityHelper {
     constructor(asset) {
-        super(asset, PubSubTopics.IMAGE_UPDATED);
+        super(asset, PubSubTopics.VIDEO_UPDATED);
+        this._createPreviewFunctions();
+    }
+
+    _createPreviewFunctions() {
+        this._previewVideo = false;
+        this._asset.getPreviewVideo = () => { return this._previewVideo; };
+        this._asset.setPreviewVideo = (previewVideo) => {
+            this._previewVideo = previewVideo;
+            if(previewVideo) {
+                this._asset.play(null, true);
+            } else {
+                this._asset.stop(true);
+            }
+        }
     }
 
     place(intersection) {
@@ -33,8 +49,17 @@ export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
 
     static fields = [
         { "parameter": "visualEdit" },
+        { "parameter": "previewVideo", "name": "Preview Video",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput},
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
             "type": EnumInput },
+        { "parameter": "autoplay", "name": "Auto Play",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "loop", "name": "Loop",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "playTopic", "name": "Play Event", "type": TextInput },
+        { "parameter": "pauseTopic", "name": "Pause Event", "type": TextInput },
+        { "parameter": "stopTopic", "name": "Stop Event", "type": TextInput },
         { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
@@ -42,4 +67,4 @@ export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(ClampedTexturePlaneHelper, ClampedTexturePlane);
+EditorHelperFactory.registerEditorHelper(ClampedVideoTexturePlaneHelper, ClampedVideoTexturePlane);
