@@ -17,7 +17,7 @@
         "ignoreTemplateLiterals": true
       }
     ],
-    "indent": ["error", 4],
+    "indent": ["error", 4, { "ignoreComments": true }],
     "semi": ["error", "always"],
     "arrow-body-style": ["error", "as-needed"],
     "no-unused-vars": [
