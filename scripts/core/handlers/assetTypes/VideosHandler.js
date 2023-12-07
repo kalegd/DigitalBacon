@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import ClampedVideoTexturePlane from '/scripts/core/assets/ClampedVideoTexturePlane.js';
+import VideoAsset from '/scripts/core/assets/VideoAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
@@ -17,7 +17,7 @@ class VideosHandler extends AssetsHandler {
     }
 
     addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
-        let asset = new ClampedVideoTexturePlane(params || { assetId: assetId});
+        let asset = new VideoAsset(params || { assetId: assetId });
         this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }

@@ -1,12 +1,9 @@
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
-import ClampedTexturePlaneHelper from '/scripts/core/helpers/editor/ClampedTexturePlaneHelper.js';
-import ClampedVideoTexturePlaneHelper from '/scripts/core/helpers/editor/ClampedVideoTexturePlaneHelper.js';
 import ComponentHelper from '/scripts/core/helpers/editor/ComponentHelper.js';
 import CustomAssetHelper from '/scripts/core/helpers/editor/CustomAssetHelper.js';
 import CustomAssetEntityHelper from '/scripts/core/helpers/editor/CustomAssetEntityHelper.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import GLTFAssetHelper from '/scripts/core/helpers/editor/GLTFAssetHelper.js';
 import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
@@ -14,14 +11,11 @@ import SystemHelper from '/scripts/core/helpers/editor/SystemHelper.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
 
 export { AssetEntityHelper };
-export { ClampedTexturePlaneHelper };
-export { ClampedVideoTexturePlaneHelper };
 export { ComponentHelper };
 export { CustomAssetHelper };
 export { CustomAssetEntityHelper };
 export { EditorHelper };
 export { EditorHelperFactory };
-export { GLTFAssetHelper };
 export { MaterialHelper };
 export { LightHelper };
 export { ShapeHelper };

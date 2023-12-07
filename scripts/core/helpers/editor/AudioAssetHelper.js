@@ -16,7 +16,7 @@ import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import TextInput from '/scripts/core/menu/input/TextInput.js';
 import * as THREE from 'three';
 
-export default class AudioHelper extends AssetEntityHelper {
+export default class AudioAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.AUDIO_UPDATED);
         this._createMesh();
@@ -87,4 +87,4 @@ export default class AudioHelper extends AssetEntityHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(AudioHelper, AudioAsset);
+EditorHelperFactory.registerEditorHelper(AudioAssetHelper, AudioAsset);

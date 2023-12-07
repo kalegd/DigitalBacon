@@ -10,7 +10,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-export default class ClampedTexturePlane extends AssetEntity {
+export default class ImageAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
+import ModelAsset from '/scripts/core/assets/ModelAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
@@ -17,7 +17,7 @@ class ModelsHandler extends AssetsHandler {
     }
 
     addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
-        let asset = new GLTFAsset(params || { assetId: assetId });
+        let asset = new ModelAsset(params || { assetId: assetId });
         this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
