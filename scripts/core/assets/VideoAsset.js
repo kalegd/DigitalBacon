@@ -193,6 +193,12 @@ export default class VideoAsset extends AssetEntity {
     }
 
     _addPartySubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            if(this._autoplay && !this._alreadyAutoplayed) {
+                this.play(null, true);
+                this._alreadyAutoplayed = true;
+            }
+        });
         PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
             this._onPeerReady(message.peer);
         });
