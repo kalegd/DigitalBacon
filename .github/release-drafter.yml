@@ -1,0 +1,9 @@
+categories:
+  - title: '🚀 Features'
+    label: 'feature request'
+  - title: '🐛 Bug Fixes'
+    label: 'bug'
+template: |
+  ## What’s Changed
+
+  $CHANGES
