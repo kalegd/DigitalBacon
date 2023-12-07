@@ -40,8 +40,8 @@ class LibraryHandler {
                 'Name': name,
                 'Type': type,
                 'Hash': hash,
-            }
-            this._loadAsset(assetId, blob).then(() => { callback(assetId) });
+            };
+            this._loadAsset(assetId, blob).then(() => { callback(assetId); });
         });
     }
 
@@ -96,11 +96,9 @@ class LibraryHandler {
                         assetDetails);
                 } else {
                     let assetPath = assetDetails['Filepath'];
-                    promise = jsZip.file(assetPath).async('arraybuffer')
-                        .then((arraybuffer)=>{
-                            return this.loadLibraryAssetFromArrayBuffer(assetId,
-                                assetDetails, [arraybuffer]);
-                        });
+                    promise = jsZip.file(assetPath).async('arraybuffer').then(
+                        (arraybuffer) => this.loadLibraryAssetFromArrayBuffer(
+                            assetId, assetDetails, [arraybuffer]));
                 }
                 loadPromises.push(promise);
             }
@@ -118,12 +116,10 @@ class LibraryHandler {
         if(assetDetails['Type'] == AssetTypes.VIDEO) {
             return this.loadLibraryExternalVideoAsset(assetId, assetDetails);
         }
-        return fetch(assetDetails['URL']).then((response) => {
-            return response.arrayBuffer();
-        }).then((arraybuffer) => {
-            return this.loadLibraryAssetFromArrayBuffer(assetId, assetDetails,
-                [arraybuffer]);
-        });
+        return fetch(assetDetails['URL'])
+            .then((response) => response.arrayBuffer())
+            .then((arraybuffer) => this.loadLibraryAssetFromArrayBuffer(
+                assetId, assetDetails, [arraybuffer]));
     }
 
     loadLibraryExternalVideoAsset(assetId, assetDetails) {
@@ -158,7 +154,7 @@ class LibraryHandler {
                 'Name': assetDetails['Name'],
                 'Type': assetDetails['Type'],
                 'Hash': hash,
-            }
+            };
             if(assetDetails['IsExternal']) {
                 this.library[assetId]['URL'] = assetDetails['URL'];
                 this.library[assetId]['IsExternal'] = true;
@@ -189,7 +185,7 @@ class LibraryHandler {
             'Name': assetClass.assetName,
             'Type': assetClass.assetType,
             'IsBuiltIn': true,
-        }
+        };
     }
 
     _loadAssetFromURL(isExternal, url, successCallback, errorCallback) {
@@ -217,7 +213,7 @@ class LibraryHandler {
         }).then((blob) => {
             if(extension == 'js') {
                 this._addNewScript(isExternal && url, blob, successCallback,
-                    errorCallback)
+                    errorCallback);
                 return;
             }
             blobToHash(blob).then((hash) => {

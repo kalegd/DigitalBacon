@@ -238,7 +238,7 @@ class UserController extends InternalAssetEntity {
         this._avatarFadeUpdateNumber = updateNumber;
         let cameraDistance = SessionHandler.getCameraDistance();
         if(cameraDistance > FADE_START * 2) return;
-        let diff = cameraDistance - this._avatarFadeCameraDistance
+        let diff = cameraDistance - this._avatarFadeCameraDistance;
         if(Math.abs(diff) < EPSILON) return;
         //Fade Logic Start
         this._avatarFadeCameraDistance = cameraDistance;

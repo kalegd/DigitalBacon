@@ -74,9 +74,8 @@ class EditAcknowledgementsPage extends MenuPage {
                 'onBlur': (oldValue, newValue) => {
                     this._acknowledgements[this._page][key] = newValue;
                 },
-                'getFromSource': () => {
-                    return this._acknowledgements[this._page][key] || '';
-                },
+                'getFromSource': () =>
+                    this._acknowledgements[this._page][key] || '',
             });
             field.addToScene(columnBlock, this._acknowledgementsInteractable);
             this._fields.push(field);

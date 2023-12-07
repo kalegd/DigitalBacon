@@ -20,7 +20,7 @@ class CopyPasteControlsHandler {
         this._copiedAssets = {};
         this._previewAssets = {};
         GripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
-            (controller) => { return this._toolHandler(controller); });
+            (controller) => this._toolHandler(controller));
         PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByGrip = {};

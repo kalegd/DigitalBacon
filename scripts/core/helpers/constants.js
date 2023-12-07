@@ -140,7 +140,7 @@ export const Fonts = {
 export const FontSizes = {
     "header": 0.03,
     "body": 0.02,
-}
+};
 
 export const defaultImageSize = 1;
 
@@ -169,7 +169,7 @@ export const BoundingBox = {
 };
 
 //For keys our 2D UI Supports
-let validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM"
+let validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
 export const ValidKeys = new Set();
 for(let character of validKeysString) {
     ValidKeys.add(character);

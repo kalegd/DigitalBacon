@@ -33,7 +33,7 @@ class PubSub {
                 this._publish(owner, topic, message);
             } else {
                 this._toPublish.push(
-                    () => { this._publish(owner, topic, message)});
+                    () => { this._publish(owner, topic, message);});
             }
         }
     }

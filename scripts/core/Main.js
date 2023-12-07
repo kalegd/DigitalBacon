@@ -53,7 +53,7 @@ export default class Main {
         this._onResize();
         this._enableStats();
 
-        this._renderer.setAnimationLoop(() => { this._loading() });
+        this._renderer.setAnimationLoop(() => { this._loading(); });
     }
 
     _createRenderer() {
@@ -149,10 +149,10 @@ export default class Main {
     }
 
     _addEventListeners() {
-        window.addEventListener('resize', () => { this._onResize() });
+        window.addEventListener('resize', () => { this._onResize(); });
         if(!global.disableImmersion) {
             this._container.addEventListener('wheel', function(event) {
-                        event.preventDefault();
+                event.preventDefault();
             }, {passive: false, capture: true});
         }
         

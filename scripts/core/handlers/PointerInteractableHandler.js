@@ -267,7 +267,7 @@ class PointerInteractableHandler extends InteractableHandler {
                     this._raycastInteractables(controller, this._interactables);
                     this._updateInteractables(controller);
                 }
-                this._updateCursor(controller)
+                this._updateCursor(controller);
             }
         }
     }

@@ -91,13 +91,13 @@ class SessionHandler {
             this._currentSession.removeEventListener( 'end', onSessionEnded );
             button.innerText = isVR ? 'ENTER VR' : 'START AR';
             this._currentSession = null;
-        }
+        };
         let onSessionStarted = async (session) => {
             session.addEventListener( 'end', onSessionEnded );
             await global.renderer.xr.setSession( session );
             button.innerText = isVR ? 'EXIT VR' : 'STOP AR';
             this._currentSession = session;
-        }
+        };
         button.addEventListener('click', () => {
             if(this._currentSession) {
                 this._currentSession.end();

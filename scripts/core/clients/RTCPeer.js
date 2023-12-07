@@ -67,7 +67,7 @@ export default class RTCPeer {
             } finally {
                 this._makingOffer = false;
             }
-        }
+        };
         this._connection.ondatachannel = (e) => {
             if(!this._polite) return;
             this._dataChannel = e.channel;
@@ -75,14 +75,14 @@ export default class RTCPeer {
             this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
             this._dataChannel.onopen = (e) => {
                 if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
-            }
+            };
             this._dataChannel.onclose = (e) => {
                 if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
-            }
+            };
             this._dataChannel.onmessage = (message) => {
                 if(this._onMessage) this._onMessage(message.data);
-            }
-        }
+            };
+        };
         this._connection.onconnectionstatechange = (e) => {
             let state = this._connection.connectionState;
             if(state == "connected" && !this._hasConnected) {
@@ -98,7 +98,7 @@ export default class RTCPeer {
                 }
                 if(this._onDisconnect) this._onDisconnect();
             }
-        }
+        };
     }
 
     _setupDataChannel() {
@@ -108,13 +108,13 @@ export default class RTCPeer {
         this._dataChannel.bufferedAmountLowThreshold = SIXTY_FOUR_KB;
         this._dataChannel.onopen = (e) => {
             if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
-        }
+        };
         this._dataChannel.onclose = (e) => {
             if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
-        }
+        };
         this._dataChannel.onmessage = (message) => {
             if(this._onMessage) this._onMessage(message.data);
-        }
+        };
     }
 
     _timeout() {
@@ -210,7 +210,7 @@ export default class RTCPeer {
         channel.onbufferedamountlow = () => {
             channel.onbufferedamountlow = null;
             this._sendData();
-        }
+        };
     }
 
     setOnDisconnect(f) {

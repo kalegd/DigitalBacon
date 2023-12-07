@@ -19,7 +19,7 @@ class GoogleDrive {
         this._gapiInitialized = false;
         this._gisInitialized = false;
         if(!window.gapi) return;
-        gapi.load('client', () => { this._initClient() });
+        gapi.load('client', () => { this._initClient(); });
     }
 
     _initClient() {
@@ -85,8 +85,8 @@ class GoogleDrive {
 
     _createFolder() {
         let fileMetadata = {
-          'name': 'Digital Bacon',
-          'mimeType': 'application/vnd.google-apps.folder'
+            'name': 'Digital Bacon',
+            'mimeType': 'application/vnd.google-apps.folder'
         };
         gapi.client.drive.files.create({
             'resource': fileMetadata,

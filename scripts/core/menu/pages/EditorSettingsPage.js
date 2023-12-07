@@ -39,9 +39,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'onBlur': (oldValue, newValue) => {
                 SettingsHandler.setEditorSetting('Movement Speed', newValue);
             },
-            'getFromSource': () => {
-                return SettingsHandler.getEditorSettings()['Movement Speed'];
-            },
+            'getFromSource': () =>
+                SettingsHandler.getEditorSettings()['Movement Speed'],
         }));
         fields.push(new NumberInput({
             'title': 'User Scale',
@@ -52,9 +51,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
                 global.userController.setScale([newValue, newValue, newValue]);
                 SettingsHandler.setEditorSetting('User Scale', newValue);
             },
-            'getFromSource': () => {
-                return SettingsHandler.getEditorSettings()['User Scale'];
-            },
+            'getFromSource': () =>
+                SettingsHandler.getEditorSettings()['User Scale'],
         }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
@@ -62,9 +60,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'onUpdate': (value) => {
                 SettingsHandler.setEditorSetting('Enable Flying', value);
             },
-            'getFromSource': () => {
-                return SettingsHandler.getEditorSettings()['Enable Flying'];
-            },
+            'getFromSource': () =>
+                SettingsHandler.getEditorSettings()['Enable Flying'],
         }));
         if(global.deviceType == "XR") {
             fields.push(new CheckboxInput({

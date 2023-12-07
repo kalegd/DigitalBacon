@@ -22,7 +22,7 @@ export default class VideoAssetHelper extends AssetEntityHelper {
 
     _createPreviewFunctions() {
         this._previewVideo = false;
-        this._asset.getPreviewVideo = () => { return this._previewVideo; };
+        this._asset.getPreviewVideo = () => this._previewVideo;
         this._asset.setPreviewVideo = (previewVideo) => {
             this._previewVideo = previewVideo;
             if(previewVideo) {
@@ -30,7 +30,7 @@ export default class VideoAssetHelper extends AssetEntityHelper {
             } else {
                 this._asset.stop(true);
             }
-        }
+        };
     }
 
     place(intersection) {

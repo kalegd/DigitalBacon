@@ -102,9 +102,7 @@ function detectMobile() {
         /Windows Phone/i
     ];
 
-    return toMatch.some((toMatchItem) => {
-        return navigator.userAgent.match(toMatchItem);
-    });
+    return toMatch.some((toMatchItem) =>navigator.userAgent.match(toMatchItem));
 }
 
 function checkIfPointer() {

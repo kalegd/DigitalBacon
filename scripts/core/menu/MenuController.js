@@ -38,8 +38,8 @@ export default class MenuController extends PointerInteractableEntity {
     }
 
     _addEventListeners() {
-        let menuToggle = document.getElementById("mobile-menu-open-button")
-        menuToggle.addEventListener('click', () => { this._openMenu() });
+        let menuToggle = document.getElementById("mobile-menu-open-button");
+        menuToggle.addEventListener('click', () => { this._openMenu(); });
     }
 
     _setupNotificationHub() {
@@ -106,11 +106,13 @@ export default class MenuController extends PointerInteractableEntity {
 
     _createBorder() {
         let indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0]);
-		let positions = [0.225, 0.15, 0, -0.225, 0.15, 0, -0.225, -0.15, 0, 0.225, -0.15, 0];
-		let geometry = new THREE.BufferGeometry();
-		geometry.setIndex( new THREE.BufferAttribute( indices, 1 ) );
-		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-        let lineSegments = new THREE.LineSegments( geometry );
+        let positions = [0.225, 0.15, 0, -0.225, 0.15, 0, -0.225, -0.15, 0,
+                         0.225, -0.15, 0];
+        let geometry = new THREE.BufferGeometry();
+        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(
+            positions, 3));
+        let lineSegments = new THREE.LineSegments(geometry);
         lineSegments.material.color.set(0xffff00);
         return lineSegments;
     }

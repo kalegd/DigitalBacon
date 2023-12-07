@@ -13,50 +13,50 @@ import PaginatedIconsPage from '/scripts/core/menu/pages/PaginatedIconsPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const ASSETS = [{
-        'text': 'Models',
-        'icon': Textures.objectIcon,
-        'assetType': AssetTypes.MODEL,
-    }, {
-        'text': 'Images',
-        'icon': Textures.imageIcon,
-        'assetType': AssetTypes.IMAGE,
-    }, {
-        'text': 'Shapes',
-        'icon': Textures.shapesIcon,
-        'assetType': AssetTypes.SHAPE,
-    }, {
-        'text': 'Lights',
-        'icon': Textures.lightbulbIcon,
-        'assetType': AssetTypes.LIGHT,
-    }, {
-        'text': 'Materials',
-        'icon': Textures.materialIcon,
-        'assetType': AssetTypes.MATERIAL,
-    }, {
-        'text': 'Textures',
-        'icon': Textures.textureIcon,
-        'assetType': AssetTypes.TEXTURE,
-    }, {
-        'text': 'Audio',
-        'icon': Textures.audioIcon,
-        'assetType': AssetTypes.AUDIO,
-    }, {
-        'text': 'Video',
-        'icon': Textures.videoIcon,
-        'assetType': AssetTypes.VIDEO,
-    }, {
-        'text': 'Components',
-        'icon': Textures.componentIcon,
-        'assetType': AssetTypes.COMPONENT,
-    }, {
-        'text': 'Systems',
-        'icon': Textures.systemIcon,
-        'assetType': AssetTypes.SYSTEM,
-    }, {
-        'text': 'Other Assets',
-        'icon': Textures.ellipsisIcon,
-        'assetType': AssetTypes.CUSTOM_ASSET,
-    }
+    'text': 'Models',
+    'icon': Textures.objectIcon,
+    'assetType': AssetTypes.MODEL,
+}, {
+    'text': 'Images',
+    'icon': Textures.imageIcon,
+    'assetType': AssetTypes.IMAGE,
+}, {
+    'text': 'Shapes',
+    'icon': Textures.shapesIcon,
+    'assetType': AssetTypes.SHAPE,
+}, {
+    'text': 'Lights',
+    'icon': Textures.lightbulbIcon,
+    'assetType': AssetTypes.LIGHT,
+}, {
+    'text': 'Materials',
+    'icon': Textures.materialIcon,
+    'assetType': AssetTypes.MATERIAL,
+}, {
+    'text': 'Textures',
+    'icon': Textures.textureIcon,
+    'assetType': AssetTypes.TEXTURE,
+}, {
+    'text': 'Audio',
+    'icon': Textures.audioIcon,
+    'assetType': AssetTypes.AUDIO,
+}, {
+    'text': 'Video',
+    'icon': Textures.videoIcon,
+    'assetType': AssetTypes.VIDEO,
+}, {
+    'text': 'Components',
+    'icon': Textures.componentIcon,
+    'assetType': AssetTypes.COMPONENT,
+}, {
+    'text': 'Systems',
+    'icon': Textures.systemIcon,
+    'assetType': AssetTypes.SYSTEM,
+}, {
+    'text': 'Other Assets',
+    'icon': Textures.ellipsisIcon,
+    'assetType': AssetTypes.CUSTOM_ASSET,
+}
 ];
 
 class LibraryPage extends PaginatedIconsPage {

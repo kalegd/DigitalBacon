@@ -47,7 +47,7 @@ class ReadyPlayerMe {
                     type: 'subscribe',
                     eventName: 'v1.**'
                 }),
-            '*');
+                '*');
         }
 
         // Get avatar GLB URL
