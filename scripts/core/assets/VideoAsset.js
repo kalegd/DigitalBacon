@@ -19,7 +19,7 @@ const PLAY = 0;
 const PAUSE = 1;
 const STOP = 2;
 
-export default class ClampedVideoTexturePlane extends AssetEntity {
+export default class VideoAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._autoplay = params['autoplay'] || false;

@@ -5,14 +5,14 @@
  */
 
 import global from '/scripts/core/global.js';
-import ClampedTexturePlane from '/scripts/core/assets/ClampedTexturePlane.js';
+import ImageAsset from '/scripts/core/assets/ImageAsset.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 
-export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
+export default class ImageAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.IMAGE_UPDATED);
     }
@@ -42,4 +42,4 @@ export default class ClampedTexturePlaneHelper extends AssetEntityHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(ClampedTexturePlaneHelper, ClampedTexturePlane);
+EditorHelperFactory.registerEditorHelper(ImageAssetHelper, ImageAsset);

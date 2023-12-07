@@ -8,7 +8,7 @@ import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 
-export default class GLTFAsset extends AssetEntity {
+export default class ModelAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);

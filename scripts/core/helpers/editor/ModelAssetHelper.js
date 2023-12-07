@@ -4,13 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import GLTFAsset from '/scripts/core/assets/GLTFAsset.js';
+import ModelAsset from '/scripts/core/assets/ModelAsset.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
-export default class GLTFAssetHelper extends AssetEntityHelper {
+export default class ModelAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.MODEL_UPDATED);
     }
@@ -24,4 +24,4 @@ export default class GLTFAssetHelper extends AssetEntityHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(GLTFAssetHelper, GLTFAsset);
+EditorHelperFactory.registerEditorHelper(ModelAssetHelper, ModelAsset);

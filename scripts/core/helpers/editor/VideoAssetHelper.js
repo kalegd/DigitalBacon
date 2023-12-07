@@ -5,7 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import ClampedVideoTexturePlane from '/scripts/core/assets/ClampedVideoTexturePlane.js';
+import VideoAsset from '/scripts/core/assets/VideoAsset.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
@@ -14,7 +14,7 @@ import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EnumInput from '/scripts/core/menu/input/EnumInput.js';
 import TextInput from '/scripts/core/menu/input/TextInput.js';
 
-export default class ClampedVideoTexturePlaneHelper extends AssetEntityHelper {
+export default class VideoAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.VIDEO_UPDATED);
         this._createPreviewFunctions();
@@ -67,4 +67,4 @@ export default class ClampedVideoTexturePlaneHelper extends AssetEntityHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(ClampedVideoTexturePlaneHelper, ClampedVideoTexturePlane);
+EditorHelperFactory.registerEditorHelper(VideoAssetHelper, VideoAsset);
