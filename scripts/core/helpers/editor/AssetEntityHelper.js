@@ -40,8 +40,8 @@ const TRANSFORM_PUBLISH_FUNCTIONS = {
     scale: 'publishScale',
 };
 const TRS_HANDLERS = [{ handler: TranslateHandler, tool: HandTools.TRANSLATE },
-    { handler: RotateHandler, tool: HandTools.ROTATE },
-    { handler: ScaleHandler, tool: HandTools.SCALE },
+                      { handler: RotateHandler, tool: HandTools.ROTATE },
+                      { handler: ScaleHandler, tool: HandTools.SCALE },
 ];
 
 export default class AssetEntityHelper extends EditorHelper {
@@ -310,7 +310,7 @@ export default class AssetEntityHelper extends EditorHelper {
         };
         this._asset.setVisualEdit = (visualEdit) => {
             this.updateVisualEdit(visualEdit);
-        }
+        };
     }
 
     _addDeleteSubscriptionForPromotions() {

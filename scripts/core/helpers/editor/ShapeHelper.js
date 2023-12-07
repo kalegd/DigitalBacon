@@ -40,7 +40,7 @@ export default class ShapeHelper extends AssetEntityHelper {
                         this._updateParameter('material', e.asset.getId(),
                             false, true);
                         this.updateMenuField('material');
-                    }
+                    };
                 }
             }
         });

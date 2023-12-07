@@ -192,7 +192,7 @@ class PartyHandler {
             timestampDiff = timestamp - messageTimestamp;
             timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
                 % TWO_BYTE_MOD;
-        } while(timestampDiff > JITTER_DELAY)
+        } while(timestampDiff > JITTER_DELAY);
         return message;
     }
 
@@ -217,9 +217,9 @@ class PartyHandler {
     _sendProjectParts(parts, ...peerList) {
         for(let peer of peerList) {
             if(peer.rtc) peer.rtc.sendData(JSON.stringify({
-                    id: 'Iproject',
-                    body: { "partsLength": parts.length },
-                }));
+                id: 'Iproject',
+                body: { "partsLength": parts.length },
+            }));
         }
         for(let part of parts) {
             let message = concatenateArrayBuffers(

@@ -18,7 +18,8 @@
   "scripts": {
     "build": "rollup -c --bundleConfigAsCjs",
     "start": "http-server -c-1 -p 8000",
-    "lint": "eslint . --ext .js"
+    "lint": "eslint ./scripts/core --ext .js",
+    "lint-fix": "eslint ./scripts/core --ext .js --fix"
   },
   "dependencies": {
     "file-saver": "2.0.5",

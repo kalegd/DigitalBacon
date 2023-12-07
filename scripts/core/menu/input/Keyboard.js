@@ -90,28 +90,28 @@ class Keyboard {
                 if(key.info.command) {
                     switch(key.info.command) {
 
-						// switch between panel charsets (eg: russian/english)
-						case 'switch-set' :
-							this._keyboard.setNextCharset();
-							break;
+					// switch between panel charsets (eg: russian/english)
+                    case 'switch-set' :
+                        this._keyboard.setNextCharset();
+                        break;
 
-						case 'enter' :
-                            this._owner.handleKey('Enter');
-							break;
+                    case 'enter' :
+                        this._owner.handleKey('Enter');
+                        break;
 
-						case 'space' :
-                            this._owner.handleKey(' ');
-							break;
+                    case 'space' :
+                        this._owner.handleKey(' ');
+                        break;
 
-						case 'backspace' :
-                            this._owner.handleKey('Backspace');
-							break;
+                    case 'backspace' :
+                        this._owner.handleKey('Backspace');
+                        break;
 
-						case 'shift' :
-							//this._keyboard.toggleCase();
-							break;
+                    case 'shift' :
+						//this._keyboard.toggleCase();
+                        break;
 
-					};
+                    }
                 } else if(key.info.input) {
                     this._owner.handleKey(key.info.input);
                 }

@@ -11,8 +11,8 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 
-const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken'
-const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry'
+const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken';
+const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry';
 const AUTH_URL = 'https://sketchfab.com/oauth2/authorize/?state=123456789&response_type=token&client_id=WXFMTux03Lde8DFpnZWlzwR4afwtSrpumZToMy62';
 const FOUR_WEEKS = 1000 * 60 * 60 * 24 * 7 * 4;
 const VALID_CALLBACK_ORIGIN = 'https://digitalbacon.io';
@@ -78,9 +78,7 @@ class Sketchfab {
             headers: {
                 Authorization: 'Bearer ' + this._authToken,
             }
-        }).then((response) => {
-            return response.json();
-        }).then((body) => {
+        }).then((response) => response.json()).then((body) => {
             if(successCallback) successCallback(body);
         }).catch((error) => {
             console.error(error);

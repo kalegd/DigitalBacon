@@ -41,7 +41,7 @@ export default class MaterialHelper extends EditorHelper {
                         this._updateParameter(map, e.asset.getId(), false,true);
                         this.updateMenuField(map);
                     }
-                }
+                };
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_UPDATED, (message) => {

@@ -286,9 +286,7 @@ export default class ThreeMeshUIHelper {
                 return 1;
             }
         };
-        buttonBlock.getIsChecked = () => {
-            return colorBlock.backgroundOpacity == 0.8;
-        }
+        buttonBlock.getIsChecked = () => colorBlock.backgroundOpacity == 0.8;
         return buttonBlock;
     }
 

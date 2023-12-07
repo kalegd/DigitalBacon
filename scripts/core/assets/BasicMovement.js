@@ -54,7 +54,7 @@ export default class BasicMovement {
         this._worldVelocity.add(vector3s[0]);
         vector3s[0].multiplyScalar(timeDelta);
         this._userObj.position.add(vector3s[0]);
-    };
+    }
 
     _moveRight(velocity, timeDelta) {
         vector3s[0].setFromMatrixColumn(global.camera.matrixWorld, 0);
@@ -63,7 +63,7 @@ export default class BasicMovement {
         this._worldVelocity.add(vector3s[0]);
         vector3s[0].multiplyScalar(timeDelta);
         this._userObj.position.add(vector3s[0]);
-    };
+    }
 
     _moveUp(velocity, timeDelta) {
         velocity = this._userObj.scale.y * velocity;

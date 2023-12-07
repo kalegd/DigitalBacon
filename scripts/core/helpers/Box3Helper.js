@@ -9,32 +9,32 @@ import { LineSegments } from 'three';
 
 class Box3Helper extends LineSegments {
 
-	constructor(box) {
-		super(BoundingBox.geometry, BoundingBox.material);
+    constructor(box) {
+        super(BoundingBox.geometry, BoundingBox.material);
 
-		this.box = box;
+        this.box = box;
 
-		this.type = 'Box3Helper';
+        this.type = 'Box3Helper';
 
-		this.geometry.computeBoundingSphere();
+        this.geometry.computeBoundingSphere();
 
-	}
+    }
 
-	updateMatrixWorld( force ) {
+    updateMatrixWorld( force ) {
 
-		const box = this.box;
+        const box = this.box;
 
-		if ( box.isEmpty() ) return;
+        if ( box.isEmpty() ) return;
 
-		box.getCenter( this.position );
+        box.getCenter( this.position );
 
-		box.getSize( this.scale );
+        box.getSize( this.scale );
 
-		this.scale.multiplyScalar( 0.5 );
+        this.scale.multiplyScalar( 0.5 );
 
-		super.updateMatrixWorld( force );
+        super.updateMatrixWorld( force );
 
-	}
+    }
 
 }
 

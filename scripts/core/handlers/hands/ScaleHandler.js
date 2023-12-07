@@ -84,7 +84,7 @@ class ScaleHandler {
             let heldAsset = {
                 asset: asset,
                 ownerId: owner,
-            }
+            };
             if(scaleIdentity) {
                 heldAsset.scaleIdentity = scaleIdentity;
             } else {

@@ -50,9 +50,7 @@ class SketchfabLoginPage extends MenuPage {
             'onUpdate': (value) => {
                 this._staySignedIn = value;
             },
-            'getFromSource': () => {
-                return this._staySignedIn;
-            },
+            'getFromSource': () => this._staySignedIn,
         });
         staySignedInCheckbox.addToScene(columnBlock,
             this._containerInteractable);
@@ -72,7 +70,7 @@ class SketchfabLoginPage extends MenuPage {
     _handleLogin() {
         if(global.deviceType == 'XR') SessionHandler.exitXRSession();
         Sketchfab.signIn(this._staySignedIn,
-            () => { this._handleLoginCallback() });
+            () => { this._handleLoginCallback(); });
     }
 
     _handleLoginCallback() {

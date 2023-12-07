@@ -14,7 +14,7 @@ import { MathUtils } from 'three';
 
 const HEIGHT = 0.11;
 const WIDTH = 0.31;
-const TITLE_WIDTH = 0.09
+const TITLE_WIDTH = 0.09;
 const FIELD_HEIGHT = 0.03;
 const FIELD_WIDTH = 0.17;
 const FIELD_MARGIN = 0.0025;

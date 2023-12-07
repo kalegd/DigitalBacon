@@ -21,7 +21,7 @@ const NOTIFICATION_STATES = {
     FADE_IN: 'FADE_IN',
     SUSTAIN: 'SUSTAIN',
     FADE_OUT: 'FADE_OUT',
-}
+};
 
 class NotificationHub extends Entity {
     constructor() {

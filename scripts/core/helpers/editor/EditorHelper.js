@@ -265,7 +265,7 @@ export default class EditorHelper {
             'filter': typeof field.filter == 'function' ? field.filter : null,
             'includeScene': field.includeScene,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -277,7 +277,7 @@ export default class EditorHelper {
         return new AudioInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -290,7 +290,7 @@ export default class EditorHelper {
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'suppressMenuFocusEvent': field.suppressMenuFocusEvent == true,
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -302,10 +302,10 @@ export default class EditorHelper {
         return new ColorInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
-                                      oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue, false, true);
@@ -318,7 +318,7 @@ export default class EditorHelper {
         return new CubeImageInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (side, newValue) => {
                 this._updateCubeImage(field.parameter, side, newValue);
             },
@@ -332,10 +332,8 @@ export default class EditorHelper {
             'initialValue': this._getKeyFromValue(field.map,
                 this._asset[getFunction]()),
             'options': Object.keys(field.map),
-            'getFromSource': () => {
-                return this._getKeyFromValue(field.map,
-                    this._asset[getFunction]());
-            },
+            'getFromSource': () => this._getKeyFromValue(field.map,
+                this._asset[getFunction]()),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, field.map[newValue]);
             },
@@ -347,10 +345,10 @@ export default class EditorHelper {
         return new EulerInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateEuler(field.parameter, newValue, false, false,
-                                  oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateEuler(field.parameter, newValue, false, true);
@@ -363,7 +361,7 @@ export default class EditorHelper {
         return new ImageInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -375,7 +373,7 @@ export default class EditorHelper {
         return new MaterialInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -389,10 +387,10 @@ export default class EditorHelper {
             'minValue': field.min,
             'maxValue': field.max,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
-                                      oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue, false, true);
@@ -405,10 +403,10 @@ export default class EditorHelper {
         return new TextInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
-                                      oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue, false, true);
@@ -422,7 +420,7 @@ export default class EditorHelper {
             'title': field.name,
             'filter': field.filter,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -434,10 +432,10 @@ export default class EditorHelper {
         return new Vector2Input({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateVector2(field.parameter, newValue, false, false,
-                                  oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateVector2(field.parameter, newValue, false, true);
@@ -450,10 +448,10 @@ export default class EditorHelper {
         return new Vector3Input({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateVector3(field.parameter, newValue, false, false,
-                                  oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateVector3(field.parameter, newValue, false, true);

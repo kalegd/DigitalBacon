@@ -42,10 +42,10 @@ class InputHandler {
         if(global.deviceType == "XR") {
             //XR Event Listeners
             this._renderer.xr.addEventListener("sessionstart", (event) => {
-                this._onXRSessionStart(event)
+                this._onXRSessionStart(event);
             });
             this._renderer.xr.addEventListener("sessionend", (event) => {
-                this._onXRSessionEnd(event)
+                this._onXRSessionEnd(event);
             });
         } else if (global.deviceType == "POINTER") {
             //POINTER Event Listeners

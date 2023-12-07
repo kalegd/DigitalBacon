@@ -71,7 +71,7 @@ class NewAssetPage extends PaginatedPage {
         }
         let params;
         if(this._assetType in AssetEntityTypes) {
-            params = this._getNewEntityParams()
+            params = this._getNewEntityParams();
             params['assetId'] = item.assetId;
         }
         let asset = ProjectHandler.addNewAsset(item.assetId, params);
@@ -151,7 +151,7 @@ class NewAssetPage extends PaginatedPage {
         let params;
         let assetType = LibraryHandler.getType(assetId);
         if(assetType in AssetEntityTypes) {
-            params = this._getNewEntityParams()
+            params = this._getNewEntityParams();
             params['assetId'] = assetId;
         }
         let asset = ProjectHandler.addNewAsset(assetId, params);

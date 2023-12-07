@@ -6,11 +6,9 @@
 
 import * as THREE from 'three';
 
-export const uuidv4 = () => {
-    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
-        c => (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4)
+export const uuidv4 = () => ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
+    c => (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4)
         .toString(16));
-};
 
 //https://github.com/domske/uuid-tool/blob/master/src/uuid.ts
 export const uuidToBytes = (uuid) => {
@@ -18,7 +16,7 @@ export const uuidToBytes = (uuid) => {
     (uuid.replace(/-/g, '').match(/.{2}/g) || [])
         .map((b, i) => array[i] = parseInt(b, 16));
     return array;
-}
+};
 
 export const uuidFromBytes = (bytes) => {
     let array = [];
@@ -27,33 +25,28 @@ export const uuidFromBytes = (bytes) => {
     }
     return array.join('')
         .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-}
+};
 
-export const numberOr = (number, defaultValue) => {
-    return (typeof number == 'number')
+export const numberOr = (number, defaultValue) =>
+    (typeof number == 'number')
         ? number
         : defaultValue;
-}
 
-export const stringOr = (string, defaultValue) => {
-    return (typeof string == 'string')
+export const stringOr = (string, defaultValue) =>
+    (typeof string == 'string')
         ? string
         : defaultValue;
-}
 
-export const compareLists = (list1, list2) => {
-    return list1.length == list2.length
+export const compareLists = (list1, list2) => list1.length == list2.length
         && list1.reduce((a, v, i) => a && list2[i] == v, true);
-}
-export const stringWithMaxLength = (string, maxLength) => {
-    return (string.length > maxLength)
+
+export const stringWithMaxLength = (string, maxLength) =>
+    (string.length > maxLength)
         ? string.substring(0, maxLength) + "..."
         : string;
-}
 
-export const capitalizeFirstLetter = (string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
+export const capitalizeFirstLetter = (string) =>
+    string.charAt(0).toUpperCase() + string.slice(1);
 
 export const fullDispose = (object3d, textures) => {
     object3d.traverse((node) => {
@@ -105,13 +98,13 @@ export const buildBVH = (object3d) => {
             }
         }
     });
-}
+};
 
 //https://stackoverflow.com/questions/21711600/javascript-number-precision-without-converting-to-string
 export const roundWithPrecision = (num, p) => {
     let precision = p || 9;
     return Number(num.toFixed(p));
-}
+};
 
 THREE.Vector3.prototype.roundWithPrecision = function(p) {
     let precision = p || 9;
@@ -122,7 +115,7 @@ THREE.Vector3.prototype.roundWithPrecision = function(p) {
     return this.x != oldValues[0]
         || this.y != oldValues[1]
         || this.z != oldValues[2];
-}
+};
 
 THREE.Euler.prototype.roundWithPrecision = function(p) {
     let precision = p || 9;
@@ -135,7 +128,7 @@ THREE.Euler.prototype.roundWithPrecision = function(p) {
     return this.x != oldValues[0]
         || this.y != oldValues[1]
         || this.z != oldValues[2];
-}
+};
 
 THREE.Cache.enabled = true;
 
@@ -143,15 +136,11 @@ export const cartesianToPolar = (x, y) => {
     let r = Math.sqrt(x*x + y*y);
     let phi = Math.atan2(y, x);
     return [r, phi];
-}
+};
 
-export const polarToCartesian = (r, phi) => {
-    return [r * Math.cos(phi), r * Math.sin(phi)];
-}
+export const polarToCartesian = (r, phi) => [r * Math.cos(phi),r*Math.sin(phi)];
 
-export const radiansToDegrees = (r) => {
-    return ((r + Math.PI) / (2 * Math.PI)) * 360;
-}
+export const radiansToDegrees = (r) => ((r + Math.PI) / (2 * Math.PI)) * 360;
 
 //https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex/44134328#44134328
 function hueToRGB(p, q, t){
@@ -177,37 +166,32 @@ export const hslToRGB = (h, s, l) => {
     }
 
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
+};
 
-export const rgbToHex = (r, g, b) => {
-    return r << 16 ^ g << 8 ^ b << 0;
-}
+export const rgbToHex = (r, g, b) => r << 16 ^ g << 8 ^ b << 0;
 
 export const rgbToHexColorString = (r, g, b) => {
     var hex = Number(rgb).toString(16);
     if (hex.length < 2) {
-         hex = '0' + hex;
+        hex = '0' + hex;
     }
     return '#' + hex;
-}
+};
 
-export const blobToHash = (blob) => {
-    return new Promise((resolve, reject) => {
-        blob.arrayBuffer().then((arrayBuffer) => {
-            crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
-                let hashArray = Array.from(new Uint8Array(hashBuffer));
-                let hash = hashArray.map(b => b.toString(16).padStart(2, '0'))
+export const blobToHash = (blob) => new Promise((resolve, reject) => {
+    blob.arrayBuffer().then((arrayBuffer) => {
+        crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
+            let hashArray = Array.from(new Uint8Array(hashBuffer));
+            let hash = hashArray.map(b => b.toString(16).padStart(2, '0'))
                     .join('');
-                resolve(hash);
-            });
+            resolve(hash);
         });
     });
-}
+});
 
 //https://gist.github.com/72lions/4528834
-export const concatenateArrayBuffers = (...buffers) => {
-    return concatenateArrayBuffersFromList(buffers);
-}
+export const concatenateArrayBuffers = (...buffers) =>
+    concatenateArrayBuffersFromList(buffers);
 
 export const concatenateArrayBuffersFromList = (buffers) => {
     let length = 0;
@@ -222,11 +206,9 @@ export const concatenateArrayBuffersFromList = (buffers) => {
         index += buffer.byteLength;
     }
     return array.buffer;
-}
+};
 
-export const typedArrayToArray = (typedArray) => {
-    return [].slice.call(typedArray);
-}
+export const typedArrayToArray = (typedArray) => [].slice.call(typedArray);
 
 export const storeStringValuesInSet = (object, set) => {
     if(typeof object != 'object') return;
@@ -236,7 +218,7 @@ export const storeStringValuesInSet = (object, set) => {
             ? set.add(value)
             : storeStringValuesInSet(value, set);
     }
-}
+};
 
 //https://dmitripavlutin.com/javascript-queue/
 export class Queue {

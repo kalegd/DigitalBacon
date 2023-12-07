@@ -41,9 +41,8 @@ class TransformControlsHandler {
         this._preTransformStates = {};
         this._id = uuidv4();
         let tool = (global.deviceType == 'XR') ? HandTools.EDIT : null;
-        PointerInteractableHandler.registerToolHandler(tool, (controller) => {
-            return this._toolHandler(controller);
-        });
+        PointerInteractableHandler.registerToolHandler(tool,
+            (controller) => this._toolHandler(controller));
         if(global.deviceType != 'XR') {
             scene.add(this._transformControls);
             this._addEventListeners();
@@ -237,7 +236,7 @@ class TransformControlsHandler {
     }
 
     _clone(option) {
-        option = option || global.deviceType
+        option = option || global.deviceType;
         let asset = this._attachedAssets[option];
         if(asset) {
             let clone = asset.clone();
@@ -258,7 +257,7 @@ class TransformControlsHandler {
     }
 
     _delete(option) {
-        option = option || global.deviceType
+        option = option || global.deviceType;
         let asset = this._attachedAssets[option];
         if(asset) {
             ProjectHandler.deleteAsset(asset);
@@ -341,9 +340,9 @@ class TransformControlsHandler {
             if(objects[i] != attachedObject) {
                 intersectObject(objects[i], raycaster, intersects, true);
             }
-		}
-		intersects.sort(ascSort);
-		return intersects;
+        }
+        intersects.sort(ascSort);
+        return intersects;
     }
 
     _otherOption(userController, ownerId) {
@@ -523,20 +522,20 @@ class TransformControlsHandler {
 
 //Copied from Raycaster.js
 function ascSort(a, b) {
-	return a.distance - b.distance;
+    return a.distance - b.distance;
 }
 
 //Copied from Raycaster.js
 function intersectObject(object, raycaster, intersects, recursive) {
-	if(object.layers.test(raycaster.layers)) {
-		object.raycast(raycaster, intersects);
-	}
-	if(recursive === true) {
-		const children = object.children;
-		for(let i = 0, l = children.length; i < l; i++) {
-			intersectObject(children[ i ], raycaster, intersects, true);
-		}
-	}
+    if(object.layers.test(raycaster.layers)) {
+        object.raycast(raycaster, intersects);
+    }
+    if(recursive === true) {
+        const children = object.children;
+        for(let i = 0, l = children.length; i < l; i++) {
+            intersectObject(children[ i ], raycaster, intersects, true);
+        }
+    }
 }
 
 let transformControlsHandler = new TransformControlsHandler();

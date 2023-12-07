@@ -32,7 +32,7 @@ export default class AudioAssetHelper extends AssetEntityHelper {
 
     _createPreviewFunctions() {
         this._previewAudio = false;
-        this._asset.getPreviewAudio = () => { return this._previewAudio; };
+        this._asset.getPreviewAudio = () => this._previewAudio;
         this._asset.setPreviewAudio = (previewAudio) => {
             this._previewAudio = previewAudio;
             if(previewAudio) {
@@ -40,7 +40,7 @@ export default class AudioAssetHelper extends AssetEntityHelper {
             } else {
                 this._asset.getAudio().stop();
             }
-        }
+        };
     }
 
     updateVisualEdit(isVisualEdit) {

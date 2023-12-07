@@ -87,7 +87,7 @@ export default class PeerController extends InternalAssetEntity {
 
     _updatePosition(float32Array, index) {
         this._positionError.fromArray(float32Array, index)
-            .sub(this._object.position)
+            .sub(this._object.position);
         this._errorFixFrame = 0;
     }
 

@@ -61,8 +61,8 @@ class SketchfabSearchPage extends PaginatedImagesPage {
         let number = Math.random();
         this._idempotentKey = number;
         Sketchfab.search(this._textField.content,
-            (response) => { this._handleSearchResponse(response, number) },
-            () => { this._handleSearchError() });
+            (response) => { this._handleSearchResponse(response, number); },
+            () => { this._handleSearchError(); });
     }
 
     _handleSearchResponse(response, number) {
@@ -97,8 +97,8 @@ class SketchfabSearchPage extends PaginatedImagesPage {
         let number = Math.random();
         this._idempotentKey = number;
         Sketchfab.fetch(this._canFetchMore,
-            (response) => { this._handleSearchResponse(response, number) },
-            () => { this._handleFetchMoreError() });
+            (response) => { this._handleSearchResponse(response, number); },
+            () => { this._handleFetchMoreError(); });
     }
 
     _getItemImage(item) {

@@ -168,17 +168,16 @@ class PartyMessageHelper {
             };
             LibraryHandler.loadLibraryAssetFromArrayBuffer(assetId,
                 assetDetails, parts).then(() => {
-                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                        assetId);
-                    this._partyHandler.removeMessageHandlerLock(lock);
-                });
+                PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                this._partyHandler.removeMessageHandlerLock(lock);
+            });
         }
     }
 
     _handleBlockable(handler, peer, message) {
         if(this._handlingLocks.size > 0) {
             this._handleQueue.enqueue(() => {
-                handler(peer, message)
+                handler(peer, message);
             });
             return;
         }
@@ -475,33 +474,31 @@ class PartyMessageHelper {
             }, true);
             return;
         }
-        this._partyHandler.publishFromFunction(() => {
-            return new Promise((resolve) => {
-                let libraryDetails = LibraryHandler.getLibrary()[assetId];
-                let blob = libraryDetails['Blob'];
-                blob.arrayBuffer().then((buffer) => {
-                    let parts = [];
-                    let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
-                    for(let i = 0; i < n; i++) {
-                        let chunkStart = i * SIXTEEN_KB;
-                        let chunkEnd = (i + 1) * SIXTEEN_KB;
-                        parts.push(buffer.slice(chunkStart, chunkEnd));
-                    }
-                    this._partyHandler.publishInternalMessage('asset_added', {
-                        assetId: assetId,
-                        name: libraryDetails['Name'],
-                        type: libraryDetails['Type'],
-                        sketchfabId: libraryDetails['SketchfabID'],
-                        partsLength: parts.length,
-                    }, true);
-                    for(let part of parts) {
-                        this._partyHandler.publishInternalBufferMessage(
-                            InternalMessageIds.ASSET_ADDED_PART, part, true);
-                    }
-                    resolve();
-                });
+        this._partyHandler.publishFromFunction(() => new Promise((resolve) => {
+            let libraryDetails = LibraryHandler.getLibrary()[assetId];
+            let blob = libraryDetails['Blob'];
+            blob.arrayBuffer().then((buffer) => {
+                let parts = [];
+                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB);
+                for(let i = 0; i < n; i++) {
+                    let chunkStart = i * SIXTEEN_KB;
+                    let chunkEnd = (i + 1) * SIXTEEN_KB;
+                    parts.push(buffer.slice(chunkStart, chunkEnd));
+                }
+                this._partyHandler.publishInternalMessage('asset_added', {
+                    assetId: assetId,
+                    name: libraryDetails['Name'],
+                    type: libraryDetails['Type'],
+                    sketchfabId: libraryDetails['SketchfabID'],
+                    partsLength: parts.length,
+                }, true);
+                for(let part of parts) {
+                    this._partyHandler.publishInternalBufferMessage(
+                        InternalMessageIds.ASSET_ADDED_PART, part, true);
+                }
+                resolve();
             });
-        });
+        }));
     }
 
     _publishComponentAttachedDetached(internalMessageId, message) {

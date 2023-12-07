@@ -5,7 +5,8 @@
   },
   "extends": "eslint:recommended",
   "parserOptions": {
-    "ecmaVersion": "latest"
+    "ecmaVersion": "latest",
+    "sourceType": "module"
   },
   "rules": {
     "max-len": [
@@ -17,7 +18,13 @@
         "ignoreTemplateLiterals": true
       }
     ],
-    "indent": ["error", 4, { "ignoreComments": true }],
+    "indent": ["error", 4, {
+        "ignoreComments": true,
+        "ArrayExpression": "first",
+        "FunctionDeclaration": { "parameters": "first" },
+        "FunctionExpression": { "parameters": "first" },
+        "MemberExpression": "off"
+    }],
     "semi": ["error", "always"],
     "arrow-body-style": ["error", "as-needed"],
     "no-unused-vars": [
