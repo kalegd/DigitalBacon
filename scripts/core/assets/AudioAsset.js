@@ -179,7 +179,7 @@ export default class AudioAsset extends AssetEntity {
         this._playTopic = playTopic;
         if(this._playTopic) {
             PubSub.subscribe(this._id, this._playTopic, (message) => {
-                if(!global.isEditor) this._audio.play();
+                if(!global.isEditor) this.play(null, true);
             });
         }
     }
@@ -191,7 +191,7 @@ export default class AudioAsset extends AssetEntity {
         this._pauseTopic = pauseTopic;
         if(this._pauseTopic) {
             PubSub.subscribe(this._id, this._pauseTopic, (message) => {
-                if(!global.isEditor) this._audio.pause();
+                if(!global.isEditor) this.pause(null, true);
             });
         }
     }
@@ -213,7 +213,7 @@ export default class AudioAsset extends AssetEntity {
         this._stopTopic = stopTopic;
         if(this._stopTopic) {
             PubSub.subscribe(this._id, this._stopTopic, (message) => {
-                if(!global.isEditor) this._audio.stop();
+                if(!global.isEditor) this.stop(true);
             });
         }
     }
@@ -278,10 +278,13 @@ export default class AudioAsset extends AssetEntity {
 
     _onPeerReady(peer) {
         if(!PartyHandler.isHost()) return;
-        if(!this._audio.isPlaying) return;
-        this._audio.pause();//pause() update audio._progress
-        this._audio.play();
-        let type = new Uint8Array([PLAY]);
+        let topic = PAUSE;
+        if(this._audio.isPlaying) {
+            this._audio.pause();//pause() update audio._progress
+            this._audio.play();
+            topic = PLAY;
+        }
+        let type = new Uint8Array([topic]);
         let position = new Float64Array([this._audio._progress]);
         let message = concatenateArrayBuffers(type, position);
         PartyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
@@ -289,7 +292,7 @@ export default class AudioAsset extends AssetEntity {
 
     _onPartyStarted(isHost) {
         if(isHost) return;
-        this._audio.stop();
+        this.stop(true);
     }
 
     static assetType = AssetTypes.AUDIO;

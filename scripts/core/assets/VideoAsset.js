@@ -123,7 +123,7 @@ export default class VideoAsset extends AssetEntity {
         this._playTopic = playTopic;
         if(this._playTopic) {
             PubSub.subscribe(this._id, this._playTopic, (message) => {
-                if(!global.isEditor) this._video.play();
+                if(!global.isEditor) this.play(null, true);
             });
         }
     }
@@ -135,7 +135,7 @@ export default class VideoAsset extends AssetEntity {
         this._pauseTopic = pauseTopic;
         if(this._pauseTopic) {
             PubSub.subscribe(this._id, this._pauseTopic, (message) => {
-                if(!global.isEditor) this._video.pause();
+                if(!global.isEditor) this.pause(null, true);
             });
         }
     }
@@ -154,13 +154,12 @@ export default class VideoAsset extends AssetEntity {
         this._stopTopic = stopTopic;
         if(this._stopTopic) {
             PubSub.subscribe(this._id, this._stopTopic, (message) => {
-                if(!global.isEditor) this._video.stop();
+                if(!global.isEditor) this.stop(true);
             });
         }
     }
 
     play(position, ignorePublish) {
-        //this._video.pause();//pause() update video._progress
         if(position != null) {
             this._video.currentTime = position || 0;
         }
@@ -226,10 +225,8 @@ export default class VideoAsset extends AssetEntity {
 
     _onPeerReady(peer) {
         if(!PartyHandler.isHost()) return;
-        if(!this._isPlaying) return;
-        //this._video.pause();//pause() update video._progress
-        this._video.play();
-        let type = new Uint8Array([PLAY]);
+        let topic = (this._isPlaying()) ? PLAY : PAUSE;
+        let type = new Uint8Array([topic]);
         let position = new Float64Array([this._video.currentTime]);
         let message = concatenateArrayBuffers(type, position);
         PartyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
@@ -237,7 +234,7 @@ export default class VideoAsset extends AssetEntity {
 
     _onPartyStarted(isHost) {
         if(isHost) return;
-        this._video.stop();
+        this.stop(true);
     }
 
     removeFromScene() {
