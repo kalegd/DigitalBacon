@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
@@ -140,7 +139,7 @@ class SkyboxPage extends MenuPage {
     }
 
     _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+        PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, () => {
             this._setTextures();
         });
     }

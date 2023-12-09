@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import States from '/scripts/core/enums/InteractableStates.js';
 import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import * as THREE from 'three';

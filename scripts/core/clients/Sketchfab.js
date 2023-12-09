@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
@@ -14,7 +13,6 @@ import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 const AUTH_KEY = 'DigitalBacon:Sketchfab:authToken';
 const AUTH_EXPIRY_KEY = 'DigitalBacon:Sketchfab:authExpiry';
 const AUTH_URL = 'https://sketchfab.com/oauth2/authorize/?state=123456789&response_type=token&client_id=WXFMTux03Lde8DFpnZWlzwR4afwtSrpumZToMy62';
-const FOUR_WEEKS = 1000 * 60 * 60 * 24 * 7 * 4;
 const VALID_CALLBACK_ORIGIN = 'https://digitalbacon.io';
 const SEARCH_URL = 'https://api.sketchfab.com/v3/search?type=models&downloadable=true&archives_flavours=false&q=';
 const DOWNLOAD_URL = 'https://api.sketchfab.com/v3/models/{uid}/download';

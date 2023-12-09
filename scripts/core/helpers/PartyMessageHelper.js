@@ -12,7 +12,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { uuidv4, uuidFromBytes, uuidToBytes, capitalizeFirstLetter, concatenateArrayBuffers, concatenateArrayBuffersFromList, Queue } from '/scripts/core/helpers/utils.module.js';
+import { uuidFromBytes, uuidToBytes, capitalizeFirstLetter, concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
 const HANDLERS = {
@@ -90,8 +90,9 @@ class PartyMessageHelper {
     }
 
     queuePublish(message) {
+        console.warn("PartyMessageHelper.queuePublish(...) is deprecated");
         if(typeof message == 'function') {
-            this._publishQueue.enqueue(f);
+            this._publishQueue.enqueue(message);
         } else {
             this._publishQueue.enqueue(() => {
                 this._partyHandler._sendToAllPeers(message);
@@ -372,12 +373,12 @@ class PartyMessageHelper {
         }
     }
 
-    _handleLoadedDiff(peer, message) {
+    _handleLoadedDiff(peer) {
         PubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
         peer.readyForUpdates = true;
     }
 
-    _handleSanitizeInternals(peer, message) {
+    _handleSanitizeInternals() {
         PubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
     }
 

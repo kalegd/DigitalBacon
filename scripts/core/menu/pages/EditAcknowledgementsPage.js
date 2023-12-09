@@ -4,16 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import TextInput from '/scripts/core/menu/input/TextInput.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
-import { TextureLoader } from 'three';
 
 class EditAcknowledgementsPage extends MenuPage {
     constructor(controller) {

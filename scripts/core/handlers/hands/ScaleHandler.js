@@ -5,7 +5,6 @@
  */
 
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -15,7 +14,7 @@ class ScaleHandler {
     constructor() {
         this._id = uuidv4();
         this._heldAssets = {};
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
+        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
@@ -62,7 +61,7 @@ class ScaleHandler {
                 }
             });
         }
-        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
             for(let key in this._heldAssets) {
                 delete this._heldAssets[key];
             }

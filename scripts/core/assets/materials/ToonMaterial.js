@@ -10,7 +10,8 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
+const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap",
+              "normalMap"];
 
 export default class ToonMaterial extends Material {
     constructor(params = {}) {

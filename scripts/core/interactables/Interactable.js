@@ -73,19 +73,19 @@ class Interactable {
         }
     }
 
-    addHoveredBy(owner) {
+    addHoveredBy(_owner) {
         console.error("Interactable.addHoveredBy(owner) should be overridden");
     }
 
-    removeHoveredBy(owner) {
+    removeHoveredBy(_owner) {
         console.error("Interactable.removeHoveredBy(owner) should be overridden");
     }
 
-    addSelectedBy(owner) {
+    addSelectedBy(_owner) {
         console.error("Interactable.addSelectedBy(owner) should be overridden");
     }
 
-    removeSelectedBy(owner) {
+    removeSelectedBy(_owner) {
         console.error("Interactable.removeSelectedBy(owner) should be overridden");
     }
 

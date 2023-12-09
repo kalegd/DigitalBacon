@@ -4,11 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
+import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
@@ -50,7 +47,10 @@ class AssetSelectPage extends PaginatedPage {
             'height': 0.04,
             'width': 0.04,
         });
-        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(this._addButton);
         this._addInteractable = new PointerInteractable(this._addButton, true);

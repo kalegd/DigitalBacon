@@ -6,7 +6,6 @@
 
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
@@ -41,7 +40,10 @@ class MenuPage extends PointerInteractableEntity {
             'height': 0.04,
             'width': 0.04,
         });
-        backButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        backButtonParent.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         backButtonParent.position.fromArray([-.225, 0.15, -0.001]);
         backButtonParent.add(backButton);
         let interactable = new PointerInteractable(backButton, true);
@@ -63,7 +65,10 @@ class MenuPage extends PointerInteractableEntity {
             'height': 0.04,
             'width': 0.04,
         });
-        homeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        homeButtonParent.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         homeButtonParent.position.fromArray([-.225, 0.1, -0.001]);
         homeButtonParent.add(homeButton);
         let interactable = new PointerInteractable(homeButton, true);
@@ -85,7 +90,10 @@ class MenuPage extends PointerInteractableEntity {
             'height': 0.04,
             'width': 0.04,
         });
-        closeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        closeButtonParent.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         closeButtonParent.position.fromArray([.225, 0.15, -0.001]);
         closeButtonParent.add(closeButton);
         let interactable = new PointerInteractable(closeButton, true);
@@ -111,7 +119,10 @@ class MenuPage extends PointerInteractableEntity {
             borderColor: Colors.white,
             borderOpacity: 0.75,
         });
-        this._container.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        this._container.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         this._containerInteractable = new PointerInteractable(
             this._container.children[0]);
         if(global.deviceType == 'XR')

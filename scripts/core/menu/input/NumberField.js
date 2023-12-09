@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import InteractableStates from '/scripts/core/enums/InteractableStates.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 

@@ -4,8 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -110,7 +108,8 @@ class JoinPartyPage extends MenuPage {
             });
         } else if(topic == 'rtc-timeout') {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                text: 'Could not connect to all other users in time, please try again',
+                text: 'Could not connect to all other users in time, '
+                    + 'please try again',
             });
         } else if(topic == 'could-not-connect') {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {

@@ -281,7 +281,7 @@ class SessionHandler {
         let referenceSpace = global.renderer.xr.getReferenceSpace();
         global.frame.createAnchor(pose, referenceSpace).then(
             (anchor) => this._anchor = anchor );
-        referenceSpace.onreset = (event) => {
+        referenceSpace.onreset = () => {
             if(global.xrSessionType != 'AR') return;
             global.dynamicAssets.add(this);
         };

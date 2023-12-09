@@ -13,7 +13,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
+import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -22,9 +22,6 @@ const HEIGHT = 0.2;
 const WIDTH = 0.31;
 const TITLE_HEIGHT = 0.04;
 const TITLE_WIDTH = 0.31;
-const FIELD_HEIGHT = 0.06;
-const FIELD_WIDTH = 0.06;
-const FIELD_MARGIN = 0.002;
 const SIDES = [
     CubeSides.TOP,
     CubeSides.LEFT,

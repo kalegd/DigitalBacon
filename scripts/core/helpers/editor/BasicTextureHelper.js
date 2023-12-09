@@ -5,7 +5,6 @@
  */
 
 import BasicTexture from '/scripts/core/assets/textures/BasicTexture.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { WRAP_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';

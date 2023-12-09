@@ -82,55 +82,55 @@ export default class AudioAsset extends AssetEntity {
         return this._audio;
     }
 
-    getAutoplay(autoplay) {
+    getAutoplay() {
         return this._autoplay;
     }
 
-    getConeInnerAngle(coneInnerAngle) {
+    getConeInnerAngle() {
         return this._coneInnerAngle;
     }
 
-    getConeOuterAngle(coneOuterAngle) {
+    getConeOuterAngle() {
         return this._coneOuterAngle;
     }
 
-    getConeOuterGain(coneOuterGain) {
+    getConeOuterGain() {
         return this._coneOuterGain;
     }
 
-    getDistanceModel(distanceModel) {
+    getDistanceModel() {
         return this._distanceModel;
     }
 
-    getLoop(loop) {
+    getLoop() {
         return this._loop;
     }
 
-    getMaxDistance(maxDistance) {
+    getMaxDistance() {
         return this._maxDistance;
     }
 
-    getPlayTopic(playTopic) {
+    getPlayTopic() {
         return this._playTopic;
     }
 
-    getPauseTopic(pauseTopic) {
+    getPauseTopic() {
         return this._pauseTopic;
     }
 
-    getRefDistance(refDistance) {
+    getRefDistance() {
         return this._refDistance;
     }
 
-    getRolloffFactor(rolloffFactor) {
+    getRolloffFactor() {
         return this._rolloffFactor;
     }
 
-    getStopTopic(stopTopic) {
+    getStopTopic() {
         return this._stopTopic;
     }
 
-    getVolume(volume) {
+    getVolume() {
         return this._volume;
     }
 
@@ -178,7 +178,7 @@ export default class AudioAsset extends AssetEntity {
         }
         this._playTopic = playTopic;
         if(this._playTopic) {
-            PubSub.subscribe(this._id, this._playTopic, (message) => {
+            PubSub.subscribe(this._id, this._playTopic, () => {
                 if(!global.isEditor) this.play(null, true);
             });
         }
@@ -190,7 +190,7 @@ export default class AudioAsset extends AssetEntity {
         }
         this._pauseTopic = pauseTopic;
         if(this._pauseTopic) {
-            PubSub.subscribe(this._id, this._pauseTopic, (message) => {
+            PubSub.subscribe(this._id, this._pauseTopic, () => {
                 if(!global.isEditor) this.pause(null, true);
             });
         }
@@ -212,7 +212,7 @@ export default class AudioAsset extends AssetEntity {
         }
         this._stopTopic = stopTopic;
         if(this._stopTopic) {
-            PubSub.subscribe(this._id, this._stopTopic, (message) => {
+            PubSub.subscribe(this._id, this._stopTopic, () => {
                 if(!global.isEditor) this.stop(true);
             });
         }

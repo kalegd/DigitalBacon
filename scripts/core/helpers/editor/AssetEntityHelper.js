@@ -6,15 +6,8 @@
 
 import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
-import Scene from '/scripts/core/assets/Scene.js';
-import UserController from '/scripts/core/assets/UserController.js';
 import States from '/scripts/core/enums/InteractableStates.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
-import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
@@ -67,7 +60,7 @@ export default class AssetEntityHelper extends EditorHelper {
                     TransformControlsHandler.detach(ownerId);
                 }, HandTools.EDIT));
             this._gripActions.push(
-                this._asset.addGripAction((ownerId) => {
+                this._asset.addGripAction(() => {
                     ProjectHandler.deleteAsset(this._asset);
                 }, null, HandTools.DELETE));
             this._pointerActions.push(
@@ -304,7 +297,7 @@ export default class AssetEntityHelper extends EditorHelper {
                     gripInteractable);
                 this.addToScene();
             };
-        this._asset.removeFromScene = (scene) => {
+        this._asset.removeFromScene = () => {
             this._asset._removeFromScene();
             this.removeFromScene();
         };

@@ -6,7 +6,6 @@
 
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
-import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';

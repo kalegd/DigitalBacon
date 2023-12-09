@@ -12,7 +12,7 @@ export default class Component extends Asset {
         super(params);
     }
 
-    supports(asset) {
+    supports(_asset) {
         return true;
     }
 

@@ -5,10 +5,8 @@
  */
 
 import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
-import { Colors } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-import * as THREE from 'three';
 
 export default class AmbientLightHelper extends LightHelper {
     constructor(asset) {

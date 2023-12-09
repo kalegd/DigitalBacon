@@ -9,9 +9,8 @@ import Party from '/scripts/core/clients/Party.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
 import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
-import { concatenateArrayBuffers, concatenateArrayBuffersFromList, uuidv4, uuidFromBytes, Queue } from '/scripts/core/helpers/utils.module.js';
+import { concatenateArrayBuffers, concatenateArrayBuffersFromList, uuidv4, uuidFromBytes, uuidToBytes, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
 const TWO_BYTE_MOD = 2 ** 16;
@@ -158,7 +157,7 @@ class PartyHandler {
             peer.handleEventArrayBuffer(peer, message);
             return;
         }
-        let id, prefix;
+        let id;
         let type = new Uint8Array(message, 0, 1)[0];
         if(type == 0) {
             peer.jitterBuffer.enqueue(message.slice(1));
@@ -231,7 +230,6 @@ class PartyHandler {
     }
 
     _handleProject(peer, message) {
-        let lock = uuidv4();
         message.lock = this.addMessageHandlerLock();
         message.parts = [];
         peer.incomingProjectDetails = message;

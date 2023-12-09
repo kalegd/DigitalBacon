@@ -6,7 +6,6 @@
 
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 
 export default class InternalAssetEntity extends AssetEntity {
     constructor(params = {}) {

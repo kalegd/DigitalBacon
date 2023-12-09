@@ -9,7 +9,6 @@ import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableE
 import InteractableStates from '/scripts/core/enums/InteractableStates.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import TexturesHandler from '/scripts/core/handlers/assetTypes/TexturesHandler.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';

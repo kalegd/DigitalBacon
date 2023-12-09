@@ -83,7 +83,7 @@ class UserSettingsPage extends DynamicFieldsPage {
     }
 
     _addSubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+        PubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, () => {
             for(let field of this._fields) {
                 field.updateFromSource();
             }

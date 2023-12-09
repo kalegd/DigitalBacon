@@ -86,7 +86,9 @@ function start(callback, containerId, params) {
 }
 
 function hasPointerLock() {
-    let capableOfPointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+    let capableOfPointerLock = 'pointerLockElement' in document
+        || 'mozPointerLockElement' in document
+        || 'webkitPointerLockElement' in document;
     return capableOfPointerLock;
 }
 

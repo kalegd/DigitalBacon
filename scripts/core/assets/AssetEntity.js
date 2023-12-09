@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import Asset from '/scripts/core/assets/Asset.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
@@ -12,7 +11,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
+import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
 import { concatenateArrayBuffers, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';

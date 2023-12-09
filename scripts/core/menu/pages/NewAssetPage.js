@@ -20,7 +20,6 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import { FontSizes, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
 const URL_PREFIX_PATTERN = /^https:\/\//i;
@@ -92,7 +91,8 @@ class NewAssetPage extends PaginatedPage {
                     this._handleExternalAsset(assetId);
                 }, () => {
                     PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                        text: 'Sorry, something went wrong while loading the file'
+                        text: 'Sorry, something went wrong while loading the '
+                            + 'file'
                     });
                     if(this._controller.getCurrentPage() == textPage)
                         this._controller.back();

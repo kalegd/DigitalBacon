@@ -46,4 +46,4 @@ export default class LambertMaterialHelper extends MaterialHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(LambertMaterialHelper, LambertMaterial);
+EditorHelperFactory.registerEditorHelper(LambertMaterialHelper,LambertMaterial);

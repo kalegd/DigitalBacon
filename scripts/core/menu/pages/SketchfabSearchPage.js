@@ -12,7 +12,6 @@ import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import PaginatedImagesPage from '/scripts/core/menu/pages/PaginatedImagesPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
 import { TextureLoader } from 'three';
 
 class SketchfabSearchPage extends PaginatedImagesPage {
@@ -44,7 +43,6 @@ class SketchfabSearchPage extends PaginatedImagesPage {
     }
 
     _searchUpdated() {
-        let texturesToDispose = [];
         for(let item of this._items) {
             item.isDeleted = true;
             if(item.previewTexture) item.previewTexture.dispose();

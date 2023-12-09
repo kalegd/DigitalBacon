@@ -109,8 +109,8 @@ export default class System extends Asset {
     _onUserReady() {}
     _onPeerReady() {}
     _onPeerDisconnected() {}
-    _onPeerMessage(p, m) {}
-    _onPeerBufferMessage(p, m) {}
+    _onPeerMessage(_p, _m) {}
+    _onPeerBufferMessage(_p, _m) {}
     _onPartyStarted() {}
     _onPartyEnded() {}
 

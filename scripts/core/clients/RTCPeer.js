@@ -77,13 +77,14 @@ export default class RTCPeer {
                 if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
             };
             this._dataChannel.onclose = (e) => {
-                if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+                if(this._onSendDataChannelClose)
+                    this._onSendDataChannelClose(e);
             };
             this._dataChannel.onmessage = (message) => {
                 if(this._onMessage) this._onMessage(message.data);
             };
         };
-        this._connection.onconnectionstatechange = (e) => {
+        this._connection.onconnectionstatechange = (_e) => {
             let state = this._connection.connectionState;
             if(state == "connected" && !this._hasConnected) {
                 this._hasConnected = true;
@@ -134,7 +135,7 @@ export default class RTCPeer {
         this._peerAudioTrack.enabled = !muted;
     }
 
-    _addAudioTrack(track, srcObject) {
+    _addAudioTrack() {
         this._connection.addTrack(this._myAudioTrack, this._myAudioStream);
     }
 

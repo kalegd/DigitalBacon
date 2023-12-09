@@ -16,7 +16,7 @@ const FIFTY_MINUTES = 60000 * 50;
 
 class Party {
     constructor() {
-        //this._id = uuidv4();
+        this._id = uuidv4();
         this._peers = {};
         this._userAudio = createAudioElement();
         this._userAudio.defaultMuted = true;
@@ -108,7 +108,7 @@ class Party {
                 this._authToken = body.authToken;
                 if(successCallback) successCallback();
             })
-            .catch((error) => {
+            .catch(() => {
                 this.disconnect();
                 if(errorCallback) errorCallback({ topic: 'bad-auth' });
             });
@@ -151,7 +151,7 @@ class Party {
         navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
             this._userAudio.srcObject = stream;
             this._setupWebSocket();
-        }).catch((error) => {
+        }).catch(() => {
             this._userAudio.srcObject = new MediaStream();
             this._setupWebSocket();
         });
@@ -159,8 +159,8 @@ class Party {
 
     _setupWebSocket() {
         this._socket = new WebSocket(global.socketUrl);
-        this._socket.onopen = (e) => { this._onSocketOpen(e); };
-        this._socket.onclose = (e) => { this._onSocketClose(e); };
+        this._socket.onopen = (_e) => { this._onSocketOpen(); };
+        this._socket.onclose = (_e) => { this._onSocketClose(); };
         this._socket.onmessage = (e) => { this._onSocketMessage(e); };
         this._socket.onerror = (e) => { this._onSocketError(e); };
         this._socket._send = this._socket.send;
@@ -183,7 +183,7 @@ class Party {
         };
     }
 
-    _onSocketOpen(e) {
+    _onSocketOpen() {
         this._socket.send({
             topic: "identify",
             //id: this._id,
@@ -203,7 +203,7 @@ class Party {
         }, FIFTY_MINUTES);
     }
 
-    _onSocketClose(e) {
+    _onSocketClose() {
         if(this._socket) this.disconnect();
     }
 
@@ -239,7 +239,7 @@ class Party {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: "Error: Couldn't make user host",
             });
-        } else if(topic == "error" && message.requestTopic == "update-connection"){
+        } else if(topic =="error" && message.requestTopic=="update-connection"){
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Could not reinitiate connection with Server',
             });

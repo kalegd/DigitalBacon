@@ -375,7 +375,8 @@ class ProjectPage extends PaginatedPage {
                     () => { this._handleGoogleAuthResponse(); });
             } catch(error) {
                 PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Google could not be reached. Please check your internet connection and then try refreshing the page',
+                    text: 'Google could not be reached. Please check your '
+                        +'internet connection and then try refreshing the page',
                 });
             }
         });

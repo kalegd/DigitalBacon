@@ -94,7 +94,10 @@ class LibraryPage extends PaginatedIconsPage {
             'width': 0.04,
             'padding': 0.01,
         });
-        searchButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        searchButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         searchButtonParent.position.fromArray([-0.175, 0.12, -0.001]);
         searchButtonParent.add(searchButton);
         let interactable = new PointerInteractable(searchButton, true);

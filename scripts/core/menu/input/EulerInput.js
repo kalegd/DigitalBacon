@@ -112,7 +112,7 @@ class EulerInput extends PointerInteractableEntity {
         }
     }
 
-    _blur(index) {
+    _blur() {
         let newValue = [this.getX(), this.getY(), this.getZ()];
         newValue.forEach((v, i) => newValue[i] = MathUtils.degToRad(v));
         if(this._onBlur) this._onBlur(this._lastValue, newValue);

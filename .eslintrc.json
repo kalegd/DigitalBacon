@@ -1,7 +1,8 @@
 {
   "env": {
     "browser": true,
-    "es2021": true
+    "es2021": true,
+    "jquery": true
   },
   "extends": "eslint:recommended",
   "parserOptions": {
@@ -9,15 +10,13 @@
     "sourceType": "module"
   },
   "rules": {
-    "max-len": [
-      "warn",
-      {
+    "max-len": ["warn", {
         "code": 80,
         "comments": 80,
         "ignoreUrls": true,
-        "ignoreTemplateLiterals": true
-      }
-    ],
+        "ignoreTemplateLiterals": true,
+        "ignorePattern": "^import.*|^const .*|^ *console\\."
+    }],
     "indent": ["error", 4, {
         "ignoreComments": true,
         "ArrayExpression": "first",
@@ -27,9 +26,11 @@
     }],
     "semi": ["error", "always"],
     "arrow-body-style": ["error", "as-needed"],
-    "no-unused-vars": [
-      "error",
-      { "vars": "all", "args": "after-used", "ignoreRestSiblings": false }
-    ]
+    "no-unused-vars": ["error", {
+        "vars": "all",
+        "args": "after-used",
+        "argsIgnorePattern": "^_",
+        "ignoreRestSiblings": false
+    }]
   }
 }

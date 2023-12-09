@@ -18,7 +18,7 @@ class ClickAction {
             this._eventType = global.deviceType == "MOBILE"
                 ? 'touchend'
                 : 'click';
-            this._clickListener = (e) => {
+            this._clickListener = () => {
                 setTimeout(() => {
                     if(this._triggerAction) {
                         this._triggerAction = false;

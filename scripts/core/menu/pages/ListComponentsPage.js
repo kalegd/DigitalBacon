@@ -4,14 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ComponentsHandler from '/scripts/core/handlers/assetTypes/ComponentsHandler.js';
-import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
+import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedListPage from '/scripts/core/menu/pages/PaginatedListPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -52,7 +50,10 @@ class ListComponentsPage extends PaginatedListPage {
             'height': 0.04,
             'width': 0.04,
         });
-        this._addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        this._addButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         this._addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         this._addButtonParent.add(addButton);
         this._addInteractable = new PointerInteractable(addButton, true);

@@ -7,7 +7,6 @@
 import Material from '/scripts/core/assets/materials/Material.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';

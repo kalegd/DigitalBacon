@@ -5,7 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
