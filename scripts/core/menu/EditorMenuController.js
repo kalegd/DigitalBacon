@@ -38,8 +38,6 @@ import TwoButtonPage from '/scripts/core/menu/pages/TwoButtonPage.js';
 import UploadPage from '/scripts/core/menu/pages/UploadPage.js';
 import UserSettingsPage from '/scripts/core/menu/pages/UserSettingsPage.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import * as THREE from 'three';
 
 export default class EditorMenuController extends MenuController {
     constructor() {
@@ -47,7 +45,8 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
         this._pages[MenuPages.COLOR_WHEEL] = new ColorWheelPage(this);
-        this._pages[MenuPages.EDIT_ACKNOWLEDGEMENTS] =new EditAcknowledgementsPage(this);
+        this._pages[MenuPages.EDIT_ACKNOWLEDGEMENTS]
+            = new EditAcknowledgementsPage(this);
         this._pages[MenuPages.EDITOR_SETTINGS] = new EditorSettingsPage(this);
         this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);

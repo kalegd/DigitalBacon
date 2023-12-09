@@ -10,7 +10,6 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.05;

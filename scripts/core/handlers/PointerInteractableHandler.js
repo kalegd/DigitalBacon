@@ -6,11 +6,8 @@
 
 import global from '/scripts/core/global.js';
 import Scene from '/scripts/core/assets/Scene.js';
-import States from '/scripts/core/enums/InteractableStates.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import InteractableHandler from '/scripts/core/handlers/InteractableHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -285,7 +282,7 @@ class PointerInteractableHandler extends InteractableHandler {
         };
         let skipUpdate = false;
         if(this._toolHandlers[this._tool]) {
-            let skipUpdate = this._toolHandlers[this._tool](controller);
+            skipUpdate = this._toolHandlers[this._tool](controller);
         }
         if(!skipUpdate) {
             this._raycastInteractables(controller, this._interactables);

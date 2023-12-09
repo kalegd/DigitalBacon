@@ -8,7 +8,6 @@ import ModelAsset from '/scripts/core/assets/ModelAsset.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import * as THREE from 'three';
 
 export default class ModelAssetHelper extends AssetEntityHelper {
     constructor(asset) {

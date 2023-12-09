@@ -5,9 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
-import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';

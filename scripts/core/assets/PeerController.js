@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';

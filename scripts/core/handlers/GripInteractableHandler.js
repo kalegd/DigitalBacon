@@ -7,11 +7,7 @@
 import global from '/scripts/core/global.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import InteractableHandler from '/scripts/core/handlers/InteractableHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
 import * as THREE from 'three';
 
 class GripInteractableHandler extends InteractableHandler {

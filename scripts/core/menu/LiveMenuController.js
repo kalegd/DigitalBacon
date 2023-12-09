@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import MenuController from '/scripts/core/menu/MenuController.js';
 import AcknowledgementsPage from '/scripts/core/menu/pages/AcknowledgementsPage.js';
@@ -15,8 +14,6 @@ import PartyPage from '/scripts/core/menu/pages/PartyPage.js';
 import PeerPage from '/scripts/core/menu/pages/PeerPage.js';
 import SettingsPage from '/scripts/core/menu/pages/SettingsPage.js';
 import UserSettingsPage from '/scripts/core/menu/pages/UserSettingsPage.js';
-import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import * as THREE from 'three';
 
 export default class LiveMenuController extends MenuController {
     constructor() {

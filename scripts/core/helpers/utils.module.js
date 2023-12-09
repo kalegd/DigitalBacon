@@ -103,7 +103,7 @@ export const buildBVH = (object3d) => {
 //https://stackoverflow.com/questions/21711600/javascript-number-precision-without-converting-to-string
 export const roundWithPrecision = (num, p) => {
     let precision = p || 9;
-    return Number(num.toFixed(p));
+    return Number(num.toFixed(precision));
 };
 
 THREE.Vector3.prototype.roundWithPrecision = function(p) {
@@ -170,14 +170,6 @@ export const hslToRGB = (h, s, l) => {
 
 export const rgbToHex = (r, g, b) => r << 16 ^ g << 8 ^ b << 0;
 
-export const rgbToHexColorString = (r, g, b) => {
-    var hex = Number(rgb).toString(16);
-    if (hex.length < 2) {
-        hex = '0' + hex;
-    }
-    return '#' + hex;
-};
-
 export const blobToHash = (blob) => new Promise((resolve, reject) => {
     blob.arrayBuffer().then((arrayBuffer) => {
         crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
@@ -186,7 +178,7 @@ export const blobToHash = (blob) => new Promise((resolve, reject) => {
                     .join('');
             resolve(hash);
         });
-    });
+    }).catch(reject);
 });
 
 //https://gist.github.com/72lions/4528834

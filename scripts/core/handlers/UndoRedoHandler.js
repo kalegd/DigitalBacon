@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';

@@ -8,7 +8,6 @@ import DirectionalLight from '/scripts/core/assets/primitives/DirectionalLight.j
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
-import * as THREE from 'three';
 
 export default class DirectionalLightHelper extends LightHelper {
     constructor(asset) {
@@ -22,4 +21,5 @@ export default class DirectionalLightHelper extends LightHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(DirectionalLightHelper, DirectionalLight);
+EditorHelperFactory.registerEditorHelper(DirectionalLightHelper,
+    DirectionalLight);

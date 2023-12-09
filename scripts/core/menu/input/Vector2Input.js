@@ -96,7 +96,7 @@ class Vector2Input extends PointerInteractableEntity {
         }
     }
 
-    _blur(index) {
+    _blur() {
         let newValue = [this.getX(), this.getY()];
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
         this._lastValue = newValue;

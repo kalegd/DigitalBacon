@@ -40,7 +40,7 @@ export default class VideoAsset extends AssetEntity {
         let videoUrl = LibraryHandler.getUrl(assetId);
         if(!videoUrl) return;
         this._video = document.createElement('video');
-        this._video.onloadedmetadata = (e) => {
+        this._video.onloadedmetadata = () => {
             let texture = new THREE.VideoTexture(this._video);
             texture.colorSpace = THREE.SRGBColorSpace;
             let width = this._video.videoWidth;
@@ -78,19 +78,19 @@ export default class VideoAsset extends AssetEntity {
         return params;
     }
 
-    getAutoplay(autoplay) {
+    getAutoplay() {
         return this._autoplay;
     }
 
-    getLoop(loop) {
+    getLoop() {
         return this._loop;
     }
 
-    getPlayTopic(playTopic) {
+    getPlayTopic() {
         return this._playTopic;
     }
 
-    getPauseTopic(pauseTopic) {
+    getPauseTopic() {
         return this._pauseTopic;
     }
 
@@ -98,7 +98,7 @@ export default class VideoAsset extends AssetEntity {
         return this._material.side;
     }
 
-    getStopTopic(stopTopic) {
+    getStopTopic() {
         return this._stopTopic;
     }
 
@@ -122,7 +122,7 @@ export default class VideoAsset extends AssetEntity {
         }
         this._playTopic = playTopic;
         if(this._playTopic) {
-            PubSub.subscribe(this._id, this._playTopic, (message) => {
+            PubSub.subscribe(this._id, this._playTopic, () => {
                 if(!global.isEditor) this.play(null, true);
             });
         }
@@ -134,7 +134,7 @@ export default class VideoAsset extends AssetEntity {
         }
         this._pauseTopic = pauseTopic;
         if(this._pauseTopic) {
-            PubSub.subscribe(this._id, this._pauseTopic, (message) => {
+            PubSub.subscribe(this._id, this._pauseTopic, () => {
                 if(!global.isEditor) this.pause(null, true);
             });
         }
@@ -153,7 +153,7 @@ export default class VideoAsset extends AssetEntity {
         }
         this._stopTopic = stopTopic;
         if(this._stopTopic) {
-            PubSub.subscribe(this._id, this._stopTopic, (message) => {
+            PubSub.subscribe(this._id, this._stopTopic, () => {
                 if(!global.isEditor) this.stop(true);
             });
         }

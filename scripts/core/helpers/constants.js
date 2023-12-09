@@ -10,7 +10,10 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'system', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger',
+             'headphones', 'home', 'image', 'lightbulb', 'material',
+             'microphone', 'object', 'pencil', 'search', 'shapes', 'system',
+             'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global.loadingLocks.add(blackPixelLock);
@@ -21,91 +24,91 @@ for(let icon of icons) {
 export const Textures = {
     "audioIcon": new THREE.TextureLoader().load(
         'images/icons/audio_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['audio']); },
+        function() { global.loadingLocks.delete(locks['audio']); },
     ),
     "checkmarkIcon": new THREE.TextureLoader().load(
         'images/icons/checkmark_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['checkmark']); },
+        function() { global.loadingLocks.delete(locks['checkmark']); },
     ),
     "componentIcon": new THREE.TextureLoader().load(
         'images/icons/component_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['component']); },
+        function() { global.loadingLocks.delete(locks['component']); },
     ),
     "ellipsisIcon": new THREE.TextureLoader().load(
         'images/icons/ellipsis_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['ellipsis']); },
+        function() { global.loadingLocks.delete(locks['ellipsis']); },
     ),
     "hamburgerIcon": new THREE.TextureLoader().load(
         'images/icons/hamburger_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['hamburger']); },
+        function() { global.loadingLocks.delete(locks['hamburger']); },
     ),
     "headphonesIcon": new THREE.TextureLoader().load(
         'images/icons/headphones_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['headphones']); },
+        function() { global.loadingLocks.delete(locks['headphones']); },
     ),
     "homeIcon": new THREE.TextureLoader().load(
         'images/icons/home_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['home']); },
+        function() { global.loadingLocks.delete(locks['home']); },
     ),
     "imageIcon": new THREE.TextureLoader().load(
         'images/icons/image_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['image']); },
+        function() { global.loadingLocks.delete(locks['image']); },
     ),
     "lightbulbIcon": new THREE.TextureLoader().load(
         'images/icons/lightbulb_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['lightbulb']); },
+        function() { global.loadingLocks.delete(locks['lightbulb']); },
     ),
     "materialIcon": new THREE.TextureLoader().load(
         'images/icons/material_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['material']); },
+        function() { global.loadingLocks.delete(locks['material']); },
     ),
     "microphoneIcon": new THREE.TextureLoader().load(
         'images/icons/microphone_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['microphone']); },
+        function() { global.loadingLocks.delete(locks['microphone']); },
     ),
     "objectIcon": new THREE.TextureLoader().load(
         'images/icons/object_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['object']); },
+        function() { global.loadingLocks.delete(locks['object']); },
     ),
     "pencilIcon": new THREE.TextureLoader().load(
         'images/icons/pencil_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['pencil']); },
+        function() { global.loadingLocks.delete(locks['pencil']); },
     ),
     "searchIcon": new THREE.TextureLoader().load(
         'images/icons/search_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['search']); },
+        function() { global.loadingLocks.delete(locks['search']); },
     ),
     "shapesIcon": new THREE.TextureLoader().load(
         'images/icons/shapes_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['shapes']); },
+        function() { global.loadingLocks.delete(locks['shapes']); },
     ),
     "systemIcon": new THREE.TextureLoader().load(
         'images/icons/system_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['system']); },
+        function() { global.loadingLocks.delete(locks['system']); },
     ),
     "textureIcon": new THREE.TextureLoader().load(
         'images/icons/texture_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['texture']); },
+        function() { global.loadingLocks.delete(locks['texture']); },
     ),
     "trashIcon": new THREE.TextureLoader().load(
         'images/icons/trash_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['trash']); },
+        function() { global.loadingLocks.delete(locks['trash']); },
     ),
     "undoIcon": new THREE.TextureLoader().load(
         'images/icons/undo_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['undo']); },
+        function() { global.loadingLocks.delete(locks['undo']); },
     ),
     "redoIcon": new THREE.TextureLoader().load(
         'images/icons/redo_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['redo']); },
+        function() { global.loadingLocks.delete(locks['redo']); },
     ),
     "videoIcon": new THREE.TextureLoader().load(
         'images/icons/video_icon_white.png',
-        function(texture) { global.loadingLocks.delete(locks['video']); },
+        function() { global.loadingLocks.delete(locks['video']); },
     ),
     "blackPixel": new THREE.TextureLoader().load(
         'images/black_pixel.png',
-        function(texture) { global.loadingLocks.delete(blackPixelLock); },
+        function() { global.loadingLocks.delete(blackPixelLock); },
     ),
 };
 
@@ -155,8 +158,10 @@ export const quaternion = new THREE.Quaternion();
 export const matrix4 = new THREE.Matrix4();
 
 // For Bounding Box
-let indices = new Uint16Array( [ 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7 ] );
-let positions = [ 1, 1, 1, - 1, 1, 1, - 1, - 1, 1, 1, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 1, - 1, 1, - 1, - 1 ];
+let indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4,
+                               0, 4, 1, 5, 2, 6, 3, 7]);
+let positions = [1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1,
+                 -1, -1, -1, 1, -1, -1 ];
 let geometry = new THREE.BufferGeometry();
 geometry.setIndex(new THREE.BufferAttribute(indices, 1));
 geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
@@ -169,7 +174,7 @@ export const BoundingBox = {
 };
 
 //For keys our 2D UI Supports
-let validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+const validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
 export const ValidKeys = new Set();
 for(let character of validKeysString) {
     ValidKeys.add(character);

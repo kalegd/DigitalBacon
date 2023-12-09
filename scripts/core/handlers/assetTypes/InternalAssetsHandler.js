@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetsHandler from '/scripts/core/handlers/assetTypes/AssetsHandler.js';
@@ -17,7 +16,7 @@ class InternalAssetsHandler extends AssetsHandler {
             PubSubTopics.INTERNAL_DELETED, AssetTypes.INTERNAL);
     }
 
-    addAsset(asset, ignorePublish, ignoreUndoRedo) {
+    addAsset(asset, ignorePublish) {
         if(this._assets[asset.getId()]) return;
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
@@ -27,7 +26,7 @@ class InternalAssetsHandler extends AssetsHandler {
         PubSub.publish(this._id, topic, asset, true);
     }
 
-    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
+    deleteAsset(asset, ignorePublish) {
         if(!(asset.getId() in this._assets)) return;
         delete this._assets[asset.getId()];
         ProjectHandler.deleteAssetFromHandler(asset);
@@ -72,7 +71,6 @@ class InternalAssetsHandler extends AssetsHandler {
     //}
 
     reset() {
-        let keptAssets = this._assets;
         for(let assetId in this._assets) {
             let asset = this._assets[assetId];
             this.deleteAsset(asset, true, true);

@@ -5,7 +5,6 @@
  */
 
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -85,7 +84,8 @@ class PaginatedIconsPage extends MenuPage {
                         this._handleItemInteraction(this._items[index]);
                     } else {
                         console.error(
-                            "PaginatedIconsPage displaying non existant option");
+                            "PaginatedIconsPage displaying non existant option"
+                        );
                     }
                 });
                 this._optionsInteractable.addChild(interactable);

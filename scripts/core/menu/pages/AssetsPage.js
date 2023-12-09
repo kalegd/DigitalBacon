@@ -8,7 +8,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
+import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -53,7 +53,10 @@ class AssetsPage extends PaginatedPage {
             'height': 0.04,
             'width': 0.04,
         });
-        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(addButton);
         let interactable = new PointerInteractable(addButton, true);
@@ -88,15 +91,15 @@ class AssetsPage extends PaginatedPage {
     }
 
     _addSubscriptions() {
-        PubSub.subscribe(this._id, this._assetType + '_ADDED', (asset) => {
+        PubSub.subscribe(this._id, this._assetType + '_ADDED', () => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        PubSub.subscribe(this._id, this._assetType + '_UPDATED', (message) => {
+        PubSub.subscribe(this._id, this._assetType + '_UPDATED', () => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        PubSub.subscribe(this._id, this._assetType + '_DELETED', (e) => {
+        PubSub.subscribe(this._id, this._assetType + '_DELETED', () => {
             this._refreshItems();
             this._updateItemsGUI();
         });

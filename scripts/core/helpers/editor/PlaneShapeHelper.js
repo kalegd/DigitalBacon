@@ -18,14 +18,12 @@ export default class PlaneShapeHelper extends ShapeHelper {
 
     place(intersection) {
         let object = intersection.object;
-        let point = intersection.point;
-        let face = intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(point);
+        this._object.position.copy(normal).add(intersection.point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }
@@ -33,8 +31,8 @@ export default class PlaneShapeHelper extends ShapeHelper {
     static fields = [
         { "parameter": "visualEdit" },
         { "parameter": "material" },
-        { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
-        { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
+        { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput},
+        { "parameter": "height", "name": "Height", "min": 0,"type":NumberInput},
         { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
             "type": NumberInput },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,

@@ -16,9 +16,6 @@ const LIGHTNESS_WIDTH = 1;
 const LIGHTNESS_HEIGHT = 256;
 const RADIUS = 128;
 const R_SQUARED = RADIUS * RADIUS;
-const INNER_RADIUS = 8;
-const OUTER_RADIUS = 16;
-const OR_SQUARED = OUTER_RADIUS * OUTER_RADIUS;
 const PIXEL_BYTES = 4;
 
 class ColorWheel {
@@ -45,7 +42,7 @@ class ColorWheel {
     }
 
     _updateColorWheel() {
-        let image = this._colorContext.getImageData(0, 0, 2 * RADIUS, 2 * RADIUS);
+        let image = this._colorContext.getImageData(0, 0, 2 * RADIUS, 2*RADIUS);
         let data = image.data;
         this._drawColorWheel(data);
         //this._drawSelectCircle(data);
@@ -80,41 +77,9 @@ class ColorWheel {
         }
     }
 
-    //_drawSelectCircle(data) {
-    //    let [xCenter, yCenter] = polarToCartesian(this._saturation * RADIUS,
-    //        THREE.MathUtils.degToRad(this._hue + 180));
-    //    xCenter = Math.round(xCenter);
-    //    yCenter = Math.round(yCenter);
-    //    for(let x = xCenter - OUTER_RADIUS; x < xCenter + OUTER_RADIUS; x++) {
-    //        let xSquared = (x - xCenter) ** 2;
-    //        let yMax = Math.ceil(Math.sqrt(OR_SQUARED - xSquared));
-    //        for(let y = yCenter - yMax; y <= yCenter + yMax; y++) {
-    //            let [r, phi] = cartesianToPolar(x, y);
-    //            if(r > RADIUS) continue;
-
-    //            let distanceFromSelection = Math.sqrt((xCenter - x) ** 2
-    //                + (yCenter - y) ** 2);
-    //            if(distanceFromSelection < INNER_RADIUS
-    //                || distanceFromSelection > OUTER_RADIUS)
-    //                continue;
-
-    //            // Need to convert coordinates from [-RADIUS,RADIUS] to
-    //            // [0,RADIUS] for getting index of Image Data Array
-    //            let rowLength = 2 * RADIUS;
-    //            let adjustedX = x + RADIUS;
-    //            let adjustedY = y + RADIUS;
-    //            let index = (adjustedX + (adjustedY * rowLength)) * PIXEL_BYTES;
-
-    //            data[index] = 255;
-    //            data[index+1] = 255;
-    //            data[index+2] = 255;
-    //            data[index+3] = 255;
-    //        }
-    //    }
-    //}
-
     _updateLightnessBar() {
-        let image = this._lightnessContext.getImageData(0, 0, LIGHTNESS_WIDTH, LIGHTNESS_HEIGHT);
+        let image = this._lightnessContext.getImageData(0, 0, LIGHTNESS_WIDTH,
+            LIGHTNESS_HEIGHT);
         let data = image.data;
         for(let x = 0; x < LIGHTNESS_WIDTH; x++) {
             for(let y = 0; y < LIGHTNESS_HEIGHT; y++) {

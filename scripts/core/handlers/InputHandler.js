@@ -11,6 +11,7 @@ import { Object3D, Vector2 } from 'three';
 import { XRControllerModelFactory } from '/scripts/three/examples/jsm/webxr/XRControllerModelFactory.js';
 import { XRHandModelFactory } from '/scripts/three/examples/jsm/webxr/XRHandModelFactory.js';
 
+/* global nipplejs */
 const controllerModelFactory = new XRControllerModelFactory();
 const handModelFactory = new XRHandModelFactory();
 
@@ -41,11 +42,11 @@ class InputHandler {
     _addEventListeners() {
         if(global.deviceType == "XR") {
             //XR Event Listeners
-            this._renderer.xr.addEventListener("sessionstart", (event) => {
-                this._onXRSessionStart(event);
+            this._renderer.xr.addEventListener("sessionstart", () => {
+                this._onXRSessionStart();
             });
-            this._renderer.xr.addEventListener("sessionend", (event) => {
-                this._onXRSessionEnd(event);
+            this._renderer.xr.addEventListener("sessionend", () => {
+                this._onXRSessionEnd();
             });
         } else if (global.deviceType == "POINTER") {
             //POINTER Event Listeners
@@ -57,7 +58,7 @@ class InputHandler {
                 this._keysPressed.delete(event.key);
                 this._keyCodesPressed.delete(event.code);
             });
-            window.addEventListener('blur', (event) => {
+            window.addEventListener('blur', () => {
                 this._keysPressed.clear();
                 this._keyCodesPressed.clear();
             });
@@ -136,7 +137,7 @@ class InputHandler {
         });
     }
 
-    _onXRSessionStart(event) {
+    _onXRSessionStart() {
         this._session = this._renderer.xr.getSession();
         this._session.oninputsourceschange = (event) => {
             this._onXRInputSourceChange(event);
@@ -147,7 +148,7 @@ class InputHandler {
         }
     }
 
-    _onXRSessionEnd(event) {
+    _onXRSessionEnd() {
         this._session.oninputsourcechange = null;
         this._session = null;
         for(let type in this._xrInputDevices) {

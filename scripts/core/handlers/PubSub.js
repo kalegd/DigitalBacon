@@ -27,7 +27,7 @@ class PubSub {
     publish(owner, topic, message, urgent) {
         let topics = this._splitTopic(topic);
         for(let topic of topics) {
-            if(!topic in this._topics) {
+            if(!(topic in this._topics)) {
                 continue;
             } else if(urgent) {
                 this._publish(owner, topic, message);

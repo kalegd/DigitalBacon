@@ -38,7 +38,7 @@ class TextField extends PointerInteractableEntity {
 
     _setupEventListeners() {
         this._keyListener = (event) => { this.handleKey(event.key); };
-        this._clickListener = (event) => {
+        this._clickListener = () => {
             if(!Keyboard.isKeyPressed() && this._pointerInteractable.getState()
                 != InteractableStates.SELECTED)
             {

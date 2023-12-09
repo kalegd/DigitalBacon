@@ -54,11 +54,6 @@ class ReadyPlayerMe {
             UserController.setAvatarUrl(json.data.url + '?useHands=false');
             this._close();
         }
-
-        // Get user id
-        if(json.eventName === 'v1.user.set') {
-            //console.log(`User with id ${json.data.id} set: ${JSON.stringify(json)}`);
-        }
     }
 
     _close() {

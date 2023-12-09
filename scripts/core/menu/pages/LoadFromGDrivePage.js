@@ -5,7 +5,6 @@
  */
 
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -91,7 +90,8 @@ class LoadFromGDrivePage extends PaginatedPage {
                 if(!this._isLoadingSaving) {
                     this._container.remove(this._loadingSavingBlock);
                     this._container.add(this._optionsContainer);
-                    this._containerInteractable.addChild(this._optionsInteractable);
+                    this._containerInteractable.addChild(
+                        this._optionsInteractable);
                 }
             }
             this._instances = files;
@@ -105,7 +105,8 @@ class LoadFromGDrivePage extends PaginatedPage {
                 if(!this._isLoadingSaving) {
                     this._container.remove(this._loadingSavingBlock);
                     this._container.add(this._optionsContainer);
-                    this._containerInteractable.addChild(this._optionsInteractable);
+                    this._containerInteractable.addChild(
+                        this._optionsInteractable);
                 }
             }
         }

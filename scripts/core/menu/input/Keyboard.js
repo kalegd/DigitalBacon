@@ -5,7 +5,7 @@
  */
 
 import States from '/scripts/core/enums/InteractableStates.js';
-import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
+import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
@@ -15,8 +15,6 @@ import { Object3D } from 'three';
 
 const KEYBOARD_SCALE = 0.6;
 const KEYBOARD_VERTICAL_OFFSET = -0.275;
-
-let i = 0;
 
 class Keyboard {
     constructor() {
@@ -155,7 +153,8 @@ class Keyboard {
     setOwner(owner) {
         this._owner = owner;
         this._scene.add(this._pivotPoint);
-        PointerInteractableHandler.addInteractables(this._pageInteractables[this._keyboardPage]);
+        PointerInteractableHandler.addInteractables(
+            this._pageInteractables[this._keyboardPage]);
         UndoRedoHandler.disable(this._id);
     }
 

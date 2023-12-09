@@ -10,7 +10,7 @@ import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { Euler, Quaternion, Raycaster, Vector3 } from 'three';
+import { Raycaster, Vector3 } from 'three';
 
 export default class XRController extends XRDevice {
     constructor(params = {}) {
@@ -23,7 +23,7 @@ export default class XRController extends XRDevice {
             this._modelUrl = controllerModel.motionController.assetUrl;
         }
         this._handedness = params['handedness'];
-        if(!this._handedness in Handedness) {
+        if(!(this._handedness in Handedness)) {
             throw new Error("hand must be LEFT or RIGHT");
         }
         this._raycasterOrigin = new Vector3();

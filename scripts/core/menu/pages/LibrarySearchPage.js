@@ -5,15 +5,11 @@
  */
 
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { FontSizes } from '/scripts/core/helpers/constants.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
 
 const FIELD_MAX_LENGTH = 25;
 

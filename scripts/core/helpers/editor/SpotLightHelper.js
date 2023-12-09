@@ -9,7 +9,7 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
+//import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import * as THREE from 'three';

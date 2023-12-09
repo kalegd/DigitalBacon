@@ -5,8 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';

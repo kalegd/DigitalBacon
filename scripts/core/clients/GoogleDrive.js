@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+/* global gapi, google, JSZip */
 const CLIENT_ID = '791471431939-q3fifjtaq8mhlhce0l5h96k38m8fchn2.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyBdadP7BFyNpPCRAlCfV-ikXklXkdJ188s';
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];

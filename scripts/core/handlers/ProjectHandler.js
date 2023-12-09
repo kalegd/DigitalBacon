@@ -12,9 +12,9 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import { uuidv4, capitalizeFirstLetter, storeStringValuesInSet } from '/scripts/core/helpers/utils.module.js';
-import * as THREE from 'three';
+
+/* global JSZip, JSZipUtils */
 
 class ProjectHandler {
     constructor() {
@@ -117,7 +117,7 @@ class ProjectHandler {
             let handler = this._assetHandlers[key];
             key = key.toLowerCase() + 's';
             if(!handler) {
-                console.error('Unexpected asset type: ' + handlerKey);
+                console.error('Unexpected asset type: ' + key);
                 continue;
             }
             for(let assetId in projectDetails[key]) {
@@ -206,14 +206,6 @@ class ProjectHandler {
                 asset['set' + capitalizeFirstLetter(key)](value);
             }
         }
-        for(let id in this._assets) {
-            let asset = this._assets[id];
-            //if(asset.addTo) {
-            //    let parentAsset = this._sessionAssets[
-            //        asset.getParentId()];
-            //    asset.addTo(parentAsset, true);
-            //}
-        }
     }
 
     _loadAssetWithoutDependencies(pendingAsset, isDiff) {
@@ -285,8 +277,6 @@ class ProjectHandler {
 
     deleteAssetFromHandler(asset) {
         let id = asset.getId();
-        let assetId = asset.getAssetId();
-        let assetType = LibraryHandler.getType(asset.getAssetId());
         if(this._assets[id]) {
             if(asset.removeFromScene) {
                 if(asset.getObject) {
@@ -297,9 +287,12 @@ class ProjectHandler {
                             break;
                         }
                     }
-                    if(asset.parent) {
-                        let type = LibraryHandler.getType(asset.parent.getId());
-                        if(type == AssetTypes.INTERNAL && asset.parent != Scene)
+                    let type = LibraryHandler.getType(asset.getAssetId());
+                    if(asset.parent && asset.parent != Scene
+                            && type != AssetTypes.INTERNAL) {
+                        let parentAssetId = asset.parent.getAssetId();
+                        let parentType = LibraryHandler.getType(parentAssetId);
+                        if(parentType == AssetTypes.INTERNAL)
                             this._scene.attach(object);
                     }
                 }

@@ -9,7 +9,6 @@ import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
-import { compareLists, numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
 export default class BasicTexture extends Texture {

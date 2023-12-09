@@ -7,7 +7,6 @@
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import InteractableStates from '/scripts/core/enums/InteractableStates.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';

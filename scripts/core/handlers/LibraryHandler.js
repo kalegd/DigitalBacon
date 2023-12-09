@@ -90,7 +90,6 @@ class LibraryHandler {
             for(let assetId in library) {
                 let promise;
                 let assetDetails = library[assetId];
-                let type = assetDetails['Type'];
                 if(assetDetails['IsExternal']) {
                     promise = this.loadLibraryExternalAsset(assetId,
                         assetDetails);
@@ -290,78 +289,77 @@ class LibraryHandler {
                     PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
                         true);
                 resolve();
-            });
+            }, null, reject);
         });
     }
 
     _loadImage(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
-            new THREE.TextureLoader().load(objectURL,
-                (texture) => {
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                    let width = texture.image.width;
-                    let height = texture.image.height;
-                    if(width > height) {
-                        height *= defaultImageSize / width;
-                        width = defaultImageSize;
-                    } else {
-                        width *= defaultImageSize / height;
-                        height = defaultImageSize;
-                    }
-                    let geometry = new THREE.PlaneGeometry(width, height);
-                    let material = new THREE.MeshBasicMaterial({
-                        map: texture,
-                        side: THREE.DoubleSide,
-                        transparent: true,
-                    });
-                    let mesh = new THREE.Mesh( geometry, material );
-                    this.library[assetId]['Mesh'] = mesh;
-                    if(!ignorePublish) {
-                        PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId, true);
-                    }
-                    resolve();
+            new THREE.TextureLoader().load(objectURL, (texture) => {
+                texture.colorSpace = THREE.SRGBColorSpace;
+                let width = texture.image.width;
+                let height = texture.image.height;
+                if(width > height) {
+                    height *= defaultImageSize / width;
+                    width = defaultImageSize;
+                } else {
+                    width *= defaultImageSize / height;
+                    height = defaultImageSize;
                 }
-            );
+                let geometry = new THREE.PlaneGeometry(width, height);
+                let material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                });
+                let mesh = new THREE.Mesh( geometry, material );
+                this.library[assetId]['Mesh'] = mesh;
+                if(!ignorePublish)
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
+                resolve();
+            }, null, reject);
         });
     }
 
     _loadAudio(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
-            new THREE.AudioLoader().load(objectURL,
-                (buffer) => {
-                    this.library[assetId]['Buffer'] = buffer;
-                    if(!ignorePublish) {
-                        PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId, true);
-                    }
-                    resolve();
-                }
-            );
+            new THREE.AudioLoader().load(objectURL, (buffer) => {
+                this.library[assetId]['Buffer'] = buffer;
+                if(!ignorePublish)
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
+                resolve();
+            }, null, reject);
         });
     }
 
     _loadVideo(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
-            let objectURL = URL.createObjectURL(blob);
-            this.library[assetId]['URL'] = objectURL;
-            PubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                assetId, true);
-            resolve();
+            try {
+                let objectURL = URL.createObjectURL(blob);
+                this.library[assetId]['URL'] = objectURL;
+                if(!ignorePublish)
+                    PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
+                resolve();
+            } catch {
+                reject();
+            }
         });
     }
 
     _loadScript(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
-            import(objectURL).then(module => {
+            import(objectURL).then(() => {
                 if(!ignorePublish)
                     PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
                         true);
                 resolve();
-            });
+            }).catch(reject);
         });
     }
 

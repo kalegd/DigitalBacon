@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -195,7 +194,7 @@ export default class Avatar extends InternalAssetEntity {
         return this._avatarUrl;
     }
 
-    getVerticalOffset(verticalOffset) {
+    getVerticalOffset() {
         return this._verticalOffset;
     }
 

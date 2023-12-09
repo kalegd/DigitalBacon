@@ -8,10 +8,7 @@ import Entity from '/scripts/core/assets/Entity.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUI from 'three-mesh-ui';
-import { Object3D } from 'three';
 
 const BACKGROUND_OPACITY = 0.8;
 const FONT_OPACITY = 1;
@@ -108,7 +105,8 @@ class NotificationHub extends Entity {
         } else if(notification.state == NOTIFICATION_STATES.FADE_OUT) {
             notification.timeInState = Math.min(
                 notification.timeInState + timeDelta, notification.fadeTime);
-            let fadePercent = 1 - (notification.timeInState / notification.fadeTime);
+            let fadePercent
+                = 1 - (notification.timeInState / notification.fadeTime);
             this._container.set({
                 backgroundOpacity: BACKGROUND_OPACITY * fadePercent
             });

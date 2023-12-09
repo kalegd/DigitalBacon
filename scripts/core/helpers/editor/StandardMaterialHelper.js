@@ -69,4 +69,5 @@ export default class StandardMaterialHelper extends MaterialHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(StandardMaterialHelper, StandardMaterial);
+EditorHelperFactory.registerEditorHelper(StandardMaterialHelper,
+    StandardMaterial);

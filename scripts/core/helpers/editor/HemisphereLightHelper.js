@@ -8,7 +8,6 @@ import HemisphereLight from '/scripts/core/assets/primitives/HemisphereLight.js'
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import ColorInput from '/scripts/core/menu/input/ColorInput.js';
-import * as THREE from 'three';
 
 export default class HemisphereLightHelper extends LightHelper {
     constructor(asset) {
@@ -18,8 +17,9 @@ export default class HemisphereLightHelper extends LightHelper {
     static fields = [
         { "parameter": "intensity" },
         { "parameter": "color" },
-        { "parameter": "groundColor", "name": "Ground Color", "type": ColorInput },
+        { "parameter": "groundColor", "name": "Ground Color","type":ColorInput},
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(HemisphereLightHelper, HemisphereLight);
+EditorHelperFactory.registerEditorHelper(HemisphereLightHelper,
+    HemisphereLight);

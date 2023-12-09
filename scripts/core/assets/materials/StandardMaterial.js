@@ -10,7 +10,8 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "metalnessMap", "normalMap", "roughnessMap"];
+const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap",
+              "envMap", "metalnessMap", "normalMap", "roughnessMap"];
 
 export default class StandardMaterial extends Material {
     constructor(params = {}) {

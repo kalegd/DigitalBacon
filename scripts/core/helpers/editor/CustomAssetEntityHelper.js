@@ -15,4 +15,5 @@ export default class CustomAssetEntityHelper extends AssetEntityHelper {
     }
 }
 
-EditorHelperFactory.registerEditorHelper(CustomAssetEntityHelper, CustomAssetEntity);
+EditorHelperFactory.registerEditorHelper(CustomAssetEntityHelper,
+    CustomAssetEntity);

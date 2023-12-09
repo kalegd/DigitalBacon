@@ -4,17 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '/scripts/core/global.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
 import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
 
 const hands = [
     { "title": "Edit", "type": HandTools.EDIT },

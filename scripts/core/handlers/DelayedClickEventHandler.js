@@ -17,7 +17,7 @@ class DelayedClickEventHandler {
             this._eventType = global.deviceType == "MOBILE"
                 ? 'touchend'
                 : 'click';
-            this._clickListener = (e) => {
+            this._clickListener = () => {
                 setTimeout(() => {
                     if(this._triggerDelayedClickEvent) {
                         this._triggerDelayedClickEvent = false;

@@ -5,7 +5,6 @@
  */
 
 import CubeTexture from '/scripts/core/assets/textures/CubeTexture.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { MAPPING_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';

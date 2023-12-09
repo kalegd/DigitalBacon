@@ -7,7 +7,6 @@
 import global from '/scripts/core/global.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';

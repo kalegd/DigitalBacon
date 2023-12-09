@@ -20,6 +20,8 @@ import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
+/* global saveAs, JSZip */
+
 const PREVIEW_URL = 'https://digitalbacon.io/preview';
 const PREVIEW_ORIGIN = 'https://digitalbacon.io';
 const OPTIONS = {
@@ -375,7 +377,8 @@ class ProjectPage extends PaginatedPage {
                     () => { this._handleGoogleAuthResponse(); });
             } catch(error) {
                 PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Google could not be reached. Please check your internet connection and then try refreshing the page',
+                    text: 'Google could not be reached. Please check your '
+                        +'internet connection and then try refreshing the page',
                 });
             }
         });

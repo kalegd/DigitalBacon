@@ -181,7 +181,7 @@ class PartyPage extends DynamicFieldsPage {
         return different;
     }
 
-    _abdicateHost(peerId) {
+    _abdicateHost() {
         for(let peerId in this._peerFields) {
             this._peerFields[peerId].toggleHost(false);
         }

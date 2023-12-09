@@ -7,13 +7,10 @@
 import States from '/scripts/core/enums/InteractableStates.js';
 import { Colors, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import * as THREE from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const defaultOffset = 0.008;
 const defaultMargin = 0.01;
-const defaultWidth = 0.01;
-const defaultHeight = 0.01;
 
 export default class ThreeMeshUIHelper {
     static createTextBlock(params) {
@@ -165,7 +162,6 @@ export default class ThreeMeshUIHelper {
 
     static createInputBlock(params) {
         let text = params['text'] || " ";
-        let backgroundTexture = params['backgroundTexture'];
         let fontSize = (params['fontSize'])
             ? params['fontSize']
             : FontSizes.body;

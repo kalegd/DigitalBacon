@@ -11,7 +11,6 @@ import Handedness from '/scripts/core/enums/Handedness.js';
 import HandTools from '/scripts/core/enums/HandTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import InputHandler from '/scripts/core/handlers/InputHandler.js';
-import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
@@ -21,14 +20,8 @@ import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { TransformControls } from '/node_modules/three/examples/jsm/controls/TransformControls.js';
-import * as THREE from 'three';
 
 const MODES = ['translate', 'rotate', 'scale'];
-const MODE_TO_OBJECT_PARAM = {
-    translate: 'position',
-    rotate: 'rotation',
-    scale: 'scale'
-};
 
 class TransformControlsHandler {
     init(canvas, camera, scene) {
@@ -93,7 +86,7 @@ class TransformControlsHandler {
                 }
             });
         }
-        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+        PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
             for(let option in this._attachedAssets) {
                 this._detachDeleted(option);
             }
@@ -199,7 +192,7 @@ class TransformControlsHandler {
     _pasteDigitalBaconData(e) {
         let data = e.clipboardData.getData('text/digitalbacon');
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
-        let [ , assetId, , instanceId] = data.split(":");
+        let [ , , , instanceId] = data.split(":");
         let instance = ProjectHandler.getAsset(instanceId);
         let sessionInstance = ProjectHandler.getSessionAsset(instanceId);
         if(sessionInstance) {
@@ -223,7 +216,6 @@ class TransformControlsHandler {
             euler.setFromQuaternion(quaternion);
             let rotation = euler.toArray();
             for(let assetId of assetIds) {
-                let type = LibraryHandler.getType(assetId);
                 let params = {
                     "assetId": assetId,
                     "position": position,
@@ -496,9 +488,7 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
     }
 
-    initiateDrag(option) {
-        option = option || global.deviceType;
-        let asset = this._attachedAssets[option];
+    initiateDrag() {
         let pointerPosition = InputHandler.getPointerPosition();
         let pointer = { x: pointerPosition.x, y: pointerPosition.y, button: 0 };
         let plane = this._transformControls._plane;

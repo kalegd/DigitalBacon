@@ -19,14 +19,12 @@ export default class ImageAssetHelper extends AssetEntityHelper {
 
     place(intersection) {
         let object = intersection.object;
-        let point = intersection.point;
-        let face = intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(point);
+        this._object.position.copy(normal).add(intersection.point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }

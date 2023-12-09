@@ -20,8 +20,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { vector3s } from '/scripts/core/helpers/constants.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
 const USERNAME_KEY = "DigitalBacon:Username";
@@ -199,9 +198,8 @@ class UserController extends InternalAssetEntity {
         return UserMessageCodes.AVATAR;
     }
 
-    _pushHandsDataForRTC(data, type) {
+    _pushHandsDataForRTC(data) {
         let codes = 0;
-        let userScale = SettingsHandler.getUserScale();
         for(let type of ['CONTROLLER', 'HAND']) {
             let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
             for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {

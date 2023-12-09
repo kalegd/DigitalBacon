@@ -7,9 +7,7 @@
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
-import UserController from '/scripts/core/assets/UserController.js';
 import Handedness from '/scripts/core/enums/Handedness.js';
-import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import NotificationHub from '/scripts/core/menu/NotificationHub.js';
@@ -144,7 +142,8 @@ export default class MenuController extends PointerInteractableEntity {
     }
 
     getRotationArray() {
-        return euler.setFromQuaternion(this._object.getWorldQuaternion(quaternion).normalize()).toArray();
+        return euler.setFromQuaternion(this._object.getWorldQuaternion(
+            quaternion).normalize()).toArray();
     }
 
     getDirection(vector3) {
@@ -173,7 +172,8 @@ export default class MenuController extends PointerInteractableEntity {
             : 1.5 * aspectRatio;
         global.camera.getWorldPosition(vector3s[0]);
         global.camera.getWorldDirection(vector3s[1]);
-        vector3s[1].normalize().divideScalar(menuDistanceScale).multiplyScalar(userScale);
+        vector3s[1].normalize().divideScalar(menuDistanceScale)
+            .multiplyScalar(userScale);
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
         this._object.scale.set(userScale, userScale, userScale);
@@ -241,6 +241,7 @@ export default class MenuController extends PointerInteractableEntity {
         currentPage.removeFromScene();
         if(global.deviceType == "XR")
             GripInteractableHandler.removeInteractable(this._gripInteractable);
-        PointerInteractableHandler.removeInteractable(this._pointerInteractable);
+        PointerInteractableHandler.removeInteractable(
+            this._pointerInteractable);
     }
 }
