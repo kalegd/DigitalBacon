@@ -11,6 +11,7 @@ import { Object3D, Vector2 } from 'three';
 import { XRControllerModelFactory } from '/scripts/three/examples/jsm/webxr/XRControllerModelFactory.js';
 import { XRHandModelFactory } from '/scripts/three/examples/jsm/webxr/XRHandModelFactory.js';
 
+/* global nipplejs */
 const controllerModelFactory = new XRControllerModelFactory();
 const handModelFactory = new XRHandModelFactory();
 

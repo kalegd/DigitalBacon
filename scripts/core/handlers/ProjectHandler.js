@@ -14,6 +14,8 @@ import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4, capitalizeFirstLetter, storeStringValuesInSet } from '/scripts/core/helpers/utils.module.js';
 
+/* global JSZip, JSZipUtils */
+
 class ProjectHandler {
     constructor() {
         this._id = uuidv4();

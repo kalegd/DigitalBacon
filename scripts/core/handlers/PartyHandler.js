@@ -12,6 +12,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import { concatenateArrayBuffers, concatenateArrayBuffersFromList, uuidv4, uuidFromBytes, uuidToBytes, Queue } from '/scripts/core/helpers/utils.module.js';
 
+/* global JSZip */
 const SIXTEEN_KB = 1024 * 16;
 const TWO_BYTE_MOD = 2 ** 16;
 const JITTER_DELAY = 50;
