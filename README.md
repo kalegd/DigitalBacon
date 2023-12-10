@@ -2,9 +2,13 @@
 
 Create 3D websites easily that run on AR, VR, Desktop, and Mobile devices with Digital Bacon. No coding required, but supports an API to create plugins for advanced customizations
 
-<img src="/resources/gifs/vr_asset_transform_demo.gif" title="vr asset transform demo" height="200"> &nbsp;&nbsp;&nbsp;<img src="/resources/gifs/water_color_demo.gif" title="vr water color demo" height="200"> &nbsp;&nbsp;&nbsp;<img src="/resources/gifs/ar_wall_occlusion_demo.gif" title="ar wall occlusion demo" height="200"> &nbsp;&nbsp;&nbsp;<img src="/resources/gifs/iphone_demo.gif" title="iphone demo" height="200">
+<p align="center"><img src="/resources/gifs/vr_asset_transform_demo.gif" title="vr asset transform demo" height="200"> &nbsp;&nbsp;&nbsp;<img src="/resources/gifs/water_color_demo.gif" title="vr water color demo" height="200"> &nbsp;&nbsp;&nbsp;<img src="/resources/gifs/ar_wall_occlusion_demo.gif" title="ar wall occlusion demo" height="200"> &nbsp;&nbsp;&nbsp;<img src="/resources/gifs/iphone_demo.gif" title="iphone demo" height="200"></p>
 
-[![NPM Package](https://img.shields.io/npm/v/digitalbacon)](https://www.npmjs.com/package/digitalbacon) [![Build Size](https://badgen.net/bundlephobia/minzip/digitalbacon)](https://bundlephobia.com/result?p=digitalbacon) [![NPM Downloads](https://img.shields.io/npm/dw/digitalbacon)](https://www.npmtrends.com/digitalbacon)
+<div align="center">
+  
+  [![NPM Package](https://img.shields.io/npm/v/digitalbacon)](https://www.npmjs.com/package/digitalbacon) [![Build Size](https://badgen.net/bundlephobia/minzip/digitalbacon)](https://bundlephobia.com/result?p=digitalbacon) [![NPM Downloads](https://img.shields.io/npm/dw/digitalbacon)](https://www.npmtrends.com/digitalbacon)
+  
+</div>
 
 #### How to use
 Go to [Digital Bacon](https://digitalbacon.io) to create you own 3D website and then save your project zip file. You can then use host your project using the below html snippet
