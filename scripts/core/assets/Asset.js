@@ -12,7 +12,7 @@ import { uuidv4, uuidToBytes } from '/scripts/core/helpers/utils.module.js';
 export default class Asset {
     constructor(params = {}) {
         this._id = params['id'] || uuidv4();
-        this._idBytes = uuidToBytes(this._id);
+         this._idBytes = uuidToBytes(this._id);
         this._assetId = params['assetId'];
         this._name = ('name' in params)
             ? params['name']
