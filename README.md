@@ -49,3 +49,16 @@ The following Shims may be useful for running in Firefox and Safari as they tend
     <!-- SHIM FOR WEBRTC IN FIREFOX -->
     <script async src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.0/adapter.min.js"></script>
 ```
+
+## Contributors
+
+A special thanks to the following people for taking time to contribute to this project
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
