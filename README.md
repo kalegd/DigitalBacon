@@ -1,4 +1,7 @@
 # DigitalBacon
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 Create 3D websites easily that run on AR, VR, Desktop, and Mobile devices with Digital Bacon. No coding required, but supports an API to create plugins for advanced customizations
 
@@ -53,6 +56,21 @@ The following Shims may be useful for running in Firefox and Safari as they tend
 ## Contributors
 
 A special thanks to the following people for taking time to contribute to this project
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/prajwalbandak"><img src="https://avatars.githubusercontent.com/u/62823252?v=4?s=100" width="100px;" alt="prajwalbandak"/><br /><sub><b>prajwalbandak</b></sub></a><br /><a href="#infra-prajwalbandak" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
