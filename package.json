@@ -1,6 +1,7 @@
 {
   "name": "digitalbacon",
   "version": "0.2.0",
+  "type": "module",
   "description": "Content management system for 3D websites",
   "main": "/build/DigitalBacon.min.js",
   "license": "MPL 2.0",
@@ -17,9 +18,10 @@
   ],
   "scripts": {
     "build": "rollup -c --bundleConfigAsCjs",
-    "start": "http-server -c-1 -p 8000",
     "lint": "eslint ./scripts/core --ext .js",
-    "lint-fix": "eslint ./scripts/core --ext .js --fix"
+    "lint-fix": "eslint ./scripts/core --ext .js --fix",
+    "start": "http-server -c-1 -p 8000",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
     "file-saver": "2.0.5",
@@ -36,6 +38,7 @@
     "@rollup/plugin-terser": "^0.3.0",
     "eslint": "^8.55.0",
     "http-server": "14.1.0",
+    "jest": "^29.7.0",
     "mime": "3.0.0",
     "rollup": "^3.9.1",
     "rollup-plugin-root-import": "^1.0.0"
