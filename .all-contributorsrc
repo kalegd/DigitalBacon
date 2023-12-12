@@ -15,6 +15,15 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "laurittab",
+      "name": "Lauritta",
+      "avatar_url": "https://avatars.githubusercontent.com/u/57863817?v=4",
+      "profile": "https://www.codewars.com/users/ReetzOnline/badges/micro",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,

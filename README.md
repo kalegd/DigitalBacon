@@ -7,7 +7,7 @@ Create 3D websites easily that run on AR, VR, Desktop, and Mobile devices with D
 <div align="center">
   
   [![NPM Package](https://img.shields.io/npm/v/digitalbacon)](https://www.npmjs.com/package/digitalbacon) [![Build Size](https://badgen.net/bundlephobia/minzip/digitalbacon)](https://bundlephobia.com/result?p=digitalbacon) [![NPM Downloads](https://img.shields.io/npm/dw/digitalbacon)](https://www.npmtrends.com/digitalbacon) <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
   
 </div>
@@ -62,6 +62,7 @@ A special thanks to the following people for taking time to contribute to this p
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/prajwalbandak"><img src="https://avatars.githubusercontent.com/u/62823252?v=4?s=100" width="100px;" alt="prajwalbandak"/><br /><sub><b>prajwalbandak</b></sub></a><br /><a href="#infra-prajwalbandak" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.codewars.com/users/ReetzOnline/badges/micro"><img src="https://avatars.githubusercontent.com/u/57863817?v=4?s=100" width="100px;" alt="Lauritta"/><br /><sub><b>Lauritta</b></sub></a><br /><a href="#infra-laurittab" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>
