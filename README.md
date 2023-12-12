@@ -62,7 +62,7 @@ A special thanks to the following people for taking time to contribute to this p
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/prajwalbandak"><img src="https://avatars.githubusercontent.com/u/62823252?v=4?s=100" width="100px;" alt="prajwalbandak"/><br /><sub><b>prajwalbandak</b></sub></a><br /><a href="#infra-prajwalbandak" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.codewars.com/users/ReetzOnline/badges/micro"><img src="https://avatars.githubusercontent.com/u/57863817?v=4?s=100" width="100px;" alt="Lauritta"/><br /><sub><b>Lauritta</b></sub></a><br /><a href="#infra-laurittab" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/laurittab"><img src="https://avatars.githubusercontent.com/u/57863817?v=4?s=100" width="100px;" alt="Lauritta"/><br /><sub><b>Lauritta</b></sub></a><br /><a href="#infra-laurittab" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>
