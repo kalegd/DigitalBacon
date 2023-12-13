@@ -113,7 +113,7 @@ class LibraryHandler {
 
     loadLibraryExternalAsset(assetId, assetDetails) {
         if(assetDetails['Type'] == AssetTypes.VIDEO) {
-            return this.loadLibraryExternalVideoAsset(assetId, assetDetails);
+            return this._loadLibraryExternalVideoAsset(assetId, assetDetails);
         }
         return fetch(assetDetails['URL'])
             .then((response) => response.arrayBuffer())
@@ -121,7 +121,7 @@ class LibraryHandler {
                 assetId, assetDetails, [arraybuffer]));
     }
 
-    loadLibraryExternalVideoAsset(assetId, assetDetails) {
+    _loadLibraryExternalVideoAsset(assetId, assetDetails) {
         let url = assetDetails.URL;
         if(url in this._blobHashMap) return;
         return fetch(url, { method: 'HEAD' }).then((response) => {
