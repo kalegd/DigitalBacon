@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, LinearSRGBColorSpace, SpotLight, PointLight as PointLight$1, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, ColorManagement, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, NumberKeyframeTrack, QuaternionKeyframeTrack, Box3, Sphere, Interpolant, BoxGeometry, SphereGeometry, Triangle, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Euler, Raycaster, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
+import { TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Quaternion, Matrix4, Loader, LoaderUtils, FileLoader, Color, LinearSRGBColorSpace, SpotLight as SpotLight$1, PointLight as PointLight$1, DirectionalLight as DirectionalLight$1, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, Vector3, InstancedMesh, Object3D, TextureLoader, ImageBitmapLoader, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, ColorManagement, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, Texture as Texture$1, VectorKeyframeTrack, NumberKeyframeTrack, QuaternionKeyframeTrack, Box3, Sphere, Interpolant, BoxGeometry, SphereGeometry, Triangle, EventDispatcher, MOUSE, TOUCH, Spherical, CubeTexture as CubeTexture$1, Raycaster, Euler, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, TorusGeometry, PlaneGeometry } from 'three';
 import ThreeMeshUI from 'three-mesh-ui';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
@@ -26,6 +26,7 @@ const AssetTypes = {
     SHAPE: "SHAPE",
     SYSTEM: "SYSTEM",
     TEXTURE: "TEXTURE",
+    VIDEO: "VIDEO",
 };
 
 const PubSubTopics = {
@@ -115,6 +116,12 @@ const PubSubTopics = {
     TOOL_UPDATED: "TOOL_UPDATED",
     USER_PERSPECTIVE_CHANGED: "USER_PERSPECTIVE_CHANGED",
     USERNAME_UPDATED: "USERNAME_UPDATED",
+    VIDEO_ADDED: "VIDEO_ADDED",
+    VIDEO_CREATED: "VIDEO_CREATED",
+    VIDEO_DELETED: "VIDEO_DELETED",
+    VIDEO_UPDATED: "VIDEO_UPDATED",
+    VIDEO_ATTACHED: "VIDEO_ATTACHED",
+    VIDEO_DETACHED: "VIDEO_DETACHED",
 };
 
 const AssetScriptTypes = {
@@ -127,10 +134,24 @@ const AssetScriptTypes = {
     TEXTURE: "TEXTURE",
 };
 
+const FileTypes$4 = {
+    mp3: "mp3",
+    wav: "wav",
+};
+
 const FileTypes$3 = {
     jpg: "jpg",
     jpeg: "jpeg",
     png: "png",
+};
+
+const FileTypes$2 = {
+    glb: "glb",
+};
+
+const FileTypes$1 = {
+    mp4: "mp4",
+    webm: "webm",
 };
 
 /*
@@ -162,7 +183,7 @@ class PubSub {
     publish(owner, topic, message, urgent) {
         let topics = this._splitTopic(topic);
         for(let topic of topics) {
-            if(!topic in this._topics) {
+            if(!(topic in this._topics)) {
                 continue;
             } else if(urgent) {
                 this._publish(owner, topic, message);
@@ -209,14 +230,12 @@ let pubSub = new PubSub();
  */
 
 
-const uuidv4 = () => {
-    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
-        c => (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4)
+const uuidv4 = () => ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
+    c => (c^crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4)
         .toString(16));
-};
 
 //https://github.com/domske/uuid-tool/blob/master/src/uuid.ts
-const uuidToBytes$1 = (uuid) => {
+const uuidToBytes = (uuid) => {
     let array = new Uint8Array(16);
     (uuid.replace(/-/g, '').match(/.{2}/g) || [])
         .map((b, i) => array[i] = parseInt(b, 16));
@@ -232,31 +251,26 @@ const uuidFromBytes = (bytes) => {
         .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
 };
 
-const numberOr = (number, defaultValue) => {
-    return (typeof number == 'number')
+const numberOr = (number, defaultValue) =>
+    (typeof number == 'number')
         ? number
         : defaultValue;
-};
 
-const stringOr = (string, defaultValue) => {
-    return (typeof string == 'string')
+const stringOr = (string, defaultValue) =>
+    (typeof string == 'string')
         ? string
         : defaultValue;
-};
 
-const compareLists = (list1, list2) => {
-    return list1.length == list2.length
+const compareLists = (list1, list2) => list1.length == list2.length
         && list1.reduce((a, v, i) => a && list2[i] == v, true);
-};
-const stringWithMaxLength = (string, maxLength) => {
-    return (string.length > maxLength)
+
+const stringWithMaxLength = (string, maxLength) =>
+    (string.length > maxLength)
         ? string.substring(0, maxLength) + "..."
         : string;
-};
 
-const capitalizeFirstLetter = (string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-};
+const capitalizeFirstLetter = (string) =>
+    string.charAt(0).toUpperCase() + string.slice(1);
 
 const fullDispose = (object3d, textures) => {
     object3d.traverse((node) => {
@@ -312,7 +326,8 @@ const buildBVH = (object3d) => {
 
 //https://stackoverflow.com/questions/21711600/javascript-number-precision-without-converting-to-string
 const roundWithPrecision = (num, p) => {
-    return Number(num.toFixed(p));
+    let precision = p || 9;
+    return Number(num.toFixed(precision));
 };
 
 THREE.Vector3.prototype.roundWithPrecision = function(p) {
@@ -347,13 +362,9 @@ const cartesianToPolar = (x, y) => {
     return [r, phi];
 };
 
-const polarToCartesian = (r, phi) => {
-    return [r * Math.cos(phi), r * Math.sin(phi)];
-};
+const polarToCartesian = (r, phi) => [r * Math.cos(phi),r*Math.sin(phi)];
 
-const radiansToDegrees = (r) => {
-    return ((r + Math.PI) / (2 * Math.PI)) * 360;
-};
+const radiansToDegrees = (r) => ((r + Math.PI) / (2 * Math.PI)) * 360;
 
 //https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex/44134328#44134328
 function hueToRGB(p, q, t){
@@ -381,35 +392,22 @@ const hslToRGB = (h, s, l) => {
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 };
 
-const rgbToHex = (r, g, b) => {
-    return r << 16 ^ g << 8 ^ b << 0;
-};
+const rgbToHex = (r, g, b) => r << 16 ^ g << 8 ^ b << 0;
 
-const rgbToHexColorString = (r, g, b) => {
-    var hex = Number(rgb).toString(16);
-    if (hex.length < 2) {
-         hex = '0' + hex;
-    }
-    return '#' + hex;
-};
-
-const blobToHash = (blob) => {
-    return new Promise((resolve, reject) => {
-        blob.arrayBuffer().then((arrayBuffer) => {
-            crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
-                let hashArray = Array.from(new Uint8Array(hashBuffer));
-                let hash = hashArray.map(b => b.toString(16).padStart(2, '0'))
+const blobToHash = (blob) => new Promise((resolve, reject) => {
+    blob.arrayBuffer().then((arrayBuffer) => {
+        crypto.subtle.digest("SHA-256", arrayBuffer).then((hashBuffer) => {
+            let hashArray = Array.from(new Uint8Array(hashBuffer));
+            let hash = hashArray.map(b => b.toString(16).padStart(2, '0'))
                     .join('');
-                resolve(hash);
-            });
+            resolve(hash);
         });
-    });
-};
+    }).catch(reject);
+});
 
 //https://gist.github.com/72lions/4528834
-const concatenateArrayBuffers = (...buffers) => {
-    return concatenateArrayBuffersFromList(buffers);
-};
+const concatenateArrayBuffers = (...buffers) =>
+    concatenateArrayBuffersFromList(buffers);
 
 const concatenateArrayBuffersFromList = (buffers) => {
     let length = 0;
@@ -426,8 +424,16 @@ const concatenateArrayBuffersFromList = (buffers) => {
     return array.buffer;
 };
 
-const typedArrayToArray = (typedArray) => {
-    return [].slice.call(typedArray);
+const typedArrayToArray = (typedArray) => [].slice.call(typedArray);
+
+const storeStringValuesInSet = (object, set) => {
+    if(typeof object != 'object') return;
+    for(let key in object) {
+        let value = object[key];
+        (typeof value == 'string')
+            ? set.add(value)
+            : storeStringValuesInSet(value, set);
+    }
 };
 
 //https://dmitripavlutin.com/javascript-queue/
@@ -472,13 +478,13 @@ var utils = /*#__PURE__*/Object.freeze({
   polarToCartesian: polarToCartesian,
   radiansToDegrees: radiansToDegrees,
   rgbToHex: rgbToHex,
-  rgbToHexColorString: rgbToHexColorString,
   roundWithPrecision: roundWithPrecision,
+  storeStringValuesInSet: storeStringValuesInSet,
   stringOr: stringOr,
   stringWithMaxLength: stringWithMaxLength,
   typedArrayToArray: typedArrayToArray,
   uuidFromBytes: uuidFromBytes,
-  uuidToBytes: uuidToBytes$1,
+  uuidToBytes: uuidToBytes,
   uuidv4: uuidv4
 });
 
@@ -490,7 +496,10 @@ var utils = /*#__PURE__*/Object.freeze({
 
 
 //three-mesh-ui doesn't like textures that haven't already been loaded
-let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'system', 'texture', 'trash', 'undo', 'redo', 'video'];
+let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger',
+             'headphones', 'home', 'image', 'lightbulb', 'material',
+             'microphone', 'object', 'pencil', 'search', 'shapes', 'system',
+             'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global$1.loadingLocks.add(blackPixelLock);
@@ -501,91 +510,91 @@ for(let icon of icons) {
 const Textures = {
     "audioIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['audio']); },
+        function() { global$1.loadingLocks.delete(locks['audio']); },
     ),
     "checkmarkIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['checkmark']); },
+        function() { global$1.loadingLocks.delete(locks['checkmark']); },
     ),
     "componentIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['component']); },
+        function() { global$1.loadingLocks.delete(locks['component']); },
     ),
     "ellipsisIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAACTtJREFUeF7t3NFuG0cQRFHr/z9agZAoMQw7FFs73Jmq41erCdSt7qslZevthz8IIFBL4K02ueAIIPCDACwBAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUeAAOwAAsUECKC4fNERIAA7gEAxAQIoLl90BAjADiBQTIAAissXHQECsAMIFBMggOLyRUegRgDv7+/vz9T99vYWxUb+7v7/tPtRS/67kM8u/q+vcboI5H/u8NP6f/RNL1IA3136P9rykKcC+b939Kf3/+jof/77OAGsWv5PaLs/Eci/5vhP6f+Z4//42hgBrF783R8N5V97+Lv3/+zh/yu06eBOc69e/t2+G8j/2uPfrf/v3OLxTwB3Lf8uSyD/Pce/S//fOf7j3wLcvfx3L4H89x7/3f1/9/iPFsAuy3/XEsi/x/Hf1f8Vx08AV1H8+DT1xT8iJAACuGJ9j/wMYLflf/V3Afn3Ov5X93/F4R/7U4Bdl/9VSyD/nsf/qv6vPP4j3wI4gO4DaO+fAJ78Tz1XA3v0eqs/C2g/gPb8j/bv2b8/6jOA3ctf/Rgo/95PP6v7f/a4v/L1BPAVSk9+zaqnAAIggCdX8eGXHyOAU5Z/1XcB+c84/lX9P7zk4RcQwBDco7GrnwIIgAAe7dzk7wlgQu0LMwRw7W9UahfgF1Zu9CUEMML2eIgACODxltz/FQSwqAMCIIBFq3XpyxLApTj/ezECIIBFq3XpyxLApTgJYNWn4D4DWLOoBLCG6+X/O7D9ANrzL1rTc34nYPsCyO/HgCsk4AlgBdUFvx+AAAhgxaoSwAqqBOAt0It/Qcx0jQlgSu7BnJ8C+CnAotW69GWPEcBH6lMeg68+/s/G5T/jbcCq/i+9/H9ejAAWUF21AARAAFev61ECOOEpYNXxn/IUIP+1b32uPvhfX48ALibsANYewO5PQav7v3hdz/l3AL4D/k2g/QDa89cLYOcjeJX9dz0C+dc+/Vx9/B+vd9xbgF2fBF61/PLv+ST06v6vkgEBXETy1Quw21OA/Od99z/6CWCntwKvXv7dngLkP/P4jxfADhK4a/l3kYD85x5/hADulMDdy3+3BOQ/+/hjBHCHBHZZ/rskIP/5xx8lgFcdwm6L/+tnmKs/HJQ/4/A/9+bYnwL834f3q45g9+VfLUH5s44/8gng6u+Ipyz9n4T4XRnKn3f0P+9K5BPA747h2UM4ffG/K0L5sw8/+i3ARf+2x8sgEE+g5gkgvkkBERgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBAggAE0IwikECCAlCblQGBAgAAG0IwgkEKAAFKalAOBAQECGEAzgkAKAQJIaVIOBAYECGAAzQgCKQQIIKVJORAYECCAATQjCKQQIICUJuVAYECAAAbQjCCQQoAAUpqUA4EBAQIYQDOCQAoBAkhpUg4EBgQIYADNCAIpBAggpUk5EBgQIIABNCMIpBAggJQm5UBgQIAABtCMIJBCgABSmpQDgQEBAhhAM4JACgECSGlSDgQGBAhgAM0IAikECCClSTkQGBD4C9goER8tauZoAAAAAElFTkSuQmCC',
-        function(texture) { global$1.loadingLocks.delete(locks['ellipsis']); },
+        function() { global$1.loadingLocks.delete(locks['ellipsis']); },
     ),
     "hamburgerIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAQAAAAHUWYVAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA75o43NsAAAAHdElNRQflBwgBKRc7nqR1AAAAAW9yTlQBz6J3mgAAAQpJREFUeNrt3bEKgzAUQNFY/P8f7mBnoVMN9UbO2RN43jE8HAMAAAAAAAAAAAAAAAAAAAAAAACANW2T79uP990j/dc2+Qu+7h6IM0FiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiBIkRJEaQGEFiZgc57h4IAAAAAAAAACaZvRY9xv7zySvv8Sue/cqe+kX21B9OkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBAAAAAAAAAIAl2FO/yJ76wwkSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgSI0iMIDGCxAgS43/qAAAAAAAAAAAAAAAAAAAAAAAAADDFB0xaDHVXaSV/AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIxLTA3LTA4VDAxOjQxOjIzKzAwOjAw09nK7wAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMS0wNy0wOFQwMTo0MToyMyswMDowMKKEclMAAAAASUVORK5CYII=',
-        function(texture) { global$1.loadingLocks.delete(locks['hamburger']); },
+        function() { global$1.loadingLocks.delete(locks['hamburger']); },
     ),
     "headphonesIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['headphones']); },
+        function() { global$1.loadingLocks.delete(locks['headphones']); },
     ),
     "homeIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAAD8FJREFUeF7tnNFWJDcQQ+H/P5qcyQkJYWemrbLdluybV6rd1pVKDOxmPz/4DwIQOJbA57HKEQ4BCHxQAIQAAgcToAAONh/pEKAAyAAEDiZAARxsPtIhQAGQAQgcTIACONh8pEOAAiADEDiYAAVwsPlIhwAFQAYgcDABCuBg85EOAQqADEDgYAIUwMHmIx0CFAAZgMDBBCiAg81HOgQoADIAgYMJUAAHm490CFAAZAACBxOgAA42H+kQoADIAAQOJkABHGw+0iFAAZABCBxMgAI42HykQ4ACIAMQOJgABXCw+UiHAAVwSAa+vr6+FKmfn5+x2VC1Klwqs84sY02uGHHaM6MWwTnAvz0dpXl0VlwZUgCjnTY4b9YSuIb4G/ks3aMsdeRHAYxy1+Sc2UvgGOKUAnjc040fBWCyuCOuMXv5v+/oFuLHve7S3uuTGzsKoNdRg+dXhd8pzKsYqPY7Mfv7E4kqgHkvAquD7xLo1RxaU+HC699Pc60XZ86PgEvoHULtwuIqJQ6sft6RTwBXjpl+3S3wq4PtxuNVbFZz+n0vCsB0wd9dyzXsK8PtyuSPhTP7C1YUQFABEPLXZsGmFmQKoMbt9qdSAr7qjwpT+Kz8lPQstBTA7ausvzAl3Cs/7qYwogD0/B/9REqwV//SK4UTBXD0OmviU0J9peqO0KewuoPFlR/8MaBCaMFsSphVNDPDn8JsJgPVj8c8vwOoUJv4TEqQqwhmLUAKt1n6y35UH+S58QRSQtyrfMYSpLCbob3HDz4B9NAb+GxKgEdJHr0IKfxG6+71gwLoJTjg+ZTwDpD6vyNGLkMKw5GaR/hBAYygWDwjJbRFeU2PjVqIFJaj9DbBbRiiABogzRhJCewM7c/O7F2MFJ69Okf7QQGMJtpwXkpYG6QMHelZjhSmPRqHwv7nMApgBtU3Z6YE9WYs/76uuiApXKv6ZvlBAcwi++TclJDeiOTpqypLksK2om2mHxTATLr/nJ0SzhtQNL9CXZQUxqquZmDFQQqgCK71sZRgtuq5e651YVI4t+q5izMFMJF0SignIhhydMvSpLBu0TIEWuMhFEAjKHUsJZCqrlXzV4uTwvtKx918KYAJxBPC+DuIiXf+aV3C/R/3pQAmLJzLkekhTLj/qwVKuDsF4LKpE+6xSwBTdaTee0IUpSP5EUDC9Xx4t/Al6km884DodR9BAXQi3DV4abrS7tsZu2GPUwAdKBNC1/tLpxSNCffkdwAdy+b06GlhS9HrlJFXd+kt5NEa+QQgEk1ZhtFBS9Et2nn7+GhfegVQAALBlCWYFbIU/YKlt4/O8qYqhAJoJJcS/tkBS+HQaOvtY7P9UQVRAA3EEkJ/d7ASmDRYe/vI3T5dCaQA3hBKCfmqUKXwuVqCO7++yquXv5S8U3zSu1LC3ROob40jzkjyduVde1jPuDefAJ5Q3X35X+mrhjOF14wFUs+sMlbf0zpPAfwilRLmapCu9M06tzWQu89V+c7iQgH8IHu1HLNMUM7tCVCrvjveoWjeabaH7QwOFMDHx0frYswwQDmzJzyqxjvfpTBIn+3hOkP78QWgLsYME1rO7AlOVeOKd7awSJ7pYTpD99EFUF2MGUa8O7MamlH6Vr//bt4z31dlOetOxxbAqOWYZcz3udXAjNbnco/ZvGefX+U4615HFsDo5ZhhTk9QZulzvNMM9jPP7GE4415HFcCsxRhtTE9IZmt0vttoH2ac18Nvyn1mHOp45uzFGKW5JyB3aUy44yg/Rp/Tw270XR7nHfEJ4K7F6DWoGo5V+tLu2+vPiOerzEa8+9kZ2xfAquVQDasGY7W+1Hur/oyar/Ia9f7f52xdAKuXo8W0nkC46NtBQ4tXI2Z6WI14/xEF4LIYV4b1hMFN405arnzr+XoPp573vnp2u08AbovxEvznZ4m9u75qwN11jVq+Kp9R79/6E0BKiKohQN+sNbjv3Kr3s25Y+i406zI957IcPfTGP1sNeoqPVWJVLtX3XT23RQEkhKbH+AR9T/+IqfhjzuOsVM2XC9fB5OrsytejCyAlJCcu/3cYT9Y+uhQrC371TGwB7L78KfquAtZbBHBoJVybiyyAlFBUv/ul6FMjB4+PjyoDlXXrfFwBpCxH1egUfa0B++OPnYo/A+/CpZqLKu+r56IKICEEPQYn6LsKVMvXT2bUo72FrToTUQApi9FjbopGNWCv5k9l1aN7FPuf59gXQMpiVI1N0TcjfI8zT+NW1TuN/6yDR5ybshxVU1P0jfDy3Rkn8atqneWB7SeAlOWoGpqib1bwTv3lYDUvs3ywLICE5egxMkHfrMDN+CTwODOFaU9uZnhiVQAnmJiicUbYWs7sWZAUtj0aWxgqMzYFsLt5KfqU8MycrS5JCueqvtHMLQpgd9NS9I0OV+951SVJ4V3V18vV6o8BdzcrRd/IUI08q7okKdyr+kYxXvoJIMGkHoMS9I0K0sxzdvegR18v9yUFkLIYVWNS9PWG5+7nd/ejqq/Hh9sLIGU5qmak6OsJzcpnd/elqq/qya0FkLIcVRNS9FXD4vLc7v5U9VX8ua0AUpajCj9FXyUkjs/s7lNVn+rVLQWQsBw9wBP0qcFImN/dsx59rf5NLYCUxaiCTtHXGobUud39q+pr8XNaAaQsRxVuir6WEOwws7uPVX1X3k4pgJTlqEJN0Xdl/m5f393Pqr53Pg8vgJTlqMJM0bfbcrfq2d3Xqr5X/IYWQMJy9ABM0Ne6KDvP7e5xj77fvg8pgJTFqIJL0bfzUle07e53Vd9Plt0FkLIcVVgp+ioLcsIzu/te1fftfVcBpCxHFVKKvhMWuUfj7v5X9T2YlgsgZTmqcFL09SzGSc/unoOqvlIBJCxHFUiCtpMWd7TWnXNR0SYVQMpyVEA8gpaib/RSnHbe7vlQ9DUXQMpyKOJ/Bj9F32nLOkvv7jlp1ddUACnL0Sr6d6hS9M1ahlPP3T0vLfouCyBlOVrEPgt6ir5Tl3S27t1zc6XvbQEkLMeVwFcBStA2O/yc/x+BnXP0TtvTAkhZjp1NYznvJ7B7np7p+6MAWP77g8cbfQicVgL/KwCW3yeI3GQdgZNK4N8CYPnXBY43+xE4pQT+LoCE5d/dEL8V4EYPAjvn7qHtk+Un6BB4T2DrEnAvgJ3hs3g5BHbNofUngF2h58Sem/4ksGMebQugAtv90wzrtAeBnbJpVwAVuCm/yNwj/qjY6ZeDVgXA8rNcSQR2yKtNAewAMym83HUMgfTcWvw9gHSIY6LEKakEUvP7998D+Ia+6hdoFXir7poaUO59D4GkLH/fddn/C1CBxS/77gkyb6kTSMj1zzsu+b8BEyDVI8CTpxNwzvfvu91eAM5wTg8u+scRcM35ZQHM/JjtCmWc7ZwEgf8IuOX92X1e/pNgo3/RVoEx+g6EEwIrCDhk/9Udpv+bgBXxMz+FrAgA74TAyj149+6p/yrwStFEDgJuBFbsw9U7Lwug+t346sWvzOFjv1tsuc9IAnfuRcu7phRAy4spgJGx4qwUAnfuRsu7mgpA+RTQ8tJ3ZvEJICXK3LNC4K79aH1PcwFclUDrC6+gUQBXhPh6MoE79kR5h1QAP8E/FlV5UatpFEArKeYSCczameq55QKYBZ8CmEWWcx0IVBd11t0pgFlkORcCTwhQABex4BMAe7MzAQqAAtg532i7IEABUAAsycEEKAAK4OD4I50CoADYgoMJUAAUwMHxRzoFQAGwBQcToAAogIPjj3QKgAJgCw4mQAFQAAfHH+kUAAXAFhxMgAKgAA6OP9IpAAqALTiYAAVAARwcf6RTABQAW3AwAQqAAjg4/kinACgAtuBgAhQABXBw/JFOAVAAbMHBBCgACuDg+COdAqAAurbALUC/xfBvOr63180//lXgrnW8/2G3AFEAWgbc/KMANP+WT7sFiALQIuHmHwWg+bd82i1AFIAWCTf/KADNv+XTbgGiALRIuPlHAWj+LZ92CxAFoEXCzT8KQPNv+bRbgCgALRJu/lEAmn/Lp90CRAFokXDzjwLQ/Fs+7RYgCkCLhJt/FIDm3/JptwBRAFok3PyjADT/lk+7BYgC0CLh5h8FoPm3fNotQBSAFgk3/ygAzb/l024BogC0SLj5RwFo/i2fdgsQBaBFws0/CkDzb/m0W4AoAC0Sbv5RAJp/y6fdAkQBaJFw848C0PxbPu0WIApAi4SbfxSA5t/yabcAUQBaJNz8owA0/5ZPuwWIAtAi4eYfBaD5t3zaLUAUgBYJN/8oAM2/5dNuAaIAtEi4+UcBaP4tn3YLEAWgRcLNPwpA82/5tFuAKAAtEm7+UQCaf8un3QJEAWiRcPOPAtD8Wz7tFiAKQIuEm38UgObf8mm3AFEAWiTc/KMANP+WT7sFiALQIuHmHwWg+bd82i1AFIAWCTf/KADNv+XTbgGiALRIuPlHAWj+LZ92CxAFoEXCzT8KQPNv+bRbgCgALRJu/lEAmn/Lp90CRAFokXDzjwLQ/Fs+7RYgCkCLhJt/FIDm3/JptwBRAFok3PyjADT/lk+7BYgC0CLh5h8FoPm3fNotQBSAFgk3/ygAzb/l024BogC0SLj5RwFo/i2fdgsQBaBFws0/CkDzb/m0W4AoAC0Sbv5RAJp/y6fdAkQBaJFw848C0PxbPu0WIApAi4SbfxSA5t/yabcAUQBaJNz8owA0/5ZPuwWIAtAi4eYfBaD5t3zaLUAUgBYJN/8oAM2/5dNuAaIAtEi4+UcBaP4tn3YLEAWgRcLNPwpA82/5tFuAKAAtEm7+UQCaf8un3QJEAWiRcPOPAtD8Wz7tFiAKQIuEm38UgObf8mm3AFEAWiTc/KMANP+WT7sFiALQIuHmHwWg+bd82i1AFIAWCTf/KADNv+XTbgGiALRIuPlnVwAPnF9fX18a1nOm3QJEAbRnz9E7CqDdP4tJxxD9BEN5v46Jo3cUgMVat1/CMUQUQJt/jt5ZFgA/BmR9F6EArgvAcfkft7YtAErgeahcg/R9W34E+NM3Z88ogOvytppwDhOlnVfa1gXAd5Ws7yYUwP/9ci9r+x8B+NmSArD6+CVcJmH5owpAYM8oBCDQSCDiR4BGLYxBAAIiAQpABMY4BHYiQAHs5CZaICASoABEYIxDYCcCFMBObqIFAiIBCkAExjgEdiJAAezkJlogIBKgAERgjENgJwIUwE5uogUCIgEKQATGOAR2IkAB7OQmWiAgEqAARGCMQ2AnAhTATm6iBQIiAQpABMY4BHYiQAHs5CZaICASoABEYIxDYCcCFMBObqIFAiIBCkAExjgEdiJAAezkJlogIBKgAERgjENgJwIUwE5uogUCIgEKQATGOAR2IkAB7OQmWiAgEqAARGCMQ2AnAhTATm6iBQIigb8AvXhhTrIVtqIAAAAASUVORK5CYII=',
-        function(texture) { global$1.loadingLocks.delete(locks['home']); },
+        function() { global$1.loadingLocks.delete(locks['home']); },
     ),
     "imageIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['image']); },
+        function() { global$1.loadingLocks.delete(locks['image']); },
     ),
     "lightbulbIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['lightbulb']); },
+        function() { global$1.loadingLocks.delete(locks['lightbulb']); },
     ),
     "materialIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['material']); },
+        function() { global$1.loadingLocks.delete(locks['material']); },
     ),
     "microphoneIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAADzlJREFUeF7tnOuaWykMBOP3f+jZbzaZJOP4ApySEFD7N9BHtFpljp3N7Yf/benAx8fHB3mw2+12I/XUquGATa3RB6QKeuifFSUMkHaVEBEAJdowXkTW0AuD8R5V3ikAKnfnSW2zh14YLBiaJyULgIV6WXXw7y30FWGdUAmARXq1yvB/2SkE1giWACjep9UG39tA8UDdlScAivZr9cEXBEWDJQDqN2a34fe1oG7mvAEU682uwy8EigXtVzkCoFBfdh9+IVAobAKgTjNOGXy/F6iTud8wrlfSWRWdOvzeBmrk3FeAiX04ffiFwMTw+Qow13yH/7v//sWhOXn0BjDH9x8CQABMit63xwqACV1w+B+b7i0gP4wCINlzh/+14UIgN5ACINFvh7/NbCHQ5hOxSgAQLjZoVBr+ZwO2Qo0NVrukwwEB0GHWlaUzh2v0E3XFmq/06MS9AiCh6zMGaXTon9mxwxkSWr3cIwRAQssyh4ce/Ht7djpLQuvLP0IABLcoa2CiB38WCLLPFRyHcvICILglGQCYNSQ7ny04FmXkBUBgK04YkBPOGBiR6dICIKgF0YMx61N/1peE1c4bFJt0WQEQZHkkAKoOw4lnDopPmqwACLL6xGE48cxB8UmTFQABVp88CCefPSBK4ZICIMDiqCGoevXP+olwlfMHRCpMUgAEWBsBgNXCrwcBwQqQFACwqRHB/yxRAPxs1Go+wPHC5QQAbGkEAFYNvV7A4QqQEwCwqYb+j6F6AYcrQE4AwKbSoV/10//LVv2AAwbLCQDQUDrsO7zz6gkYsAApAQCaatj/NVNPwIAFSAkA0FQ67Ktf/30NAMMVJCUAQGMFwGMz9QUMGSwlAEBDDboAAOOUIiUAQJsFgAAA45QiJQBAmwWAAADjlCIlAECbBYAAAOOUIiUAQJtJAOzyC0DELwG7eQNGsFtKAHRb9nyDANAbME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVICALRZAAgAME4pUgIAtFkACAAwTilSAgC0WQAIADBOKVLbAuDZMN5ut7AzC4D1ATAjNymT/uQhYcMw61A9Q0jDoOfZ7/yha3v3vOg/r+xNT2279WUrAPQ08ivwZENHnv9s8Mi6ooe7Rb+qNyN17dSbbQAw0kgaAldquB+inUL2ebaK3lypaZf+bAGAK40kIUDUQdbT8smctaaaN0Q9O0BgeQAQjfwcAqKZVC1UPVnD3fKcat5Q9RC5afEvao0A+MvZq82kQiUAXsfdPnE4EAACgEvTC6VKcKxUS4r5Lx4iAARASgYrDV2lWlLM3xUAZCOJazdZz9Vr7uxg3T+/kjdkLURuZvZq6RtAtUaS9QiA52Nx1RuyTwJgIr6q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',
-        function(texture) { global$1.loadingLocks.delete(locks['microphone']); },
+        function() { global$1.loadingLocks.delete(locks['microphone']); },
     ),
     "objectIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['object']); },
+        function() { global$1.loadingLocks.delete(locks['object']); },
     ),
     "pencilIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['pencil']); },
+        function() { global$1.loadingLocks.delete(locks['pencil']); },
     ),
     "searchIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAALxUExURUdwTP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9wLB8UAAAD6dFJOUwD9+gT7AwL+AfyNlpUFB/aD9RnzCSMR+fL3C63wwzOy7+l4cHlrORX4KApD7VeaG+7O8WjnJsj0CAadQGRZ4xR2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',
-        function(texture) { global$1.loadingLocks.delete(locks['search']); },
+        function() { global$1.loadingLocks.delete(locks['search']); },
     ),
     "shapesIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['shapes']); },
+        function() { global$1.loadingLocks.delete(locks['shapes']); },
     ),
     "systemIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['system']); },
+        function() { global$1.loadingLocks.delete(locks['system']); },
     ),
     "textureIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['texture']); },
+        function() { global$1.loadingLocks.delete(locks['texture']); },
     ),
     "trashIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['trash']); },
+        function() { global$1.loadingLocks.delete(locks['trash']); },
     ),
     "undoIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,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',
-        function(texture) { global$1.loadingLocks.delete(locks['undo']); },
+        function() { global$1.loadingLocks.delete(locks['undo']); },
     ),
     "redoIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAQAAAD2e2DtAAALoElEQVR42u2dIVhqSxDHDQQCwWAgGAgEgoFgMBgIBoKBQCAYCAaDwXCDwcD3GQwGww0GA8FgMBgMBgOBQDAQDAYDwUAwGAgGwrw97+inFzhwOMwcds7+51/ed++7B87Oj93Z2dndFVqBXBaaAABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAEACABAAAACABAAgACAFUpTzigNJycbgFXapBo1qGl0Ty1qU8/ok37b4P8/a5u/vfv//zsx/2LT/EsAoBKADBWpSsd0TR16p0Xs3Tzhyjypap6YAQC2K2t+t5f0QlLWpQuquNYvwPGOg2B3EFeJ1fGTQNhNehBp6xfbNmPzO9lg7+abbAOA+LRBp/RGttmb+VYbAEBW6yYe75LN1jXfcB0ASGiHHkmLPZpvCwAYVbH8dz+5L6gAgMWVojq9klZ7Nd8+BQCiT/KOLAz25g8Oj3RPFJeVv29Qn5JiffM2qwAgvPYS5PwfCPYAQLhZfpuSam2NmYJ4O/4LGlKSbWjecBUAuNPxJ2AwQMfv+GAQx1z/POEd/+TB4FxHjkD6A3L0RK7ak3l7xwGo0YBctg/TAs4CkKZLgpFphbSLAOQVLvDILRzlXQOg7njXP2oDe6eGEkXbTXh8gjXtLDznr+DtwNcB1jGtk3AAckus4dVgL0ufGGYlASg4kuxdLFFcWKL7982cRAyAbQR+IQPCZRWZV2hI11IAVOH+ORCoLmWnheehlgwA+w5m+xdbKdiP2f3fw3NXAoBjeDSCHcca+n2X3vb4AbiALyPaRUzuz/xakBtyA3AEPy5gR7GU3v+75SbNCcCeRYFVl27olOomwCoZ5c2MO/vV/eXMCOj9WdX87an5v7oWBazyq4XXI5+Y4wNgd+mh34uZ1x7QToQMW9b8q4Olbj7/7pLLou4/G/vETS4Aljnv9xxfY0qsxn38xHjftSXm/sMJn7fDA0BhKbv3h/Rghp2sUKS8Z56+jD5NKjtYnfg2dQ4AsktI+rYNz2viI+aa+ZT4C1hfBaDeHjkpLSDwjNZI8XaYz3QS8yJKznxivO/YZV4sLtBHwCc1FgUgFesv5GmJ27ArsRa0PrAOZ8Hbbq8WBSC+xM+jmbote728RC11ucGM6TOD7WYxACoxNcYdFa0pmiiabxNPiMuxTjirh24tAkAucGThtM7oXNUCbcZS6fTGEObezoyoIgOQimFMfI99nSz82x/EgP+ikcDsAboXHYAz8S7w0vK9tWsmhJK2E/GVmYgAlB3s+CfPr5+FfwZRzyCrhfyE1SgArAtn/s4UHbeUEp4J9SOlhUqhs5i5+QGQnfv3hRdEJLQr+oO4j7ABP/zKzPb8AJyIzvaz6tzv94mSP4ranN9lntR8eV4AcgFZZY7xrqH4pL2U+fZSi0dvc4TD86bm6/MCIJUGGSTgyNUdsUXxsAVjmbl7oj/zAVAWG/kL6t0vuR1mGGpWlJqZ+JmxHDR7l7/MUa4vGk7PWPKGuE6I4fFvhOc25wFApuT7SWngF7z6JpMjPRDxzm14ANZFRrhWAm/oyoisGn5M/aHUI7d/aABuBF7qVv8J22yj8Wy7nhKbDSMPvyEB2BF4oXZC3e/3AhIrhsWA1cnofXM/HAApgdCmm/DrGbPUE6iMGP+c/IIzj1AA8G/6eElY6Dd5UjgQ7wOyC/8018IA0MW8P2JqaCjaB3AMNLnZAHCXfg0sKvGSVl2wD0jRPcPzSrMB4F7oKDvjfk+nYn0AT0HK7iwASkvKaydHNyJ9QIPpafVZAPDe4feU4KlfcAq9zd4HHLA97Xg6AEXm0T/nnPv9LOoHaztyLj2fTgeAd/m35qT7Pe2TrdacBkCe9aOunHW/p5alANxPA4DzkPdewjN/s9NCn1YC0AoGIM06clWcdr/ccvriP8xAADgTQHfOu99L3HQtBOA9GAC+APDT0eh/VFtWHqIZAMAq45h1Aud/6dxCALKTAeCbuLw4mPwJrhPoWQdAfjIAfNmrHThecGmNcTno39wVl3Xg9BHZdpFGZRIAJ/yPh750YBkA9UkAPLON/3D4eH7l3SoAGuMAbPDTBQnWCCxm5+MAcJ37/Yb4P6Bg1Ka0cHMcAK4U0BGcHaCmRQA8jAPAswYwsPum3KWqaBEA7VEAuL7cFRw9RY/WANAbBYArAkACaJp2rQHgYxQAngjgDU6eoVdrEBgBgCcCOIeL1UwG138DwBUBFOFiNYHgxm8AeCKAZzg4hN7sWg7ijABQARBGF5YAUPsNAA+VW3BvCG1bAsD+DwBpphQQUsDhqgTtuLWw8QMAzzLQA5wbUg9WAHDxAwBPvcoxXBtSJ1YA0PwB4A8igFhVsgKAxx8ALhEBxFwcYsPCcOcHgDYigFiVtyIM7P0A0OcLKaAQhSF2FIgOvgHIsDzuEK4NuUegTbZYygeAJzuNZeBwOYB7ssdyPgBVzrUlaKquyCYr+gDU+cYTaKoaZJeVfAA4vlYX7lW3NYRojw+AWzh4hioWbhI/8AHgWJ48hYtnrAAOyD5r+AA0+VaWoIkqWLYt7Nv++gBcYyFIOPHTIzut6QPQYnhUHY4OTPx0yVZrAQD5xE+L7LWuDwDHpvAynD1RN2Sz9XwAOEaoEpxtcflnkA19ADgKQrfh7jEdkf2WRg8gpSppsBwAkCr6GqoAYNMDgOOuuyqc/ksbVub9An64mAZya13oNnEJq3sAcFSp78PxX1qz7kTAGXVcWAtIasFXSL8BAM683y3psisPgDOGB6EmmGt/Rbx2w1UQgl0Btmz4mns5iGdj2Kvz7q+TRnvmKgolx08H3FWS+JmwHLRCZZZHbTjs/i01iZ9xW+G6J7DicMFXn/RaxnsFju7L1aKwrEUn/0VaDvJegiN35eYRsRl6It225b0Gx341F7eGpCw57GURK/NVrqw6B8A16be69yKHCAMj6IySYH+8V9lheZRb6eAjSoY1/BVsDnMpCqgqTfyMW9N/IZ5Di1yJArYtvRQ+it36r8RzYZwbUUBBcd5vwnIQ50KmC7mArOq837i9+K9VY3nYR+KXhDKqCr7C2Ns314RBYKbSygq+wq0GfYmH7GSfFJKnevLEW870aTpJ1Aap0vd/1Jh6FBSIKwWAKwp4RJPqBIArChiakRLNqhIArqLmv2hUnQBwRQGfZjhBwyoEIMu2wIH7Q1UCwHeZ0YeDxSGJAGCPLb2EKyRVApBhW+fqO75RRCkAnFVu6ANUAlBmA+DTv48C0gVAivFY4zs0rj4AeA83xPmhCgHYYgTgFaGgPgBWWPe6IRRUCADnSRefWBrSB8AqfTAi0MUwoA2AFTplLTq7RCNrAyDLvPGhhmbWBQD3SfcDJIW0AZBj3vv25F9UDGkBgOf8UEQCigEosO9AwNVyqgBYoTt2BFAyrgqAIjsAQ1wsoQmAFYGzrwe4XkoTAOsCO+EHJrpAsysBYMUEbvzWR9m4HgBSIvvhO8gKaAGA6wSxsaOJ0PBaAJC6/7aEptcCwLrIoUgtNL0WAGRCQfQBigCQCQWv0fhaAJC5C/cdcwE9APDcLTZqyAoqAiBFj+wAHKL59QAgcUbmKZpfEwD8SSGkg5QBwH1JAgBQB0CK9bBU3DisDgAvL8i3fxhFYgoB4DxDAPVBKgHgSg0PaQ3NrxMAno0jbTS+XgA46gURAagGYNHM4DvOEtQNgHeoXGcBAI7Q9NoB8JLDUZeJcXhMIgDwNpFGWR9AaXhiAIh2i94umj05AHjnivXnmv1jh2DCAPDSw0+hN4WU0OTJA8C7Ue88xLEydwYVNHkiAfCUp+aUysEWfvtJB8CfGO7T7T9h4dC4/hhRvysA/CSJcuYXX8Byj6sAQAAAAgAQAIAAAAQAIAAAAQAIAEAAAAIAEACAAAAEACAAAAEACABAAAACABAAgAAABAAgAAABAAgAQAAAAgAQAIAAAAQAIH79B9OSZJUmf1RHAAAAAElFTkSuQmCC',
-        function(texture) { global$1.loadingLocks.delete(locks['redo']); },
+        function() { global$1.loadingLocks.delete(locks['redo']); },
     ),
     "videoIcon": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAXNSR0IArs4c6QAAE/BJREFUeF7tnN12I0kIg533f+jsyUy8cTxuN0JAQbX2NvUDn4S67WT246b/ROCCBD4/Pz89bX98fHx49nXds1UzXSGrrvUEvAN/Vvn0QFAAnCmsn48lkDX0r4BMDQIFwFh7q/BnApUDf0R/WhAoADRHowl0GPpngJNCQAEw2v7XK77jwE9+G1AAXG+GxnU8aeinvQ0oAMaNw/4FTx74aV8QKgD2n6cRHe429FPeBBQAI8ZjvyJ3H/gpbwIKgP1mq21HVxz67m8CCoC24zK/sO4Dj/66LqIf9M5sFygAsglf7PyIIclExg5gRH9sDZF8FACRNC96VsRQZKLLGDi254yaPAwVAB5qF9/Dmj8bX+VweVlU1viOtwIg242bnO81elX7KwfKy2ZlzXddFABVDh12j9fUVW12GJ7HXj28OvSgAKhy7IB7PCaubKvDwLzr18NvdU8KgEoHN7vLY9jKFlYPh6dXlOnqHhUAHpUH70ENurLV1cPh6R3lu7pHBYBH5UF7UEN2a231gKA8PLxX9qgAQBUesN5jws5trRwQDxeU/8r+FAAehZvtQQ3XrHxTOSuHxFTgwyJUj5W9KQBQdZusR01WXfYrU7M1rxwUlB/S68q+FACosgvXI6ZaUabFyGwPljtW9P58J9rnqr4UAB3cclADaqLqVrymZfvy3lvJB+1xVU8KgEpXGO5CjWM4MnRJlFHZPqPqCIXzdBjS46p+FACZDjCcjZjEcFz4kkxjsr1n1hYBEu1vRT8KgAilwTNQY4DH08srjciyqKwVBYv2tqIXBQCqqmM9agTHFdSWFcZ7LDiCz+oejgRAelvRgwKAGp3jzYjwSSVAx64w3xVCAPVBtQ4KAGhM9hn4V51Um++5BnRYOvbA9lStgQKACIAIwxLXp2ytNiA7MN1DAPVINX8FADBGqJjA0a2WVptQIfBDoJq9AuBk9LoPfcaf3H4hqTbiziGAeqiSvQLgRQCgglU/vq0GYfuw3pPZ/xV7qOSuALjdbqzJMgeAfRqzvVWaMeJXaV2/E0B0qGR+2QBABMke8GzTsr1WGnLXEEA1qGJ+mQBABage+mzB2f6z67PwntwDWnsV760DAIVuMWHkmiqR7zWzPKrrfcV6cg9I7VWstwoABHDkIFvPqhL1XT0sI/VgVfvfdQj7Ks7jAwCB6pcubmeVsAqB95qt0AH1akWN4wIAhRg3unEnVQh7Vi3LUT2cEebeANjf/lirGxEArFmtMCrXaYBiaLPeqNYBqbeitrYBgICKsRJ2ypc4bI0VAp91pR5q/+oR5Z3tkTYBgII5M3b0z4+EYOvOFtjCQT3UhQDKOtsfywMABWIxdNQaK3y2B+s9UX3t9uu1ab/mRPyS7Y1lAYBAyDT+49kMbLYf5u4oPuoh/00AZZzti/IAQAFEmfvonEjAbG+RtXi5qYfYEGB5Zv82oDQAImB4jX3flz1kbI/Z9Vn4qQcuBFh+zxpleqIkAKKBWEwc9WqP3vW1nu03U3BrP+oBCwGW1ztdMv2QHgCZYFZBswwR23em6Jb6FWR/KWX99seqweiPAOwQIJBerV09RBH9qwfWBXFvZBF6errJ9EDaG8AqWJWfnyxiRnDINIB6sBBYuyZT/5QAiDB9JPJMgJY6I3ioBwvp92sidOCrwE7I1r19AET8yW325yiLpBHmyzbDWR/q4YxQ7M8r9A4PgCyTZJ0bK1n+E6jCFO+6kA75jqnUODQAWHOcNc6erzeBGPNO0yGi3hhyx6eceT/r/hYBgDQfISZyXwZ49fCXaqYOEYwztL+fmdk7UndYAHiBe0F47+skwPQe2PqjQyCiHmR40LVer6P3IOuXBgALhBWcvR8BfbRWPfjfBFh2Efq9O6ODv856DAkAjxBRcDx3P0KJquMMdOYXa1fqgdWb0cmyt4MWljr/fxNGFkc9xaIhsaaIrsfDVD28fhNguXi0QPZ08A5S7/Na+g3AI1AGNE8dehNgrPN6b4QO7BnxXf0+McO/2TUfnV8eAJnwWONk1mYVWD1YSdWt6+CLrG63CoAvSBog/5dqkSZjdYisxXPWzkP/683XA+dxDyJ0FVSkplf9V9WpLwZZ98Xt76B5XDf2k6g3AHTQKiGjtf3z5cjHB8XGLsHxyuk9sPVHMHx3RqUfs3vxnk+ZHBW4Gjhan0LAa6OffSxzvoL3J1R7MLsf9vyyAFgFnjXkqrq9H7OqP9KwfFkDn+3voN9ZjSt/vn0AfMFlTdrBRJ16YGvJNnwHvbJ7jDr/EgGgEPhrF+9gaOCjxq3fOZcJAIUAFgIa+n7DmlHRpQJAIXAcAhr4jPHqf+blAkAh8BMCGvr+A5pd4SUDQCGQbSvf+d7vKHy3adef74UYDOgTpJvAaP2vWK3uKaIHxgPs3tX82Pqn76cCAH2SdhQ7YoBW9xXRQ5WRV7Oq6nPKPZcPADTEjoRdaezuAbCSzZRBXFWnAuCbfMQQVRk9otZsw1WxyO5j9/NLA+DPlw4N/pHNkagRg5XVX0RtmWbO6juzZp1NfgnoeX3ubpSIQYvqMaKWTJNH9ZlZo85+T4B+A0BDYIJpIgbP02fEvZmG9/SUWY/O5gmUB0D3jwGPSNmBtAwMewdvgZMnROOPbNm9X+F8BcCJyuyAPocAe162KS2hlV2Dzq8jEBIAO34MiHwTqJPTd5OG3sdth10KAKOK3Z/cxjb+LNPAI7T2XrskAKaacHIIaOj3HmRvdwoAkNykENDQg+JecHlYAOz+PQDa3wovaeBXUJ9957IAmPAxYMLTXkM/ewBXV68AeFKg+9Br4FePzF73hwYA+prcxcwa+r1MrW7sBC4ZABp4u0G0cm8CSwOg8nsADf3eRlZ3PgLbBoAG3mcI7boWgfAAWPk9gIb+WuZVtzyB5QHAfAzQwPMG0AnXJjAuADT01zasuo8lkBIAkR8Dug888wYTK6VOEwGcQIsAeB6i7kPf5e8XcLm1QwR+E2gTAN2F0dB3V0j1eQgoAA6oaeA9dtKeaQTSAgD9HmAaONUrAqsJRDykFACrVdT9IkAQYENAAUDA11YR6ECACYHUANDHgA72UA27E1AA7K6w+hOBNwQUALKHCFyYgALgwuKrdRFQAMgDInBhAgqAC4uv1kVAASAPiMCFCSgALiy+WheBbQKAaaTaBp5/sVjVn2rzuaETN6QWxlet/hCIacQnuW8XIs79hqreVJtPU+8frWXpiujI1KAAAP2CCFM9/N1M/Iy2M7tutSH1KADAIWaWI8JUB4Bq8ynbkRtSkwLApzu8CxFFw/8br9hhdkN4KQAwtu7ViCgKgB/M4oZbDmGmAMD5wjsQQTT8M4a/83cmiN8UAPA44xsQQRQAMwJgF00VAPg8Qzt2MYqCaUYwoW8mCgBonLHFnYcfNYoCQAHw7H79HcBJHnQOANWGhfl9dWdunhr1BuDzwemuzkbpXJveTE6tdboA0VcBcIrTtwARQa/XM16vO2v66FKkTgWAb77f7kIE0PDPGP7ubyYKgI+P9O8kLFnRefi7m7gzu861PfsSqVVvAJapBtYg8PX0n/H076zpK2si9SoAgOE+W4qArx5+z9OfMccZK+apVc2uu64MS0bj9FduBDzTCGrWo/VIvTKxnv5RvlMA3G631QGg4ffbWez87PQR4JuAAuDYRBow34B15vauI6RuZm70EeBbBQS4Xv1nvPp7vjP52sMMlC+m/t2F+JGpVwFwu90Q2NXD393Endl1ru0sKJDaFQBnNE9+jsCuDgDV5hO3MzdLR0j9CgAL0YM1CGgN/2+IYkcYL/ChpAAgdJCJffDEzcfNugvhqwCwUn1ah0DW0597+jMmReXtrKu1F6QHhu2lvwREICsAZnzz31lT6/CjX/wqABCy32s7G0W1OQQdoCvSFeIBBQBCVr/2A2lxr/5fuxmDIsUiQ1P9Rof0oTcAlBa4vrNRVBso5mZP/nv3iA+YgL3cdwAI2OqnROfa0KeS2PmCTAHAcTvd3XnIVNupfC8XdObm6wj761S9ARgpdzaKajOK+GJZZ3berpCeFABGyghUvcL+QBU3o8EClyHMFQAG8AhQDb+G32Cp1CWIXxUAJ1IgMKuHX1+u+eeou67+zi76HQADTHtF4KoEtnkDuKqA6lsEGAIKAIae9orAcAIKgOECqnwRYAgoABh62isCwwkoAIYLqPJFgCGgAGDoaa8IDCegABguoMoXAYaAAoChp70iMJyAAmC4gCpfBBgCCgCGnvaKwHAC2wQA08hwDVW+CPwigPw7B2ZuLvd/BJLPRGACAQXABJVUowgkEVAAJIHVsSIwgYACYIJKqlEEkggoAJLA6lgRmEBAATBBJdUoAkkEFABJYHWsCEwgoACYoJJqFIEkAgqAJLA6VgQmEFAATFBJNYpAEgEFQBLYnY99Zxrmz0V3Zta1NwVAV2Wa1mUxjEKgqXgvyrLoed/G6Kp/CzDHE28rrTLMJrjat1GlpwKgvRXOC0TM8nga8+Q4r0orGAKIpoyOCgBGpSZ7EbO8KpkxUBME25WBaMropwDYwDqIWY7aZUy0AcJ2LSCaMtopANpJjxeEmOXsdMZMZ2fr53YCiKaMZgoAuyZtVyJmsTbBmMp6h9YdE0A0ZbRSAGzgQsQsaLuMudC7tP6HAKIpo5ECYAPXIWbxtMsYzHOf9txuiKaMPgqADdyGmIVplzEac+8V9yKaMrooADZwF2KWiHYZw0Xcf4UzEE0ZPRQAG7gJMUtUu4zpomrY+RxEU0YLBcAGLkLMEt0uY77oWnY6D9GU0UABsIFrELNktcuYMKumyecimjLsFQCTXfJdO2oWZD2KhzEjetfO6xGNGOYKgA1c5DULsg/BxBgSuWfntYg2DG8FwAYuYs2C7EdwMcZE7tlxLaIJw1kBsIF7IsyCnIEiYwyK3rXLekQPhq8CYAPHRJoFOQtFxxgVvWv6ekQHhqsCYLpTbjl/NooYEEHImBW5Z/pahD/DVAEw3SlJAXDHghgRQcmYFrln6lqEO8NSATDVIQ91Z5sFOR/FyZgXvWvSeoQ5w1ABMMkVB7VWmQW5B8XKmBi9a8J6hDXDTgEwwQ0nNVaZRR8L6sxSpakCoE7TtJuqzPLYAHIn2jjzREPv6roe4cvwUgB0dQBQV5VZXpWE3A20dGNMjdzTdS3ClWGlAOjqAKCuKrO8KwmpwdoaY2zrHV3XITwZTgqArg4A6qoyi6UkpJaz8xhjn53d/ecIR4aTAqC7Ewz1VZnFUMqfJUg9Z2cy5j47u/PPEYYMIwVAZxcYa6syi7Gc/5chdR2dzZgbrbfTeoQdw0gB0El1Zy1VZkHKQ2p6dy5jbqTebmsRfgwjBUA35R31VJnFUhpSi+U8xtyW87uuQTgyjBQAXR0A1FVllnclITVYW2OMbb2j6zqEJ8NJAdDVAUBdVWZ5VRJyN9CS/g7g8/PTyksBYCW16TpkCBmzPOND7kXQR9aI3NtpLcKW4aU3gE6qO2upMsu9POQ+pCXGyMg9E9YijBluCoAJbjipscosyD0oVsbE6F0T1iOsGXYKgAluWBwAiBlRnIx50bsmrUeYMwwVAJNccVBrplmQsxGUjGmRe6auRbgzLBUAUx3yUHeGWZAzEYSMWZF7pq9F+DNMFQDTnQL+7f2ZWRDjoejO7kbP23k9ogPDVQGwgYuizIKcg2BjDIrcs9NaRAuGrwJgA9ewZkH2I7gYYyL37LgW0YThrADYwD1esyD7UEyMKdG7dlyPaMOwVgBs4B7ULMh6FA9jRvSundcjGjHMFQAbuAgxS1a7jAmzapp8LqIpw14BMNkl37UjZolulzFfdC07nYdoymigANjANYhZIttljBdZx45nIZoyOigANnAPYpaIdhnDRdx/hTMQTRk9FAAbuAkxC9MuYzTm3ivuRTRldFEAbOAuxCyedhmDee7THuz/rMzoowDYwG2ZAcCYawO0y1pANGU0UgAskzjuYsQs1lsZU1nv0LpjAoimjFYKgA1ciJjlrF3GTGdn6+d2AoimjGYKALsmbVciZnnXBGOktnCGFoZoyujWKgC+tGKaGao1XTZilleXiTktQfgBiKaMfukB8EWmqplwFYYciPB9bIkxzhA0Y8tENGV0VACMtcjvwqsMswmu9m1U6akAaG8FW4FWwzBPC1slWhVBwKon+7FZARChVpMz3plGg99EJGMZCgAjKC0Tgd0IIMO/3RsA29BuZlA/1yOgAPj4KPlocj1rqePuBCqH/8/DtgpIdWNVfekeEYgkUD0nCoBI9XSWCBAE0OGP+LjcNgAimiO00FYRKCeABkDEb3bKAuCLJtqgQqDcg7pwEYFVs9E+ABQCixypa8sIrBr+0i8B7zQ9zSoEyryoi4oJrJ6H0jcA78eAuyYRn3mK9dV1IvCSgHfwox+G5QHAhkA0APlTBKoJMMMf7f8lARARAnorqLat7mMIsEOf5ffxAfBKFH1UYKyqvSyBqGF/riPD18sCIPItgBVsp/1ekxyZNvq8nVhX9+LV4l2dSwNAIZBjIdQoZ0+s6PNyut77VFQDK43lAaAQsEqFrbMa5mz40c+e1vOwbq692qqlh1KLAFAIeKR7v8dqGuvARp8X3/GeJ1q5e7tvEwAKAa+Er/dZjGMd/q8bos+L7Xa/0yy8I7puFQD3hhBjRkDY8QyLgRDO0eftyDyqJwvrsLuiDoo+BzFn9N07nGc1kZVz9Hk7MM7owco56u6WbwCPzVkNGgVkl3OsRrLyjT5vF85RfVj5Rt13P6d9AOhjAS45aqazEIg+D+9o3x0o22gSYwJAbwU26b2G0h8C2fiyq7z6sPce7f8P1dMxxO8s51IAAAAASUVORK5CYII=',
-        function(texture) { global$1.loadingLocks.delete(locks['video']); },
+        function() { global$1.loadingLocks.delete(locks['video']); },
     ),
     "blackPixel": new THREE.TextureLoader().load(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWNgAAAAAgABz8g15QAAAABJRU5ErkJggg==',
-        function(texture) { global$1.loadingLocks.delete(blackPixelLock); },
+        function() { global$1.loadingLocks.delete(blackPixelLock); },
     ),
 };
 
@@ -635,8 +644,10 @@ const quaternion = new THREE.Quaternion();
 const matrix4 = new THREE.Matrix4();
 
 // For Bounding Box
-let indices = new Uint16Array( [ 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7 ] );
-let positions = [ 1, 1, 1, - 1, 1, 1, - 1, - 1, 1, 1, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 1, - 1, 1, - 1, - 1 ];
+let indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4,
+                               0, 4, 1, 5, 2, 6, 3, 7]);
+let positions = [1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1,
+                 -1, -1, -1, 1, -1, -1 ];
 let geometry = new THREE.BufferGeometry();
 geometry.setIndex(new THREE.BufferAttribute(indices, 1));
 geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
@@ -649,7 +660,7 @@ const BoundingBox = {
 };
 
 //For keys our 2D UI Supports
-let validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+const validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
 const ValidKeys = new Set();
 for(let character of validKeysString) {
     ValidKeys.add(character);
@@ -1287,7 +1298,7 @@ class GLTFLightsExtension {
 		switch ( lightDef.type ) {
 
 			case 'directional':
-				lightNode = new DirectionalLight( color );
+				lightNode = new DirectionalLight$1( color );
 				lightNode.target.position.set( 0, 0, - 1 );
 				lightNode.add( lightNode.target );
 				break;
@@ -1298,7 +1309,7 @@ class GLTFLightsExtension {
 				break;
 
 			case 'spot':
-				lightNode = new SpotLight( color );
+				lightNode = new SpotLight$1( color );
 				lightNode.distance = range;
 				// Handle spotlight properties.
 				lightDef.spot = lightDef.spot || {};
@@ -5374,7 +5385,7 @@ function parallelTraverse( a, b, callback ) {
  */
 
 
-const OPTIONAL_PARAMS = ['Sketchfab ID'];
+const OPTIONAL_PARAMS = ['SketchfabID'];
 
 class LibraryHandler {
     constructor() {
@@ -5395,12 +5406,17 @@ class LibraryHandler {
                 'Blob': blob,
                 'Name': name,
                 'Type': type,
+                'Hash': hash,
             };
             this._loadAsset(assetId, blob).then(() => { callback(assetId); });
         });
     }
 
     addNewScript(blob, successCallback, errorCallback) {
+        this._addNewScript(false, blob, successCallback, errorCallback);
+    }
+
+    _addNewScript(externalURL, blob, successCallback, errorCallback) {
         blobToHash(blob).then((hash) => {
             if(hash in this._blobHashMap) {
                 if(successCallback) successCallback(this._blobHashMap[hash]);
@@ -5418,10 +5434,16 @@ class LibraryHandler {
                 }
                 this._blobHashMap[hash] = assetId;
                 this.library[assetId] = {
-                    'Blob': blob,
                     'Name': assetName,
                     'Type': assetType,
+                    'Hash': hash,
                 };
+                if(externalURL) {
+                    this.library[assetId]['URL'] = externalURL;
+                    this.library[assetId]['IsExternal'] = true;
+                } else {
+                    this.library[assetId]['Blob'] = blob;
+                }
                 pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
                     true);
                 if(successCallback) successCallback(assetId);
@@ -5433,17 +5455,17 @@ class LibraryHandler {
         try {
             let loadPromises = [];
             for(let assetId in library) {
+                let promise;
                 let assetDetails = library[assetId];
-                let type = assetDetails['Type'];
-                let assetPath = assetDetails['Filepath'];
-                let promise = jsZip.file(assetPath).async('arraybuffer')
-                    .then((arraybuffer)=>{
-                        let options;
-                        if(type in AssetScriptTypes)
-                            options = { type: 'application/javascript' };
-                        let blob = new Blob([arraybuffer], options);
-                        return this.loadLibraryAsset(assetId, assetDetails, blob);
-                    });
+                if(assetDetails['IsExternal']) {
+                    promise = this.loadLibraryExternalAsset(assetId,
+                        assetDetails);
+                } else {
+                    let assetPath = assetDetails['Filepath'];
+                    promise = jsZip.file(assetPath).async('arraybuffer').then(
+                        (arraybuffer) => this.loadLibraryAssetFromArrayBuffer(
+                            assetId, assetDetails, [arraybuffer]));
+                }
                 loadPromises.push(promise);
             }
             Promise.all(loadPromises).then(successCallback).catch(error => {
@@ -5456,54 +5478,71 @@ class LibraryHandler {
         }
     }
 
+    loadLibraryExternalAsset(assetId, assetDetails) {
+        if(assetDetails['Type'] == AssetTypes.VIDEO) {
+            return this._loadLibraryExternalVideoAsset(assetId, assetDetails);
+        }
+        return fetch(assetDetails['URL'])
+            .then((response) => response.arrayBuffer())
+            .then((arraybuffer) => this.loadLibraryAssetFromArrayBuffer(
+                assetId, assetDetails, [arraybuffer]));
+    }
+
+    _loadLibraryExternalVideoAsset(assetId, assetDetails) {
+        let url = assetDetails.URL;
+        if(url in this._blobHashMap) return;
+        return fetch(url, { method: 'HEAD' }).then((response) => {
+            if(!response.ok) throw new Error('URL could not be fetched');
+            this._blobHashMap[url] = assetId;
+            this.library[assetId] = {
+                'Name': assetDetails['Name'],
+                'Type': assetDetails['Type'],
+                'Hash': url,
+                'IsExternal': true,
+                'URL': url,
+            };
+        });
+    }
+
+    loadLibraryAssetFromArrayBuffer(assetId, assetDetails, arraybuffers) {
+        let options;
+        if(assetDetails['Type'] in AssetScriptTypes)
+            options = { type: 'application/javascript' };
+        let blob = new Blob(arraybuffers, options);
+        return this.loadLibraryAsset(assetId, assetDetails, blob);
+    }
+
     loadLibraryAsset(assetId, assetDetails, blob) {
         return blobToHash(blob).then((hash) => {
             if(hash in this._blobHashMap) return;
             this._blobHashMap[hash] = assetId;
             this.library[assetId] = {
-                'Blob': blob,
                 'Name': assetDetails['Name'],
                 'Type': assetDetails['Type'],
+                'Hash': hash,
             };
+            if(assetDetails['IsExternal']) {
+                this.library[assetId]['URL'] = assetDetails['URL'];
+                this.library[assetId]['IsExternal'] = true;
+            } else {
+                this.library[assetId]['Blob'] = blob;
+            }
             for(let key of OPTIONAL_PARAMS) {
                 if(assetDetails[key])
                     this.library[assetId][key] = assetDetails[key];
             }
-            if(assetDetails['Sketchfab ID'])
-                this._sketchfabIdMap[assetDetails['Sketchfab ID']] = assetId;
+            if(assetDetails['SketchfabID'])
+                this._sketchfabIdMap[assetDetails['SketchfabID']] = assetId;
             return this._loadAsset(assetId, blob, true);
         });
     }
 
-    loadAsset(filepath, callback) {
-        let name = filepath.split('/').pop();
-        let assetId = uuidv4();
-        let extension = name.split('.').pop().toLowerCase();
-        let type;
-        if(extension in FileTypes$3) {
-            type = AssetTypes.IMAGE;
-        } else if(extension == "glb") {
-            type = AssetTypes.MODEL;
-        }
-        fetch(filepath).then(response => response.blob()).then((blob) => {
-            if(extension == 'js') {
-                this.addNewScript(blob, callback);
-                return;
-            }
-            blobToHash(blob).then((hash) => {
-                if(hash in this._blobHashMap) {
-                    if(callback) callback(this._blobHashMap[hash]);
-                    return;
-                }
-                this._blobHashMap[hash] = assetId;
-                this.library[assetId] = {
-                    'Blob': blob,
-                    'Name': name,
-                    'Type': type,
-                };
-                this._loadAsset(assetId, blob).then(() => { callback(assetId);});
-            });
-        });
+    loadAsset(filepath, successCallback, errorCallback) {
+        this._loadAssetFromURL(false, filepath, successCallback, errorCallback);
+    }
+
+    loadExternalAsset(url, successCallback, errorCallback) {
+        this._loadAssetFromURL(true, url, successCallback, errorCallback);
     }
 
     loadBuiltIn(assetClass) {
@@ -5511,7 +5550,85 @@ class LibraryHandler {
         this.library[assetClass.assetId] = {
             'Name': assetClass.assetName,
             'Type': assetClass.assetType,
+            'IsBuiltIn': true,
         };
+    }
+
+    _loadAssetFromURL(isExternal, url, successCallback, errorCallback) {
+        let name = url.split('/').pop();
+        let assetId = uuidv4();
+        let extension = name.split('.').pop().toLowerCase();
+        let type;
+        if(extension in FileTypes$4) {
+            type = AssetTypes.AUDIO;
+        } else if(extension in FileTypes$3) {
+            type = AssetTypes.IMAGE;
+        } else if(extension in FileTypes$2) {
+            type = AssetTypes.MODEL;
+        } else if(extension in FileTypes$1) {
+            type = AssetTypes.VIDEO;
+            if(isExternal) {
+                this._loadExternalVideo(assetId, url, name, successCallback,
+                    errorCallback);
+                return;
+            }
+        }
+        fetch(url).then((response) => {
+            if(!response.ok) throw new Error('URL could not be fetched');
+            return response.blob();
+        }).then((blob) => {
+            if(extension == 'js') {
+                this._addNewScript(isExternal && url, blob, successCallback,
+                    errorCallback);
+                return;
+            }
+            blobToHash(blob).then((hash) => {
+                if(hash in this._blobHashMap) {
+                    if(successCallback)
+                        successCallback(this._blobHashMap[hash]);
+                    return;
+                }
+                this._blobHashMap[hash] = assetId;
+                this.library[assetId] = {
+                    'Name': name,
+                    'Type': type,
+                    'Hash': hash,
+                };
+                if(isExternal) {
+                    this.library[assetId]['URL'] = url;
+                    this.library[assetId]['IsExternal'] = true;
+                } else {
+                    this.library[assetId]['Blob'] = blob;
+                }
+                this._loadAsset(assetId, blob).then(() => {
+                    if(successCallback) successCallback(assetId);
+                });
+            });
+        }).catch((error) => {
+            if(errorCallback) errorCallback(error);
+        });
+    }
+
+    _loadExternalVideo(assetId, url, name, successCallback, errorCallback) {
+        if(url in this._blobHashMap) {
+            if(successCallback) successCallback(this._blobHashMap[url]);
+            return;
+        }
+        fetch(url, { method: 'HEAD' }).then((response) => {
+            if(!response.ok) throw new Error('URL could not be fetched');
+            this._blobHashMap[url] = assetId;
+            this.library[assetId] = {
+                'Name': name,
+                'Type': AssetTypes.VIDEO,
+                'Hash': url,
+                'IsExternal': true,
+                'URL': url,
+            };
+            pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId, true);
+            if(successCallback) successCallback(assetId);
+        }).catch((error) => {
+            if(errorCallback) errorCallback(error);
+        });
     }
 
     _loadAsset(assetId, blob, ignorePublish) {
@@ -5521,6 +5638,8 @@ class LibraryHandler {
             return this._loadImage(assetId, blob, ignorePublish);
         } else if(this.library[assetId]['Type'] == AssetTypes.AUDIO) {
             return this._loadAudio(assetId, blob, ignorePublish);
+        } else if(this.library[assetId]['Type'] == AssetTypes.VIDEO) {
+            return this._loadVideo(assetId, blob, ignorePublish);
         } else {
             return this._loadScript(assetId, blob, ignorePublish);
         }
@@ -5537,68 +5656,77 @@ class LibraryHandler {
                     pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
                         true);
                 resolve();
-            });
+            }, null, reject);
         });
     }
 
     _loadImage(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
-            new THREE.TextureLoader().load(objectURL,
-                (texture) => {
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                    let width = texture.image.width;
-                    let height = texture.image.height;
-                    if(width > height) {
-                        height *= defaultImageSize / width;
-                        width = defaultImageSize;
-                    } else {
-                        width *= defaultImageSize / height;
-                        height = defaultImageSize;
-                    }
-                    let geometry = new THREE.PlaneGeometry(width, height);
-                    let material = new THREE.MeshBasicMaterial({
-                        map: texture,
-                        side: THREE.DoubleSide,
-                        transparent: true,
-                    });
-                    let mesh = new THREE.Mesh( geometry, material );
-                    this.library[assetId]['Mesh'] = mesh;
-                    if(!ignorePublish) {
-                        pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId, true);
-                    }
-                    resolve();
+            new THREE.TextureLoader().load(objectURL, (texture) => {
+                texture.colorSpace = THREE.SRGBColorSpace;
+                let width = texture.image.width;
+                let height = texture.image.height;
+                if(width > height) {
+                    height *= defaultImageSize / width;
+                    width = defaultImageSize;
+                } else {
+                    width *= defaultImageSize / height;
+                    height = defaultImageSize;
                 }
-            );
+                let geometry = new THREE.PlaneGeometry(width, height);
+                let material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                });
+                let mesh = new THREE.Mesh( geometry, material );
+                this.library[assetId]['Mesh'] = mesh;
+                if(!ignorePublish)
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
+                resolve();
+            }, null, reject);
         });
     }
 
     _loadAudio(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
-            new THREE.AudioLoader().load(objectURL,
-                (buffer) => {
-                    this.library[assetId]['Buffer'] = buffer;
-                    if(!ignorePublish) {
-                        pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                            assetId, true);
-                    }
-                    resolve();
-                }
-            );
+            new THREE.AudioLoader().load(objectURL, (buffer) => {
+                this.library[assetId]['Buffer'] = buffer;
+                if(!ignorePublish)
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
+                resolve();
+            }, null, reject);
+        });
+    }
+
+    _loadVideo(assetId, blob, ignorePublish) {
+        return new Promise((resolve, reject) => {
+            try {
+                let objectURL = URL.createObjectURL(blob);
+                this.library[assetId]['URL'] = objectURL;
+                if(!ignorePublish)
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
+                        true);
+                resolve();
+            } catch {
+                reject();
+            }
         });
     }
 
     _loadScript(assetId, blob, ignorePublish) {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
-            import(objectURL).then(module => {
+            import(objectURL).then(() => {
                 if(!ignorePublish)
                     pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
                         true);
                 resolve();
-            });
+            }).catch(reject);
         });
     }
 
@@ -5629,6 +5757,26 @@ class LibraryHandler {
         return assetDetails['Mesh'].material.map.clone();
     }
 
+    filterAssets(assetIds) {
+        for(let assetId in this.library) {
+            let asset = this.library[assetId];
+            if(!assetIds.has(assetId) && !asset['IsBuiltIn']) {
+                delete this.library[assetId];
+                delete this._blobHashMap[asset.Hash];
+                delete this._sketchfabIdMap[asset['SketchfabID']];
+            }
+        }
+    }
+
+    getAssetName(assetId) {
+        if(assetId in this.library) return this.library[assetId]['Name'];
+        return null;
+    }
+
+    getAssetIdFromSketchfabId(sketchfabId) {
+        return this._sketchfabIdMap[sketchfabId];
+    }
+
     getImage(assetId) {
         let assetDetails = this.library[assetId];
         return assetDetails['Mesh'].material.map.image;
@@ -5643,13 +5791,9 @@ class LibraryHandler {
         return null;
     }
 
-    getAssetName(assetId) {
-        if(assetId in this.library) return this.library[assetId]['Name'];
+    getUrl(assetId) {
+        if(assetId in this.library) return this.library[assetId]['URL'];
         return null;
-    }
-
-    getAssetIdFromSketchfabId(sketchfabId) {
-        return this._sketchfabIdMap[sketchfabId];
     }
 
     registerSketchfabAsset(assetId, sketchfabAsset) {
@@ -5659,7 +5803,7 @@ class LibraryHandler {
             return;
         }
         if(sketchfabAsset.uid) {
-            asset['Sketchfab ID'] = sketchfabAsset.uid;
+            asset['SketchfabID'] = sketchfabAsset.uid;
             this._sketchfabIdMap[sketchfabAsset.uid] = assetId;
         }
     }
@@ -5667,7 +5811,7 @@ class LibraryHandler {
     reset() {
         let newLibrary = {};
         for(let assetId in this.library) {
-            if(!this.library[assetId]['Blob']) {
+            if(this.library[assetId]['IsBuiltIn']) {
                 newLibrary[assetId] = this.library[assetId];
             }
         }
@@ -5680,7 +5824,7 @@ class LibraryHandler {
         let libraryDetails = {};
         for(let assetId of assetIds) {
             let assetDetails = this.library[assetId];
-            if(!assetDetails['Blob']) continue;//Built-in asset
+            if(assetDetails['IsBuiltIn']) continue;//Built-in asset
             let assetType = assetDetails['Type'];
             libraryDetails[assetId] = {
                 'Name': assetDetails['Name'],
@@ -5689,6 +5833,11 @@ class LibraryHandler {
             for(let key of OPTIONAL_PARAMS) {
                 if(assetDetails[key])
                     libraryDetails[assetId][key] = assetDetails[key];
+            }
+            if(assetDetails['IsExternal']) {
+                libraryDetails[assetId]['URL'] = assetDetails['URL'];
+                libraryDetails[assetId]['IsExternal'] = true;
+                continue;
             }
             let filepath = 'assets/' + assetId + "/" + assetDetails['Name'];
             libraryDetails[assetId]['Filepath'] = filepath;
@@ -5738,32 +5887,32 @@ let toolHandler = new ToolHandler();
 
 class Box3Helper extends LineSegments {
 
-	constructor(box) {
-		super(BoundingBox.geometry, BoundingBox.material);
+    constructor(box) {
+        super(BoundingBox.geometry, BoundingBox.material);
 
-		this.box = box;
+        this.box = box;
 
-		this.type = 'Box3Helper';
+        this.type = 'Box3Helper';
 
-		this.geometry.computeBoundingSphere();
+        this.geometry.computeBoundingSphere();
 
-	}
+    }
 
-	updateMatrixWorld( force ) {
+    updateMatrixWorld( force ) {
 
-		const box = this.box;
+        const box = this.box;
 
-		if ( box.isEmpty() ) return;
+        if ( box.isEmpty() ) return;
 
-		box.getCenter( this.position );
+        box.getCenter( this.position );
 
-		box.getSize( this.scale );
+        box.getSize( this.scale );
 
-		this.scale.multiplyScalar( 0.5 );
+        this.scale.multiplyScalar( 0.5 );
 
-		super.updateMatrixWorld( force );
+        super.updateMatrixWorld( force );
 
-	}
+    }
 
 }
 
@@ -5839,19 +5988,19 @@ class Interactable {
         }
     }
 
-    addHoveredBy(owner) {
+    addHoveredBy(_owner) {
         console.error("Interactable.addHoveredBy(owner) should be overridden");
     }
 
-    removeHoveredBy(owner) {
+    removeHoveredBy(_owner) {
         console.error("Interactable.removeHoveredBy(owner) should be overridden");
     }
 
-    addSelectedBy(owner) {
+    addSelectedBy(_owner) {
         console.error("Interactable.addSelectedBy(owner) should be overridden");
     }
 
-    removeSelectedBy(owner) {
+    removeSelectedBy(_owner) {
         console.error("Interactable.removeSelectedBy(owner) should be overridden");
     }
 
@@ -7075,6 +7224,7 @@ class XRHandModelFactory {
  */
 
 
+/* global nipplejs */
 const controllerModelFactory = new XRControllerModelFactory();
 const handModelFactory = new XRHandModelFactory();
 
@@ -7105,11 +7255,11 @@ class InputHandler {
     _addEventListeners() {
         if(global$1.deviceType == "XR") {
             //XR Event Listeners
-            this._renderer.xr.addEventListener("sessionstart", (event) => {
-                this._onXRSessionStart(event);
+            this._renderer.xr.addEventListener("sessionstart", () => {
+                this._onXRSessionStart();
             });
-            this._renderer.xr.addEventListener("sessionend", (event) => {
-                this._onXRSessionEnd(event);
+            this._renderer.xr.addEventListener("sessionend", () => {
+                this._onXRSessionEnd();
             });
         } else if (global$1.deviceType == "POINTER") {
             //POINTER Event Listeners
@@ -7121,7 +7271,7 @@ class InputHandler {
                 this._keysPressed.delete(event.key);
                 this._keyCodesPressed.delete(event.code);
             });
-            window.addEventListener('blur', (event) => {
+            window.addEventListener('blur', () => {
                 this._keysPressed.clear();
                 this._keyCodesPressed.clear();
             });
@@ -7200,7 +7350,7 @@ class InputHandler {
         });
     }
 
-    _onXRSessionStart(event) {
+    _onXRSessionStart() {
         this._session = this._renderer.xr.getSession();
         this._session.oninputsourceschange = (event) => {
             this._onXRInputSourceChange(event);
@@ -7211,7 +7361,7 @@ class InputHandler {
         }
     }
 
-    _onXRSessionEnd(event) {
+    _onXRSessionEnd() {
         this._session.oninputsourcechange = null;
         this._session = null;
         for(let type in this._xrInputDevices) {
@@ -8936,7 +9086,7 @@ class SessionHandler {
         let referenceSpace = global$1.renderer.xr.getReferenceSpace();
         global$1.frame.createAnchor(pose, referenceSpace).then(
             (anchor) => this._anchor = anchor );
-        referenceSpace.onreset = (event) => {
+        referenceSpace.onreset = () => {
             if(global$1.xrSessionType != 'AR') return;
             global$1.dynamicAssets.add(this);
         };
@@ -9609,7 +9759,6 @@ class ThreeMeshUIHelper {
 
     static createInputBlock(params) {
         let text = params['text'] || " ";
-        params['backgroundTexture'];
         let fontSize = (params['fontSize'])
             ? params['fontSize']
             : FontSizes.body;
@@ -9730,9 +9879,7 @@ class ThreeMeshUIHelper {
                 return 1;
             }
         };
-        buttonBlock.getIsChecked = () => {
-            return colorBlock.backgroundOpacity == 0.8;
-        };
+        buttonBlock.getIsChecked = () => colorBlock.backgroundOpacity == 0.8;
         return buttonBlock;
     }
 
@@ -9925,34 +10072,8 @@ let undoRedoHandler = new UndoRedoHandler();
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class EditorHelperFactory {
-    constructor() {
-        this._editorHelperClassMap = {};
-    }
 
-    registerEditorHelper(editorHelper, assetClass) {
-        this._editorHelperClassMap[assetClass] = editorHelper;
-    }
-
-    addEditorHelperTo(asset) {
-        if(asset.editorHelper) return;
-        let assetClass = asset.constructor;
-        while(!this._editorHelperClassMap[assetClass]) {
-            assetClass = Object.getPrototypeOf(assetClass);
-        }
-        let EditorHelper = this._editorHelperClassMap[assetClass];
-        asset.editorHelper = new EditorHelper(asset);
-    }
-}
-
-let editorHelperFactory = new EditorHelperFactory();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
+/* global JSZip, JSZipUtils */
 
 class ProjectHandler {
     constructor() {
@@ -10028,6 +10149,10 @@ class ProjectHandler {
                     if(errorCallback) errorCallback();
                     return;
                 }
+                let assetIds = Object.keys(this._projectDetails.library);
+                assetIds.push(...Object.keys(projectDetails.library));
+                assetIds = new Set(assetIds);
+                libraryHandler.filterAssets(assetIds);
                 libraryHandler.load(projectDetails['library'], jsZip,()=>{
                     try {
                         for(let key in this._assetHandlers) {
@@ -10051,7 +10176,7 @@ class ProjectHandler {
             let handler = this._assetHandlers[key];
             key = key.toLowerCase() + 's';
             if(!handler) {
-                console.error('Unexpected asset type: ' + handlerKey);
+                console.error('Unexpected asset type: ' + key);
                 continue;
             }
             for(let assetId in projectDetails[key]) {
@@ -10140,14 +10265,6 @@ class ProjectHandler {
                 asset['set' + capitalizeFirstLetter(key)](value);
             }
         }
-        for(let id in this._assets) {
-            this._assets[id];
-            //if(asset.addTo) {
-            //    let parentAsset = this._sessionAssets[
-            //        asset.getParentId()];
-            //    asset.addTo(parentAsset, true);
-            //}
-        }
     }
 
     _loadAssetWithoutDependencies(pendingAsset, isDiff) {
@@ -10219,8 +10336,6 @@ class ProjectHandler {
 
     deleteAssetFromHandler(asset) {
         let id = asset.getId();
-        asset.getAssetId();
-        libraryHandler.getType(asset.getAssetId());
         if(this._assets[id]) {
             if(asset.removeFromScene) {
                 if(asset.getObject) {
@@ -10231,9 +10346,12 @@ class ProjectHandler {
                             break;
                         }
                     }
-                    if(asset.parent) {
-                        let type = libraryHandler.getType(asset.parent.getId());
-                        if(type == AssetTypes.INTERNAL && asset.parent != scene)
+                    let type = libraryHandler.getType(asset.getAssetId());
+                    if(asset.parent && asset.parent != scene
+                            && type != AssetTypes.INTERNAL) {
+                        let parentAssetId = asset.parent.getAssetId();
+                        let parentType = libraryHandler.getType(parentAssetId);
+                        if(parentType == AssetTypes.INTERNAL)
                             this._scene.attach(object);
                     }
                 }
@@ -10286,23 +10404,17 @@ class ProjectHandler {
     }
 
     exportDiff() {
-        let assetIds = [];
-        let projectDetails = this._getProjectDetails(true);
-        for(let key in this._assetHandlers) {
-            key = key.toLowerCase() + 's';
-            for(let assetId in projectDetails[key]) {
-                if(!this._projectDetails[key]
-                        || !(assetId in this._projectDetails[key])) {
-                    assetIds.push(assetId);
-                }
-            }
+        let oldValues = new Set();
+        let projectDetails = this._getProjectDetails();
+        storeStringValuesInSet(this._projectDetails, oldValues);
+        for(let assetId in projectDetails.library) {
+            if(oldValues.has(assetId)) delete projectDetails.library[assetId];
         }
-        projectDetails['library'] = libraryHandler.getLibraryDetails(assetIds);
         return this._exportBlob(projectDetails);
     }
 
     exportProject(includeInternals) {
-        let projectDetails = this._getProjectDetails(false, !includeInternals);
+        let projectDetails = this._getProjectDetails(!includeInternals);
         return this._exportBlob(projectDetails);
     }
 
@@ -10312,8 +10424,8 @@ class ProjectHandler {
         let library = libraryHandler.getLibrary();
         for(let assetId in projectDetails['library']) {
             let assetType = projectDetails['library'][assetId]['Type'];
-            if(assetType != AssetTypes.PRIMITVE
-                    && assetType != AssetTypes.INTERNAL) {
+            let isExternal = library[assetId]['IsExternal'];
+            if(assetType != AssetTypes.INTERNAL && !isExternal) {
                 let filename = projectDetails['library'][assetId]['Filepath'];
                 zip.file(filename, library[assetId]['Blob']);
             }
@@ -10321,10 +10433,11 @@ class ProjectHandler {
         return zip;
     }
 
-    _getProjectDetails(skipLibrary, skipInternals) {
-        let assetIds = [];
+    _getProjectDetails(skipInternals) {
+        let assetIds = Object.keys(libraryHandler.library);
         let settings = settingsHandler.getSettings();
         let projectDetails = { settings: settings, version: global$1.version };
+        let values = new Set();
         if(skipInternals)
             pubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
         for(let type in this._assetHandlers) {
@@ -10333,27 +10446,45 @@ class ProjectHandler {
             let details = handler.getAssetsDetails();
             if(!details) continue;
             projectDetails[type.toLowerCase() + 's'] = details;
-            if(type == AssetTypes.TEXTURE) {
-                let texturesAssetIds = handler.getTexturesAssetIds();
-                for(let assetId of texturesAssetIds) assetIds.push(assetId);
-            } else {
-                for(let assetId in details) assetIds.push(assetId);
-            }
-        }
-        for(let side in settings['Skybox']) {
-            let assetId = settings['Skybox'][side];
-            if(assetId) assetIds.push(assetId);
         }
 
-        if(!skipLibrary) {
-            projectDetails['library'] = libraryHandler.getLibraryDetails(
-                assetIds);
-        }
+        storeStringValuesInSet(projectDetails, values);
+        assetIds.filter((assetId) => values.has(assetId));
+        projectDetails['library'] = libraryHandler.getLibraryDetails(
+            assetIds);
         return projectDetails;
     }
 }
 
 let projectHandler = new ProjectHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+class EditorHelperFactory {
+    constructor() {
+        this._editorHelperClassMap = {};
+    }
+
+    registerEditorHelper(editorHelper, assetClass) {
+        this._editorHelperClassMap[assetClass] = editorHelper;
+    }
+
+    addEditorHelperTo(asset) {
+        if(asset.editorHelper) return;
+        let assetClass = asset.constructor;
+        while(!this._editorHelperClassMap[assetClass]) {
+            assetClass = Object.getPrototypeOf(assetClass);
+        }
+        let EditorHelper = this._editorHelperClassMap[assetClass];
+        asset.editorHelper = new EditorHelper(asset);
+    }
+}
+
+let editorHelperFactory = new EditorHelperFactory();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -10569,7 +10700,7 @@ class InternalAssetsHandler extends AssetsHandler {
             PubSubTopics.INTERNAL_DELETED, AssetTypes.INTERNAL);
     }
 
-    addAsset(asset, ignorePublish, ignoreUndoRedo) {
+    addAsset(asset, ignorePublish) {
         if(this._assets[asset.getId()]) return;
         this._assets[asset.getId()] = asset;
         this._sessionAssets[asset.getId()] = asset;
@@ -10579,7 +10710,7 @@ class InternalAssetsHandler extends AssetsHandler {
         pubSub.publish(this._id, topic, asset, true);
     }
 
-    deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
+    deleteAsset(asset, ignorePublish) {
         if(!(asset.getId() in this._assets)) return;
         delete this._assets[asset.getId()];
         projectHandler.deleteAssetFromHandler(asset);
@@ -10624,7 +10755,6 @@ class InternalAssetsHandler extends AssetsHandler {
     //}
 
     reset() {
-        this._assets;
         for(let assetId in this._assets) {
             let asset = this._assets[assetId];
             this.deleteAsset(asset, true, true);
@@ -10645,7 +10775,7 @@ new InternalAssetsHandler();
 class Asset {
     constructor(params = {}) {
         this._id = params['id'] || uuidv4();
-        this._idBytes = uuidToBytes$1(this._id);
+        this._idBytes = uuidToBytes(this._id);
         this._assetId = params['assetId'];
         this._name = ('name' in params)
             ? params['name']
@@ -10846,13 +10976,14 @@ class RTCPeer {
                 if(this._onSendDataChannelOpen) this._onSendDataChannelOpen(e);
             };
             this._dataChannel.onclose = (e) => {
-                if(this._onSendDataChannelClose) this._onSendDataChannelClose(e);
+                if(this._onSendDataChannelClose)
+                    this._onSendDataChannelClose(e);
             };
             this._dataChannel.onmessage = (message) => {
                 if(this._onMessage) this._onMessage(message.data);
             };
         };
-        this._connection.onconnectionstatechange = (e) => {
+        this._connection.onconnectionstatechange = (_e) => {
             let state = this._connection.connectionState;
             if(state == "connected" && !this._hasConnected) {
                 this._hasConnected = true;
@@ -10903,7 +11034,7 @@ class RTCPeer {
         this._peerAudioTrack.enabled = !muted;
     }
 
-    _addAudioTrack(track, srcObject) {
+    _addAudioTrack() {
         this._connection.addTrack(this._myAudioTrack, this._myAudioStream);
     }
 
@@ -11023,7 +11154,7 @@ const FIFTY_MINUTES = 60000 * 50;
 
 class Party {
     constructor() {
-        //this._id = uuidv4();
+        this._id = uuidv4();
         this._peers = {};
         this._userAudio = createAudioElement();
         this._userAudio.defaultMuted = true;
@@ -11115,7 +11246,7 @@ class Party {
                 this._authToken = body.authToken;
                 if(successCallback) successCallback();
             })
-            .catch((error) => {
+            .catch(() => {
                 this.disconnect();
                 if(errorCallback) errorCallback({ topic: 'bad-auth' });
             });
@@ -11158,7 +11289,7 @@ class Party {
         navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
             this._userAudio.srcObject = stream;
             this._setupWebSocket();
-        }).catch((error) => {
+        }).catch(() => {
             this._userAudio.srcObject = new MediaStream();
             this._setupWebSocket();
         });
@@ -11166,8 +11297,8 @@ class Party {
 
     _setupWebSocket() {
         this._socket = new WebSocket(global$1.socketUrl);
-        this._socket.onopen = (e) => { this._onSocketOpen(e); };
-        this._socket.onclose = (e) => { this._onSocketClose(e); };
+        this._socket.onopen = (_e) => { this._onSocketOpen(); };
+        this._socket.onclose = (_e) => { this._onSocketClose(); };
         this._socket.onmessage = (e) => { this._onSocketMessage(e); };
         this._socket.onerror = (e) => { this._onSocketError(e); };
         this._socket._send = this._socket.send;
@@ -11190,7 +11321,7 @@ class Party {
         };
     }
 
-    _onSocketOpen(e) {
+    _onSocketOpen() {
         this._socket.send({
             topic: "identify",
             //id: this._id,
@@ -11210,7 +11341,7 @@ class Party {
         }, FIFTY_MINUTES);
     }
 
-    _onSocketClose(e) {
+    _onSocketClose() {
         if(this._socket) this.disconnect();
     }
 
@@ -11246,7 +11377,7 @@ class Party {
             pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: "Error: Couldn't make user host",
             });
-        } else if(topic == "error" && message.requestTopic == "update-connection"){
+        } else if(topic =="error" && message.requestTopic=="update-connection"){
             pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Could not reinitiate connection with Server',
             });
@@ -11325,7 +11456,7 @@ const BLOCKABLE_BUFFER_HANDLERS = {
 class PartyMessageHelper {
     constructor() {
         this._id = '44a9d6b3-2bf7-4e36-b8d1-10bb69de95cc';
-        this._idBytes = uuidToBytes$1(this._id);
+        this._idBytes = uuidToBytes(this._id);
         this._handlingLocks = new Set();
         this._handleQueue = new Queue();
         this._publishQueue = new Queue();
@@ -11367,8 +11498,9 @@ class PartyMessageHelper {
     }
 
     queuePublish(message) {
+        console.warn("PartyMessageHelper.queuePublish(...) is deprecated");
         if(typeof message == 'function') {
-            this._publishQueue.enqueue(f);
+            this._publishQueue.enqueue(message);
         } else {
             this._publishQueue.enqueue(() => {
                 this._partyHandler._sendToAllPeers(message);
@@ -11406,8 +11538,25 @@ class PartyMessageHelper {
     }
 
     _handleAssetAdded(peer, message) {
-        uuidv4();
-        message.lock = this._partyHandler.addMessageHandlerLock();
+        let lock = this._partyHandler.addMessageHandlerLock();
+        if(message.isExternal) {
+            let { assetId, name, type, url, sketchfabId } = message;
+            let assetDetails = {
+                Name: name,
+                Type: type,
+                IsExternal: true,
+                URL: url,
+                SketchfabID: sketchfabId,
+            };
+            libraryHandler.loadLibraryExternalAsset(assetId, assetDetails)
+                .then(() => {
+                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
+                        assetId);
+                    this._partyHandler.removeMessageHandlerLock(lock);
+                });
+            return;
+        }
+        message.lock = lock;
         message.parts = [];
         peer.assetAddedDetails = message;
     }
@@ -11417,20 +11566,20 @@ class PartyMessageHelper {
             console.error('Unexpected call to _handleBufferAssetAdded() before _handleAssetAdded()');
             return;
         }
-        let {parts,partsLength,assetId,name,type,lock} = peer.assetAddedDetails;
+        let { parts, partsLength, assetId, name, type, lock, sketchfabId }
+            = peer.assetAddedDetails;
         parts.push(message);
         if(parts.length == partsLength) {
-            let blob = new Blob(parts, { type: 'application/javascript' });
             let assetDetails = {
                 Name: name,
                 Type: type,
+                SketchfabID: sketchfabId,
             };
-            libraryHandler.loadLibraryAsset(assetId, assetDetails, blob)
-                .then(() => {
-                    pubSub.publish(this._id, PubSubTopics.ASSET_ADDED,
-                        assetId);
-                    this._partyHandler.removeMessageHandlerLock(lock);
-                });
+            libraryHandler.loadLibraryAssetFromArrayBuffer(assetId,
+                assetDetails, parts).then(() => {
+                pubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId);
+                this._partyHandler.removeMessageHandlerLock(lock);
+            });
         }
     }
 
@@ -11632,12 +11781,12 @@ class PartyMessageHelper {
         }
     }
 
-    _handleLoadedDiff(peer, message) {
+    _handleLoadedDiff(peer) {
         pubSub.publish(this._id, PubSubTopics.PEER_READY, { peer: peer });
         peer.readyForUpdates = true;
     }
 
-    _handleSanitizeInternals(peer, message) {
+    _handleSanitizeInternals() {
         pubSub.publish(this._id, PubSubTopics.SANITIZE_INTERNALS,null,true);
     }
 
@@ -11722,39 +11871,50 @@ class PartyMessageHelper {
     }
 
     _publishAssetAdded(assetId) {
-        this._partyHandler.publishFromFunction(() => {
-            return new Promise((resolve) => {
-                let libraryDetails = libraryHandler.getLibrary()[assetId];
-                let blob = libraryDetails['Blob'];
-                blob.arrayBuffer().then((buffer) => {
-                    let parts = [];
-                    let n = Math.ceil(buffer.byteLength / SIXTEEN_KB$1);
-                    for(let i = 0; i < n; i++) {
-                        let chunkStart = i * SIXTEEN_KB$1;
-                        let chunkEnd = (i + 1) * SIXTEEN_KB$1;
-                        parts.push(buffer.slice(chunkStart, chunkEnd));
-                    }
-                    this._partyHandler.publishInternalMessage('asset_added', {
-                        assetId: assetId,
-                        name: libraryDetails['Name'],
-                        type: libraryDetails['Type'],
-                        partsLength: parts.length,
-                    }, true);
-                    for(let part of parts) {
-                        this._partyHandler.publishInternalBufferMessage(
-                            InternalMessageIds.ASSET_ADDED_PART, part, true);
-                    }
-                    resolve();
-                });
+        let libraryDetails = libraryHandler.getLibrary()[assetId];
+        if(libraryDetails['IsExternal']) {
+            this._partyHandler.publishInternalMessage('asset_added', {
+                assetId: assetId,
+                name: libraryDetails['Name'],
+                type: libraryDetails['Type'],
+                url: libraryDetails['URL'],
+                sketchfabId: libraryDetails['SketchfabID'],
+                isExternal: true,
+            }, true);
+            return;
+        }
+        this._partyHandler.publishFromFunction(() => new Promise((resolve) => {
+            let libraryDetails = libraryHandler.getLibrary()[assetId];
+            let blob = libraryDetails['Blob'];
+            blob.arrayBuffer().then((buffer) => {
+                let parts = [];
+                let n = Math.ceil(buffer.byteLength / SIXTEEN_KB$1);
+                for(let i = 0; i < n; i++) {
+                    let chunkStart = i * SIXTEEN_KB$1;
+                    let chunkEnd = (i + 1) * SIXTEEN_KB$1;
+                    parts.push(buffer.slice(chunkStart, chunkEnd));
+                }
+                this._partyHandler.publishInternalMessage('asset_added', {
+                    assetId: assetId,
+                    name: libraryDetails['Name'],
+                    type: libraryDetails['Type'],
+                    sketchfabId: libraryDetails['SketchfabID'],
+                    partsLength: parts.length,
+                }, true);
+                for(let part of parts) {
+                    this._partyHandler.publishInternalBufferMessage(
+                        InternalMessageIds.ASSET_ADDED_PART, part, true);
+                }
+                resolve();
             });
-        });
+        }));
     }
 
     _publishComponentAttachedDetached(internalMessageId, message) {
         let peerMessage = concatenateArrayBuffers(
-            uuidToBytes$1(message.id),
-            uuidToBytes$1(message.componentId),
-            uuidToBytes$1(message.componentAssetId)
+            uuidToBytes(message.id),
+            uuidToBytes(message.componentId),
+            uuidToBytes(message.componentAssetId)
         );
         this._partyHandler.publishInternalBufferMessage(internalMessageId,
             peerMessage);
@@ -11763,8 +11923,8 @@ class PartyMessageHelper {
     _publishEntityAdded(message) {
         let childAsset = projectHandler.getSessionAsset(message.childId);
         let peerMessage = concatenateArrayBuffers(
-            uuidToBytes$1(message.parentId),
-            uuidToBytes$1(message.childId),
+            uuidToBytes(message.parentId),
+            uuidToBytes(message.childId),
             new Float64Array(childAsset.getPosition()),
             new Float64Array(childAsset.getRotation()),
         );
@@ -11775,8 +11935,8 @@ class PartyMessageHelper {
     _publishEntityAttached(message) {
         let childAsset = projectHandler.getSessionAsset(message.childId);
         let peerMessage = concatenateArrayBuffers(
-            uuidToBytes$1(message.parentId),
-            uuidToBytes$1(message.childId),
+            uuidToBytes(message.parentId),
+            uuidToBytes(message.childId),
             new Float64Array(childAsset.getPosition()),
             new Float64Array(childAsset.getRotation()),
         );
@@ -11969,6 +12129,7 @@ let partyMessageHelper = new PartyMessageHelper();
  */
 
 
+/* global JSZip */
 const SIXTEEN_KB = 1024 * 16;
 const TWO_BYTE_MOD = 2 ** 16;
 const JITTER_DELAY = 50;
@@ -12148,7 +12309,7 @@ class PartyHandler {
             timestampDiff = timestamp - messageTimestamp;
             timestampDiff = ((timestampDiff % TWO_BYTE_MOD) + TWO_BYTE_MOD)
                 % TWO_BYTE_MOD;
-        } while(timestampDiff > JITTER_DELAY)
+        } while(timestampDiff > JITTER_DELAY);
         return message;
     }
 
@@ -12173,9 +12334,9 @@ class PartyHandler {
     _sendProjectParts(parts, ...peerList) {
         for(let peer of peerList) {
             if(peer.rtc) peer.rtc.sendData(JSON.stringify({
-                    id: 'Iproject',
-                    body: { "partsLength": parts.length },
-                }));
+                id: 'Iproject',
+                body: { "partsLength": parts.length },
+            }));
         }
         for(let part of parts) {
             let message = concatenateArrayBuffers(
@@ -12187,7 +12348,6 @@ class PartyHandler {
     }
 
     _handleProject(peer, message) {
-        uuidv4();
         message.lock = this.addMessageHandlerLock();
         message.parts = [];
         peer.incomingProjectDetails = message;
@@ -12773,1238 +12933,9 @@ class AssetEntity extends Asset {
  */
 
 
-class InternalAssetEntity extends AssetEntity {
-    constructor(params = {}) {
-        super(params);
-    }
-
-    removeFromScene() {
-        let inheritor = this.parent;
-        while(inheritor.constructor.assetType == AssetTypes.INTERNAL) {
-            inheritor = inheritor.parent;
-        }
-        this.promoteExternalAssets(inheritor, this.children);
-        super.removeFromScene();
-    }
-
-    promoteExternalAssets(inheritor, children) {
-        for(let child of children) {
-            if(child.constructor.assetType == AssetTypes.INTERNAL) {
-                this.promoteExternalAssets(inheritor, child.children);
-            } else {
-                child.attachTo(inheritor, true);
-            }
-        }
-    }
-
-    static assetType = AssetTypes.INTERNAL;
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-  
-class Avatar extends InternalAssetEntity {
-    constructor(params = {}) {
-        params['assetId'] = Avatar.assetId;
-        super(params);
-        if(params == null) {
-            params = {};
-        }
-        this._avatarParent = new THREE.Object3D();
-        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
-        this._verticalOffset = params['verticalOffset'] || 0;
-        this._object.position.setY(this._verticalOffset);
-        this._object.add(this._avatarParent);
-
-        this._createMesh(this._avatarUrl);
-        let parentAsset = projectHandler.getSessionAsset(this._parentId);
-        if(parentAsset && parentAsset.registerAvatar) {
-            parentAsset.registerAvatar(this);
-        }
-    }
-
-    _createMesh(filename) {
-        if(/\.glb/.test(filename)) {
-            let gltfLoader = new GLTFLoader();
-            gltfLoader.load(filename, (gltf) => {
-                gltf.scene.rotateY(Math.PI);
-                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
-                    let hands = new Set();
-                    gltf.scene.traverse((child) => {
-                        if(child.name.toLowerCase().includes("hand")) {
-                            hands.add(child);
-                        }
-                    });
-                    hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.65);
-                }
-                this._avatarParent.add(gltf.scene);
-                this._saveOriginalTransparencyStates();
-                this._dimensions = 3;
-            }, () => {}, (error) => {
-                console.log(error);
-                if(filename != DEFAULT_URL) {
-                    this._createMesh(DEFAULT_URL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
-            new THREE.TextureLoader().load(filename, (texture) => {
-                let width = texture.image.width;
-                let height = texture.image.height;
-                if(width > height) {
-                    let factor = 0.3 / width;
-                    width = 0.3;
-                    height *= factor;
-                } else {
-                    let factor = 0.3 / height;
-                    height = 0.3;
-                    width *= factor;
-                }
-                let material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                });
-                let geometry = new THREE.PlaneGeometry(width, height);
-                geometry.rotateY(Math.PI);
-                let mesh = new THREE.Mesh(geometry, material);
-                this._avatarParent.add(mesh);
-                this._saveOriginalTransparencyStates();
-                //let sprite = new THREE.Sprite(material);
-                //this._avatarParent.add(sprite);
-                this._dimensions = 2;
-            }, () => {}, () => {
-                if(filename != DEFAULT_URL) {
-                    this._createMesh(DEFAULT_URL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else {
-            if(filename != DEFAULT_URL) {
-                this._createMesh(DEFAULT_URL);
-            } else {
-                console.error("Default avatar URL is invalid :(");
-            }
-        }
-    }
-
-    _saveOriginalTransparencyStates() {
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.userData['transparent'] = material.transparent;
-                        material.userData['opacity'] = material.opacity;
-                    }
-                } else {
-                    let material = node.material;
-                    material.userData['transparent'] = material.transparent;
-                    material.userData['opacity'] = material.opacity;
-                }
-            }
-        });
-    }
-
-    fade(percent) {
-        this._isFading = true;
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                node.renderOrder = Infinity;
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        if(!material.transparent) {
-                            material.transparent = true;
-                            material.needsUpdate = true;
-                        }
-                        material.opacity = material.userData['opacity']*percent;
-                    }
-                } else {
-                    let material = node.material;
-                    if(!material.transparent) {
-                        material.transparent = true;
-                        material.needsUpdate = true;
-                    }
-                    material.opacity = material.userData['opacity'] * percent;
-                }
-            }
-        });
-    }
-
-    endFade() {
-        if(!this._isFading) return;
-        this._isFading = false;
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let mtrl = node.material[i];
-                        if(mtrl.transparent != mtrl.userData['transparent']) {
-                            mtrl.transparent = mtrl.userData['transparent'];
-                            mtrl.needsUpdate = true;
-                        }
-                        mtrl.opacity = mtrl.userData['opacity'];
-                    }
-                } else {
-                    let mtrl = node.material;
-                    if(mtrl.transparent != mtrl.userData['transparent']) {
-                        mtrl.transparent = mtrl.userData['transparent'];
-                        mtrl.needsUpdate = true;
-                    }
-                    mtrl.opacity = mtrl.userData['opacity'];
-                }
-            }
-        });
-    }
-
-    lookAtLocal(point) {
-        if(this._object.parent) {
-            vector3s[0].copy(point);
-            this._object.parent.localToWorld(vector3s[0]);
-            this._object.lookAt(vector3s[0]);
-        }
-    }
-
-    updateSourceUrl(url) {
-        while(this._avatarParent.children[0]) {
-            let child = this._avatarParent.children[0];
-            this._avatarParent.remove(child);
-            fullDispose(child, true);
-        }
-        this._avatarUrl = url;
-        this._createMesh(url);
-    }
-
-    getAvatarUrl() {
-        return this._avatarUrl;
-    }
-
-    getVerticalOffset(verticalOffset) {
-        return this._verticalOffset;
-    }
-
-    setAvatarUrl(avatarUrl) {
-        this.updateSourceUrl(avatarUrl);
-    }
-
-    setVerticalOffset(verticalOffset) {
-        this._verticalOffsert = verticalOffset;
-        this._object.position.setY(verticalOffset);
-    }
-
-    displayAvatar() {
-        this._object.add(this._avatarParent);
-    }
-
-    hideAvatar() {
-        this._object.remove(this._avatarParent);
-    }
-
-    isDisplayingAvatar() {
-        return this._avatarParent.parent == this._object;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['avatarUrl'] = this._avatarUrl;
-        params['verticalOffset'] = this._verticalOffset;
-        return params;
-    }
-
-    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
-    static assetName = 'Avatar';
-}
-
-projectHandler.registerAsset(Avatar);
-libraryHandler.loadBuiltIn(Avatar);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class BasicMovement {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        this._avatar = params['Avatar'];
-        this._userObj = params['User Object'];
-        this._velocity = new THREE.Vector3();
-        this._verticalVelocity = 0;
-        this._worldVelocity = new THREE.Vector3();
-        this._snapRotationTriggered = false;
-        this._disabled = false;
-    }
-
-    _setupMobileFlyingButtons() {
-        this._mobileUp = false;
-        this._mobileDown = false;
-        let upButton = inputHandler.addExtraControlsButton(
-            'mobile-flying-up-button', 'UP');
-        let downButton = inputHandler.addExtraControlsButton(
-            'mobile-flying-down-button', 'DOWN');
-        upButton.addEventListener('touchstart',
-            () => { this._mobileUp = true; });
-        upButton.addEventListener('touchend',
-            () => { this._mobileUp = false; });
-        downButton.addEventListener('touchstart',
-            () => { this._mobileDown = true; });
-        downButton.addEventListener('touchend',
-            () => { this._mobileDown = false; });
-    }
-
-    _moveForward(velocity, timeDelta) {
-        // move forward parallel to the xz-plane
-        // assumes camera.up is y-up
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
-        // not using addScaledVector because we use vector3s[0] later
-        vector3s[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s[0]);
-        vector3s[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s[0]);
-    };
-
-    _moveRight(velocity, timeDelta) {
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].y = 0;
-        vector3s[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s[0]);
-        vector3s[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s[0]);
-    };
-
-    _moveUp(velocity, timeDelta) {
-        velocity = this._userObj.scale.y * velocity;
-        this._worldVelocity.setY(velocity);
-        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
-        this._userObj.position.add(vector3s[0]);
-    }
-
-    _snapLeft() {
-        this._userObj.rotateY(Math.PI/8);
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: global$1.userController, fields: ['rotation'] });
-    }
-
-    _snapRight() {
-        this._userObj.rotateY(-Math.PI/8);
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: global$1.userController, fields: ['rotation'] });
-    }
-
-    disable() {
-        this._disabled = true;
-    }
-
-    enable() {
-        this._enabled = true;
-    }
-
-    getWorldVelocity() {
-        return this._worldVelocity;
-    }
-
-    setPerspective(perspective) {
-        this._perspective = perspective;
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updatePositionVR(timeDelta);
-            this.update = this._updatePositionVR;
-        } else if(global$1.deviceType == "POINTER") {
-            this._updatePosition(timeDelta);
-            this.update = this._updatePosition;
-        } else if(global$1.deviceType == "MOBILE") {
-            this._setupMobileFlyingButtons();
-            this._updatePositionMobile(timeDelta);
-            this.update = this._updatePositionMobile;
-        }
-    }
-
-    _updatePosition(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(this._disabled || timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        // Decrease the velocity.
-        let slowdownFactor = (1 - timeDelta) * 0.88;
-        this._velocity.x *= slowdownFactor;
-        if(flightEnabled)
-            this._verticalVelocity *= slowdownFactor;
-        this._velocity.z *= slowdownFactor;
-
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            if (inputHandler.isKeyCodePressed("ArrowUp")
-                    || inputHandler.isKeyCodePressed("KeyW"))
-                this._velocity.z += movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowDown")
-                    || inputHandler.isKeyCodePressed("KeyS"))
-                this._velocity.z -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowLeft")
-                    || inputHandler.isKeyCodePressed("KeyA"))
-                this._velocity.x -= movementSpeed / 4;
-            if (inputHandler.isKeyCodePressed("ArrowRight")
-                    || inputHandler.isKeyCodePressed("KeyD"))
-                this._velocity.x += movementSpeed / 4;
-            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
-                    != inputHandler.isKeyPressed("Shift")
-                    && !inputHandler.isKeyPressed("Meta")) {
-                this._verticalVelocity =
-                    (inputHandler.isKeyCodePressed("Space"))
-                        ? movementSpeed
-                        : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s[1].add(vector3s[0]);
-            if(this._perspective != 1 && vector3s[1].length() > 0.001
-                    * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
-                this._avatar.lookAtLocal(vector3s[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionMobile(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(this._disabled || timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        this._velocity.x = 0;
-        if(flightEnabled)
-            this._verticalVelocity *= (1 - timeDelta) * 0.88;
-        this._velocity.z = 0;
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            let joystickAngle = inputHandler.getJoystickAngle();
-            let joystickDistance = inputHandler.getJoystickDistance();
-            let movingDistance = movementSpeed * joystickDistance;
-            this._velocity.x = movingDistance * Math.cos(joystickAngle);
-            this._velocity.z = movingDistance * Math.sin(joystickAngle);
-            if(flightEnabled && this._mobileUp != this._mobileDown) {
-                this._verticalVelocity = (this._mobileUp)
-                    ? movementSpeed
-                    : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s[1].add(vector3s[0]);
-            if(this._perspective != 1 && vector3s[1].length() > 0.001
-                    * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
-                this._avatar.lookAtLocal(vector3s[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionVR(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(this._disabled || global$1.xrSessionType=='AR' || timeDelta >1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        let movementGamepad;
-        let rotationGamepad;
-        if(settingsHandler.areJoysticksSwapped()) {
-            movementGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
-            rotationGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
-        } else {
-            movementGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
-            rotationGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
-        }
-        this._velocity.x = 0;
-        this._velocity.y = 0;
-        this._velocity.z = 0;
-        if(movementGamepad) {
-            let axes = movementGamepad.axes;
-            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
-            this._velocity.x = movementSpeed * axes[2];//Left/Right
-
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        if(rotationGamepad) {
-            let verticalForce = rotationGamepad.axes[3];
-            let rotationForce = rotationGamepad.axes[2];
-            if(Math.abs(rotationForce) > 0.7) {
-                if(!this._snapRotationTriggered) {
-                    this._snapRotationTriggered = true; 
-                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
-                }
-            } else {
-                this._snapRotationTriggered = false;
-            }
-            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
-                this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y, timeDelta);
-            }
-        } else {
-            this._snapRotationTriggered = false;
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const TTL = 5;
-
-class XRDevice extends InternalAssetEntity {
-    constructor(params = {}) {
-        if(!params['assetId']) params['assetId'] = XRDevice.assetId;
-        super(params);
-        this._ttl = TTL;
-        this._ownerId = params['ownerId'];
-        this._modelUrl = params['modelUrl'];
-        if(this._modelUrl) {
-            this._loadModelFromUrl();
-        }
-        this._vector3 = new Vector3();
-        this._euler = new Euler();
-        this._quaternion = new Quaternion();
-        this._registerOwner(params);
-    }
-
-    _loadModelFromUrl() {
-        let gltfLoader = new GLTFLoader();
-        gltfLoader.load(this._modelUrl, (gltf) => {
-            this._modelObject = gltf.scene;
-            this._object.add(gltf.scene);
-        });
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
-            owner.registerXRDevice(this);
-        }
-    }
-
-    _enableARMask() {
-        this._isAR = global$1.xrSessionType == 'AR';
-        if(this._isAR) this._setARMask();
-        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
-            let isAR = global$1.xrSessionType == 'AR';
-            if(this._isAR == isAR) return;
-            this._isAR = isAR;
-            if(isAR) {
-                this._setARMask();
-            } else {
-                this._removeARMask();
-            }
-        });
-    }
-
-    _setARMask() {
-        this._object.traverse((node) => {
-            if (node instanceof Mesh) {
-                node.renderOrder = -Infinity;
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        node.material.forEach((mtrl) => {
-                            mtrl.colorWrite = false;
-                        });
-                    }
-                    else {
-                        node.material.colorWrite = false;
-                    }
-                }
-            }
-        });
-    }
-
-    _removeARMask() {
-        this._object.traverse((node) => {
-            if (node instanceof Mesh) {
-                node.renderOrder = 0;
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        node.material.forEach((mtrl) => {
-                            mtrl.colorWrite = true;
-                        });
-                    }
-                    else {
-                        node.material.colorWrite = true;
-                    }
-                }
-            }
-        });
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['ownerId'] = this._ownerId;
-        params['modelUrl'] = this._modelUrl;
-        return params;
-    }
-
-    isInScene() {
-        return this._object.parent != null;
-    }
-
-    getModelObject() {
-        return this._modelObject;
-    }
-
-    getModelUrl() {
-        return this._modelUrl;
-    }
-
-    getOwnerId() {
-        return this._ownerId;
-    }
-
-    getWorldPosition() {
-        this._object.getWorldPosition(this._vector3);
-        return this._vector3;
-    }
-
-    getWorldRotation() {
-        this._object.getWorldQuaternion(this._quaternion);
-        this._quaternion.normalize();
-        this._euler.setFromQuaternion(this._quaternion);
-        return this._euler;
-    }
-
-    getWorldQuaternion() {
-        this._object.getWorldQuaternion(this._quaternion);
-        return this._quaternion;
-    }
-
-    setModelUrl(modelUrl) {
-        this._modelUrl = modelUrl;
-    }
-
-    setOwnerId(ownerId) {
-        this._ownerId = ownerId;
-    }
-
-    decrementTTL(timeDelta) {
-        this._ttl -= timeDelta;
-        if(this._ttl < 0) {
-            projectHandler.deleteAsset(this);
-        }
-    }
-
-    resetTTL() {
-        this._ttl = TTL;
-    }
-
-    static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';
-    static assetName = 'XR Device';
-}
-
-projectHandler.registerAsset(XRDevice);
-libraryHandler.loadBuiltIn(XRDevice);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class XRController extends XRDevice {
-    constructor(params = {}) {
-        params['assetId'] = XRController.assetId;
-        super(params);
-        let controllerModel = params['controllerModel'];
-        if(controllerModel) {
-            this._object.add(controllerModel);
-            this._modelObject = controllerModel;
-            this._modelUrl = controllerModel.motionController.assetUrl;
-        }
-        this._handedness = params['handedness'];
-        if(!this._handedness in Handedness) {
-            throw new Error("hand must be LEFT or RIGHT");
-        }
-        this._raycasterOrigin = new Vector3();
-        this._raycasterDirection = new Vector3();
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
-            owner.registerXRController(params['handedness'], this);
-        }
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['handedness'] = this._handedness;
-        return params;
-    }
-
-    addFromTargetRay(asset, position, rotation) {
-        let controller = inputHandler.getXRController(
-            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
-        let assetObject = asset.getObject();
-        if(!controller) return;
-        controller.add(assetObject);
-        if(position) assetObject.position.fromArray(position);
-        if(rotation) assetObject.rotation.fromArray(rotation);
-        asset.attachTo(this);
-    }
-
-    getHandedness() {
-        return this._handedness;
-    }
-
-    getTargetRayDirection() {
-        let xrController = inputHandler.getXRController(
-            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return this._raycasterDirection;
-    }
-
-    getRaycaster() {
-        let xrController = inputHandler.getXRController(
-            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldPosition(this._raycasterOrigin);
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
-    }
-
-    isButtonPressed(index) {
-        let gamepad = inputHandler.getXRGamepad(this._handedness);
-        return gamepad != null && gamepad.buttons[index].pressed;
-    }
-
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
-    }
-
-    static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
-    static assetName = 'XR Controller';
-}
-
-projectHandler.registerAsset(XRController);
-libraryHandler.loadBuiltIn(XRController);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
-
-class XRHand extends XRDevice {
-    constructor(params = {}) {
-        params['assetId'] = XRHand.assetId;
-        super(params);
-        this._handedness = params['handedness'];
-        if(!this._handedness in Handedness) {
-            throw new Error("hand must be LEFT or RIGHT");
-        }
-        let controllerModel = params['controllerModel'];
-        if(controllerModel) {
-            this._object.add(controllerModel);
-            this._modelObject = controllerModel;
-            this._modelUrl = DEFAULT_HAND_PROFILE_PATH
-                + this._handedness.toLowerCase() + '.glb';
-            this._isUsers = true;
-            this._enableARMask();
-        }
-        this._palmDirection = new Vector3();
-        this._raycasterOrigin = new Vector3();
-        this._raycasterDirection = new Vector3();
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
-            owner.registerXRHand(params['handedness'], this);
-        }
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['handedness'] = this._handedness;
-        return params;
-    }
-
-    addFromTargetRay(asset, position, rotation) {
-        let hand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
-            this._handedness, 'targetRay');
-        let assetObject = asset.getObject();
-        if(!hand) return;
-        hand.add(assetObject);
-        if(position) assetObject.position.fromArray(position);
-        if(rotation) assetObject.rotation.fromArray(rotation);
-        asset.attachTo(this);
-    }
-
-    getHandedness() {
-        return this._handedness;
-    }
-
-    getTargetRayDirection() {
-        let xrController = inputHandler.getXRController(XRInputDeviceTypes.HAND,
-            this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return this._raycasterDirection;
-    }
-
-    getRaycaster() {
-        let xrHand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
-            this._handedness, 'targetRay');
-        if(!xrHand) return null;
-        xrHand.getWorldPosition(this._raycasterOrigin);
-        xrHand.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
-    }
-
-    getPalmDirection() {
-        if(this._isUsers) {
-            let model = inputHandler.getXRControllerModel(
-                XRInputDeviceTypes.HAND, this._handedness);
-            this._palmDirection.copy(model.motionController.palmDirection);
-        } else if(this._handedness == Handedness.LEFT) {
-            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
-                0.1958660688459766);
-            this._object.localToWorld(this._palmDirection)
-                .sub(this.getWorldPosition());
-        } else {
-            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
-                0.19586401335899684);
-            this._object.localToWorld(this._palmDirection)
-                .sub(this.getWorldPosition());
-        }
-        return this._palmDirection;
-    }
-
-    isButtonPressed(index) {
-        let model = inputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
-            this._handedness);
-        if(index == 0) {
-            return model.motionController.isPinching;
-        } else if(index == 1) {
-            return model.motionController.isGrabbing;
-        }
-        return false;
-    }
-
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
-    }
-
-    static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
-    static assetName = 'XR Hand';
-}
-
-projectHandler.registerAsset(XRHand);
-libraryHandler.loadBuiltIn(XRHand);
-
-const UserMessageCodes = {
-    AVATAR: 1,
-    LEFT_CONTROLLER: 2,
-    RIGHT_CONTROLLER: 4,
-    LEFT_HAND: 8,
-    RIGHT_HAND: 16,
-    USER_VELOCITY: 32,
-    USER_POSITION: 64,
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const AVATAR_KEY = "DigitalBacon:Avatar";
-const USERNAME_KEY = "DigitalBacon:Username";
-const FADE_START = 0.6;
-const FADE_END = 0.2;
-//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
-const FADE_RANGE = FADE_START - FADE_END;
-const EPSILON = 0.00000000001;
-  
-class UserController extends InternalAssetEntity {
-    constructor(params = {}) {
-        params['assetId'] = UserController.assetId;
-        super(params);
-        this._isXR = false;
-        this._username = localStorage.getItem(USERNAME_KEY)
-            || generateRandomUsername();
-        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
-            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-        this._avatarFadeUpdateNumber = 0;
-        this._xrControllers = {};
-        this._xrHands = {};
-        this._xrDevices = new Set();
-    }
-
-    init() {
-        if(global$1.deviceType == 'XR') {
-            this.setIsXR(true);
-        }
-        let scale = settingsHandler.getUserScale();
-        this.setScale([scale, scale, scale]);
-        this._setup();
-    }
-
-    _setup() {
-        if(global$1.deviceType != "XR") {
-            this._avatar = new Avatar({
-                'avatarUrl': this._avatarUrl,
-                'parentId': this._id,
-                'verticalOffset': global$1.cameraFocus.position.y,
-            });
-            audioHandler.setListenerParent(this._avatar.getObject());
-        } else {
-            this._avatar = new Avatar({
-                'object': global$1.camera,
-                'parentId': this._id,
-                'avatarUrl': this._avatarUrl,
-            });
-        }
-        this._avatar.parent = this;
-        projectHandler.addAsset(this._avatar);
-        this._basicMovement = new BasicMovement({
-            'User Object': this._object,
-            'Avatar': this._avatar,
-        });
-    }
-
-    getAvatar() {
-        return this._avatar;
-    }
-
-    getIsXR() {
-        return this._isXR;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    setAvatarUrl(url, ignorePublish) {
-        localStorage.setItem(AVATAR_KEY, url);
-        this._avatarUrl = url;
-        this._avatar.updateSourceUrl(url);
-        if(ignorePublish) return;
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: this._avatar, fields: ['avatarUrl'] });
-    }
-
-    setIsXR(isXR) {
-        this._isXR = isXR;
-    }
-
-    setScale(scale, ignorePublish) {
-        super.setScale(scale);
-        if(ignorePublish) return;
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: this, fields: ['scale'] });
-    }
-    setUsername(username, ignorePublish) {
-        localStorage.setItem(USERNAME_KEY, username);
-        this._username = username;
-        if(ignorePublish) return;
-        pubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
-    }
-
-    getController(handedness) {
-        return this._xrControllers[handedness];
-    }
-
-    getHand(handedness) {
-        return this._xrHands[handedness];
-    }
-
-    getXRDevices() {
-        return this._xrDevices;
-    }
-
-    registerXRController(handedness, xrController) {
-        this._xrControllers[handedness] = xrController;
-        this._xrDevices.add(xrController);
-    }
-
-    registerXRHand(handedness, xrHand) {
-        this._xrHands[handedness] = xrHand;
-        this._xrDevices.add(xrHand);
-    }
-
-    registerXRDevice(xrDevice) {
-        this._xrDevices.add(xrDevice);
-    }
-
-    disableBasicMovement() {
-        this._basicMovement.disable();
-    }
-
-    enableBasicMovement() {
-        this._basicMovement.enable();
-    }
-
-    getDistanceBetweenHands() {
-        if(global$1.deviceType != 'XR') return;
-        let leftController = this._xrControllers[Handedness.LEFT];
-        let rightController = this._xrControllers[Handedness.RIGHT];
-        if(!leftController || !rightController) return;
-        if(!leftController.isInScene()) {
-            leftController = this._xrHands[Handedness.LEFT];
-            rightController = this._xrHands[Handedness.RIGHT];
-            if(!leftController || !rightController) return;
-        }
-
-        let leftPosition = leftController.getWorldPosition();
-        let rightPosition = rightController.getWorldPosition();
-        return leftPosition.distanceTo(rightPosition);
-    }
-
-    getDataForRTC() {
-        let codes = 0;
-        let data = [];
-        if(global$1.deviceType == "XR") {
-            codes += this._pushAvatarDataForRTC(data);
-            codes += this._pushHandsDataForRTC(data);
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            codes += this._pushAvatarDataForRTC(data);
-        }
-        let worldVelocity = this._basicMovement.getWorldVelocity();
-        if(worldVelocity.length() >= 0.00001) {
-            data.push(...this._basicMovement.getWorldVelocity().toArray());
-            codes += UserMessageCodes.USER_VELOCITY;
-        }
-        if(global$1.renderer.info.render.frame % 300 == 0) {
-            this._object.getWorldPosition(vector3s[0]);
-            data.push(...vector3s[0].toArray());
-            codes += UserMessageCodes.USER_POSITION;
-        }
-        let codesArray = new Uint8Array([codes]);
-        return [codesArray.buffer, Float32Array.from(data).buffer];
-    }
-
-    _pushAvatarDataForRTC(data) {
-        let position = global$1.camera.position.toArray();
-        let rotation = global$1.camera.rotation.toArray();
-        rotation.pop();
-
-        data.push(...position);
-        data.push(...rotation);
-        return UserMessageCodes.AVATAR;
-    }
-
-    _pushHandsDataForRTC(data, type) {
-        let codes = 0;
-        settingsHandler.getUserScale();
-        for(let type of ['CONTROLLER', 'HAND']) {
-            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
-            for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
-                let controller = this[map][handedness];
-                if(controller && controller.isInScene()) {
-                    controller.pushDataForRTC(data);
-                    codes += UserMessageCodes[handedness + '_' + type];
-                }
-            }
-        }
-        return codes;
-    }
-
-    hasChild(object) {
-        return object.parent == this._object;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['isXR'] = this._isXR;
-        params['username'] = this._username;
-        return params;
-    }
-
-    _updateAvatar() {
-        if(!this._avatar.isDisplayingAvatar()) {
-            let data = [];
-            this._pushAvatarDataForRTC(data);
-            let rotation = data.slice(3, 6);
-            this._avatar.getObject().rotation.fromArray(rotation);
-        }
-        let updateNumber = sessionHandler.getControlsUpdateNumber();
-        if(this._avatarFadeUpdateNumber == updateNumber) return;
-        this._avatarFadeUpdateNumber = updateNumber;
-        let cameraDistance = sessionHandler.getCameraDistance();
-        if(cameraDistance > FADE_START * 2) return;
-        let diff = cameraDistance - this._avatarFadeCameraDistance;
-        if(Math.abs(diff) < EPSILON) return;
-        //Fade Logic Start
-        this._avatarFadeCameraDistance = cameraDistance;
-        let fadePercent = Math.max(cameraDistance, FADE_END);
-        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
-        if(fadePercent == 0) {
-            if(this._avatar.isDisplayingAvatar()) {
-                this._basicMovement.setPerspective(1);
-                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
-                    1);
-                this._avatar.hideAvatar();
-            }
-            return;
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            this._basicMovement.setPerspective(3);
-            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
-            this._avatar.displayAvatar();
-        }
-        (fadePercent < 1)
-            ? this._avatar.fade(fadePercent)
-            : this._avatar.endFade();
-        //Fade Logic end
-
-        //Disappear Logic start
-        //let object = this._avatar.getObject();
-        //if(cameraDistance < FADE_MIDDLE) {
-        //    if(object.parent) this._avatar.removeFromScene();
-        //} else if(!object.parent) {
-        //    this._avatar.addToScene(global.cameraFocus,
-        //        this._pointerInteractable, this._gripInteractable);
-        //}
-        //Disappear Logic end
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updateHands(timeDelta);
-        } else if(this._avatar) {
-            this._updateAvatar();
-        }
-        this._basicMovement.update(timeDelta);
-    }
-
-    _getControllerModelUrl(object) {
-        if(object && object.motionController) {
-            return object.motionController.assetUrl;
-        }
-    }
-
-    _updateHands(timeDelta) {
-        for(let side in Handedness) {
-            this._updateHand(timeDelta, XRInputDeviceTypes.CONTROLLER, side);
-            this._updateHand(timeDelta, XRInputDeviceTypes.HAND, side);
-        }
-    }
-
-    _updateHand(timeDelta, type, handedness) {
-        let controller = (type == XRInputDeviceTypes.HAND)
-            ? this._xrHands[handedness]
-            : this._xrControllers[handedness];
-        let controllerModel = inputHandler.getXRControllerModel(type,
-            handedness);
-        let source = inputHandler.getXRInputSource(type, handedness);
-        if(controller && controller.isInScene()) {
-            if(source) {
-                controller.resetTTL();
-            } else {
-                controller.decrementTTL(timeDelta);
-            }
-        } else if(source && this._getControllerModelUrl(controllerModel)) {
-            if(!controller) {
-                if(controllerModel.children.length == 0) return;
-                let assetClass = (type == XRInputDeviceTypes.HAND)
-                    ? XRHand
-                    : XRController;
-                controller = new assetClass({
-                    handedness: handedness,
-                    ownerId: this._id,
-                    controllerModel: controllerModel,
-                    object: inputHandler.getXRController(type, handedness,
-                        'grip'),
-                });
-                projectHandler.addAsset(controller, false, true);
-                controller.attachTo(this);
-            } else {
-                projectHandler.addAsset(controller, false, true);
-            }
-        }
-    }
-
-    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
-    static assetName = 'User';
-}
-
-function generateRandomUsername() {
-    return String.fromCharCode(97+Math.floor(Math.random() * 26))
-            + Math.floor(Math.random() * 100);
-}
-
-let userController = new UserController();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-const PLAY = 0;
-const PAUSE = 1;
-const STOP = 2;
+const PLAY$1 = 0;
+const PAUSE$1 = 1;
+const STOP$1 = 2;
 
 class AudioAsset extends AssetEntity {
     constructor(params = {}) {
@@ -14044,8 +12975,7 @@ class AudioAsset extends AssetEntity {
     }
 
     _getDefaultName() {
-        return libraryHandler.getAssetName(this._assetId)
-            || 'Audio';
+        return libraryHandler.getAssetName(this._assetId) || 'Audio';
     }
 
     exportParams() {
@@ -14070,55 +13000,55 @@ class AudioAsset extends AssetEntity {
         return this._audio;
     }
 
-    getAutoplay(autoplay) {
+    getAutoplay() {
         return this._autoplay;
     }
 
-    getConeInnerAngle(coneInnerAngle) {
+    getConeInnerAngle() {
         return this._coneInnerAngle;
     }
 
-    getConeOuterAngle(coneOuterAngle) {
+    getConeOuterAngle() {
         return this._coneOuterAngle;
     }
 
-    getConeOuterGain(coneOuterGain) {
+    getConeOuterGain() {
         return this._coneOuterGain;
     }
 
-    getDistanceModel(distanceModel) {
+    getDistanceModel() {
         return this._distanceModel;
     }
 
-    getLoop(loop) {
+    getLoop() {
         return this._loop;
     }
 
-    getMaxDistance(maxDistance) {
+    getMaxDistance() {
         return this._maxDistance;
     }
 
-    getPlayTopic(playTopic) {
+    getPlayTopic() {
         return this._playTopic;
     }
 
-    getPauseTopic(pauseTopic) {
+    getPauseTopic() {
         return this._pauseTopic;
     }
 
-    getRefDistance(refDistance) {
+    getRefDistance() {
         return this._refDistance;
     }
 
-    getRolloffFactor(rolloffFactor) {
+    getRolloffFactor() {
         return this._rolloffFactor;
     }
 
-    getStopTopic(stopTopic) {
+    getStopTopic() {
         return this._stopTopic;
     }
 
-    getVolume(volume) {
+    getVolume() {
         return this._volume;
     }
 
@@ -14166,8 +13096,8 @@ class AudioAsset extends AssetEntity {
         }
         this._playTopic = playTopic;
         if(this._playTopic) {
-            pubSub.subscribe(this._id, this._playTopic, (message) => {
-                if(!global$1.isEditor) this._audio.play();
+            pubSub.subscribe(this._id, this._playTopic, () => {
+                if(!global$1.isEditor) this.play(null, true);
             });
         }
     }
@@ -14178,8 +13108,8 @@ class AudioAsset extends AssetEntity {
         }
         this._pauseTopic = pauseTopic;
         if(this._pauseTopic) {
-            pubSub.subscribe(this._id, this._pauseTopic, (message) => {
-                if(!global$1.isEditor) this._audio.pause();
+            pubSub.subscribe(this._id, this._pauseTopic, () => {
+                if(!global$1.isEditor) this.pause(null, true);
             });
         }
     }
@@ -14200,8 +13130,8 @@ class AudioAsset extends AssetEntity {
         }
         this._stopTopic = stopTopic;
         if(this._stopTopic) {
-            pubSub.subscribe(this._id, this._stopTopic, (message) => {
-                if(!global$1.isEditor) this._audio.stop();
+            pubSub.subscribe(this._id, this._stopTopic, () => {
+                if(!global$1.isEditor) this.stop(true);
             });
         }
     }
@@ -14218,7 +13148,7 @@ class AudioAsset extends AssetEntity {
         }
         this._audio.play();
         if(ignorePublish) return;
-        let type = new Uint8Array([PLAY]);
+        let type = new Uint8Array([PLAY$1]);
         position = new Float64Array([this._audio._progress]);
         let message = concatenateArrayBuffers(type, position);
         partyHandler.publishInternalBufferMessage(this._idBytes, message);
@@ -14230,7 +13160,7 @@ class AudioAsset extends AssetEntity {
             this._audio._progress = position || 0;
         }
         if(ignorePublish) return;
-        let type = new Uint8Array([PAUSE]);
+        let type = new Uint8Array([PAUSE$1]);
         position = new Float64Array([this._audio._progress]);
         let message = concatenateArrayBuffers(type, position);
         partyHandler.publishInternalBufferMessage(this._idBytes, message);
@@ -14239,7 +13169,7 @@ class AudioAsset extends AssetEntity {
     stop(ignorePublish) {
         this._audio.stop();
         if(ignorePublish) return;
-        let message = new Uint8Array([STOP]);
+        let message = new Uint8Array([STOP$1]);
         partyHandler.publishInternalBufferMessage(this._idBytes, message);
     }
 
@@ -14252,13 +13182,13 @@ class AudioAsset extends AssetEntity {
         });
         partyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
             let type = new Uint8Array(m, 0, 1);
-            if(type[0] == PLAY) {
+            if(type[0] == PLAY$1) {
                 let message = new Float64Array(m.slice(1));
                 this.play(message[0], true);
-            } else if(type[0] == PAUSE) {
+            } else if(type[0] == PAUSE$1) {
                 let message = new Float64Array(m.slice(1));
                 this.pause(message[0], true);
-            } else if(type[0] == STOP) {
+            } else if(type[0] == STOP$1) {
                 this.stop(true);
             }
         });
@@ -14266,10 +13196,13 @@ class AudioAsset extends AssetEntity {
 
     _onPeerReady(peer) {
         if(!partyHandler.isHost()) return;
-        if(!this._audio.isPlaying) return;
-        this._audio.pause();//pause() update audio._progress
-        this._audio.play();
-        let type = new Uint8Array([PLAY]);
+        let topic = PAUSE$1;
+        if(this._audio.isPlaying) {
+            this._audio.pause();//pause() update audio._progress
+            this._audio.play();
+            topic = PLAY$1;
+        }
+        let type = new Uint8Array([topic]);
         let position = new Float64Array([this._audio._progress]);
         let message = concatenateArrayBuffers(type, position);
         partyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
@@ -14277,7 +13210,7 @@ class AudioAsset extends AssetEntity {
 
     _onPartyStarted(isHost) {
         if(isHost) return;
-        this._audio.stop();
+        this.stop(true);
     }
 
     static assetType = AssetTypes.AUDIO;
@@ -14312,35 +13245,6 @@ class AudioHandler extends AssetsHandler {
             return this.addNewAsset(params.assetId, params, true, true);
         }
     }
-
-    //load(assets, isDiff) {
-    //    if(!assets) return;
-    //    if(isDiff) {
-    //        let assetsToDelete = [];
-    //        for(let id in this._assets) {
-    //            let asset = this._assets[id];
-    //            let assetId = asset.getAssetId();
-    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-    //                assetsToDelete.push(asset);
-    //        }
-    //        for(let asset of assetsToDelete) {
-    //            this.deleteAsset(asset, true, true);
-    //        }
-    //    }
-    //    for(let assetTypeId in assets) {
-    //        if(!(assetTypeId in LibraryHandler.library)) {
-    //            console.error("Unrecognized asset found");
-    //            continue;
-    //        }
-    //        for(let params of assets[assetTypeId]) {
-    //            if(isDiff && this._assets[params.id]) {
-    //                this._assets[params.id].updateFromParams(params);
-    //            } else {
-    //                this.addNewAsset(assetTypeId, params, true, true);
-    //            }
-    //        }
-    //    }
-    //}
 }
 
 new AudioHandler();
@@ -14352,14 +13256,13 @@ new AudioHandler();
  */
 
 
-class ClampedTexturePlane extends AssetEntity {
+class ImageAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);
-        this._doubleSided = !(params.doubleSided == false);
-        if(!this._doubleSided) this._updateDoubleSided(false);
-        this._transparent = params['transparent'] != false;
-        if(!this._transparent) this._updateTransparent(false);
+        let side = numberOr(params['side'], THREE.DoubleSide);
+        if(side != THREE.DoubleSide) this.setSide(side);
+        this._side = side;
     }
 
     _createMesh(assetId) {
@@ -14368,40 +13271,28 @@ class ClampedTexturePlane extends AssetEntity {
     }
 
     _getDefaultName() {
-        return libraryHandler.getAssetName(this._assetId)
-            || super._getDefaultName();
+        return libraryHandler.getAssetName(this._assetId) || 'Image';
     }
-
-    _updateTransparent(isTransparent) {
-        if(!this._materialAlreadyCloned) {
-            this._mesh.material = this._mesh.material.clone();
-            this._materialAlreadyCloned = true;
-        }
-        this._mesh.material.transparent = isTransparent;
-        this._transparent = isTransparent;
-     }
 
     exportParams() {
         let params = super.exportParams();
-        params['doubleSided'] = this._mesh.material.side == THREE.DoubleSide;
-        params['transparent'] = this._transparent;
+        params['side'] = this._mesh.material.side;
         return params;
     }
 
-    getDoubleSided() {
-        return this._mesh.material.side == THREE.DoubleSide;
+    getSide() {
+        return this._mesh.material.side;
     }
 
-    setDoubleSided(doubleSided) {
-        if(doubleSided == this._doubleSided) return;
+    setSide(side) {
+        if(side == this._side) return;
         if(!this._materialAlreadyCloned) {
             this._mesh.material = this._mesh.material.clone();
             this._materialAlreadyCloned = true;
         }
-        this._mesh.material.side = (doubleSided)
-            ? THREE.DoubleSide
-            : THREE.FrontSide;
-        this._doubleSided = doubleSided;
+        this._side = side;
+        this._mesh.material.side = side;
+        this._mesh.material.needsUpdate = true;
     }
 
     static assetType = AssetTypes.IMAGE;
@@ -14421,7 +13312,7 @@ class ImagesHandler extends AssetsHandler {
     }
 
     addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
-        let asset = new ClampedTexturePlane(params || { assetId: assetId });
+        let asset = new ImageAsset(params || { assetId: assetId });
         this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
@@ -14436,35 +13327,6 @@ class ImagesHandler extends AssetsHandler {
             return this.addNewAsset(params.assetId, params, true, true);
         }
     }
-
-    //load(assets, isDiff) {
-    //    if(!assets) return;
-    //    if(isDiff) {
-    //        let assetsToDelete = [];
-    //        for(let id in this._assets) {
-    //            let asset = this._assets[id];
-    //            let assetId = asset.getAssetId();
-    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-    //                assetsToDelete.push(asset);
-    //        }
-    //        for(let asset of assetsToDelete) {
-    //            this.deleteAsset(asset, true, true);
-    //        }
-    //    }
-    //    for(let assetTypeId in assets) {
-    //        if(!(assetTypeId in LibraryHandler.library)) {
-    //            console.error("Unrecognized asset found");
-    //            continue;
-    //        }
-    //        for(let params of assets[assetTypeId]) {
-    //            if(isDiff && this._assets[params.id]) {
-    //                this._assets[params.id].updateFromParams(params);
-    //            } else {
-    //                this.addNewAsset(assetTypeId, params, true, true);
-    //            }
-    //        }
-    //    }
-    //}
 }
 
 new ImagesHandler();
@@ -14519,7 +13381,7 @@ let materialsHandler = new MaterialsHandler();
  */
 
 
-class GLTFAsset extends AssetEntity {
+class ModelAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
         this._createMesh(params['assetId']);
@@ -14552,7 +13414,7 @@ class ModelsHandler extends AssetsHandler {
     }
 
     addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
-        let asset = new GLTFAsset(params || { assetId: assetId });
+        let asset = new ModelAsset(params || { assetId: assetId });
         this.addAsset(asset, ignorePublish, ignoreUndoRedo);
         return asset;
     }
@@ -14567,35 +13429,6 @@ class ModelsHandler extends AssetsHandler {
             return this.addNewAsset(params.assetId, params, true, true);
         }
     }
-
-    //load(assets, isDiff) {
-    //    if(!assets) return;
-    //    if(isDiff) {
-    //        let assetsToDelete = [];
-    //        for(let id in this._assets) {
-    //            let asset = this._assets[id];
-    //            let assetId = asset.getAssetId();
-    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-    //                assetsToDelete.push(asset);
-    //        }
-    //        for(let asset of assetsToDelete) {
-    //            this.deleteAsset(asset, true, true);
-    //        }
-    //    }
-    //    for(let assetTypeId in assets) {
-    //        if(!(assetTypeId in LibraryHandler.library)) {
-    //            console.error("Unrecognized asset found");
-    //            continue;
-    //        }
-    //        for(let params of assets[assetTypeId]) {
-    //            if(isDiff && this._assets[params.id]) {
-    //                this._assets[params.id].updateFromParams(params);
-    //            } else {
-    //                this.addNewAsset(assetTypeId, params, true, true);
-    //            }
-    //        }
-    //    }
-    //}
 }
 
 new ModelsHandler();
@@ -14668,6 +13501,320 @@ class TexturesHandler extends AssetsHandler {
 }
 
 let texturesHandler = new TexturesHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const PLAY = 0;
+const PAUSE = 1;
+const STOP = 2;
+
+class VideoAsset extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+        this._autoplay = params['autoplay'] || false;
+        this._loop = params['loop'] || false;
+        this._side = numberOr(params['side'], THREE.DoubleSide);
+        this._createMesh(params['assetId']);
+        this.setPlayTopic(params['playTopic'] || '');
+        this.setPauseTopic(params['pauseTopic'] || '');
+        this.setStopTopic(params['stopTopic'] || '');
+        if(!global$1.isEditor) this._addPartySubscriptions();
+    }
+
+    _createMesh(assetId) {
+        this._material = new THREE.MeshBasicMaterial({
+            side: this._side,
+            transparent: false,
+        });
+        let videoUrl = libraryHandler.getUrl(assetId);
+        if(!videoUrl) return;
+        this._video = document.createElement('video');
+        this._video.onloadedmetadata = () => {
+            let texture = new THREE.VideoTexture(this._video);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            let width = this._video.videoWidth;
+            let height = this._video.videoHeight;
+            if(width > height) {
+                height *= defaultImageSize / width;
+                width = defaultImageSize;
+            } else {
+                width *= defaultImageSize / height;
+                height = defaultImageSize;
+            }
+            let geometry = new THREE.PlaneGeometry(width, height);
+            this._material.map = texture;
+            this._material.needsUpdate = true;
+            let mesh = new THREE.Mesh( geometry, this._material );
+            this._object.add(mesh);
+        };
+        this._video.crossOrigin = "anonymous";
+        this._video.src = videoUrl;
+
+    }
+
+    _getDefaultName() {
+        return libraryHandler.getAssetName(this._assetId) || 'Video';
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['autoplay'] = this._autoplay;
+        params['loop'] = this._loop;
+        params['pauseTopic'] = this._pauseTopic;
+        params['playTopic'] = this._playTopic;
+        params['side'] = this._material.side;
+        params['stopTopic'] = this._stopTopic;
+        return params;
+    }
+
+    getAutoplay() {
+        return this._autoplay;
+    }
+
+    getLoop() {
+        return this._loop;
+    }
+
+    getPlayTopic() {
+        return this._playTopic;
+    }
+
+    getPauseTopic() {
+        return this._pauseTopic;
+    }
+
+    getSide() {
+        return this._material.side;
+    }
+
+    getStopTopic() {
+        return this._stopTopic;
+    }
+
+    getVideo() {
+        return this._video;
+    }
+
+    setAutoplay(autoplay) {
+        this._autoplay = autoplay;
+        if(!global$1.isEditor) this._video.autoplay = autoplay;
+    }
+
+    setLoop(loop) {
+        this._loop = loop;
+        this._video.loop = loop;
+    }
+
+    setPlayTopic(playTopic) {
+        if(this._playTopic) {
+            pubSub.unsubscribe(this._id, this._playTopic);
+        }
+        this._playTopic = playTopic;
+        if(this._playTopic) {
+            pubSub.subscribe(this._id, this._playTopic, () => {
+                if(!global$1.isEditor) this.play(null, true);
+            });
+        }
+    }
+
+    setPauseTopic(pauseTopic) {
+        if(this._pauseTopic) {
+            pubSub.unsubscribe(this._id, this._pauseTopic);
+        }
+        this._pauseTopic = pauseTopic;
+        if(this._pauseTopic) {
+            pubSub.subscribe(this._id, this._pauseTopic, () => {
+                if(!global$1.isEditor) this.pause(null, true);
+            });
+        }
+    }
+
+    setSide(side) {
+        if(side == this._side) return;
+        this._side = side;
+        this._material.side = side;
+        this._material.needsUpdate = true;
+    }
+
+    setStopTopic(stopTopic) {
+        if(this._stopTopic) {
+            pubSub.unsubscribe(this._id, this._stopTopic);
+        }
+        this._stopTopic = stopTopic;
+        if(this._stopTopic) {
+            pubSub.subscribe(this._id, this._stopTopic, () => {
+                if(!global$1.isEditor) this.stop(true);
+            });
+        }
+    }
+
+    play(position, ignorePublish) {
+        if(position != null) {
+            this._video.currentTime = position || 0;
+        }
+        this._video.play();
+        if(ignorePublish) return;
+        let type = new Uint8Array([PLAY]);
+        position = new Float64Array([this._video.currentTime]);
+        let message = concatenateArrayBuffers(type, position);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message);
+    }
+
+    pause(position, ignorePublish) {
+        this._video.pause();
+        if(position != null) {
+            this._video.currentTime = position || 0;
+        }
+        if(ignorePublish) return;
+        let type = new Uint8Array([PAUSE]);
+        position = new Float64Array([this._video.currentTime]);
+        let message = concatenateArrayBuffers(type, position);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message);
+    }
+
+    stop(ignorePublish) {
+        this._video.pause();
+        this._video.currentTime = 0;
+        if(ignorePublish) return;
+        let message = new Uint8Array([STOP]);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message);
+    }
+
+    _addPartySubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            if(this._autoplay && !this._alreadyAutoplayed) {
+                this.play(null, true);
+                this._alreadyAutoplayed = true;
+            }
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            this._onPeerReady(message.peer);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
+            this._onPartyStarted(partyHandler.isHost());
+        });
+        partyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
+            let type = new Uint8Array(m, 0, 1);
+            if(type[0] == PLAY) {
+                let message = new Float64Array(m.slice(1));
+                this.play(message[0], true);
+            } else if(type[0] == PAUSE) {
+                let message = new Float64Array(m.slice(1));
+                this.pause(message[0], true);
+            } else if(type[0] == STOP) {
+                this.stop(true);
+            }
+        });
+    }
+
+    _isPlaying() {
+        return !this._video.paused && !this._video.ended
+            && this._video.currentTime > 0 && this._video.readyState > 2;
+    }
+
+    _onPeerReady(peer) {
+        if(!partyHandler.isHost()) return;
+        let topic = (this._isPlaying()) ? PLAY : PAUSE;
+        let type = new Uint8Array([topic]);
+        let position = new Float64Array([this._video.currentTime]);
+        let message = concatenateArrayBuffers(type, position);
+        partyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
+    }
+
+    _onPartyStarted(isHost) {
+        if(isHost) return;
+        this.stop(true);
+    }
+
+    removeFromScene() {
+        this.stop(true);
+        super.removeFromScene();
+    }
+
+    static assetType = AssetTypes.VIDEO;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class VideosHandler extends AssetsHandler {
+    constructor() {
+        super(PubSubTopics.VIDEO_ADDED, PubSubTopics.VIDEO_DELETED,
+            AssetTypes.VIDEO);
+    }
+
+    addNewAsset(assetId, params, ignorePublish, ignoreUndoRedo) {
+        let asset = new VideoAsset(params || { assetId: assetId });
+        this.addAsset(asset, ignorePublish, ignoreUndoRedo);
+        return asset;
+    }
+
+    loadAsset(params, isDiff) {
+        if(!(params.assetId in libraryHandler.library)) {
+            console.error("Unrecognized asset found");
+        } else if(isDiff && this._assets[params.id]) {
+            this._assets[params.id].updateFromParams(params);
+            return this._assets[params.id];
+        } else {
+            return this.addNewAsset(params.assetId, params, true, true);
+        }
+    }
+}
+
+new VideosHandler();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class InternalAssetEntity extends AssetEntity {
+    constructor(params = {}) {
+        super(params);
+    }
+
+    removeFromScene() {
+        let inheritor = this.parent;
+        while(inheritor.constructor.assetType == AssetTypes.INTERNAL) {
+            inheritor = inheritor.parent;
+        }
+        this.promoteExternalAssets(inheritor, this.children);
+        super.removeFromScene();
+    }
+
+    promoteExternalAssets(inheritor, children) {
+        for(let child of children) {
+            if(child.constructor.assetType == AssetTypes.INTERNAL) {
+                this.promoteExternalAssets(inheritor, child.children);
+            } else {
+                child.attachTo(inheritor, true);
+            }
+        }
+    }
+
+    static assetType = AssetTypes.INTERNAL;
+}
+
+const UserMessageCodes = {
+    AVATAR: 1,
+    LEFT_CONTROLLER: 2,
+    RIGHT_CONTROLLER: 4,
+    LEFT_HAND: 8,
+    RIGHT_HAND: 16,
+    USER_VELOCITY: 32,
+    USER_POSITION: 64,
+};
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -14947,1181 +14094,10 @@ class Light extends AssetEntity {
  */
 
 
-class PointerInteractableEntity extends Entity {
-    constructor() {
-        super();
-        this._pointerInteractable = PointerInteractable.emptyGroup();
-    }
-    
-    setPointerInteractableParent(interactableParent) {
-        if(interactableParent) {
-            interactableParent.addChild(this._pointerInteractable);
-        }
-    }
-
-    removeParentInteractableParent() {
-        if(this._pointerInteractable.parent)
-            this._pointerInteractable.parent.removeChild(
-                this._pointerInteractable);
-    }
-
-    addToScene(scene, interactableParent) {
-        super.addToScene(scene);
-        this.setPointerInteractableParent(interactableParent);
-    }
-
-    removeFromScene() {
-        super.removeFromScene();
-        this.removeParentInteractableParent();
-    }
-}
-
-const MenuPages = {
-    ACKNOWLEDGEMENTS: "ACKNOWLEDGEMENTS",
-    ASSET: "ASSET",
-    ASSETS: "ASSETS",
-    ASSET_SELECT: "ASSET_SELECT",
-    COLOR_WHEEL: "COLOR_WHEEL",
-    COMPONENT: "COMPONENT",
-    COMPONENTS: "COMPONENTS",
-    EDIT_ACKNOWLEDGEMENTS: "EDIT_ACKNOWLEDGEMENTS",
-    EDITOR_SETTINGS: "EDITOR_SETTINGS",
-    HANDS: "HANDS",
-    HOST_PARTY: "HOST_PARTY",
-    JOIN_PARTY: "JOIN_PARTY",
-    LIBRARY: "LIBRARY",
-    LIBRARY_SEARCH: "LIBRARY_SEARCH",
-    LIST_COMPONENTS: "LIST_COMPONENTS",
-    LOAD_GDRIVE: "LOAD_GDRIVE",
-    MATERIAL: "MATERIAL",
-    MATERIALS: "MATERIALS",
-    NAVIGATION: "NAVIGATION",
-    NEW_COMPONENT: "NEW_COMPONENT",
-    NEW_MATERIAL: "NEW_MATERIAL",
-    NEW_TEXTURE: "NEW_TEXTURE",
-    NEW_SYSTEM: "NEW_SYSTEM",
-    PARTY: "PARTY",
-    PEER: "PEER",
-    PROJECT: "PROJECT",
-    SETTINGS: "SETTINGS",
-    SKETCHFAB_ASSET: "SKETCHFAB_ASSET",
-    SKETCHFAB_LOGIN: "SKETCHFAB_LOGIN",
-    SKETCHFAB_SEARCH: "SKETCHFAB_SEARCH",
-    SKYBOX: "SKYBOX",
-    SYSTEM: "SYSTEM",
-    SYSTEMS: "SYSTEMS",
-    TEXTURE: "TEXTURE",
-    TEXTURES: "TEXTURES",
-    TEXT_INPUT: "TEXT_INPUT",
-    TWO_BUTTON: "TWO_BUTTON",
-    UPLOAD: "UPLOAD",
-    USER_SETTINGS: "USER_SETTINGS",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const HEIGHT$d = 0.05;
-const WIDTH$d = 0.31;
-const TITLE_WIDTH$d = 0.14;
-const COLOR_BOX_WIDTH = 0.08;
-const COLOR_BOX_HEIGHT = 0.04;
-
-class ColorInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        let title = params['title'] || 'Missing Field Name...';
-        this._lastValue = numberOr(params['initialValue'], 0x2abbd5);
-        this._color = new THREE.Color(this._lastValue);
-        this._onBlur = params['onBlur'];
-        this._onUpdate = params['onUpdate'];
-        this._getFromSource = params['getFromSource'];
-        this._createInputs(title);
-    }
-
-    _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$d,
-            'width': WIDTH$d,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$d,
-            'width': TITLE_WIDTH$d,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._colorBlock = ThreeMeshUIHelper.createColorBlock({
-            'height': COLOR_BOX_HEIGHT,
-            'width': COLOR_BOX_WIDTH,
-            'margin': 0,
-            'selectedColor': this._color,
-        });
-        this._object.add(titleBlock);
-        this._object.add(this._colorBlock);
-        let interactable = new PointerInteractable(this._colorBlock, true);
-        interactable.addAction(() => {
-            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
-            colorPage.setContent(this._id, this._color,
-                (color) => {
-                    this._color.setHex(color);
-                    if(this._onUpdate) this._onUpdate(color);
-                }, ()   => {
-                    if(colorPage.isDraggingCursors()) return;
-                    let oldColor = this._lastValue;
-                    let newColor = this._color.getHex();
-                    if(this._onBlur) this._onBlur(oldColor, newColor);
-                    this._lastValue = newColor;
-                    this._color.setHex(this._lastValue);
-                });
-            global$1.menuController.pushPage(MenuPages.COLOR_WHEEL);
-            pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-                'id': this._id,
-                'targetOnlyMenu': true,
-            });
-        });
-        this._pointerInteractable.addChild(interactable);
-    }
-
-    getWidth() {
-        return WIDTH$d;
-    }
-
-    getHeight() {
-        return HEIGHT$d;
-    }
-
-    deactivate() {
-        //Required method
-    }
-
-    updateFromSource() {
-        if(this._getFromSource) {
-            this._lastValue = this._getFromSource();
-            this._color.setHex(this._lastValue);
-            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
-            colorPage.updateColor(this._id, this._color);
-        }
-    }
-}
-
-const HandTools = {
-    ACTIVE: "EDIT",
-    COPY_PASTE: "COPY_PASTE",
-    DELETE: "DELETE",
-    EDIT: "EDIT",
-    ROTATE: "ROTATE",
-    SCALE: "SCALE",
-    TRANSLATE: "TRANSLATE",
-};
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class MenuGripInteractable extends GripInteractable {
-    constructor(threeObj, border) {
-        super(threeObj);
-        if(threeObj) threeObj.gripInteractable = this;
-        this._border = border;
-    }
-
-    _createBoundingObject() {
-        this._boundingPlane = new THREE.Plane();
-    }
-
-    _getBoundingObject() {
-        this._threeObj.getWorldPosition(vector3s[0]);
-        this._threeObj.getWorldQuaternion(quaternion);
-        vector3s[1].set(0,0,1).applyQuaternion(quaternion);
-        this._boundingPlane.setFromNormalAndCoplanarPoint(vector3s[1],
-            vector3s[0]);
-        return this._boundingPlane;
-    }
-
-    _displayBoundingObject() {
-        this._threeObj.add(this._border);
-    }
-
-    _hideBoundingObject() {
-        this._threeObj.remove(this._border);
-    }
-
-    intersectsSphere(sphere) {
-        let boundingPlane = this._getBoundingObject();
-        let intersects;
-        if(boundingPlane) {
-            //We already have threeObj's world position in vector3s[0]
-            intersects = sphere.intersectsPlane(boundingPlane)
-                && sphere.distanceToPoint(vector3s[0]) < 0.45;
-        } else {
-            intersects = false;
-        }
-        return intersects;
-    }
-
-    // Assumes intersectsSphere(sphere) is called first so we don't update the
-    // bounding plane by calling _getBoundingObject()
-    distanceToSphere(sphere) {
-        return this._boundingPlane.distanceToPoint(sphere.center);
-    }
-
-    static emptyGroup() {
-        return new MenuGripInteractable();
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class InteractableHandler {
-    constructor() {
-        this._id = uuidv4();
-        this._interactables = new Set();
-        this._hoveredInteractables = {};
-        this._selectedInteractables = {};
-        this._tool = null;
-        this._toolHandlers = {};
-        this._addInteractable = this.addInteractable;
-        this._addInteractables = this.addInteractables;
-        this._removeInteractable = this.removeInteractable;
-        this._removeInteractables = this.removeInteractables;
-        this.addInteractable = () => {};
-        this.addInteractables = () => {};
-        this.removeInteractable = () => {};
-        this.removeInteractables = () => {};
-    }
-
-    _setupXRSubscription() {
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
-            this._tool = tool;
-            for(let option in this._hoveredInteractables) {
-                let interactable = this._hoveredInteractables[option];
-                if(!interactable) return;
-                if(interactable instanceof MenuGripInteractable) continue;
-                interactable.removeHoveredBy(option);
-                delete this._hoveredInteractables[option];
-            }
-            for(let option in this._selectedInteractables) {
-                let interactable = this._selectedInteractables[option];
-                if(!interactable) return;
-                if(interactable instanceof MenuGripInteractable) continue;
-                interactable.removeSelectedBy(option);
-                delete this._selectedInteractables[option];
-            }
-        });
-    }
-
-    init() {
-        if(global$1.deviceType == "XR") {
-            this.update = this._updateForXR;
-            this._setupXRSubscription();
-        } else if(global$1.deviceType == "POINTER") {
-            this.update = this._updateForPointer;
-        } else if(global$1.deviceType == "MOBILE") {
-            this.update = this._updateForMobile;
-        }
-        this.addInteractable = this._addInteractable;
-        this.addInteractables = this._addInteractables;
-        this.removeInteractable = this._removeInteractable;
-        this.removeInteractables = this._removeInteractables;
-    }
-
-    registerToolHandler(tool, handler) {
-        this._toolHandlers[tool] = handler;
-    }
-
-    addInteractable(interactable) {
-        this._interactables.add(interactable);
-    }
-
-    addInteractables(interactables) {
-        interactables.forEach((interactable) => {
-            this._interactables.add(interactable);
-        });
-    }
-
-    removeInteractable(interactable) {
-        this._interactables.delete(interactable);
-        interactable.reset();
-    }
-
-    removeInteractables(interactables) {
-        interactables.forEach((interactable) => {
-            this._interactables.delete(interactable);
-            interactable.reset();
-        });
-    }
-
-    reset() {
-        this._interactables.forEach(interactable => { interactable.reset(); });
-        this._interactables = new Set();
-        this._hoveredInteractables = {};
-        this._selectedInteractables = {};
-    }
-
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class PointerInteractableHandler extends InteractableHandler {
-    constructor() {
-        super();
-        this._wasPressed = {};
-    }
-
-    init() {
-        super.init();
-        this._cursors = {};
-        this.addInteractable(scene.getPointerInteractable());
-    }
-
-    _getXRCursor(hand) {
-        if(this._cursors[hand]) return this._cursors[hand];
-        let canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        let ctx = canvas.getContext("2d");
-        ctx.beginPath();
-        ctx.arc(32, 32, 29, 0, 2 * Math.PI);
-        ctx.lineWidth = 5;
-        ctx.stroke();
-        ctx.fillStyle = "white";
-        ctx.fill();
-        let spriteMaterial = new THREE.SpriteMaterial({
-            map: new THREE.CanvasTexture(canvas),
-            depthTest: false,
-            sizeAttenuation: false,
-        });
-        for(let handedness in Handedness) {
-            let cursor = new THREE.Sprite(spriteMaterial);
-            cursor.scale.set(0.015,0.015,0.015);
-            cursor.visible = false;
-            cursor.renderOrder = Infinity;
-            this._cursors[handedness] = cursor;
-            scene.getObject().add(cursor);
-        }
-        return this._cursors[hand];
-    }
-
-    _getRaycaster(option) {
-        if(option == "POINTER") {
-            let position = inputHandler.getPointerPosition();
-            let raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(position, global$1.camera);
-            return raycaster;
-        } else if(option == "MOBILE") {
-            let position = inputHandler.getPointerPosition();
-            let raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(position, global$1.camera);
-            return raycaster;
-        }
-    }
-
-    _isControllerPressed(option) {
-        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
-            let gamepad = inputHandler.getXRGamepad(option);
-            return gamepad != null && gamepad.buttons[0].pressed;
-        } else if(option == "POINTER") {
-            return inputHandler.isPointerPressed();
-        } else if(option == "MOBILE") {
-            return inputHandler.isScreenTouched();
-        }
-    }
-
-    _squashInteractables(option, interactables, objects) {
-        for(let interactable of interactables) {
-            let object = interactable.getThreeObj();
-            if(object && !interactable.isOnlyGroup()) objects.push(object);
-            if(interactable.children.size != 0) {
-                this._squashInteractables(option, interactable.children,
-                    objects);
-            }
-        }
-    }
-
-    _getObjectInteractable(object) {
-        while(object != null) {
-            if(object.pointerInteractable) return object.pointerInteractable;
-            object = object.parent;
-        }
-    }
-
-    _raycastInteractables(controller, interactables) {
-        let raycaster = controller['raycaster'];
-        if(!raycaster) return;
-        raycaster.firstHitOnly = true;
-        raycaster.params.Line.threshold = 0.01;
-        let objects = [];
-        this._squashInteractables(controller.option, interactables, objects);
-        let intersections = raycaster.intersectObjects(objects);
-        for(let intersection of intersections) {
-            let interactable = this._getObjectInteractable(intersection.object);
-            if(!interactable) continue;
-            let distance = intersection.distance;
-            let userDistance = distance;
-            if(global$1.deviceType != 'XR') {
-                global$1.cameraFocus.getWorldPosition(vector3s[0]);
-                userDistance = intersection.point
-                    .distanceTo(vector3s[0]);
-            }   
-            if(!interactable.isWithinReach(userDistance)) continue;
-            controller['closestPointDistance'] = distance;
-            controller['closestPoint'] = intersection.point;
-            controller['closestInteractable'] = interactable;
-            controller['userDistance'] = userDistance;
-            return;
-        }
-    }
-
-    _updateInteractables(controller) {
-        let option = controller['option'];
-        let isPressed = controller['isPressed'];
-        let hoveredInteractable = this._hoveredInteractables[option];
-        let selectedInteractable = this._selectedInteractables[option];
-        let closestInteractable = controller['closestInteractable'];
-        let userDistance = controller['userDistance'];
-        if(closestInteractable && !closestInteractable.isOnlyGroup()) {
-            if(isPressed) {
-                if(selectedInteractable) {
-                    if(selectedInteractable == closestInteractable) {
-                        selectedInteractable.triggerDraggableActions(option,
-                            controller['closestPoint'], userDistance);
-                    }
-                } else if(hoveredInteractable == closestInteractable) {
-                    closestInteractable.addSelectedBy(option,
-                        controller['closestPoint'], userDistance);
-                    this._selectedInteractables[option] = closestInteractable;
-                    closestInteractable.removeHoveredBy(option);
-                    this._hoveredInteractables[option] = null;
-                }
-            } else {
-                if(hoveredInteractable != closestInteractable) {
-                    if(hoveredInteractable) {
-                        hoveredInteractable.removeHoveredBy(option);
-                    }
-                    closestInteractable.addHoveredBy(option,
-                        controller['closestPoint'], userDistance);
-                    this._hoveredInteractables[option] = closestInteractable;
-                    //I can probably remove the below 2 lines
-                //} else if(selectedInteractable) {
-                //    selectedInteractable.releaseDraggedActions();
-                }
-                if(selectedInteractable) {
-                    selectedInteractable.removeSelectedBy(option);
-                    this._selectedInteractables[option] = null;
-                }
-            }
-        } else if(!isPressed) {
-            if(this._wasPressed[option] && !hoveredInteractable
-                    && !selectedInteractable) {
-                pubSub.publish(this._id, PubSubTopics.EMPTY_CLICK);
-            }
-            if(selectedInteractable) {
-                selectedInteractable.removeSelectedBy(option);
-                this._selectedInteractables[option] = null;
-            }
-            if(hoveredInteractable) {
-                hoveredInteractable.removeHoveredBy(option);
-                this._hoveredInteractables[option] = null;
-            }
-        }
-        this._wasPressed[option] = isPressed;
-    }
-
-    _updateInteractablesMobile(controller) {
-        let option = controller['option'];
-        let isPressed = controller['isPressed'];
-        let selectedInteractable = this._selectedInteractables[option];
-        if(this._mobileWasTouched) {
-            if(!selectedInteractable) {
-                this._mobileWasTouched = isPressed;
-                return;
-            }
-
-            this._raycastInteractables(controller, this._interactables);
-            let userDistance = controller['userDistance'];
-            let closestInteractable = controller['closestInteractable'];
-            if(!isPressed) {
-                this._mobileWasTouched = false;
-                if(closestInteractable == selectedInteractable) {
-                    selectedInteractable.triggerActions(option,
-                        controller['closestPoint'], userDistance);
-                }
-                selectedInteractable.removeSelectedBy(option);
-            } else if(selectedInteractable == closestInteractable) {
-                selectedInteractable.triggerDraggableActions(option,
-                    controller['closestPoint'], userDistance);
-            }
-        } else if(isPressed) {
-            this._mobileWasTouched = true;
-            this._raycastInteractables(controller, this._interactables);
-            let userDistance = controller['userDistance'];
-            let closestInteractable = controller['closestInteractable'];
-            if(closestInteractable) {
-                closestInteractable.addSelectedBy(option,
-                    controller['closestPoint'], userDistance);
-                this._selectedInteractables[option] = closestInteractable;
-            }
-        }
-    }
-
-    _updateCursor(controller) {
-        let cursor = controller.cursor;
-        if(!cursor) return;
-        if(controller['closestPoint'] != null) {
-            cursor.position.copy(controller['closestPoint']);
-            if(!cursor.visible) {
-                cursor.visible = true;
-            }
-        } else {
-            if(cursor.visible) {
-                cursor.visible = false;
-            }
-        }
-    }
-
-    _updateForXR() {
-        if(!global$1.sessionActive) return;
-
-        for(let handedness in Handedness) {
-            let controllerExists = false;
-            for(let type of ['getController', 'getHand']) {
-                let xrDevice = global$1.userController[type](handedness);
-                if(!xrDevice) continue;
-                let active = xrDevice.isInScene();
-                if(active) {
-                    if(type == 'getController') {
-                        controllerExists = true;
-                    } else if(controllerExists) {
-                        active = false;
-                    }
-                }
-                let controller = {
-                    option: xrDevice.getId(),
-                    raycaster: (active) ? xrDevice.getRaycaster() : null,
-                    isPressed: (active) ? xrDevice.isButtonPressed(0) : false,
-                    closestPoint: null,
-                    closestPointDistance: Number.MAX_SAFE_INTEGER,
-                    cursor: (active) ? this._getXRCursor(handedness) : null,
-                    userDistance: Number.MAX_SAFE_INTEGER,
-                };
-                let skipUpdate = false;
-                if(this._toolHandlers[this._tool]) {
-                    skipUpdate = this._toolHandlers[this._tool](controller);
-                }
-                if(!skipUpdate) {
-                    this._raycastInteractables(controller, this._interactables);
-                    this._updateInteractables(controller);
-                }
-                this._updateCursor(controller);
-            }
-        }
-    }
-
-    _updateForPointer() {
-        if(!global$1.sessionActive) return;
-
-        let controller = {
-            option: "POINTER",
-            raycaster: this._getRaycaster("POINTER"),
-            isPressed: this._isControllerPressed("POINTER"),
-            closestPoint: null,
-            closestPointDistance: Number.MAX_SAFE_INTEGER,
-            userDistance: Number.MAX_SAFE_INTEGER,
-        };
-        if(this._toolHandlers[this._tool]) {
-            this._toolHandlers[this._tool](controller);
-        }
-        {
-            this._raycastInteractables(controller, this._interactables);
-            this._updateInteractables(controller);
-        }
-        let style = global$1.renderer.domElement.style;
-        if(this._hoveredInteractables['POINTER']) {
-            if(!style.cursor) style.cursor = 'pointer';
-        } else if(style.cursor == 'pointer') {
-            style.cursor = '';
-        }
-    }
-
-    _updateForMobile() {
-        if(!global$1.sessionActive) return;
-
-        let controller = {
-            option: "MOBILE",
-            raycaster: this._getRaycaster("MOBILE"),
-            isPressed: this._isControllerPressed("MOBILE"),
-            closestPoint: null,
-            closestPointDistance: Number.MAX_SAFE_INTEGER,
-            userDistance: Number.MAX_SAFE_INTEGER,
-        };
-        if(this._toolHandlers[this._tool]) {
-            let skipUpdate = this._toolHandlers[this._tool](controller);
-            if(skipUpdate) return;
-        }
-        this._updateInteractablesMobile(controller);
-    }
-}
-
-let pointerInteractableHandler = new PointerInteractableHandler();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const KEYBOARD_SCALE = 0.6;
-const KEYBOARD_VERTICAL_OFFSET = -0.275;
-
-class Keyboard {
-    constructor() {
-        this._id = uuidv4();
-        this._pivotPoint = new Object3D();
-        this._interactables = [];
-        this._pageInteractables = [[],[]];
-        this._keyboardPage = 0;
-        this._owner = null;
-        this._keysPressed = new Set();
-    }
-
-    init(scene) {
-        this._scene = scene;
-        this._setupKeyboard();
-    }
-
-    _setupKeyboard() {
-        this._keyboard = new ThreeMeshUI.Keyboard({
-            language: 'English',
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture,
-            fontSize: 0.035, // fontSize will propagate to the keys blocks
-            backgroundColor: Colors.keyboard,
-            backgroundOpacity: 1,
-            backspaceTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDoyNTJDRDY5NkEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyNTJDRDY5NUEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6RUVFQjQyNUZBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6RUVFQjQyNjBBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+rrf2SgAADoVJREFUeNrs3QuQ1VUBx/Gz7LI8ZtTJ0VFBCAhDBR+h+SCjgikqbVIIMQUFRQgFfAT2MOXhA8g3Q2iRRsSjEBDIB2Cv6TU1PNJpLJqmoZIZkB6Ay0tYdju/OecSMAvce/eee/97zvczcwajZXf//3PP73/O+Z//+Vc1NjYaAGlqxSkACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQAkrqbSv0BDQ4Np1SrNHGpsbDx53bp1o7Zt29a7tra2yv7vBj6S8Tpw4EDrdu3a7evTp8+Ctm3brt60aZPp2rVr2gGQsFOqqqqe7t2793CFoP1vBQJnJXKq5+rq6n72P0fZP19NvgeQqO62fNeWj9kPgT4QnJG0dLRl1q5du/raPzczB5AWpf/ravyciqR1raur61/pX4IAKK8xtiy3pQunAjU1NV0IgDSojz/Dltm2nMTpgFfxSR/mAMI7w5ZnbbmOU4GjNBAAcbvElhdsuZBTgSxiCBDOQFtW0fhBAKTnXlsW2XIapwJZxhCgtNrZ8pQtozkVIADSojWdz9vyCU4FGAKk5aO2vErjBwGQnhtsWWzLuZwKEABpedCWubacyakAcwDpONWWZ2wZyqkAPYC09PJdfho/CIDEDDDu/n5/TgUIgLR8yTf+XpEcz35bDkRwHHv5aDIHEFKtLZNs+Xokx7PLuInLNbZU+d6MFi61aWHH8XtbnrNlq3FrMIbbchkfVwKglDrZ8k3jbvXF4E+23OMbf85KW9baMsuWU1rIcagnpr0Vdh72d0ttediW2/nYEgCl0NuWb9lyRSTH809/lVzbxP8335Z9/s+s9wR+aMtIW/Yc9ffbbBnrhzZ38vFlDqA5rvFXxlga/zvGPZ249jhfs8SWm/wQIasW2jKqicafs9/3cL7NR5gAKNYdvjvZMZLj0Rj5WlvW5/G1S30I7Mxot/82W+pO8HUHfA9gPh9lAqAQ7Y1b3KNuf20kx7TFlmG2/K6Af7PSDxXqMnQcuvLf7Icp+Tjoj2EhH2sCIB+62mtxz/iIjmm3Lbfa8pMi/q02Lh3hu9RZGPOr219f4L9TCIymJ0AAnIh27Flty9URHdMe8/8diYql4cDgCvcE5vvGv7vIf6/5DN0tWMbHnABoyiB/hewZ0THpQ69lymtK8L1W+hDYUYHjWGDcLb26EpyPW4x7XBsEwCEP+G7/6REdk7q999nyUgm/52o/j1DOnsA832j3lej75UJxPU2eANC2XXNsmRrh8f/Flh8F+L4vGzep9l6ZGv8YH2altN24uQ0kHAB6J98rxi0kidG/AzScnGVlmBOYa9xinj0Bzw8SDQCtedc7+WLetqt74CHNj20ZEmhO4Af+yh8yYNi1KdEA0EyyJrS6RH6cHWy537hXkYXymin9OoHvG3fbcV/A3/vTxq0lQEIBoON71LinxtonUqdqnE8E/hkrjFuVV4o5AV357ww4dBEt6da8z/to8keK+WGg033DH5hgvd5l3JLYiQF/xovGLc7RuP3kIr+HJvzGmeLv8+dDD3VpGfHZNPd0egB6J9+qRBt/zgRbHglcx7rdOLTIOQFd+bXJyruBr/wpDP0IgMPoLbzLfPKnTpuYTAv8MzQxqCXHOwts/Po3IXfzudL3UjryMUgnAPQoqN7G25mqPUQLg6YG/hnqCejWaj6TeAv9lb8+4O9zkR+a0O1PZA5Am1jonXxjqNImadWjJtmmBPwZS/yfCuCTjvE1WtuvCb89AX+Pnv7Kfw7VnkYPoLP/8NH4j2+yCb+voeph2DHmBHTlvz3wmP9i41b70fgTCYCP+wq/hqrMiyYFJwX+GSv8+P7whq4He0q5tr8pvf2VvzvVnMYQ4HpbnrblLKqx4J5AvQ+DkHMCGpZpc5VfG/dcfsgx//nG3VKk8ScSALrFpQU+ranCojzsG+SMgD9DG3n81ZZNJux9/u5+6HEe1Rp/AJzqG/5oqq7ZptvSaNy256GEfvz2Qt/4GfMnEABK+Nl+3I/SmOG76g+1wN9dt/q03qMb1Vi8ljIJ2Ne4Lapo/KWnNQITW9jv3MO4iUUafwIBoCe4ljPGC0rDgAkt5Hft5q/8Pam2uAOg1o9T9agoT3GF91gLCAE9z69nPM6nuuKeA9Bz7brFN5gqKnsIVPk/s0aNnhV+CQSAXr+tVzv1oXoqNhzQsuEnM/Q7dTFuGTFX/siHAHqF1Qoaf8VpQ5G7M/K76Gk+LSz6ENUSdwDoST6tF2dmNxvUA6j08xVa5KPn+S+mOuIOgCn+A9eOKskMzQVo3cVdFWz8Wk3Ivg4xB0B9ff0A+8eDVEVmaTL2jgp0+79n3M5OiDkAqqqqBlENmTfTuFuE5fi8aKJPLyK5itOexhCgPdWQedVlHIdrDugiTnk6AbCSasi8BX4Y0FCGn6WXeGr9x05OexoBoGW+L1IVmaV3Derpy3fL9PMUMnruQ7sHvcfpjz8A9tsy3jTvXfYId+VX499dgZ+ti4K2HK+jGuIOANlq3B7+z1Ilmbry31bhrrie9b/RhHkXIUy2FgLt9eNM7Rq7i6qp+JV/aEa64LlXk9MTiDwAcrT45CZbtlA9FbHIhN/Dr1C5jUb3Uz3xB4DozsBnbFlHFZXV/AqO+fMZDgyiJ5BGAMibtnzKuOcDEJ7O88iMNzANB4YwJ5BGAMh2PxadQlUFpS21bzYt47bba8wJpBMAop1rJ/sxIJVeenpRp576O9iCfucVPgRYJ5BAAOTo4RC9AejPVFvJaLu1sSbsu/pC0b6Ag7kopBMA8ks/L8CiodJ0+/WW3pAr/EI/3q1Xk+uOEcuGEwkA2WzcoqHvUH3NavwaUoV8V18P30C/VoYQuMWUb6kyAZABWjSk21V622091ViQ3Cu6Q4759b7G523pb9ybnMaWYU7gVuYE0gmAnGm2fMGWbVRlXub6xhhypWUH3yA/ctjfzfTDjZD0ANGNzAmkFQC59P+sLW9QnSe88o8JPF4+x9fHh4/6e20vpjcFjwp8jJoYHGbLf6nudAJA1vt5geVUaZN0q29EGcb8Wkx06XE+a9ru/Z4yXBAq/RATAVABeg21JoOeolqPsMB3v0POlXQx7pbipXl87ZNlmBNY7nsbzAkkFACimeB7/VVmH9V7qNsf8j5/Jz/+vryAfzPThN9yfLEfDnB3IKEAyNFOttfb8o+E61ZP9WlXnZCTYnphqx7cKnTr7tyW4+MCn4PcpiLbaeppBYDo/vB1tvw8wXpd6K9+IXtBvfxVtjmbhc70PbbQnwM95LSb5p5WAMgfjLs1tDihOv2VcRurhLzPr5d2zPMh0FxPmPATg8v8z2A/gcQCQLb6EHg0gWPd4a+oIWfAu/oGVcp39Wli8CuBz80c4yZEkVgAGH81vN+420P/ivg437LlbwG/v/brf92WCwJ87+m23Bf4/KynyacZADkvGLerzFuRHl+bgF1/TfTpLb0fCPj7z7DlgYDfv4Ymn3YA5MbInzdxTg7qtVp9A3xfjfUX+u5/aFNtmRTg++rOwydp8gSA8d3kgb5HEBO9Zu05c+Q6/OY6z4/5e5TxOCaXOARaG7dQ6WqaPAGQs8PPCUw0cc0O6826Wgl3eQm+l7r9q41b419uuRCobub3qTVuzcEwmjsB0JTHjVssEtM25KeZwlfnHe1K4xb5dKrgcSgEHmnmmF/1O5KPOQFwPFoxpseK/xhZT0BDnGIW6lxi3DLijhk4Dt0eLPYWrtYYjOPjTQDk47fGrRx8OaJj0qTgogLH7woMLZzqlqHj0K5C04vo2Y3nY00AFEKTg1+0ZVZEx3SunxP4YB5fe4Utr2Ss8R/eE5iW55yAhg5f5uNMABRjl+823m3c1mOxhMDCE4TAVX7eoEOGj+OrefQEvmHC3EYkABLzjHEzx5sjOR6N67VPX88m/j9NFs7LeOPPmWDLY030BGp843+Ij27+WBl1fLoiaqMRvbb8sgiOR1f5l3y4/dS4xTH9fff67BZ0HAqBM427vfeOcRuS6AGoQXxkCYBS22DcC0m0p93gCI5H9/Q1x7HF9wDPaKHHMdTXx1YfBm34qDIECEUPEN1g3Fr1WJzVght/jhr9+2n8BEA5NBg3CaW95vZyOkAApGmOHxJs4lSAAEjTz2zpZ9LcbgwEAKy/2/I53yMACIAE7fZzAtptqJHTAQIgTXpYRduQ/4dTAQIgTUuM23HmTU4FCIA0aRvyAcbtRQ8QAAnS0tQhJq4nCkEAoABaKKQnCvUyCl5QCQIgUXpH4bUm7XcUggBI2irj1gv8hlOBo1QRAGnQXoPaaWgppwKHqSEA0vG2LcNN83a5RVy2EwBp0XZj2rVG21Tv5HQkTfX/i+S7IInS1lxvHzx48HFbLuB0pKVVq1ampqZGexu+QQCka82GDRtGbNy4cXRtba027eTd9fGr3Wt17tx5db9+/WZXV1dX/BeqamzkGRYg2d4IpwAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAA4pv8JMAAdr12nbQhkBgAAAABJRU5ErkJggg==',
-            shiftTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo0NzY4M0Y0M0EzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo0NzY4M0Y0MkEzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MDYyMjJFRUJBM0UyMTFFQUE1QjVGOThGNjlDRTRBQzgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6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',
-            enterTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozOEE3NEZCM0EzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozOEE3NEZCMkEzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6Rjg2REZFNTNBM0UxMTFFQUEyRjRDNThCOUZCMENEMDIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6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',
-        });
-        this._keyboard.scale.set(KEYBOARD_SCALE,KEYBOARD_SCALE,KEYBOARD_SCALE);
-        for(let i = 0; i < this._keyboard.keys.length; i++) {
-            this._setupKey(i);
-        }
-        this._pivotPoint.position.setY(KEYBOARD_VERTICAL_OFFSET);
-        this._pivotPoint.add(this._keyboard);
-    }
-
-    _setupKey(index) {
-        let key = this._keyboard.keys[index];
-        key.setupState({
-            state: InteractableStates.IDLE,
-            attributes: {
-                offset: 0,
-                backgroundColor: Colors.keyboardButtonIdle,
-                backgroundOpacity: 1,
-            },
-            onSet: () => {
-                this._keysPressed.delete(key);
-            },
-        });
-        key.setupState({
-            state: InteractableStates.HOVERED,
-            attributes: {
-                offset: 0,
-                backgroundColor: Colors.keyboardButtonHovered,
-                backgroundOpacity: 1,
-            },
-            onSet: () => {
-                this._keysPressed.delete(key);
-            },
-        });
-        key.setupState({
-            state: InteractableStates.SELECTED,
-            attributes: {
-                offset: 0,
-                backgroundColor: Colors.keyboardButtonSelected,
-                backgroundOpacity: 1,
-            },
-            onSet: () => {
-                this._keysPressed.add(key);
-                if(key.info.command) {
-                    switch(key.info.command) {
-
-						// switch between panel charsets (eg: russian/english)
-						case 'switch-set' :
-							this._keyboard.setNextCharset();
-							break;
-
-						case 'enter' :
-                            this._owner.handleKey('Enter');
-							break;
-
-						case 'space' :
-                            this._owner.handleKey(' ');
-							break;
-
-						case 'backspace' :
-                            this._owner.handleKey('Backspace');
-							break;
-
-					}                } else if(key.info.input) {
-                    this._owner.handleKey(key.info.input);
-                }
-            },
-        });
-        let interactable;
-        // Need to make switch run on release otherwise _keysPressed prematurely
-        // becomes empty
-        let emptyFunction = () => {};
-        if(key.info.command == 'switch') {
-            // switch between panels
-            interactable = new PointerInteractable(key);
-            interactable.addAction(() => { this._switchPanel(); });
-        } else {
-            interactable = new PointerInteractable(key);
-            interactable.addAction(emptyFunction);
-        }
-        if(index <= 32) {
-            this._pageInteractables[0].push(interactable);
-        } else {
-            this._pageInteractables[1].push(interactable);
-        }
-        this._interactables.push(interactable);
-    }
-
-    _switchPanel() {
-        this._keyboard.setNextPanel();
-        if(this._owner) {
-            pointerInteractableHandler.removeInteractables(
-                this._pageInteractables[this._keyboardPage]);
-            this._keyboardPage = (this._keyboardPage + 1) % 2;
-            pointerInteractableHandler.addInteractables(
-                this._pageInteractables[this._keyboardPage]);
-        }
-    }
-
-    isKeyPressed() {
-        return this._keysPressed.size != 0;
-    }
-
-    setOwner(owner) {
-        this._owner = owner;
-        this._scene.add(this._pivotPoint);
-        pointerInteractableHandler.addInteractables(this._pageInteractables[this._keyboardPage]);
-        undoRedoHandler.disable(this._id);
-    }
-
-    removeOwner(owner) {
-        if(this._owner == owner && this._pivotPoint.parent) {
-            this._owner = null;
-            this._pivotPoint.parent.remove(this._pivotPoint);
-            pointerInteractableHandler.removeInteractables(this._interactables);
-            undoRedoHandler.enable(this._id);
-        }
-    }
-}
-
-let keyboard = new Keyboard();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class TextField extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._onBlur = params['onBlur'] || null;
-        this._onEnter = params['onEnter'] || null;
-        this._onUpdate = params['onUpdate'] || null;
-        this._defaultContent = params['text'] || "";
-        this._initialContent = params['initialText'] || "";
-        this._maxLength = params['maxLength'] || null;
-        this.content = "";
-        if(global$1.deviceType == "POINTER") this._setupEventListeners();
-        this._object = ThreeMeshUIHelper.createInputBlock(params);
-        this._pointerInteractable = new PointerInteractable(this._object, true);
-        this._pointerInteractable.addAction(() => { this._activate(); });
-        this._active = false;
-
-        if(this._initialContent) this.setContent(this._initialContent);
-    }
-
-    _setupEventListeners() {
-        this._keyListener = (event) => { this.handleKey(event.key); };
-        this._clickListener = (event) => {
-            if(!keyboard.isKeyPressed() && this._pointerInteractable.getState()
-                != InteractableStates.SELECTED)
-            {
-                this.deactivate();
-            }
-        };
-        this._pasteListener = (event) => { this._handlePaste(event); };
-    }
-
-    _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
-            if(this._id != message.id) this.deactivate();
-        });
-        pubSub.subscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED, () => {
-            this.deactivate();
-        });
-        if(global$1.deviceType == "XR") {
-            pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, () => {
-                this.deactivate();
-            });
-        }
-    }
-
-    _removeSubscriptions() {
-        pubSub.unsubscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED);
-        pubSub.unsubscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED);
-        if(global$1.deviceType == "XR")
-            pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
-    }
-
-    _handlePaste(e) {
-        if(e.clipboardData.types.indexOf('text/plain') < 0) return;
-        let data = e.clipboardData.getData('text/plain');
-        let valid = true;
-        for(let key of data) {
-            if(!ValidKeys.has(key)) valid = false;
-        }
-        if(valid) {
-            this.appendToContent(data);
-            e.preventDefault();
-        }
-    }
-
-    handleKey(key) {
-        if(inputHandler.isKeyCodePressed("ControlLeft")) {
-            return;
-        } else if(inputHandler.isKeyCodePressed("MetaLeft")) {
-            return;
-        } else if(ValidKeys.has(key)) {
-            this.appendToContent(key);
-            if(this._onUpdate) this._onUpdate();
-        } else if(key == "Backspace") {
-            this._removeFromEndOfContent();
-            if(this._onUpdate) this._onUpdate();
-        } else if(key == "Enter") {
-            this.deactivate();
-            if(this._onEnter) this._onEnter();
-        }
-    }
-
-    appendToContent(str) {
-        this.content += str;
-        this._updateDisplayedContentWithCursor();
-    }
-
-    _removeFromEndOfContent() {
-        if(this.content.length > 0) {
-            this.content = this.content.slice(0, -1);
-            this._updateDisplayedContentWithCursor();
-        }
-    }
-
-    _updateDisplayedContentWithCursor() {
-        this._updateDisplayedContent(true);
-    }
-
-    _updateDisplayedContentWithoutCursor() {
-        this._updateDisplayedContent(false);
-    }
-
-    _updateDisplayedContent(addPipe) {
-        let newContent = this.content;
-        let textComponent = this._object.children[1];
-        if(this._maxLength && newContent.length > this._maxLength) {
-            newContent = "..." + newContent.substring(
-                newContent.length - this._maxLength);
-        }
-        if(addPipe) newContent += "|";
-        textComponent.set({ content: newContent });
-    }
-
-    _activate() {
-        if(global$1.deviceType == "XR") {
-            if(this._active) return;
-            this._active = true;
-
-            this._updateDisplayedContentWithCursor();
-            keyboard.setOwner(this);
-            this._addSubscriptions();
-        } else if(global$1.deviceType == "POINTER") {
-            if(this._active) return;
-            this._active = true;
-
-            this._updateDisplayedContentWithCursor();
-            document.addEventListener("keydown", this._keyListener);
-            document.addEventListener("click", this._clickListener);
-            document.addEventListener("paste", this._pasteListener);
-            global$1.keyboardLock = true;
-        } else if (global$1.deviceType == "MOBILE") {
-            let content = prompt("Enter Value", this.content);
-            if(content || content == '') {
-                this.setContent(content);
-                if(this._onBlur) this._onBlur();
-                if(this._onEnter) this._onEnter();
-            }
-        }
-        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id, 'targetOnlyMenu': false });
-    }
-
-    deactivate() {
-        if(!this._active) return;
-        this._active = false;
-
-        if(global$1.deviceType == "XR") {
-            keyboard.removeOwner(this);
-            this._updateDisplayedContentWithoutCursor();
-            ThreeMeshUI.update();
-            this._removeSubscriptions();
-        } else if(global$1.deviceType == "POINTER") {
-            document.removeEventListener("keydown", this._keyListener);
-            document.removeEventListener("click", this._clickListener);
-            document.removeEventListener("paste", this._pasteListener);
-            global$1.keyboardLock = false;
-            this._updateDisplayedContentWithoutCursor();
-            ThreeMeshUI.update();
-        }
-        if(this._onBlur) this._onBlur();
-    }
-
-    setContent(content) {
-        this.content = content;
-        let textComponent = this._object.children[1];
-        let oldContent = textComponent.content;
-        if(oldContent == content) return;
-        if(oldContent.length > 0 && oldContent.endsWith("|")) {
-            this._updateDisplayedContentWithCursor();
-        } else {
-            this._updateDisplayedContentWithoutCursor();
-        }
-    }
-
-    setDefaultContent(defaultContent) {
-        this._defaultContent = defaultContent;
-    }
-
-    isBlank() {
-        return this.content == "";
-    }
-
-    reset() {
-        if(this._initialContent) {
-            this.setContent(this._initialContent);
-        } else {
-            this.content = "";
-            let textComponent = this._object.children[1];
-            textComponent.set({ content: this._defaultContent });
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class NumberField extends TextField {
-    constructor(params) {
-        super(params);
-        this._lastValidNumber = params['initialText'];
-        this._minValue = numberOr(params['minValue'], -Infinity);
-        this._maxValue = numberOr(params['maxValue'], Infinity);
-    }
-
-    handleKey(key) {
-        if(isFinite(key) || key == '-' || key == '.') {
-            this.appendToContent(key);
-            this._update();
-        } else if(key == "Backspace") {
-            this._removeFromEndOfContent();
-            this._update();
-        } else if(key == "Enter") {
-            this.deactivate();
-            if(this._onEnter) this._onEnter();
-        }
-    }
-
-    _update() {
-        let number = Number.parseFloat(this.content);
-        if(!isNaN(number)) {
-            if(number != this.content) {
-                this.setContent(String(number));
-            }
-            if(number >= this._minValue && number <= this._maxValue) {
-                this._lastValidNumber = String(number);
-            }
-        }
-        if(this._onUpdate) this._onUpdate();
-    }
-
-    _updateDisplayedContentWithoutCursor() {
-        let number = Number.parseFloat(this.content);
-        if(Number.isNaN(number)) {
-            this.content = String(this._lastValidNumber);
-        } else if(number < this._minValue) {
-            this.content = String(this._minValue);
-        } else if(number > this._maxValue) {
-            this.content = String(this._maxValue);
-        } else {
-            this._lastValidNumber = String(number);
-        }
-        this._updateDisplayedContent(false);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const HEIGHT$c = 0.05;
-const WIDTH$c = 0.31;
-const TITLE_WIDTH$c = 0.13;
-const FIELD_HEIGHT$a = 0.03;
-const FIELD_WIDTH$a = 0.17;
-const FIELD_MARGIN$a = 0.01;
-const FIELD_MAX_LENGTH$e = 13;
-
-class NumberInput extends PointerInteractableEntity {
-    constructor(params) {
-        super();
-        this._onBlur = params['onBlur'];
-        this._onUpdate = params['onUpdate'];
-        this._getFromSource = params['getFromSource'];
-        this._minValue = numberOr(params['minValue'], -Infinity);
-        this._maxValue = numberOr(params['maxValue'], Infinity);
-        this._lastValue = params['initialValue'] || 0;
-        let title = params['title'] || 'Missing Field Name...';
-        this._createInput(title);
-    }
-
-    _createInput(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$c,
-            'width': WIDTH$c,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT$c,
-            'width': TITLE_WIDTH$c,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._numberField = new NumberField({
-            'initialText': String(this._lastValue),
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$a,
-            'width': FIELD_WIDTH$a,
-            'margin': FIELD_MARGIN$a,
-            'maxLength': FIELD_MAX_LENGTH$e,
-            'minValue': this._minValue,
-            'maxValue': this._maxValue,
-            'onBlur': () => { this._blur(); },
-            'onUpdate': () => { this._update(); },
-        });
-        this._object.add(titleBlock);
-        this._numberField.addToScene(this._object, this._pointerInteractable);
-    }
-
-    _update() {
-        if(this._onUpdate && this._validate()) {
-            this._onUpdate(this.getValue());
-        }
-    }
-
-    _blur() {
-        let newValue = this.getValue();
-        if(this._onBlur) this._onBlur(this._lastValue, newValue);
-        this._lastValue = newValue;
-    }
-
-    _validate() {
-        let number = this.getValue();
-        return !isNaN(number) && number <= this._maxValue
-            && number >= this._minValue;
-    }
-
-    getValue() {
-        return Number.parseFloat(this._numberField.content);
-    }
-
-    getWidth() {
-        return WIDTH$c;
-    }
-
-    getHeight() {
-        return HEIGHT$c;
-    }
-
-    deactivate() {
-        this._numberField.deactivate();
-    }
-
-    reset() {
-        this._numberField.reset();
-    }
-
-    updateFromSource() {
-        if(this._getFromSource) {
-            this._lastValue = this._getFromSource();
-            this._numberField.setContent(String(this._lastValue));
-        }
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
 class AmbientLight extends Light {
     constructor(params = {}) {
         params['assetId'] = AmbientLight.assetId;
+        params['visualEdit'] = false;
         super(params);
         this._createLight();
     }
@@ -16769,12 +14745,6 @@ class PointLight extends Light {
         return PointLight.assetName;
     }
 
-    _updateLight() {
-        super._updateLight();
-        this._light.distance = this._distance;
-        this._light.decay = this._decay;
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['distance'] = this._distance;
@@ -17036,6 +15006,124 @@ libraryHandler.loadBuiltIn(SphereShape);
  */
 
 
+class SpotLight extends Light {
+    constructor(params = {}) {
+        params['intensity'] = numberOr(params['intensity'], 10);
+        params['assetId'] = SpotLight.assetId;
+        super(params);
+        this._createLight(params);
+    }
+
+    _createLight(params) {
+        this._angle = numberOr(params['angle'], 60);
+        let angle = this._angle * Math.PI / 360;
+        //let castShadow = params['castShadow'] || false;
+        let decay = numberOr(params['decay'], 2);
+        let distance = numberOr(params['distance'], 0);
+        let penumbra = numberOr(params['penumbra'], 0.5);
+        this._light = new THREE.SpotLight(this._color, this._intensity,
+            distance, angle, penumbra, decay);
+        //this._light.castShadow = castShadow;
+        this._light.position.fromArray([0, 0, 0]);
+        this._light.target.position.fromArray([0, -1, 0]);
+        this._light.add(this._light.target);
+        this._object.add(this._light);
+        this.setMap(params['map']);
+    }
+
+    _getDefaultName() {
+        return SpotLight.assetName;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['angle'] = this.getDistance();
+        //params['castShadow'] = this.getCastShadow();
+        params['decay'] = this.getDecay();
+        params['distance'] = this.getDistance();
+        params['penumbra'] = this.getPenumbra();
+        params['map'] = this.getMap();
+        return params;
+    }
+
+    getAngle() {
+        return this._angle;
+    }
+
+    //getCastShadow() {
+    //    return this._light.castShadow;
+    //}
+
+    getDecay() {
+        return this._light.decay;
+    }
+
+    getDistance() {
+        return this._light.distance;
+    }
+
+    getMap() {
+        return this._map;
+    }
+
+    getPenumbra() {
+        return this._light.penumbra;
+    }
+
+    setAngle(angle) {
+        this._angle = angle;
+        angle *= Math.PI / 360;
+        this._light.angle = angle;
+    }
+
+    //setCastShadow(castShadow) {
+    //    this._light.castShadow = castShadow;
+    //}
+
+    setDecay(decay) {
+        this._light.decay = decay;
+    }
+
+    setDistance(distance) {
+        this._light.distance = distance;
+    }
+
+    setMap(map) {
+        let oldMap = this._map;
+        this._map = map;
+        let texture = projectHandler.getAsset(map);
+        this._light.map = (texture)
+            ? texture.getTexture()
+            : null;
+        if(oldMap == map) return;
+        if(oldMap) {
+            let topic = PubSubTopics.TEXTURE_RECREATED + ':' + oldMap;
+            pubSub.unsubscribe(this._id, topic);
+        }
+        if(map) {
+            let topic = PubSubTopics.TEXTURE_RECREATED + ':' + map;
+            pubSub.subscribe(this._id, topic, () => this.setMap(map));
+        }
+    }
+
+    setPenumbra(penumbra) {
+        this._light.penumbra = penumbra;
+    }
+
+    static assetId = '50d0ddbf-571f-4328-922c-a52cf8d27704';
+    static assetName = 'Spot Light';
+}
+
+projectHandler.registerAsset(SpotLight);
+libraryHandler.loadBuiltIn(SpotLight);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
 class TorusShape extends Shape {
     constructor(params = {}) {
         params['assetId'] = TorusShape.assetId;
@@ -17136,6 +15224,104 @@ class TorusShape extends Shape {
 
 projectHandler.registerAsset(TorusShape);
 libraryHandler.loadBuiltIn(TorusShape);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class DirectionalLight extends Light {
+    constructor(params = {}) {
+        params['assetId'] = DirectionalLight.assetId;
+        params['visualEdit'] = false;
+        super(params);
+        let direction = params['direction'] || [0, -1, 0];
+        this._createLight();
+        this.setDirection(direction);
+    }
+
+    _createLight() {
+        this._light = new THREE.DirectionalLight(this._color, this._intensity);
+        this._light.add(this._light.target);
+        this._object.add(this._light);
+    }
+
+    _getDefaultName() {
+        return DirectionalLight.assetName;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['direction'] = this.getDirection();
+        return params;
+    }
+
+    getDirection() {
+        return this._light.target.position.toArray();
+    }
+
+    setDirection(direction) {
+        this._light.target.position.fromArray(direction);
+    }
+
+    static assetId = '495a9c3f-fa4f-4c55-9a38-74f4f34450cc';
+    static assetName = 'Directional Light';
+}
+
+projectHandler.registerAsset(DirectionalLight);
+libraryHandler.loadBuiltIn(DirectionalLight);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class HemisphereLight extends Light {
+    constructor(params = {}) {
+        params['assetId'] = HemisphereLight.assetId;
+        params['position'] = [0, 1, 0];
+        params['visualEdit'] = false;
+        super(params);
+        this._groundColor = numberOr(params['groundColor'], 0xffffff);
+        this._createLight();
+    }
+
+    _createLight() {
+        this._light = new THREE.HemisphereLight(this._color, this._groundColor,
+            this._intensity);
+        this._object.add(this._light);
+    }
+
+    _getDefaultName() {
+        return HemisphereLight.assetName;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['groundColor'] = this._light.groundColor.getHex();
+        return params;
+    }
+
+    getGroundColor() {
+        return this._groundColor;
+    }
+
+    setGroundColor(groundColor) {
+        if(this._groundColor == groundColor) return;
+        this._groundColor = groundColor;
+        this._light.groundColor.setHex(groundColor);
+    }
+
+    static assetId = '1589e804-9177-405f-9598-874cfe00c93c';
+    static assetName = 'Hemisphere Light';
+}
+
+projectHandler.registerAsset(HemisphereLight);
+libraryHandler.loadBuiltIn(HemisphereLight);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -17427,7 +15613,8 @@ libraryHandler.loadBuiltIn(BasicMaterial);
  */
 
 
-const MAPS$1 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "envMap", "metalnessMap", "normalMap", "roughnessMap"];
+const MAPS$1 = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap",
+              "envMap", "metalnessMap", "normalMap", "roughnessMap"];
 
 class StandardMaterial extends Material {
     constructor(params = {}) {
@@ -17748,7 +15935,8 @@ libraryHandler.loadBuiltIn(StandardMaterial);
  */
 
 
-const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap", "normalMap"];
+const MAPS = ["map", "alphaMap", "bumpMap", "displacementMap", "emissiveMap",
+              "normalMap"];
 
 class ToonMaterial extends Material {
     constructor(params = {}) {
@@ -18010,7 +16198,6 @@ class Texture extends Asset {
         setTimeout(() => {
             oldTexture.dispose();
         }, 20);
-        console.log('Publishing to ' + PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
         pubSub.publish(this._id, PubSubTopics.TEXTURE_RECREATED + ':'+this._id);
     }
 
@@ -18315,6 +16502,170 @@ function powerOf2(v) {
 projectHandler.registerAsset(CubeTexture);
 libraryHandler.loadBuiltIn(CubeTexture);
 
+const HandTools = {
+    ACTIVE: "EDIT",
+    COPY_PASTE: "COPY_PASTE",
+    DELETE: "DELETE",
+    EDIT: "EDIT",
+    ROTATE: "ROTATE",
+    SCALE: "SCALE",
+    TRANSLATE: "TRANSLATE",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class MenuGripInteractable extends GripInteractable {
+    constructor(threeObj, border) {
+        super(threeObj);
+        if(threeObj) threeObj.gripInteractable = this;
+        this._border = border;
+    }
+
+    _createBoundingObject() {
+        this._boundingPlane = new THREE.Plane();
+    }
+
+    _getBoundingObject() {
+        this._threeObj.getWorldPosition(vector3s[0]);
+        this._threeObj.getWorldQuaternion(quaternion);
+        vector3s[1].set(0,0,1).applyQuaternion(quaternion);
+        this._boundingPlane.setFromNormalAndCoplanarPoint(vector3s[1],
+            vector3s[0]);
+        return this._boundingPlane;
+    }
+
+    _displayBoundingObject() {
+        this._threeObj.add(this._border);
+    }
+
+    _hideBoundingObject() {
+        this._threeObj.remove(this._border);
+    }
+
+    intersectsSphere(sphere) {
+        let boundingPlane = this._getBoundingObject();
+        let intersects;
+        if(boundingPlane) {
+            //We already have threeObj's world position in vector3s[0]
+            intersects = sphere.intersectsPlane(boundingPlane)
+                && sphere.distanceToPoint(vector3s[0]) < 0.45;
+        } else {
+            intersects = false;
+        }
+        return intersects;
+    }
+
+    // Assumes intersectsSphere(sphere) is called first so we don't update the
+    // bounding plane by calling _getBoundingObject()
+    distanceToSphere(sphere) {
+        return this._boundingPlane.distanceToPoint(sphere.center);
+    }
+
+    static emptyGroup() {
+        return new MenuGripInteractable();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class InteractableHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._interactables = new Set();
+        this._hoveredInteractables = {};
+        this._selectedInteractables = {};
+        this._tool = null;
+        this._toolHandlers = {};
+        this._addInteractable = this.addInteractable;
+        this._addInteractables = this.addInteractables;
+        this._removeInteractable = this.removeInteractable;
+        this._removeInteractables = this.removeInteractables;
+        this.addInteractable = () => {};
+        this.addInteractables = () => {};
+        this.removeInteractable = () => {};
+        this.removeInteractables = () => {};
+    }
+
+    _setupXRSubscription() {
+        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (tool) => {
+            this._tool = tool;
+            for(let option in this._hoveredInteractables) {
+                let interactable = this._hoveredInteractables[option];
+                if(!interactable) return;
+                if(interactable instanceof MenuGripInteractable) continue;
+                interactable.removeHoveredBy(option);
+                delete this._hoveredInteractables[option];
+            }
+            for(let option in this._selectedInteractables) {
+                let interactable = this._selectedInteractables[option];
+                if(!interactable) return;
+                if(interactable instanceof MenuGripInteractable) continue;
+                interactable.removeSelectedBy(option);
+                delete this._selectedInteractables[option];
+            }
+        });
+    }
+
+    init() {
+        if(global$1.deviceType == "XR") {
+            this.update = this._updateForXR;
+            this._setupXRSubscription();
+        } else if(global$1.deviceType == "POINTER") {
+            this.update = this._updateForPointer;
+        } else if(global$1.deviceType == "MOBILE") {
+            this.update = this._updateForMobile;
+        }
+        this.addInteractable = this._addInteractable;
+        this.addInteractables = this._addInteractables;
+        this.removeInteractable = this._removeInteractable;
+        this.removeInteractables = this._removeInteractables;
+    }
+
+    registerToolHandler(tool, handler) {
+        this._toolHandlers[tool] = handler;
+    }
+
+    addInteractable(interactable) {
+        this._interactables.add(interactable);
+    }
+
+    addInteractables(interactables) {
+        interactables.forEach((interactable) => {
+            this._interactables.add(interactable);
+        });
+    }
+
+    removeInteractable(interactable) {
+        this._interactables.delete(interactable);
+        interactable.reset();
+    }
+
+    removeInteractables(interactables) {
+        interactables.forEach((interactable) => {
+            this._interactables.delete(interactable);
+            interactable.reset();
+        });
+    }
+
+    reset() {
+        this._interactables.forEach(interactable => { interactable.reset(); });
+        this._interactables = new Set();
+        this._hoveredInteractables = {};
+        this._selectedInteractables = {};
+    }
+
+}
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18461,12 +16812,12 @@ class CopyPasteControlsHandler {
         this._copiedAssets = {};
         this._previewAssets = {};
         gripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
-            (controller) => { return this._toolHandler(controller); });
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
+            (controller) => this._toolHandler(controller));
+        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByGrip = {};
         });
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByGrip = {};
         });
@@ -18520,25 +16871,329 @@ const AssetEntityTypes = {
     LIGHT: "LIGHT",
     MODEL: "MODEL",
     SHAPE: "SHAPE",
+    VIDEO: "VIDEO",
 };
 
-const FileTypes$2 = {
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class PointerInteractableHandler extends InteractableHandler {
+    constructor() {
+        super();
+        this._wasPressed = {};
+    }
+
+    init() {
+        super.init();
+        this._cursors = {};
+        this.addInteractable(scene.getPointerInteractable());
+    }
+
+    _getXRCursor(hand) {
+        if(this._cursors[hand]) return this._cursors[hand];
+        let canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        let ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.arc(32, 32, 29, 0, 2 * Math.PI);
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.fillStyle = "white";
+        ctx.fill();
+        let spriteMaterial = new THREE.SpriteMaterial({
+            map: new THREE.CanvasTexture(canvas),
+            depthTest: false,
+            sizeAttenuation: false,
+        });
+        for(let handedness in Handedness) {
+            let cursor = new THREE.Sprite(spriteMaterial);
+            cursor.scale.set(0.015,0.015,0.015);
+            cursor.visible = false;
+            cursor.renderOrder = Infinity;
+            this._cursors[handedness] = cursor;
+            scene.getObject().add(cursor);
+        }
+        return this._cursors[hand];
+    }
+
+    _getRaycaster(option) {
+        if(option == "POINTER") {
+            let position = inputHandler.getPointerPosition();
+            let raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(position, global$1.camera);
+            return raycaster;
+        } else if(option == "MOBILE") {
+            let position = inputHandler.getPointerPosition();
+            let raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(position, global$1.camera);
+            return raycaster;
+        }
+    }
+
+    _isControllerPressed(option) {
+        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
+            let gamepad = inputHandler.getXRGamepad(option);
+            return gamepad != null && gamepad.buttons[0].pressed;
+        } else if(option == "POINTER") {
+            return inputHandler.isPointerPressed();
+        } else if(option == "MOBILE") {
+            return inputHandler.isScreenTouched();
+        }
+    }
+
+    _squashInteractables(option, interactables, objects) {
+        for(let interactable of interactables) {
+            let object = interactable.getThreeObj();
+            if(object && !interactable.isOnlyGroup()) objects.push(object);
+            if(interactable.children.size != 0) {
+                this._squashInteractables(option, interactable.children,
+                    objects);
+            }
+        }
+    }
+
+    _getObjectInteractable(object) {
+        while(object != null) {
+            if(object.pointerInteractable) return object.pointerInteractable;
+            object = object.parent;
+        }
+    }
+
+    _raycastInteractables(controller, interactables) {
+        let raycaster = controller['raycaster'];
+        if(!raycaster) return;
+        raycaster.firstHitOnly = true;
+        raycaster.params.Line.threshold = 0.01;
+        let objects = [];
+        this._squashInteractables(controller.option, interactables, objects);
+        let intersections = raycaster.intersectObjects(objects);
+        for(let intersection of intersections) {
+            let interactable = this._getObjectInteractable(intersection.object);
+            if(!interactable) continue;
+            let distance = intersection.distance;
+            let userDistance = distance;
+            if(global$1.deviceType != 'XR') {
+                global$1.cameraFocus.getWorldPosition(vector3s[0]);
+                userDistance = intersection.point
+                    .distanceTo(vector3s[0]);
+            }   
+            if(!interactable.isWithinReach(userDistance)) continue;
+            controller['closestPointDistance'] = distance;
+            controller['closestPoint'] = intersection.point;
+            controller['closestInteractable'] = interactable;
+            controller['userDistance'] = userDistance;
+            return;
+        }
+    }
+
+    _updateInteractables(controller) {
+        let option = controller['option'];
+        let isPressed = controller['isPressed'];
+        let hoveredInteractable = this._hoveredInteractables[option];
+        let selectedInteractable = this._selectedInteractables[option];
+        let closestInteractable = controller['closestInteractable'];
+        let userDistance = controller['userDistance'];
+        if(closestInteractable && !closestInteractable.isOnlyGroup()) {
+            if(isPressed) {
+                if(selectedInteractable) {
+                    if(selectedInteractable == closestInteractable) {
+                        selectedInteractable.triggerDraggableActions(option,
+                            controller['closestPoint'], userDistance);
+                    }
+                } else if(hoveredInteractable == closestInteractable) {
+                    closestInteractable.addSelectedBy(option,
+                        controller['closestPoint'], userDistance);
+                    this._selectedInteractables[option] = closestInteractable;
+                    closestInteractable.removeHoveredBy(option);
+                    this._hoveredInteractables[option] = null;
+                }
+            } else {
+                if(hoveredInteractable != closestInteractable) {
+                    if(hoveredInteractable) {
+                        hoveredInteractable.removeHoveredBy(option);
+                    }
+                    closestInteractable.addHoveredBy(option,
+                        controller['closestPoint'], userDistance);
+                    this._hoveredInteractables[option] = closestInteractable;
+                    //I can probably remove the below 2 lines
+                //} else if(selectedInteractable) {
+                //    selectedInteractable.releaseDraggedActions();
+                }
+                if(selectedInteractable) {
+                    selectedInteractable.removeSelectedBy(option);
+                    this._selectedInteractables[option] = null;
+                }
+            }
+        } else if(!isPressed) {
+            if(this._wasPressed[option] && !hoveredInteractable
+                    && !selectedInteractable) {
+                pubSub.publish(this._id, PubSubTopics.EMPTY_CLICK);
+            }
+            if(selectedInteractable) {
+                selectedInteractable.removeSelectedBy(option);
+                this._selectedInteractables[option] = null;
+            }
+            if(hoveredInteractable) {
+                hoveredInteractable.removeHoveredBy(option);
+                this._hoveredInteractables[option] = null;
+            }
+        }
+        this._wasPressed[option] = isPressed;
+    }
+
+    _updateInteractablesMobile(controller) {
+        let option = controller['option'];
+        let isPressed = controller['isPressed'];
+        let selectedInteractable = this._selectedInteractables[option];
+        if(this._mobileWasTouched) {
+            if(!selectedInteractable) {
+                this._mobileWasTouched = isPressed;
+                return;
+            }
+
+            this._raycastInteractables(controller, this._interactables);
+            let userDistance = controller['userDistance'];
+            let closestInteractable = controller['closestInteractable'];
+            if(!isPressed) {
+                this._mobileWasTouched = false;
+                if(closestInteractable == selectedInteractable) {
+                    selectedInteractable.triggerActions(option,
+                        controller['closestPoint'], userDistance);
+                }
+                selectedInteractable.removeSelectedBy(option);
+            } else if(selectedInteractable == closestInteractable) {
+                selectedInteractable.triggerDraggableActions(option,
+                    controller['closestPoint'], userDistance);
+            }
+        } else if(isPressed) {
+            this._mobileWasTouched = true;
+            this._raycastInteractables(controller, this._interactables);
+            let userDistance = controller['userDistance'];
+            let closestInteractable = controller['closestInteractable'];
+            if(closestInteractable) {
+                closestInteractable.addSelectedBy(option,
+                    controller['closestPoint'], userDistance);
+                this._selectedInteractables[option] = closestInteractable;
+            }
+        }
+    }
+
+    _updateCursor(controller) {
+        let cursor = controller.cursor;
+        if(!cursor) return;
+        if(controller['closestPoint'] != null) {
+            cursor.position.copy(controller['closestPoint']);
+            if(!cursor.visible) {
+                cursor.visible = true;
+            }
+        } else {
+            if(cursor.visible) {
+                cursor.visible = false;
+            }
+        }
+    }
+
+    _updateForXR() {
+        if(!global$1.sessionActive) return;
+
+        for(let handedness in Handedness) {
+            let controllerExists = false;
+            for(let type of ['getController', 'getHand']) {
+                let xrDevice = global$1.userController[type](handedness);
+                if(!xrDevice) continue;
+                let active = xrDevice.isInScene();
+                if(active) {
+                    if(type == 'getController') {
+                        controllerExists = true;
+                    } else if(controllerExists) {
+                        active = false;
+                    }
+                }
+                let controller = {
+                    option: xrDevice.getId(),
+                    raycaster: (active) ? xrDevice.getRaycaster() : null,
+                    isPressed: (active) ? xrDevice.isButtonPressed(0) : false,
+                    closestPoint: null,
+                    closestPointDistance: Number.MAX_SAFE_INTEGER,
+                    cursor: (active) ? this._getXRCursor(handedness) : null,
+                    userDistance: Number.MAX_SAFE_INTEGER,
+                };
+                let skipUpdate = false;
+                if(this._toolHandlers[this._tool]) {
+                    skipUpdate = this._toolHandlers[this._tool](controller);
+                }
+                if(!skipUpdate) {
+                    this._raycastInteractables(controller, this._interactables);
+                    this._updateInteractables(controller);
+                }
+                this._updateCursor(controller);
+            }
+        }
+    }
+
+    _updateForPointer() {
+        if(!global$1.sessionActive) return;
+
+        let controller = {
+            option: "POINTER",
+            raycaster: this._getRaycaster("POINTER"),
+            isPressed: this._isControllerPressed("POINTER"),
+            closestPoint: null,
+            closestPointDistance: Number.MAX_SAFE_INTEGER,
+            userDistance: Number.MAX_SAFE_INTEGER,
+        };
+        let skipUpdate = false;
+        if(this._toolHandlers[this._tool]) {
+            skipUpdate = this._toolHandlers[this._tool](controller);
+        }
+        if(!skipUpdate) {
+            this._raycastInteractables(controller, this._interactables);
+            this._updateInteractables(controller);
+        }
+        let style = global$1.renderer.domElement.style;
+        if(this._hoveredInteractables['POINTER']) {
+            if(!style.cursor) style.cursor = 'pointer';
+        } else if(style.cursor == 'pointer') {
+            style.cursor = '';
+        }
+    }
+
+    _updateForMobile() {
+        if(!global$1.sessionActive) return;
+
+        let controller = {
+            option: "MOBILE",
+            raycaster: this._getRaycaster("MOBILE"),
+            isPressed: this._isControllerPressed("MOBILE"),
+            closestPoint: null,
+            closestPointDistance: Number.MAX_SAFE_INTEGER,
+            userDistance: Number.MAX_SAFE_INTEGER,
+        };
+        if(this._toolHandlers[this._tool]) {
+            let skipUpdate = this._toolHandlers[this._tool](controller);
+            if(skipUpdate) return;
+        }
+        this._updateInteractablesMobile(controller);
+    }
+}
+
+let pointerInteractableHandler = new PointerInteractableHandler();
+
+const FileTypes = {
     glb: "glb",
     jpg: "jpg",
     jpeg: "jpeg",
     js: "js",
     mp3: "mp3",
+    mp4: "mp4",
     png: "png",
     wav: "wav",
-};
-
-const FileTypes$1 = {
-    mp3: "mp3",
-    wav: "wav",
-};
-
-const FileTypes = {
-    glb: "glb",
+    webm: "webm",
 };
 
 /*
@@ -18567,7 +17222,7 @@ class UploadHandler {
             this._eventType = global$1.deviceType == "MOBILE"
                 ? 'touchend'
                 : 'click';
-            this._clickListener = (e) => {
+            this._clickListener = () => {
                 setTimeout(() => {
                     if(this._triggerUpload) {
                         this._triggerUpload = false;
@@ -18598,7 +17253,7 @@ class UploadHandler {
         this._locks.add(functionLock);
         for(let file of files) {
             let extension = file.name.split('.').pop().toLowerCase();
-            if(extension in FileTypes$2) {
+            if(extension in FileTypes) {
                 let lock = uuidv4();
                 if(extension == 'js') {
                     this._locks.add(lock);
@@ -18612,10 +17267,12 @@ class UploadHandler {
                     let assetType;
                     if(extension in FileTypes$3) {
                         assetType = AssetTypes.IMAGE;
-                    } else if(extension in FileTypes) {
+                    } else if(extension in FileTypes$2) {
                         assetType = AssetTypes.MODEL;
-                    } else if(extension in FileTypes$1) {
+                    } else if(extension in FileTypes$4) {
                         assetType = AssetTypes.AUDIO;
+                    } else if(extension in FileTypes$1) {
+                        assetType = AssetTypes.VIDEO;
                     }
                     this._locks.add(lock);
                     libraryHandler.addNewAsset(file, file.name, assetType,
@@ -20272,9 +18929,8 @@ class TransformControlsHandler {
         this._preTransformStates = {};
         this._id = uuidv4();
         let tool = (global$1.deviceType == 'XR') ? HandTools.EDIT : null;
-        pointerInteractableHandler.registerToolHandler(tool, (controller) => {
-            return this._toolHandler(controller);
-        });
+        pointerInteractableHandler.registerToolHandler(tool,
+            (controller) => this._toolHandler(controller));
         if(global$1.deviceType != 'XR') {
             scene.add(this._transformControls);
             this._addEventListeners();
@@ -20325,7 +18981,7 @@ class TransformControlsHandler {
                 }
             });
         }
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
             for(let option in this._attachedAssets) {
                 this._detachDeleted(option);
             }
@@ -20431,7 +19087,7 @@ class TransformControlsHandler {
     _pasteDigitalBaconData(e) {
         let data = e.clipboardData.getData('text/digitalbacon');
         if(!data.includes('assetId:') || !data.includes(':instanceId:')) return;
-        let [ , assetId, , instanceId] = data.split(":");
+        let [ , , , instanceId] = data.split(":");
         let instance = projectHandler.getAsset(instanceId);
         let sessionInstance = projectHandler.getSessionAsset(instanceId);
         if(sessionInstance) {
@@ -20455,7 +19111,6 @@ class TransformControlsHandler {
             euler.setFromQuaternion(quaternion);
             let rotation = euler.toArray();
             for(let assetId of assetIds) {
-                libraryHandler.getType(assetId);
                 let params = {
                     "assetId": assetId,
                     "position": position,
@@ -20572,9 +19227,9 @@ class TransformControlsHandler {
             if(objects[i] != attachedObject) {
                 intersectObject(objects[i], raycaster, intersects, true);
             }
-		}
-		intersects.sort(ascSort);
-		return intersects;
+        }
+        intersects.sort(ascSort);
+        return intersects;
     }
 
     _otherOption(userController, ownerId) {
@@ -20728,9 +19383,7 @@ class TransformControlsHandler {
         this._placingObject[option] = false;
     }
 
-    initiateDrag(option) {
-        option = option || global$1.deviceType;
-        this._attachedAssets[option];
+    initiateDrag() {
         let pointerPosition = inputHandler.getPointerPosition();
         let pointer = { x: pointerPosition.x, y: pointerPosition.y, button: 0 };
         let plane = this._transformControls._plane;
@@ -20754,20 +19407,20 @@ class TransformControlsHandler {
 
 //Copied from Raycaster.js
 function ascSort(a, b) {
-	return a.distance - b.distance;
+    return a.distance - b.distance;
 }
 
 //Copied from Raycaster.js
 function intersectObject(object, raycaster, intersects, recursive) {
-	if(object.layers.test(raycaster.layers)) {
-		object.raycast(raycaster, intersects);
-	}
-	if(recursive === true) {
-		const children = object.children;
-		for(let i = 0, l = children.length; i < l; i++) {
-			intersectObject(children[ i ], raycaster, intersects, true);
-		}
-	}
+    if(object.layers.test(raycaster.layers)) {
+        object.raycast(raycaster, intersects);
+    }
+    if(recursive === true) {
+        const children = object.children;
+        for(let i = 0, l = children.length; i < l; i++) {
+            intersectObject(children[ i ], raycaster, intersects, true);
+        }
+    }
 }
 
 let transformControlsHandler = new TransformControlsHandler();
@@ -20786,7 +19439,7 @@ class RotateHandler {
         this._quaternion = new Quaternion();
         this._euler1 = new Euler();
         this._euler2 = new Euler();
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
+        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
@@ -20839,7 +19492,7 @@ class RotateHandler {
                 }
             });
         }
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
             for(let key in this._heldAssets) {
                 delete this._heldAssets[key];
             }
@@ -20961,7 +19614,7 @@ class ScaleHandler {
     constructor() {
         this._id = uuidv4();
         this._heldAssets = {};
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
+        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
@@ -21008,7 +19661,7 @@ class ScaleHandler {
                 }
             });
         }
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
             for(let key in this._heldAssets) {
                 delete this._heldAssets[key];
             }
@@ -21129,7 +19782,7 @@ class TranslateHandler {
     constructor() {
         this._id = uuidv4();
         this._heldAssets = {};
-        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool)=>{
+        pubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
@@ -21178,7 +19831,7 @@ class TranslateHandler {
                 }
             });
         }
-        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
+        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
             for(let key in this._heldAssets) {
                 delete this._heldAssets[key];
             }
@@ -21293,13 +19946,92 @@ let translateHandler = new TranslateHandler();
  */
 
 
-const HEIGHT$b = 0.05;
-const WIDTH$b = 0.31;
-const TITLE_WIDTH$b = 0.13;
-const FIELD_HEIGHT$9 = 0.03;
-const FIELD_WIDTH$9 = 0.17;
-const FIELD_MARGIN$9 = 0.01;
-const FIELD_MAX_LENGTH$d = 13;
+class PointerInteractableEntity extends Entity {
+    constructor() {
+        super();
+        this._pointerInteractable = PointerInteractable.emptyGroup();
+    }
+    
+    setPointerInteractableParent(interactableParent) {
+        if(interactableParent) {
+            interactableParent.addChild(this._pointerInteractable);
+        }
+    }
+
+    removeParentInteractableParent() {
+        if(this._pointerInteractable.parent)
+            this._pointerInteractable.parent.removeChild(
+                this._pointerInteractable);
+    }
+
+    addToScene(scene, interactableParent) {
+        super.addToScene(scene);
+        this.setPointerInteractableParent(interactableParent);
+    }
+
+    removeFromScene() {
+        super.removeFromScene();
+        this.removeParentInteractableParent();
+    }
+}
+
+const MenuPages = {
+    ACKNOWLEDGEMENTS: "ACKNOWLEDGEMENTS",
+    ASSET: "ASSET",
+    ASSETS: "ASSETS",
+    ASSET_SELECT: "ASSET_SELECT",
+    COLOR_WHEEL: "COLOR_WHEEL",
+    COMPONENT: "COMPONENT",
+    COMPONENTS: "COMPONENTS",
+    EDIT_ACKNOWLEDGEMENTS: "EDIT_ACKNOWLEDGEMENTS",
+    EDITOR_SETTINGS: "EDITOR_SETTINGS",
+    HANDS: "HANDS",
+    HOST_PARTY: "HOST_PARTY",
+    JOIN_PARTY: "JOIN_PARTY",
+    LIBRARY: "LIBRARY",
+    LIBRARY_SEARCH: "LIBRARY_SEARCH",
+    LIST_COMPONENTS: "LIST_COMPONENTS",
+    LOAD_GDRIVE: "LOAD_GDRIVE",
+    MATERIAL: "MATERIAL",
+    MATERIALS: "MATERIALS",
+    NAVIGATION: "NAVIGATION",
+    NEW_COMPONENT: "NEW_COMPONENT",
+    NEW_MATERIAL: "NEW_MATERIAL",
+    NEW_TEXTURE: "NEW_TEXTURE",
+    NEW_SYSTEM: "NEW_SYSTEM",
+    PARTY: "PARTY",
+    PEER: "PEER",
+    PROJECT: "PROJECT",
+    SETTINGS: "SETTINGS",
+    SKETCHFAB_ASSET: "SKETCHFAB_ASSET",
+    SKETCHFAB_LOGIN: "SKETCHFAB_LOGIN",
+    SKETCHFAB_SEARCH: "SKETCHFAB_SEARCH",
+    SKYBOX: "SKYBOX",
+    SYSTEM: "SYSTEM",
+    SYSTEMS: "SYSTEMS",
+    TEXTURE: "TEXTURE",
+    TEXTURES: "TEXTURES",
+    TEXT_INPUT: "TEXT_INPUT",
+    TEXT: "TEXT",
+    TWO_BUTTON: "TWO_BUTTON",
+    UPLOAD: "UPLOAD",
+    USER_SETTINGS: "USER_SETTINGS",
+};
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const HEIGHT$d = 0.05;
+const WIDTH$d = 0.31;
+const TITLE_WIDTH$d = 0.13;
+const FIELD_HEIGHT$a = 0.03;
+const FIELD_WIDTH$a = 0.17;
+const FIELD_MARGIN$a = 0.01;
+const FIELD_MAX_LENGTH$e = 13;
 
 class AssetEntityInput extends PointerInteractableEntity {
     constructor(params) {
@@ -21319,8 +20051,8 @@ class AssetEntityInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$b,
-            'width': WIDTH$b,
+            'height': HEIGHT$d,
+            'width': WIDTH$d,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -21329,17 +20061,17 @@ class AssetEntityInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$b,
-            'width': TITLE_WIDTH$b,
+            'height': HEIGHT$d,
+            'width': TITLE_WIDTH$d,
             'margin': 0,
             'textAlign': 'left',
         });
         this._assetEntitySelection = ThreeMeshUIHelper.createButtonBlock({
             'text': ' ',
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$9,
-            'width': FIELD_WIDTH$9,
-            'margin': FIELD_MARGIN$9,
+            'height': FIELD_HEIGHT$a,
+            'width': FIELD_WIDTH$a,
+            'margin': FIELD_MARGIN$a,
             'idleOpacity': 0.9,
             'hoveredOpacity': 1,
             'selectedOpacity': 1,
@@ -21395,17 +20127,17 @@ class AssetEntityInput extends PointerInteractableEntity {
         let assetEntityName = assetEntity
             ? assetEntity.getName()
             : scene.getId() == this._lastValue ? 'Scene' : " ";
-        assetEntityName = stringWithMaxLength(assetEntityName,FIELD_MAX_LENGTH$d);
+        assetEntityName = stringWithMaxLength(assetEntityName,FIELD_MAX_LENGTH$e);
         let textComponent = this._assetEntitySelection.children[1];
         textComponent.set({ content: assetEntityName });
     }
 
     getWidth() {
-        return WIDTH$b;
+        return WIDTH$d;
     }
 
     getHeight() {
-        return HEIGHT$b;
+        return HEIGHT$d;
     }
 
     deactivate() {
@@ -21426,13 +20158,13 @@ class AssetEntityInput extends PointerInteractableEntity {
  */
 
 
-const HEIGHT$a = 0.05;
-const WIDTH$a = 0.31;
-const TITLE_WIDTH$a = 0.13;
-const FIELD_HEIGHT$8 = 0.03;
-const FIELD_WIDTH$8 = 0.17;
-const FIELD_MARGIN$8 = 0.01;
-const FIELD_MAX_LENGTH$c = 13;
+const HEIGHT$c = 0.05;
+const WIDTH$c = 0.31;
+const TITLE_WIDTH$c = 0.13;
+const FIELD_HEIGHT$9 = 0.03;
+const FIELD_WIDTH$9 = 0.17;
+const FIELD_MARGIN$9 = 0.01;
+const FIELD_MAX_LENGTH$d = 13;
 
 class AudioInput extends PointerInteractableEntity {
     constructor(params) {
@@ -21449,8 +20181,8 @@ class AudioInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$a,
-            'width': WIDTH$a,
+            'height': HEIGHT$c,
+            'width': WIDTH$c,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -21459,17 +20191,17 @@ class AudioInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$a,
-            'width': TITLE_WIDTH$a,
+            'height': HEIGHT$c,
+            'width': TITLE_WIDTH$c,
             'margin': 0,
             'textAlign': 'left',
         });
         this._audioSelection = ThreeMeshUIHelper.createButtonBlock({
             'text': ' ',
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$8,
-            'width': FIELD_WIDTH$8,
-            'margin': FIELD_MARGIN$8,
+            'height': FIELD_HEIGHT$9,
+            'width': FIELD_WIDTH$9,
+            'margin': FIELD_MARGIN$9,
             'idleOpacity': 0.9,
             'hoveredOpacity': 1,
             'selectedOpacity': 1,
@@ -21526,17 +20258,17 @@ class AudioInput extends PointerInteractableEntity {
         let audioName = this._lastValue
             ? libraryHandler.getAssetName(this._lastValue)
             : " ";
-        audioName = stringWithMaxLength(audioName, FIELD_MAX_LENGTH$c);
+        audioName = stringWithMaxLength(audioName, FIELD_MAX_LENGTH$d);
         let textComponent = this._audioSelection.children[1];
         textComponent.set({ content: audioName });
     }
 
     getWidth() {
-        return WIDTH$a;
+        return WIDTH$c;
     }
 
     getHeight() {
-        return HEIGHT$a;
+        return HEIGHT$c;
     }
 
     deactivate() {
@@ -21557,9 +20289,9 @@ class AudioInput extends PointerInteractableEntity {
  */
 
 
-const HEIGHT$9 = 0.05;
-const WIDTH$9 = 0.31;
-const TITLE_WIDTH$9 = 0.14;
+const HEIGHT$b = 0.05;
+const WIDTH$b = 0.31;
+const TITLE_WIDTH$b = 0.14;
 const CHECKBOX_WIDTH = 0.04;
 const CHECKBOX_HEIGHT = 0.04;
 
@@ -21570,7 +20302,7 @@ class CheckboxInput extends PointerInteractableEntity {
         this._getFromSource = params['getFromSource'];
         let initialValue = params['initialValue'] || false;
         let title = params['title'] || 'Missing Field Name...';
-        let titleWidth = params['titleWidth'] || TITLE_WIDTH$9;
+        let titleWidth = params['titleWidth'] || TITLE_WIDTH$b;
         let contentDirection = params['swapOrder'] ? 'row-reverse' : 'row';
         this._suppressMenuFocusEvent = params['suppressMenuFocusEvent'];
         this._createInputs(initialValue, title, titleWidth, contentDirection);
@@ -21580,8 +20312,8 @@ class CheckboxInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$9,
-            'width': WIDTH$9,
+            'height': HEIGHT$b,
+            'width': WIDTH$b,
             'contentDirection': contentDirection,
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -21590,7 +20322,7 @@ class CheckboxInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$9,
+            'height': HEIGHT$b,
             'width': titleWidth,
             'margin': 0,
             'textAlign': contentDirection == 'row' ? 'left' : 'right',
@@ -21616,11 +20348,11 @@ class CheckboxInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$9;
+        return WIDTH$b;
     }
 
     getHeight() {
-        return HEIGHT$9;
+        return HEIGHT$b;
     }
 
     deactivate() {
@@ -21641,10 +20373,108 @@ class CheckboxInput extends PointerInteractableEntity {
  */
 
 
-const HEIGHT$8 = 0.2;
-const WIDTH$8 = 0.31;
+const HEIGHT$a = 0.05;
+const WIDTH$a = 0.31;
+const TITLE_WIDTH$a = 0.14;
+const COLOR_BOX_WIDTH = 0.08;
+const COLOR_BOX_HEIGHT = 0.04;
+
+class ColorInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        let title = params['title'] || 'Missing Field Name...';
+        this._lastValue = numberOr(params['initialValue'], 0x2abbd5);
+        this._color = new THREE.Color(this._lastValue);
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._createInputs(title);
+    }
+
+    _createInputs(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$a,
+            'width': WIDTH$a,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$a,
+            'width': TITLE_WIDTH$a,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._colorBlock = ThreeMeshUIHelper.createColorBlock({
+            'height': COLOR_BOX_HEIGHT,
+            'width': COLOR_BOX_WIDTH,
+            'margin': 0,
+            'selectedColor': this._color,
+        });
+        this._object.add(titleBlock);
+        this._object.add(this._colorBlock);
+        let interactable = new PointerInteractable(this._colorBlock, true);
+        interactable.addAction(() => {
+            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
+            colorPage.setContent(this._id, this._color,
+                (color) => {
+                    this._color.setHex(color);
+                    if(this._onUpdate) this._onUpdate(color);
+                }, ()   => {
+                    if(colorPage.isDraggingCursors()) return;
+                    let oldColor = this._lastValue;
+                    let newColor = this._color.getHex();
+                    if(this._onBlur) this._onBlur(oldColor, newColor);
+                    this._lastValue = newColor;
+                    this._color.setHex(this._lastValue);
+                });
+            global$1.menuController.pushPage(MenuPages.COLOR_WHEEL);
+            pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+                'id': this._id,
+                'targetOnlyMenu': true,
+            });
+        });
+        this._pointerInteractable.addChild(interactable);
+    }
+
+    getWidth() {
+        return WIDTH$a;
+    }
+
+    getHeight() {
+        return HEIGHT$a;
+    }
+
+    deactivate() {
+        //Required method
+    }
+
+    updateFromSource() {
+        if(this._getFromSource) {
+            this._lastValue = this._getFromSource();
+            this._color.setHex(this._lastValue);
+            let colorPage =global$1.menuController.getPage(MenuPages.COLOR_WHEEL);
+            colorPage.updateColor(this._id, this._color);
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const HEIGHT$9 = 0.2;
+const WIDTH$9 = 0.31;
 const TITLE_HEIGHT = 0.04;
-const TITLE_WIDTH$8 = 0.31;
+const TITLE_WIDTH$9 = 0.31;
 const SIDES = [
     CubeSides.TOP,
     CubeSides.LEFT,
@@ -21684,8 +20514,8 @@ class CubeImageInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$8,
-            'width': WIDTH$8,
+            'height': HEIGHT$9,
+            'width': WIDTH$9,
             'contentDirection': 'column',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -21696,7 +20526,7 @@ class CubeImageInput extends PointerInteractableEntity {
                 'text': this._title,
                 'fontSize': FontSizes.body,
                 'height': TITLE_HEIGHT,
-                'width': TITLE_WIDTH$8,
+                'width': TITLE_WIDTH$9,
                 'margin': 0,
             });
             this._object.add(titleBlock);
@@ -21801,12 +20631,12 @@ class CubeImageInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$8;
+        return WIDTH$9;
     }
 
     getHeight() {
-        if(this._title) return HEIGHT$8 + TITLE_HEIGHT;
-        return HEIGHT$8;
+        if(this._title) return HEIGHT$9 + TITLE_HEIGHT;
+        return HEIGHT$9;
     }
 
     deactivate() {
@@ -21831,13 +20661,13 @@ class CubeImageInput extends PointerInteractableEntity {
  */
 
 
-const HEIGHT$7 = 0.05;
-const WIDTH$7 = 0.31;
-const TITLE_WIDTH$7 = 0.13;
-const FIELD_HEIGHT$7 = 0.03;
-const FIELD_WIDTH$7 = 0.17;
-const FIELD_MARGIN$7 = 0.01;
-const FIELD_MAX_LENGTH$b = 13;
+const HEIGHT$8 = 0.05;
+const WIDTH$8 = 0.31;
+const TITLE_WIDTH$8 = 0.13;
+const FIELD_HEIGHT$8 = 0.03;
+const FIELD_WIDTH$8 = 0.17;
+const FIELD_MARGIN$8 = 0.01;
+const FIELD_MAX_LENGTH$c = 13;
 
 class EnumInput extends PointerInteractableEntity {
     constructor(params) {
@@ -21854,8 +20684,8 @@ class EnumInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$7,
-            'width': WIDTH$7,
+            'height': HEIGHT$8,
+            'width': WIDTH$8,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -21864,23 +20694,23 @@ class EnumInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$7,
-            'width': TITLE_WIDTH$7,
+            'height': HEIGHT$8,
+            'width': TITLE_WIDTH$8,
             'margin': 0,
             'textAlign': 'left',
         });
         this._optionSelection = ThreeMeshUIHelper.createButtonBlock({
-            'text': stringWithMaxLength(this._lastValue, FIELD_MAX_LENGTH$b),
+            'text': stringWithMaxLength(this._lastValue, FIELD_MAX_LENGTH$c),
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$7,
-            'width': FIELD_WIDTH$7,
-            'margin': FIELD_MARGIN$7,
+            'height': FIELD_HEIGHT$8,
+            'width': FIELD_WIDTH$8,
+            'margin': FIELD_MARGIN$8,
         });
         this._optionsContainer = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': FIELD_HEIGHT$7 * options.length,
-            'width': FIELD_WIDTH$7,
+            'height': FIELD_HEIGHT$8 * options.length,
+            'width': FIELD_WIDTH$8,
             'backgroundOpacity': 0,
             //'offset': 0,
         });
@@ -21890,8 +20720,8 @@ class EnumInput extends PointerInteractableEntity {
             let optionButton = ThreeMeshUIHelper.createButtonBlock({
                 'text': option,
                 'fontSize': FontSizes.body,
-                'height': FIELD_HEIGHT$7,
-                'width': FIELD_WIDTH$7,
+                'height': FIELD_HEIGHT$8,
+                'width': FIELD_WIDTH$8,
                 'margin': 0,
             });
             this._optionsContainer.add(optionButton);
@@ -21925,17 +20755,17 @@ class EnumInput extends PointerInteractableEntity {
 
     _updateOption(option) {
         this._lastValue = option;
-        option = stringWithMaxLength(option, FIELD_MAX_LENGTH$b);
+        option = stringWithMaxLength(option, FIELD_MAX_LENGTH$c);
         let textComponent = this._optionSelection.children[1];
         textComponent.set({ content: option });
     }
 
     getWidth() {
-        return WIDTH$7;
+        return WIDTH$8;
     }
 
     getHeight() {
-        return HEIGHT$7;
+        return HEIGHT$8;
     }
 
     deactivate() {
@@ -21957,13 +20787,429 @@ class EnumInput extends PointerInteractableEntity {
  */
 
 
-const HEIGHT$6 = 0.11;
-const WIDTH$6 = 0.31;
-const TITLE_WIDTH$6 = 0.09;
-const FIELD_HEIGHT$6 = 0.03;
-const FIELD_WIDTH$6 = 0.17;
-const FIELD_MARGIN$6 = 0.0025;
-const FIELD_MAX_LENGTH$a = 13;
+const KEYBOARD_SCALE = 0.6;
+const KEYBOARD_VERTICAL_OFFSET = -0.275;
+
+class Keyboard {
+    constructor() {
+        this._id = uuidv4();
+        this._pivotPoint = new Object3D();
+        this._interactables = [];
+        this._pageInteractables = [[],[]];
+        this._keyboardPage = 0;
+        this._owner = null;
+        this._keysPressed = new Set();
+    }
+
+    init(scene) {
+        this._scene = scene;
+        this._setupKeyboard();
+    }
+
+    _setupKeyboard() {
+        this._keyboard = new ThreeMeshUI.Keyboard({
+            language: 'English',
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+            fontSize: 0.035, // fontSize will propagate to the keys blocks
+            backgroundColor: Colors.keyboard,
+            backgroundOpacity: 1,
+            backspaceTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDoyNTJDRDY5NkEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyNTJDRDY5NUEzRTYxMUVBODFDQjk4NTAyMkIzRTQxOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6RUVFQjQyNUZBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6RUVFQjQyNjBBM0UxMTFFQUIwOUNCQUQwM0U4OTg4N0YiLz4gPGRjOmNyZWF0b3I+IDxyZGY6U2VxPiA8cmRmOmxpPlVzZXI8L3JkZjpsaT4gPC9yZGY6U2VxPiA8L2RjOmNyZWF0b3I+IDxkYzp0aXRsZT4gPHJkZjpBbHQ+IDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Jmx0O3BkZjk5NTpDOlxVc2Vyc1xVc2VyXERlc2t0b3Bcc2hpZnQuUERGJmd0OzwvcmRmOmxpPiA8L3JkZjpBbHQ+IDwvZGM6dGl0bGU+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+rrf2SgAADoVJREFUeNrs3QuQ1VUBx/Gz7LI8ZtTJ0VFBCAhDBR+h+SCjgikqbVIIMQUFRQgFfAT2MOXhA8g3Q2iRRsSjEBDIB2Cv6TU1PNJpLJqmoZIZkB6Ay0tYdju/OecSMAvce/eee/97zvczcwajZXf//3PP73/O+Z//+Vc1NjYaAGlqxSkACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQAkrqbSv0BDQ4Np1SrNHGpsbDx53bp1o7Zt29a7tra2yv7vBj6S8Tpw4EDrdu3a7evTp8+Ctm3brt60aZPp2rVr2gGQsFOqqqqe7t2793CFoP1vBQJnJXKq5+rq6n72P0fZP19NvgeQqO62fNeWj9kPgT4QnJG0dLRl1q5du/raPzczB5AWpf/ravyciqR1raur61/pX4IAKK8xtiy3pQunAjU1NV0IgDSojz/Dltm2nMTpgFfxSR/mAMI7w5ZnbbmOU4GjNBAAcbvElhdsuZBTgSxiCBDOQFtW0fhBAKTnXlsW2XIapwJZxhCgtNrZ8pQtozkVIADSojWdz9vyCU4FGAKk5aO2vErjBwGQnhtsWWzLuZwKEABpedCWubacyakAcwDpONWWZ2wZyqkAPYC09PJdfho/CIDEDDDu/n5/TgUIgLR8yTf+XpEcz35bDkRwHHv5aDIHEFKtLZNs+Xokx7PLuInLNbZU+d6MFi61aWHH8XtbnrNlq3FrMIbbchkfVwKglDrZ8k3jbvXF4E+23OMbf85KW9baMsuWU1rIcagnpr0Vdh72d0ttediW2/nYEgCl0NuWb9lyRSTH809/lVzbxP8335Z9/s+s9wR+aMtIW/Yc9ffbbBnrhzZ38vFlDqA5rvFXxlga/zvGPZ249jhfs8SWm/wQIasW2jKqicafs9/3cL7NR5gAKNYdvjvZMZLj0Rj5WlvW5/G1S30I7Mxot/82W+pO8HUHfA9gPh9lAqAQ7Y1b3KNuf20kx7TFlmG2/K6Af7PSDxXqMnQcuvLf7Icp+Tjoj2EhH2sCIB+62mtxz/iIjmm3Lbfa8pMi/q02Lh3hu9RZGPOr219f4L9TCIymJ0AAnIh27Flty9URHdMe8/8diYql4cDgCvcE5vvGv7vIf6/5DN0tWMbHnABoyiB/hewZ0THpQ69lymtK8L1W+hDYUYHjWGDcLb26EpyPW4x7XBsEwCEP+G7/6REdk7q999nyUgm/52o/j1DOnsA832j3lej75UJxPU2eANC2XXNsmRrh8f/Flh8F+L4vGzep9l6ZGv8YH2altN24uQ0kHAB6J98rxi0kidG/AzScnGVlmBOYa9xinj0Bzw8SDQCtedc7+WLetqt74CHNj20ZEmhO4Af+yh8yYNi1KdEA0EyyJrS6RH6cHWy537hXkYXymin9OoHvG3fbcV/A3/vTxq0lQEIBoON71LinxtonUqdqnE8E/hkrjFuVV4o5AV357ww4dBEt6da8z/to8keK+WGg033DH5hgvd5l3JLYiQF/xovGLc7RuP3kIr+HJvzGmeLv8+dDD3VpGfHZNPd0egB6J9+qRBt/zgRbHglcx7rdOLTIOQFd+bXJyruBr/wpDP0IgMPoLbzLfPKnTpuYTAv8MzQxqCXHOwts/Po3IXfzudL3UjryMUgnAPQoqN7G25mqPUQLg6YG/hnqCejWaj6TeAv9lb8+4O9zkR+a0O1PZA5Am1jonXxjqNImadWjJtmmBPwZS/yfCuCTjvE1WtuvCb89AX+Pnv7Kfw7VnkYPoLP/8NH4j2+yCb+voeph2DHmBHTlvz3wmP9i41b70fgTCYCP+wq/hqrMiyYFJwX+GSv8+P7whq4He0q5tr8pvf2VvzvVnMYQ4HpbnrblLKqx4J5AvQ+DkHMCGpZpc5VfG/dcfsgx//nG3VKk8ScSALrFpQU+ranCojzsG+SMgD9DG3n81ZZNJux9/u5+6HEe1Rp/AJzqG/5oqq7ZptvSaNy256GEfvz2Qt/4GfMnEABK+Nl+3I/SmOG76g+1wN9dt/q03qMb1Vi8ljIJ2Ne4Lapo/KWnNQITW9jv3MO4iUUafwIBoCe4ljPGC0rDgAkt5Hft5q/8Pam2uAOg1o9T9agoT3GF91gLCAE9z69nPM6nuuKeA9Bz7brFN5gqKnsIVPk/s0aNnhV+CQSAXr+tVzv1oXoqNhzQsuEnM/Q7dTFuGTFX/siHAHqF1Qoaf8VpQ5G7M/K76Gk+LSz6ENUSdwDoST6tF2dmNxvUA6j08xVa5KPn+S+mOuIOgCn+A9eOKskMzQVo3cVdFWz8Wk3Ivg4xB0B9ff0A+8eDVEVmaTL2jgp0+79n3M5OiDkAqqqqBlENmTfTuFuE5fi8aKJPLyK5itOexhCgPdWQedVlHIdrDugiTnk6AbCSasi8BX4Y0FCGn6WXeGr9x05OexoBoGW+L1IVmaV3Derpy3fL9PMUMnruQ7sHvcfpjz8A9tsy3jTvXfYId+VX499dgZ+ti4K2HK+jGuIOANlq3B7+z1Ilmbry31bhrrie9b/RhHkXIUy2FgLt9eNM7Rq7i6qp+JV/aEa64LlXk9MTiDwAcrT45CZbtlA9FbHIhN/Dr1C5jUb3Uz3xB4DozsBnbFlHFZXV/AqO+fMZDgyiJ5BGAMibtnzKuOcDEJ7O88iMNzANB4YwJ5BGAMh2PxadQlUFpS21bzYt47bba8wJpBMAop1rJ/sxIJVeenpRp576O9iCfucVPgRYJ5BAAOTo4RC9AejPVFvJaLu1sSbsu/pC0b6Ag7kopBMA8ks/L8CiodJ0+/WW3pAr/EI/3q1Xk+uOEcuGEwkA2WzcoqHvUH3NavwaUoV8V18P30C/VoYQuMWUb6kyAZABWjSk21V622091ViQ3Cu6Q4759b7G523pb9ybnMaWYU7gVuYE0gmAnGm2fMGWbVRlXub6xhhypWUH3yA/ctjfzfTDjZD0ANGNzAmkFQC59P+sLW9QnSe88o8JPF4+x9fHh4/6e20vpjcFjwp8jJoYHGbLf6nudAJA1vt5geVUaZN0q29EGcb8Wkx06XE+a9ru/Z4yXBAq/RATAVABeg21JoOeolqPsMB3v0POlXQx7pbipXl87ZNlmBNY7nsbzAkkFACimeB7/VVmH9V7qNsf8j5/Jz/+vryAfzPThN9yfLEfDnB3IKEAyNFOttfb8o+E61ZP9WlXnZCTYnphqx7cKnTr7tyW4+MCn4PcpiLbaeppBYDo/vB1tvw8wXpd6K9+IXtBvfxVtjmbhc70PbbQnwM95LSb5p5WAMgfjLs1tDihOv2VcRurhLzPr5d2zPMh0FxPmPATg8v8z2A/gcQCQLb6EHg0gWPd4a+oIWfAu/oGVcp39Wli8CuBz80c4yZEkVgAGH81vN+420P/ivg437LlbwG/v/brf92WCwJ87+m23Bf4/KynyacZADkvGLerzFuRHl+bgF1/TfTpLb0fCPj7z7DlgYDfv4Ymn3YA5MbInzdxTg7qtVp9A3xfjfUX+u5/aFNtmRTg++rOwydp8gSA8d3kgb5HEBO9Zu05c+Q6/OY6z4/5e5TxOCaXOARaG7dQ6WqaPAGQs8PPCUw0cc0O6826Wgl3eQm+l7r9q41b419uuRCobub3qTVuzcEwmjsB0JTHjVssEtM25KeZwlfnHe1K4xb5dKrgcSgEHmnmmF/1O5KPOQFwPFoxpseK/xhZT0BDnGIW6lxi3DLijhk4Dt0eLPYWrtYYjOPjTQDk47fGrRx8OaJj0qTgogLH7woMLZzqlqHj0K5C04vo2Y3nY00AFEKTg1+0ZVZEx3SunxP4YB5fe4Utr2Ss8R/eE5iW55yAhg5f5uNMABRjl+823m3c1mOxhMDCE4TAVX7eoEOGj+OrefQEvmHC3EYkABLzjHEzx5sjOR6N67VPX88m/j9NFs7LeOPPmWDLY030BGp843+Ij27+WBl1fLoiaqMRvbb8sgiOR1f5l3y4/dS4xTH9fff67BZ0HAqBM427vfeOcRuS6AGoQXxkCYBS22DcC0m0p93gCI5H9/Q1x7HF9wDPaKHHMdTXx1YfBm34qDIECEUPEN1g3Fr1WJzVght/jhr9+2n8BEA5NBg3CaW95vZyOkAApGmOHxJs4lSAAEjTz2zpZ9LcbgwEAKy/2/I53yMACIAE7fZzAtptqJHTAQIgTXpYRduQ/4dTAQIgTUuM23HmTU4FCIA0aRvyAcbtRQ8QAAnS0tQhJq4nCkEAoABaKKQnCvUyCl5QCQIgUXpH4bUm7XcUggBI2irj1gv8hlOBo1QRAGnQXoPaaWgppwKHqSEA0vG2LcNN83a5RVy2EwBp0XZj2rVG21Tv5HQkTfX/i+S7IInS1lxvHzx48HFbLuB0pKVVq1ampqZGexu+QQCka82GDRtGbNy4cXRtba027eTd9fGr3Wt17tx5db9+/WZXV1dX/BeqamzkGRYg2d4IpwAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAA4pv8JMAAdr12nbQhkBgAAAABJRU5ErkJggg==',
+            shiftTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo0NzY4M0Y0M0EzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo0NzY4M0Y0MkEzRTYxMUVBODc0MkQ2NEU2OUQ0NzMxQSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MDYyMjJFRUJBM0UyMTFFQUE1QjVGOThGNjlDRTRBQzgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6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',
+            enterTexture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABF9pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjliMGViMjkzLTQ5YjEtNzk0Ny04ODQ2LTQ5ZmU3OWUzN2VjYiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozOEE3NEZCM0EzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozOEE3NEZCMkEzRTYxMUVBODQ2RTg5N0U1ODk3QTY3MyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCBXaW5kb3dzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6Rjg2REZFNTNBM0UxMTFFQUEyRjRDNThCOUZCMENEMDIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6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',
+        });
+        this._keyboard.scale.set(KEYBOARD_SCALE,KEYBOARD_SCALE,KEYBOARD_SCALE);
+        for(let i = 0; i < this._keyboard.keys.length; i++) {
+            this._setupKey(i);
+        }
+        this._pivotPoint.position.setY(KEYBOARD_VERTICAL_OFFSET);
+        this._pivotPoint.add(this._keyboard);
+    }
+
+    _setupKey(index) {
+        let key = this._keyboard.keys[index];
+        key.setupState({
+            state: InteractableStates.IDLE,
+            attributes: {
+                offset: 0,
+                backgroundColor: Colors.keyboardButtonIdle,
+                backgroundOpacity: 1,
+            },
+            onSet: () => {
+                this._keysPressed.delete(key);
+            },
+        });
+        key.setupState({
+            state: InteractableStates.HOVERED,
+            attributes: {
+                offset: 0,
+                backgroundColor: Colors.keyboardButtonHovered,
+                backgroundOpacity: 1,
+            },
+            onSet: () => {
+                this._keysPressed.delete(key);
+            },
+        });
+        key.setupState({
+            state: InteractableStates.SELECTED,
+            attributes: {
+                offset: 0,
+                backgroundColor: Colors.keyboardButtonSelected,
+                backgroundOpacity: 1,
+            },
+            onSet: () => {
+                this._keysPressed.add(key);
+                if(key.info.command) {
+                    switch(key.info.command) {
+
+					// switch between panel charsets (eg: russian/english)
+                    case 'switch-set' :
+                        this._keyboard.setNextCharset();
+                        break;
+
+                    case 'enter' :
+                        this._owner.handleKey('Enter');
+                        break;
+
+                    case 'space' :
+                        this._owner.handleKey(' ');
+                        break;
+
+                    case 'backspace' :
+                        this._owner.handleKey('Backspace');
+                        break;
+
+                    }
+                } else if(key.info.input) {
+                    this._owner.handleKey(key.info.input);
+                }
+            },
+        });
+        let interactable;
+        // Need to make switch run on release otherwise _keysPressed prematurely
+        // becomes empty
+        let emptyFunction = () => {};
+        if(key.info.command == 'switch') {
+            // switch between panels
+            interactable = new PointerInteractable(key);
+            interactable.addAction(() => { this._switchPanel(); });
+        } else {
+            interactable = new PointerInteractable(key);
+            interactable.addAction(emptyFunction);
+        }
+        if(index <= 32) {
+            this._pageInteractables[0].push(interactable);
+        } else {
+            this._pageInteractables[1].push(interactable);
+        }
+        this._interactables.push(interactable);
+    }
+
+    _switchPanel() {
+        this._keyboard.setNextPanel();
+        if(this._owner) {
+            pointerInteractableHandler.removeInteractables(
+                this._pageInteractables[this._keyboardPage]);
+            this._keyboardPage = (this._keyboardPage + 1) % 2;
+            pointerInteractableHandler.addInteractables(
+                this._pageInteractables[this._keyboardPage]);
+        }
+    }
+
+    isKeyPressed() {
+        return this._keysPressed.size != 0;
+    }
+
+    setOwner(owner) {
+        this._owner = owner;
+        this._scene.add(this._pivotPoint);
+        pointerInteractableHandler.addInteractables(
+            this._pageInteractables[this._keyboardPage]);
+        undoRedoHandler.disable(this._id);
+    }
+
+    removeOwner(owner) {
+        if(this._owner == owner && this._pivotPoint.parent) {
+            this._owner = null;
+            this._pivotPoint.parent.remove(this._pivotPoint);
+            pointerInteractableHandler.removeInteractables(this._interactables);
+            undoRedoHandler.enable(this._id);
+        }
+    }
+}
+
+let keyboard = new Keyboard();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class TextField extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'] || null;
+        this._onEnter = params['onEnter'] || null;
+        this._onUpdate = params['onUpdate'] || null;
+        this._defaultContent = params['text'] || "";
+        this._initialContent = params['initialText'] || "";
+        this._maxLength = params['maxLength'] || null;
+        this.content = "";
+        if(global$1.deviceType == "POINTER") this._setupEventListeners();
+        this._object = ThreeMeshUIHelper.createInputBlock(params);
+        this._pointerInteractable = new PointerInteractable(this._object, true);
+        this._pointerInteractable.addAction(() => { this._activate(); });
+        this._active = false;
+
+        if(this._initialContent) this.setContent(this._initialContent);
+    }
+
+    _setupEventListeners() {
+        this._keyListener = (event) => { this.handleKey(event.key); };
+        this._clickListener = () => {
+            if(!keyboard.isKeyPressed() && this._pointerInteractable.getState()
+                != InteractableStates.SELECTED)
+            {
+                this.deactivate();
+            }
+        };
+        this._pasteListener = (event) => { this._handlePaste(event); };
+    }
+
+    _addSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
+            if(this._id != message.id) this.deactivate();
+        });
+        pubSub.subscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED, () => {
+            this.deactivate();
+        });
+        if(global$1.deviceType == "XR") {
+            pubSub.subscribe(this._id, PubSubTopics.INSTANCE_ATTACHED, () => {
+                this.deactivate();
+            });
+        }
+    }
+
+    _removeSubscriptions() {
+        pubSub.unsubscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED);
+        pubSub.unsubscribe(this._id, PubSubTopics.MENU_PAGE_CHANGED);
+        if(global$1.deviceType == "XR")
+            pubSub.unsubscribe(this._id, PubSubTopics.INSTANCE_ATTACHED);
+    }
+
+    _handlePaste(e) {
+        if(e.clipboardData.types.indexOf('text/plain') < 0) return;
+        let data = e.clipboardData.getData('text/plain');
+        let valid = true;
+        for(let key of data) {
+            if(!ValidKeys.has(key)) valid = false;
+        }
+        if(valid) {
+            this.appendToContent(data);
+            e.preventDefault();
+        }
+    }
+
+    handleKey(key) {
+        if(inputHandler.isKeyCodePressed("ControlLeft")) {
+            return;
+        } else if(inputHandler.isKeyCodePressed("MetaLeft")) {
+            return;
+        } else if(ValidKeys.has(key)) {
+            this.appendToContent(key);
+            if(this._onUpdate) this._onUpdate();
+        } else if(key == "Backspace") {
+            this._removeFromEndOfContent();
+            if(this._onUpdate) this._onUpdate();
+        } else if(key == "Enter") {
+            this.deactivate();
+            if(this._onEnter) this._onEnter();
+        }
+    }
+
+    appendToContent(str) {
+        this.content += str;
+        this._updateDisplayedContentWithCursor();
+    }
+
+    _removeFromEndOfContent() {
+        if(this.content.length > 0) {
+            this.content = this.content.slice(0, -1);
+            this._updateDisplayedContentWithCursor();
+        }
+    }
+
+    _updateDisplayedContentWithCursor() {
+        this._updateDisplayedContent(true);
+    }
+
+    _updateDisplayedContentWithoutCursor() {
+        this._updateDisplayedContent(false);
+    }
+
+    _updateDisplayedContent(addPipe) {
+        let newContent = this.content;
+        let textComponent = this._object.children[1];
+        if(this._maxLength && newContent.length > this._maxLength) {
+            newContent = "..." + newContent.substring(
+                newContent.length - this._maxLength);
+        }
+        if(addPipe) newContent += "|";
+        textComponent.set({ content: newContent });
+    }
+
+    _activate() {
+        if(global$1.deviceType == "XR") {
+            if(this._active) return;
+            this._active = true;
+
+            this._updateDisplayedContentWithCursor();
+            keyboard.setOwner(this);
+            this._addSubscriptions();
+        } else if(global$1.deviceType == "POINTER") {
+            if(this._active) return;
+            this._active = true;
+
+            this._updateDisplayedContentWithCursor();
+            document.addEventListener("keydown", this._keyListener);
+            document.addEventListener("click", this._clickListener);
+            document.addEventListener("paste", this._pasteListener);
+            global$1.keyboardLock = true;
+        } else if (global$1.deviceType == "MOBILE") {
+            let content = prompt("Enter Value", this.content);
+            if(content || content == '') {
+                this.setContent(content);
+                if(this._onBlur) this._onBlur();
+                if(this._onEnter) this._onEnter();
+            }
+        }
+        pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
+            'id': this._id, 'targetOnlyMenu': false });
+    }
+
+    deactivate() {
+        if(!this._active) return;
+        this._active = false;
+
+        if(global$1.deviceType == "XR") {
+            keyboard.removeOwner(this);
+            this._updateDisplayedContentWithoutCursor();
+            ThreeMeshUI.update();
+            this._removeSubscriptions();
+        } else if(global$1.deviceType == "POINTER") {
+            document.removeEventListener("keydown", this._keyListener);
+            document.removeEventListener("click", this._clickListener);
+            document.removeEventListener("paste", this._pasteListener);
+            global$1.keyboardLock = false;
+            this._updateDisplayedContentWithoutCursor();
+            ThreeMeshUI.update();
+        }
+        if(this._onBlur) this._onBlur();
+    }
+
+    setContent(content) {
+        this.content = content;
+        let textComponent = this._object.children[1];
+        let oldContent = textComponent.content;
+        if(oldContent == content) return;
+        if(oldContent.length > 0 && oldContent.endsWith("|")) {
+            this._updateDisplayedContentWithCursor();
+        } else {
+            this._updateDisplayedContentWithoutCursor();
+        }
+    }
+
+    setDefaultContent(defaultContent) {
+        this._defaultContent = defaultContent;
+    }
+
+    isBlank() {
+        return this.content == "";
+    }
+
+    reset() {
+        if(this._initialContent) {
+            this.setContent(this._initialContent);
+        } else {
+            this.content = "";
+            let textComponent = this._object.children[1];
+            textComponent.set({ content: this._defaultContent });
+        }
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class NumberField extends TextField {
+    constructor(params) {
+        super(params);
+        this._lastValidNumber = params['initialText'];
+        this._minValue = numberOr(params['minValue'], -Infinity);
+        this._maxValue = numberOr(params['maxValue'], Infinity);
+    }
+
+    handleKey(key) {
+        if(isFinite(key) || key == '-' || key == '.') {
+            this.appendToContent(key);
+            this._update();
+        } else if(key == "Backspace") {
+            this._removeFromEndOfContent();
+            this._update();
+        } else if(key == "Enter") {
+            this.deactivate();
+            if(this._onEnter) this._onEnter();
+        }
+    }
+
+    _update() {
+        let number = Number.parseFloat(this.content);
+        if(!isNaN(number)) {
+            if(number != this.content) {
+                this.setContent(String(number));
+            }
+            if(number >= this._minValue && number <= this._maxValue) {
+                this._lastValidNumber = String(number);
+            }
+        }
+        if(this._onUpdate) this._onUpdate();
+    }
+
+    _updateDisplayedContentWithoutCursor() {
+        let number = Number.parseFloat(this.content);
+        if(Number.isNaN(number)) {
+            this.content = String(this._lastValidNumber);
+        } else if(number < this._minValue) {
+            this.content = String(this._minValue);
+        } else if(number > this._maxValue) {
+            this.content = String(this._maxValue);
+        } else {
+            this._lastValidNumber = String(number);
+        }
+        this._updateDisplayedContent(false);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const HEIGHT$7 = 0.11;
+const WIDTH$7 = 0.31;
+const TITLE_WIDTH$7 = 0.09;
+const FIELD_HEIGHT$7 = 0.03;
+const FIELD_WIDTH$7 = 0.17;
+const FIELD_MARGIN$7 = 0.0025;
+const FIELD_MAX_LENGTH$b = 13;
 
 class EulerInput extends PointerInteractableEntity {
     constructor(params) {
@@ -21980,8 +21226,8 @@ class EulerInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$6,
-            'width': WIDTH$6,
+            'height': HEIGHT$7,
+            'width': WIDTH$7,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -21989,8 +21235,8 @@ class EulerInput extends PointerInteractableEntity {
             'offset': 0,
         });
         let columnBlock = new ThreeMeshUI.Block({
-            'height': HEIGHT$6,
-            'width': WIDTH$6 - TITLE_WIDTH$6,
+            'height': HEIGHT$7,
+            'width': WIDTH$7 - TITLE_WIDTH$7,
             'contentDirection': 'column',
             'justifyContent': 'center',
             'alignItems': 'end',
@@ -22001,38 +21247,38 @@ class EulerInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$6,
-            'width': TITLE_WIDTH$6,
+            'height': HEIGHT$7,
+            'width': TITLE_WIDTH$7,
             'margin': 0,
             'textAlign': 'left',
         });
         this._xField = new NumberField({
             'initialText': toDegrees(this._lastValue[0]),
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$6,
-            'width': FIELD_WIDTH$6,
-            'margin': FIELD_MARGIN$6,
-            'maxLength': FIELD_MAX_LENGTH$a,
+            'height': FIELD_HEIGHT$7,
+            'width': FIELD_WIDTH$7,
+            'margin': FIELD_MARGIN$7,
+            'maxLength': FIELD_MAX_LENGTH$b,
             'onBlur': () => { this._blur(0); },
             'onUpdate': () => { this._update(0); },
         });
         this._yField = new NumberField({
             'initialText': toDegrees(this._lastValue[1]),
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$6,
-            'width': FIELD_WIDTH$6,
-            'margin': FIELD_MARGIN$6,
-            'maxLength': FIELD_MAX_LENGTH$a,
+            'height': FIELD_HEIGHT$7,
+            'width': FIELD_WIDTH$7,
+            'margin': FIELD_MARGIN$7,
+            'maxLength': FIELD_MAX_LENGTH$b,
             'onBlur': () => { this._blur(1); },
             'onUpdate': () => { this._update(1); },
         });
         this._zField = new NumberField({
             'initialText': toDegrees(this._lastValue[2]),
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$6,
-            'width': FIELD_WIDTH$6,
-            'margin': FIELD_MARGIN$6,
-            'maxLength': FIELD_MAX_LENGTH$a,
+            'height': FIELD_HEIGHT$7,
+            'width': FIELD_WIDTH$7,
+            'margin': FIELD_MARGIN$7,
+            'maxLength': FIELD_MAX_LENGTH$b,
             'onBlur': () => { this._blur(2); },
             'onUpdate': () => { this._update(2); },
         });
@@ -22057,7 +21303,7 @@ class EulerInput extends PointerInteractableEntity {
         }
     }
 
-    _blur(index) {
+    _blur() {
         let newValue = [this.getX(), this.getY(), this.getZ()];
         newValue.forEach((v, i) => newValue[i] = MathUtils.degToRad(v));
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
@@ -22077,11 +21323,11 @@ class EulerInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$6;
+        return WIDTH$7;
     }
 
     getHeight() {
-        return HEIGHT$6;
+        return HEIGHT$7;
     }
 
     deactivate() {
@@ -22113,19 +21359,19 @@ class EulerInput extends PointerInteractableEntity {
 
 function createLabelRow$2(label) {
     let row = new ThreeMeshUI.Block({
-        'height': FIELD_HEIGHT$6,
-        'width': WIDTH$6 - TITLE_WIDTH$6,
+        'height': FIELD_HEIGHT$7,
+        'width': WIDTH$7 - TITLE_WIDTH$7,
         'contentDirection': 'row',
         'justifyContent': 'start',
         'backgroundOpacity': 0,
-        'margin': FIELD_MARGIN$6,
+        'margin': FIELD_MARGIN$7,
         'offset': 0,
     });
     let labelBlock = ThreeMeshUIHelper.createTextBlock({
         'text': label,
         'fontSize': FontSizes.body,
-        'height': FIELD_HEIGHT$6,
-        'width': WIDTH$6 - TITLE_WIDTH$6 - FIELD_WIDTH$6,
+        'height': FIELD_HEIGHT$7,
+        'width': WIDTH$7 - TITLE_WIDTH$7 - FIELD_WIDTH$7,
         'margin': 0,
     });
     row.add(labelBlock);
@@ -22143,13 +21389,13 @@ function toDegrees(radians) {
  */
 
 
-const HEIGHT$5 = 0.05;
-const WIDTH$5 = 0.31;
-const TITLE_WIDTH$5 = 0.13;
-const FIELD_HEIGHT$5 = 0.03;
-const FIELD_WIDTH$5 = 0.17;
-const FIELD_MARGIN$5 = 0.01;
-const FIELD_MAX_LENGTH$9 = 13;
+const HEIGHT$6 = 0.05;
+const WIDTH$6 = 0.31;
+const TITLE_WIDTH$6 = 0.13;
+const FIELD_HEIGHT$6 = 0.03;
+const FIELD_WIDTH$6 = 0.17;
+const FIELD_MARGIN$6 = 0.01;
+const FIELD_MAX_LENGTH$a = 13;
 
 const STATE_COLORS$2 = {};
 STATE_COLORS$2[InteractableStates.IDLE] = Colors.defaultIdle;
@@ -22171,8 +21417,8 @@ class ImageInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$5,
-            'width': WIDTH$5,
+            'height': HEIGHT$6,
+            'width': WIDTH$6,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -22181,17 +21427,17 @@ class ImageInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$5,
-            'width': TITLE_WIDTH$5,
+            'height': HEIGHT$6,
+            'width': TITLE_WIDTH$6,
             'margin': 0,
             'textAlign': 'left',
         });
         this._imageSelection = ThreeMeshUIHelper.createButtonBlock({
             'text': ' ',
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$5,
-            'width': FIELD_WIDTH$5,
-            'margin': FIELD_MARGIN$5,
+            'height': FIELD_HEIGHT$6,
+            'width': FIELD_WIDTH$6,
+            'margin': FIELD_MARGIN$6,
             'idleOpacity': 0.9,
             'hoveredOpacity': 1,
             'selectedOpacity': 1,
@@ -22244,7 +21490,7 @@ class ImageInput extends PointerInteractableEntity {
         let imageName = this._lastValue
             ? libraryHandler.getAssetName(this._lastValue)
             : " ";
-        imageName = stringWithMaxLength(imageName, FIELD_MAX_LENGTH$9);
+        imageName = stringWithMaxLength(imageName, FIELD_MAX_LENGTH$a);
         let textComponent = this._imageSelection.children[1];
         textComponent.set({ content: imageName });
         if(this._lastValue) {
@@ -22270,11 +21516,11 @@ class ImageInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$5;
+        return WIDTH$6;
     }
 
     getHeight() {
-        return HEIGHT$5;
+        return HEIGHT$6;
     }
 
     deactivate() {
@@ -22295,13 +21541,13 @@ class ImageInput extends PointerInteractableEntity {
  */
 
 
-const HEIGHT$4 = 0.05;
-const WIDTH$4 = 0.31;
-const TITLE_WIDTH$4 = 0.13;
-const FIELD_HEIGHT$4 = 0.03;
-const FIELD_WIDTH$4 = 0.13;
-const FIELD_MARGIN$4 = 0.01;
-const FIELD_MAX_LENGTH$8 = 9;
+const HEIGHT$5 = 0.05;
+const WIDTH$5 = 0.31;
+const TITLE_WIDTH$5 = 0.13;
+const FIELD_HEIGHT$5 = 0.03;
+const FIELD_WIDTH$5 = 0.13;
+const FIELD_MARGIN$5 = 0.01;
+const FIELD_MAX_LENGTH$9 = 9;
 const HSL$1 = {};
 
 const STATE_COLORS$1 = {};
@@ -22324,8 +21570,8 @@ class MaterialInput extends PointerInteractableEntity {
         this._object = new ThreeMeshUI.Block({
             'fontFamily': Fonts.defaultFamily,
             'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT$4,
-            'width': WIDTH$4,
+            'height': HEIGHT$5,
+            'width': WIDTH$5,
             'contentDirection': 'row',
             'justifyContent': 'start',
             'backgroundOpacity': 0,
@@ -22334,17 +21580,17 @@ class MaterialInput extends PointerInteractableEntity {
         let titleBlock = ThreeMeshUIHelper.createTextBlock({
             'text': title,
             'fontSize': FontSizes.body,
-            'height': HEIGHT$4,
-            'width': TITLE_WIDTH$4,
+            'height': HEIGHT$5,
+            'width': TITLE_WIDTH$5,
             'margin': 0,
             'textAlign': 'left',
         });
         this._materialBlock = ThreeMeshUIHelper.createButtonBlock({
             'text': ' ',
             'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT$4,
-            'width': FIELD_WIDTH$4,
-            'margin': FIELD_MARGIN$4,
+            'height': FIELD_HEIGHT$5,
+            'width': FIELD_WIDTH$5,
+            'margin': FIELD_MARGIN$5,
             'idleBackgroundColor': Colors.white,
             'hoveredBackgroundColor': Colors.white,
             'selectedBackgroundColor': Colors.white,
@@ -22392,10 +21638,12 @@ class MaterialInput extends PointerInteractableEntity {
     }
 
     _selectNewMaterial() {
+        let currentPage = global$1.menuController.getCurrentPage();
         let newMaterialPage = global$1.menuController.getPage(
             MenuPages.NEW_MATERIAL);
         newMaterialPage.setContent((material) => {
-            this._handleMaterialSelection(material.getId());
+            this._handleMaterialSelection(material.getId(), currentPage);
+            if(currentPage != global$1.menuController.getCurrentPage()) return;
             let materialPage = global$1.menuController.getPage(
                 MenuPages.MATERIAL);
             materialPage.setAsset(material);
@@ -22404,13 +21652,14 @@ class MaterialInput extends PointerInteractableEntity {
         global$1.menuController.pushPage(MenuPages.NEW_MATERIAL);
     }
 
-    _handleMaterialSelection(materialId) {
+    _handleMaterialSelection(materialId, callingPage) {
         if(materialId == "null\n") materialId = null;
         if(this._lastValue != materialId) {
             if(this._onUpdate) this._onUpdate(materialId);
             this._updateMaterial(materialId);
         }
-        global$1.menuController.back();
+        if(!callingPage || callingPage ==global$1.menuController.getCurrentPage())
+            global$1.menuController.back();
         pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
@@ -22423,7 +21672,7 @@ class MaterialInput extends PointerInteractableEntity {
         let materialName = material
             ? material.getName()
             : " ";
-        materialName = stringWithMaxLength(materialName, FIELD_MAX_LENGTH$8);
+        materialName = stringWithMaxLength(materialName, FIELD_MAX_LENGTH$9);
         let textComponent = this._materialBlock.children[1];
         textComponent.set({ content: materialName });
         if(material) {
@@ -22472,11 +21721,11 @@ class MaterialInput extends PointerInteractableEntity {
     }
 
     getWidth() {
-        return WIDTH$4;
+        return WIDTH$5;
     }
 
     getHeight() {
-        return HEIGHT$4;
+        return HEIGHT$5;
     }
 
     deactivate() {
@@ -22497,6 +21746,115 @@ class MaterialInput extends PointerInteractableEntity {
     removeFromScene() {
         this._removeSubscriptions();
         super.removeFromScene();
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const HEIGHT$4 = 0.05;
+const WIDTH$4 = 0.31;
+const TITLE_WIDTH$4 = 0.13;
+const FIELD_HEIGHT$4 = 0.03;
+const FIELD_WIDTH$4 = 0.17;
+const FIELD_MARGIN$4 = 0.01;
+const FIELD_MAX_LENGTH$8 = 13;
+
+class NumberInput extends PointerInteractableEntity {
+    constructor(params) {
+        super();
+        this._onBlur = params['onBlur'];
+        this._onUpdate = params['onUpdate'];
+        this._getFromSource = params['getFromSource'];
+        this._minValue = numberOr(params['minValue'], -Infinity);
+        this._maxValue = numberOr(params['maxValue'], Infinity);
+        this._lastValue = params['initialValue'] || 0;
+        let title = params['title'] || 'Missing Field Name...';
+        this._createInput(title);
+    }
+
+    _createInput(title) {
+        this._object = new ThreeMeshUI.Block({
+            'fontFamily': Fonts.defaultFamily,
+            'fontTexture': Fonts.defaultTexture,
+            'height': HEIGHT$4,
+            'width': WIDTH$4,
+            'contentDirection': 'row',
+            'justifyContent': 'start',
+            'backgroundOpacity': 0,
+            'offset': 0,
+        });
+        let titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': title,
+            'fontSize': FontSizes.body,
+            'height': HEIGHT$4,
+            'width': TITLE_WIDTH$4,
+            'margin': 0,
+            'textAlign': 'left',
+        });
+        this._numberField = new NumberField({
+            'initialText': String(this._lastValue),
+            'fontSize': FontSizes.body,
+            'height': FIELD_HEIGHT$4,
+            'width': FIELD_WIDTH$4,
+            'margin': FIELD_MARGIN$4,
+            'maxLength': FIELD_MAX_LENGTH$8,
+            'minValue': this._minValue,
+            'maxValue': this._maxValue,
+            'onBlur': () => { this._blur(); },
+            'onUpdate': () => { this._update(); },
+        });
+        this._object.add(titleBlock);
+        this._numberField.addToScene(this._object, this._pointerInteractable);
+    }
+
+    _update() {
+        if(this._onUpdate && this._validate()) {
+            this._onUpdate(this.getValue());
+        }
+    }
+
+    _blur() {
+        let newValue = this.getValue();
+        if(this._onBlur) this._onBlur(this._lastValue, newValue);
+        this._lastValue = newValue;
+    }
+
+    _validate() {
+        let number = this.getValue();
+        return !isNaN(number) && number <= this._maxValue
+            && number >= this._minValue;
+    }
+
+    getValue() {
+        return Number.parseFloat(this._numberField.content);
+    }
+
+    getWidth() {
+        return WIDTH$4;
+    }
+
+    getHeight() {
+        return HEIGHT$4;
+    }
+
+    deactivate() {
+        this._numberField.deactivate();
+    }
+
+    reset() {
+        this._numberField.reset();
+    }
+
+    updateFromSource() {
+        if(this._getFromSource) {
+            this._lastValue = this._getFromSource();
+            this._numberField.setContent(String(this._lastValue));
+        }
     }
 }
 
@@ -22704,6 +22062,7 @@ class TextureInput extends PointerInteractableEntity {
     }
 
     _selectNewTexture() {
+        let currentPage = global$1.menuController.getCurrentPage();
         let options = texturesHandler.getAssetClasses();
         if(this._filter)
             options = options.filter(o => o.textureType == this._filter);
@@ -22718,7 +22077,8 @@ class TextureInput extends PointerInteractableEntity {
             let newTexturePage = global$1.menuController.getPage(
                 MenuPages.NEW_TEXTURE);
             newTexturePage.setContent((texture) => {
-                this._handleTextureSelection(texture.getId());
+                this._handleTextureSelection(texture.getId(), currentPage);
+                if(currentPage != global$1.menuController.getCurrentPage())return;
                 let texturePage = global$1.menuController.getPage(
                     MenuPages.TEXTURE);
                 texturePage.setAsset(texture);
@@ -22728,13 +22088,14 @@ class TextureInput extends PointerInteractableEntity {
         }
     }
 
-    _handleTextureSelection(textureId) {
+    _handleTextureSelection(textureId, callingPage) {
         if(textureId == "null\n") textureId = null;
         if(this._lastValue != textureId) {
             if(this._onUpdate) this._onUpdate(textureId);
             this._updateTexture(textureId);
         }
-        global$1.menuController.back();
+        if(!callingPage || callingPage ==global$1.menuController.getCurrentPage())
+            global$1.menuController.back();
         pubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
             'id': this._id,
             'targetOnlyMenu': true,
@@ -22889,7 +22250,7 @@ class Vector2Input extends PointerInteractableEntity {
         }
     }
 
-    _blur(index) {
+    _blur() {
         let newValue = [this.getX(), this.getY()];
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
         this._lastValue = newValue;
@@ -23061,7 +22422,7 @@ class Vector3Input extends PointerInteractableEntity {
         }
     }
 
-    _blur(index) {
+    _blur() {
         let newValue = [this.getX(), this.getY(), this.getZ()];
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
         this._lastValue = newValue;
@@ -23381,7 +22742,7 @@ class EditorHelper {
             'filter': typeof field.filter == 'function' ? field.filter : null,
             'includeScene': field.includeScene,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -23393,7 +22754,7 @@ class EditorHelper {
         return new AudioInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -23406,7 +22767,7 @@ class EditorHelper {
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'suppressMenuFocusEvent': field.suppressMenuFocusEvent == true,
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -23418,10 +22779,10 @@ class EditorHelper {
         return new ColorInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
-                                      oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue, false, true);
@@ -23434,7 +22795,7 @@ class EditorHelper {
         return new CubeImageInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (side, newValue) => {
                 this._updateCubeImage(field.parameter, side, newValue);
             },
@@ -23448,10 +22809,8 @@ class EditorHelper {
             'initialValue': this._getKeyFromValue(field.map,
                 this._asset[getFunction]()),
             'options': Object.keys(field.map),
-            'getFromSource': () => {
-                return this._getKeyFromValue(field.map,
-                    this._asset[getFunction]());
-            },
+            'getFromSource': () => this._getKeyFromValue(field.map,
+                this._asset[getFunction]()),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, field.map[newValue]);
             },
@@ -23463,10 +22822,10 @@ class EditorHelper {
         return new EulerInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateEuler(field.parameter, newValue, false, false,
-                                  oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateEuler(field.parameter, newValue, false, true);
@@ -23479,7 +22838,7 @@ class EditorHelper {
         return new ImageInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -23491,7 +22850,7 @@ class EditorHelper {
         return new MaterialInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -23505,10 +22864,10 @@ class EditorHelper {
             'minValue': field.min,
             'maxValue': field.max,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
-                                      oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue, false, true);
@@ -23521,10 +22880,10 @@ class EditorHelper {
         return new TextInput({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
-                                      oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue, false, true);
@@ -23538,7 +22897,7 @@ class EditorHelper {
             'title': field.name,
             'filter': field.filter,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -23550,10 +22909,10 @@ class EditorHelper {
         return new Vector2Input({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateVector2(field.parameter, newValue, false, false,
-                                  oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateVector2(field.parameter, newValue, false, true);
@@ -23566,10 +22925,10 @@ class EditorHelper {
         return new Vector3Input({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
-            'getFromSource': () => { return this._asset[getFunction](); },
+            'getFromSource': () => this._asset[getFunction](),
             'onBlur': (oldValue, newValue) => {
                 this._updateVector3(field.parameter, newValue, false, false,
-                                  oldValue);
+                    oldValue);
             },
             'onUpdate': (newValue) => {
                 this._updateVector3(field.parameter, newValue, false, true);
@@ -23600,8 +22959,8 @@ const TRANSFORM_PUBLISH_FUNCTIONS = {
     scale: 'publishScale',
 };
 const TRS_HANDLERS = [{ handler: translateHandler, tool: HandTools.TRANSLATE },
-    { handler: rotateHandler, tool: HandTools.ROTATE },
-    { handler: scaleHandler, tool: HandTools.SCALE },
+                      { handler: rotateHandler, tool: HandTools.ROTATE },
+                      { handler: scaleHandler, tool: HandTools.SCALE },
 ];
 
 class AssetEntityHelper extends EditorHelper {
@@ -23627,7 +22986,7 @@ class AssetEntityHelper extends EditorHelper {
                     transformControlsHandler.detach(ownerId);
                 }, HandTools.EDIT));
             this._gripActions.push(
-                this._asset.addGripAction((ownerId) => {
+                this._asset.addGripAction(() => {
                     projectHandler.deleteAsset(this._asset);
                 }, null, HandTools.DELETE));
             this._pointerActions.push(
@@ -23864,7 +23223,7 @@ class AssetEntityHelper extends EditorHelper {
                     gripInteractable);
                 this.addToScene();
             };
-        this._asset.removeFromScene = (scene) => {
+        this._asset.removeFromScene = () => {
             this._asset._removeFromScene();
             this.removeFromScene();
         };
@@ -23976,7 +23335,7 @@ editorHelperFactory.registerEditorHelper(AssetEntityHelper, AssetEntity);
  */
 
 
-class AudioHelper extends AssetEntityHelper {
+class AudioAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.AUDIO_UPDATED);
         this._createMesh();
@@ -23992,7 +23351,7 @@ class AudioHelper extends AssetEntityHelper {
 
     _createPreviewFunctions() {
         this._previewAudio = false;
-        this._asset.getPreviewAudio = () => { return this._previewAudio; };
+        this._asset.getPreviewAudio = () => this._previewAudio;
         this._asset.setPreviewAudio = (previewAudio) => {
             this._previewAudio = previewAudio;
             if(previewAudio) {
@@ -24047,7 +23406,7 @@ class AudioHelper extends AssetEntityHelper {
     ];
 }
 
-editorHelperFactory.registerEditorHelper(AudioHelper, AudioAsset);
+editorHelperFactory.registerEditorHelper(AudioAssetHelper, AudioAsset);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24222,7 +23581,7 @@ class Component extends Asset {
         super(params);
     }
 
-    supports(asset) {
+    supports(_asset) {
         return true;
     }
 
@@ -24251,29 +23610,27 @@ editorHelperFactory.registerEditorHelper(ComponentHelper, Component);
  */
 
 
-class ClampedTexturePlaneHelper extends AssetEntityHelper {
+class ImageAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.IMAGE_UPDATED);
     }
 
     place(intersection) {
         let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global$1.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(point);
+        this._object.position.copy(normal).add(intersection.point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }
 
     static fields = [
         { "parameter": "visualEdit" },
-        { "parameter": "doubleSided", "name": "Double Sided",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "side", "name": "Display", "map": SIDE_MAP,
+            "type": EnumInput },
         { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },
@@ -24281,7 +23638,67 @@ class ClampedTexturePlaneHelper extends AssetEntityHelper {
     ];
 }
 
-editorHelperFactory.registerEditorHelper(ClampedTexturePlaneHelper, ClampedTexturePlane);
+editorHelperFactory.registerEditorHelper(ImageAssetHelper, ImageAsset);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class VideoAssetHelper extends AssetEntityHelper {
+    constructor(asset) {
+        super(asset, PubSubTopics.VIDEO_UPDATED);
+        this._createPreviewFunctions();
+    }
+
+    _createPreviewFunctions() {
+        this._previewVideo = false;
+        this._asset.getPreviewVideo = () => this._previewVideo;
+        this._asset.setPreviewVideo = (previewVideo) => {
+            this._previewVideo = previewVideo;
+            if(previewVideo) {
+                this._asset.play(null, true);
+            } else {
+                this._asset.stop(true);
+            }
+        };
+    }
+
+    place(intersection) {
+        let object = intersection.object;
+        object.updateMatrixWorld();
+        let normal = intersection.face.normal.clone()
+            .transformDirection(object.matrixWorld).clampLength(0, 0.001);
+        if(global$1.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
+            normal.negate();
+        this._object.position.copy(normal).add(intersection.point);
+        this._object.lookAt(normal.add(this._object.position));
+        this.roundAttributes(true);
+    }
+
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "previewVideo", "name": "Preview Video",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput},
+        { "parameter": "side", "name": "Display", "map": SIDE_MAP,
+            "type": EnumInput },
+        { "parameter": "autoplay", "name": "Auto Play",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "loop", "name": "Loop",
+            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+        { "parameter": "playTopic", "name": "Play Event", "type": TextInput },
+        { "parameter": "pauseTopic", "name": "Pause Event", "type": TextInput },
+        { "parameter": "stopTopic", "name": "Stop Event", "type": TextInput },
+        { "parameter": "parentId" },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
+}
+
+editorHelperFactory.registerEditorHelper(VideoAssetHelper, VideoAsset);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24342,7 +23759,7 @@ editorHelperFactory.registerEditorHelper(CustomAssetHelper, CustomAsset);
  */
 
 
-class GLTFAssetHelper extends AssetEntityHelper {
+class ModelAssetHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.MODEL_UPDATED);
     }
@@ -24356,7 +23773,7 @@ class GLTFAssetHelper extends AssetEntityHelper {
     ];
 }
 
-editorHelperFactory.registerEditorHelper(GLTFAssetHelper, GLTFAsset);
+editorHelperFactory.registerEditorHelper(ModelAssetHelper, ModelAsset);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24368,23 +23785,6 @@ editorHelperFactory.registerEditorHelper(GLTFAssetHelper, GLTFAsset);
 class LightHelper extends AssetEntityHelper {
     constructor(asset) {
         super(asset, PubSubTopics.LIGHT_UPDATED);
-        this._createMesh();
-    }
-
-    _createMesh() {
-        console.error(
-            "LightHelper._createMesh() should be overridden");
-        return;
-    }
-
-    updateVisualEdit(isVisualEdit) {
-        if(isVisualEdit) {
-            this._object.add(this._mesh);
-        } else {
-            this._object.remove(this._mesh);
-            fullDispose(this._mesh);
-        }
-        super.updateVisualEdit(isVisualEdit);
     }
 
     static fields = [
@@ -24413,21 +23813,9 @@ class AmbientLightHelper extends LightHelper {
         super(asset);
     }
 
-    _createMesh() {
-        let geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-        let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
-        this._mesh = new THREE.Mesh(geometry, material);
-        if(this._asset.visualEdit) this._object.add(this._mesh);
-    }
-
     static fields = [
-        { "parameter": "visualEdit" },
         { "parameter": "intensity" },
         { "parameter": "color" },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
     ];
 }
 
@@ -24551,14 +23939,12 @@ class CircleShapeHelper extends ShapeHelper {
 
     place(intersection) {
         let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global$1.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(point);
+        this._object.position.copy(normal).add(intersection.point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }
@@ -24660,6 +24046,105 @@ editorHelperFactory.registerEditorHelper(CylinderShapeHelper, CylinderShape);
  */
 
 
+class DirectionalLightHelper extends LightHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    static fields = [
+        { "parameter": "intensity" },
+        { "parameter": "color" },
+        { "parameter": "direction", "name": "Direction", "type": Vector3Input },
+    ];
+}
+
+editorHelperFactory.registerEditorHelper(DirectionalLightHelper,
+    DirectionalLight);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class HemisphereLightHelper extends LightHelper {
+    constructor(asset) {
+        super(asset);
+    }
+
+    static fields = [
+        { "parameter": "intensity" },
+        { "parameter": "color" },
+        { "parameter": "groundColor", "name": "Ground Color","type":ColorInput},
+    ];
+}
+
+editorHelperFactory.registerEditorHelper(HemisphereLightHelper,
+    HemisphereLight);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class SpotLightHelper extends LightHelper {
+    constructor(asset) {
+        super(asset);
+        this._createMesh();
+    }
+
+    _createMesh() {
+        let geometry = new THREE.ConeGeometry(0.07, 0.14, 8);
+        geometry.translate(0, -0.07, 0);
+        let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
+        this._mesh = new THREE.Mesh(geometry, material);
+        if(this._asset.visualEdit) this._object.add(this._mesh);
+    }
+
+    updateVisualEdit(isVisualEdit) {
+        if(isVisualEdit) {
+            this._object.add(this._mesh);
+        } else {
+            this._object.remove(this._mesh);
+            fullDispose(this._mesh);
+        }
+        super.updateVisualEdit(isVisualEdit);
+    }
+
+    static fields = [
+        { "parameter": "visualEdit" },
+        { "parameter": "color" },
+        { "parameter": "intensity" },
+        { "parameter": "angle", "name": "Angle", "min": 0, "max": 180,
+            "type": NumberInput },
+        //{ "parameter": "castShadow", "name": "Cast Shadow",
+        //    "type": CheckboxInput },
+        { "parameter": "distance", "name": "Distance", "min": 0,
+            "type": NumberInput },
+        { "parameter": "decay", "name": "Decay", "min": 0,
+            "type": NumberInput },
+        { "parameter": "penumbra", "name": "Penumbra", "min": 0, "max": 1,
+            "type": NumberInput },
+        { "parameter": "map", "name": "Texture", "type": TextureInput },
+        { "parameter": "parentId" },
+        { "parameter": "position" },
+        { "parameter": "rotation" },
+        { "parameter": "scale" },
+    ];
+}
+
+editorHelperFactory.registerEditorHelper(SpotLightHelper, SpotLight);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
 class PlaneShapeHelper extends ShapeHelper {
     constructor(asset) {
         super(asset);
@@ -24667,14 +24152,12 @@ class PlaneShapeHelper extends ShapeHelper {
 
     place(intersection) {
         let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global$1.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(point);
+        this._object.position.copy(normal).add(intersection.point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }
@@ -24682,8 +24165,8 @@ class PlaneShapeHelper extends ShapeHelper {
     static fields = [
         { "parameter": "visualEdit" },
         { "parameter": "material" },
-        { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput },
-        { "parameter": "height", "name": "Height", "min": 0, "type": NumberInput },
+        { "parameter": "width", "name": "Width", "min": 0, "type": NumberInput},
+        { "parameter": "height", "name": "Height", "min": 0,"type":NumberInput},
         { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
             "type": NumberInput },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
@@ -24707,6 +24190,7 @@ editorHelperFactory.registerEditorHelper(PlaneShapeHelper, PlaneShape);
 class PointLightHelper extends LightHelper {
     constructor(asset) {
         super(asset);
+        this._createMesh();
     }
 
     _createMesh() {
@@ -24714,6 +24198,16 @@ class PointLightHelper extends LightHelper {
         let material = new THREE.MeshBasicMaterial({ color: Colors.yellow });
         this._mesh = new THREE.Mesh(geometry, material);
         if(this._asset.visualEdit) this._object.add(this._mesh);
+    }
+
+    updateVisualEdit(isVisualEdit) {
+        if(isVisualEdit) {
+            this._object.add(this._mesh);
+        } else {
+            this._object.remove(this._mesh);
+            fullDispose(this._mesh);
+        }
+        super.updateVisualEdit(isVisualEdit);
     }
 
     static fields = [
@@ -24747,14 +24241,12 @@ class RingShapeHelper extends ShapeHelper {
 
     place(intersection) {
         let object = intersection.object;
-        let point = intersection.point;
-        intersection.face;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global$1.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(point);
+        this._object.position.copy(normal).add(intersection.point);
         this._object.lookAt(normal.add(this._object.position));
         this.roundAttributes(true);
     }
@@ -24909,7 +24401,8 @@ class StandardMaterialHelper extends MaterialHelper {
     ];
 }
 
-editorHelperFactory.registerEditorHelper(StandardMaterialHelper, StandardMaterial);
+editorHelperFactory.registerEditorHelper(StandardMaterialHelper,
+    StandardMaterial);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -25017,8 +24510,8 @@ class System extends Asset {
     _onUserReady() {}
     _onPeerReady() {}
     _onPeerDisconnected() {}
-    _onPeerMessage(p, m) {}
-    _onPeerBufferMessage(p, m) {}
+    _onPeerMessage(_p, _m) {}
+    _onPeerBufferMessage(_p, _m) {}
     _onPartyStarted() {}
     _onPartyEnded() {}
 
@@ -37065,7 +36558,8 @@ class NotificationHub extends Entity {
         } else if(notification.state == NOTIFICATION_STATES.FADE_OUT) {
             notification.timeInState = Math.min(
                 notification.timeInState + timeDelta, notification.fadeTime);
-            let fadePercent = 1 - (notification.timeInState / notification.fadeTime);
+            let fadePercent
+                = 1 - (notification.timeInState / notification.fadeTime);
             this._container.set({
                 backgroundOpacity: BACKGROUND_OPACITY * fadePercent
             });
@@ -37111,7 +36605,7 @@ class MenuController extends PointerInteractableEntity {
         this._notificationHub.setNotificationHeight(0.18);
     }
 
-    _getCurrentPage() {
+    getCurrentPage() {
         return this._pages[this._pageCalls[this._pageCalls.length-1]];
     }
 
@@ -37120,16 +36614,16 @@ class MenuController extends PointerInteractableEntity {
     }
 
     setPage(page) {
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         this._pageCalls = [page];
-        currentPage = this._getCurrentPage();
+        currentPage = this.getCurrentPage();
         currentPage.addToScene(this._object, this._pointerInteractable);
         pubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     pushPage(page) {
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         this._pageCalls.push(page);
         this._pages[page].addToScene(this._object, this._pointerInteractable);
@@ -37137,10 +36631,10 @@ class MenuController extends PointerInteractableEntity {
     }
 
     popPage() {
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         this._pageCalls.pop();
-        currentPage = this._getCurrentPage();
+        currentPage = this.getCurrentPage();
         currentPage.addToScene(this._object, this._pointerInteractable);
         pubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
@@ -37148,7 +36642,7 @@ class MenuController extends PointerInteractableEntity {
     popPagesPast(page) {
         let poppedPage, currentPage;
         do {
-            currentPage = this._getCurrentPage();
+            currentPage = this.getCurrentPage();
             poppedPage = this._pageCalls[this._pageCalls.length-1];
             currentPage.back();
         } while(poppedPage != page);
@@ -37157,23 +36651,25 @@ class MenuController extends PointerInteractableEntity {
 
     popAllPages() {
         while(this._pageCalls.length > 1) {
-            let currentPage = this._getCurrentPage();
+            let currentPage = this.getCurrentPage();
             currentPage.back();
         }
         pubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     back() {
-        this._getCurrentPage().back();
+        this.getCurrentPage().back();
     }
 
     _createBorder() {
         let indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0]);
-		let positions = [0.225, 0.15, 0, -0.225, 0.15, 0, -0.225, -0.15, 0, 0.225, -0.15, 0];
-		let geometry = new THREE.BufferGeometry();
-		geometry.setIndex( new THREE.BufferAttribute( indices, 1 ) );
-		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-        let lineSegments = new THREE.LineSegments( geometry );
+        let positions = [0.225, 0.15, 0, -0.225, 0.15, 0, -0.225, -0.15, 0,
+                         0.225, -0.15, 0];
+        let geometry = new THREE.BufferGeometry();
+        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(
+            positions, 3));
+        let lineSegments = new THREE.LineSegments(geometry);
         lineSegments.material.color.set(0xffff00);
         return lineSegments;
     }
@@ -37205,7 +36701,8 @@ class MenuController extends PointerInteractableEntity {
     }
 
     getRotationArray() {
-        return euler.setFromQuaternion(this._object.getWorldQuaternion(quaternion).normalize()).toArray();
+        return euler.setFromQuaternion(this._object.getWorldQuaternion(
+            quaternion).normalize()).toArray();
     }
 
     getDirection(vector3) {
@@ -37234,7 +36731,8 @@ class MenuController extends PointerInteractableEntity {
             : 1.5 * aspectRatio;
         global$1.camera.getWorldPosition(vector3s[0]);
         global$1.camera.getWorldDirection(vector3s[1]);
-        vector3s[1].normalize().divideScalar(menuDistanceScale).multiplyScalar(userScale);
+        vector3s[1].normalize().divideScalar(menuDistanceScale)
+            .multiplyScalar(userScale);
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
         this._object.scale.set(userScale, userScale, userScale);
@@ -37289,7 +36787,7 @@ class MenuController extends PointerInteractableEntity {
         if(this._object.parent == scene) return;
         super.addToScene(scene);
         this._scene = scene;
-        this._getCurrentPage().addToScene(this._object,
+        this.getCurrentPage().addToScene(this._object,
             this._pointerInteractable);
         if(global$1.deviceType == "XR")
             gripInteractableHandler.addInteractable(this._gripInteractable);
@@ -37298,11 +36796,12 @@ class MenuController extends PointerInteractableEntity {
 
     removeFromScene() {
         super.removeFromScene();
-        let currentPage = this._getCurrentPage();
+        let currentPage = this.getCurrentPage();
         currentPage.removeFromScene();
         if(global$1.deviceType == "XR")
             gripInteractableHandler.removeInteractable(this._gripInteractable);
-        pointerInteractableHandler.removeInteractable(this._pointerInteractable);
+        pointerInteractableHandler.removeInteractable(
+            this._pointerInteractable);
     }
 }
 
@@ -37342,7 +36841,10 @@ class MenuPage extends PointerInteractableEntity {
             'height': 0.04,
             'width': 0.04,
         });
-        backButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        backButtonParent.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         backButtonParent.position.fromArray([-.225, 0.15, -0.001]);
         backButtonParent.add(backButton);
         let interactable = new PointerInteractable(backButton, true);
@@ -37364,7 +36866,10 @@ class MenuPage extends PointerInteractableEntity {
             'height': 0.04,
             'width': 0.04,
         });
-        homeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        homeButtonParent.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         homeButtonParent.position.fromArray([-.225, 0.1, -0.001]);
         homeButtonParent.add(homeButton);
         let interactable = new PointerInteractable(homeButton, true);
@@ -37386,7 +36891,10 @@ class MenuPage extends PointerInteractableEntity {
             'height': 0.04,
             'width': 0.04,
         });
-        closeButtonParent.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        closeButtonParent.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         closeButtonParent.position.fromArray([.225, 0.15, -0.001]);
         closeButtonParent.add(closeButton);
         let interactable = new PointerInteractable(closeButton, true);
@@ -37412,7 +36920,10 @@ class MenuPage extends PointerInteractableEntity {
             borderColor: Colors.white,
             borderOpacity: 0.75,
         });
-        this._container.set({ fontFamily: FONT_FAMILY, fontTexture: FONT_TEXTURE });
+        this._container.set({
+            fontFamily: FONT_FAMILY,
+            fontTexture: FONT_TEXTURE,
+        });
         this._containerInteractable = new PointerInteractable(
             this._container.children[0]);
         if(global$1.deviceType == 'XR')
@@ -38141,14 +37652,18 @@ class AssetsPage extends PaginatedPage$1 {
             'height': 0.04,
             'width': 0.04,
         });
-        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(addButton);
         let interactable = new PointerInteractable(addButton, true);
         interactable.addAction(() => {
             let page = this._controller.getPage('NEW_' + this._assetType);
             page.setContent((asset) => {
-                this._handleItemInteraction(asset.getId());
+                if(asset.constructor.assetType == this._assetType)
+                    this._handleItemInteraction(asset.getId());
             });
             this._controller.pushPage('NEW_' + this._assetType);
         });
@@ -38175,15 +37690,15 @@ class AssetsPage extends PaginatedPage$1 {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, this._assetType + '_ADDED', (asset) => {
+        pubSub.subscribe(this._id, this._assetType + '_ADDED', () => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        pubSub.subscribe(this._id, this._assetType + '_UPDATED', (message) => {
+        pubSub.subscribe(this._id, this._assetType + '_UPDATED', () => {
             this._refreshItems();
             this._updateItemsGUI();
         });
-        pubSub.subscribe(this._id, this._assetType + '_DELETED', (e) => {
+        pubSub.subscribe(this._id, this._assetType + '_DELETED', () => {
             this._refreshItems();
             this._updateItemsGUI();
         });
@@ -38256,7 +37771,10 @@ class AssetSelectPage extends PaginatedPage$1 {
             'height': 0.04,
             'width': 0.04,
         });
-        addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        addButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(this._addButton);
         this._addInteractable = new PointerInteractable(this._addButton, true);
@@ -38358,7 +37876,7 @@ class ColorWheel {
     }
 
     _updateColorWheel() {
-        let image = this._colorContext.getImageData(0, 0, 2 * RADIUS$1, 2 * RADIUS$1);
+        let image = this._colorContext.getImageData(0, 0, 2 * RADIUS$1, 2*RADIUS$1);
         let data = image.data;
         this._drawColorWheel(data);
         //this._drawSelectCircle(data);
@@ -38393,41 +37911,9 @@ class ColorWheel {
         }
     }
 
-    //_drawSelectCircle(data) {
-    //    let [xCenter, yCenter] = polarToCartesian(this._saturation * RADIUS,
-    //        THREE.MathUtils.degToRad(this._hue + 180));
-    //    xCenter = Math.round(xCenter);
-    //    yCenter = Math.round(yCenter);
-    //    for(let x = xCenter - OUTER_RADIUS; x < xCenter + OUTER_RADIUS; x++) {
-    //        let xSquared = (x - xCenter) ** 2;
-    //        let yMax = Math.ceil(Math.sqrt(OR_SQUARED - xSquared));
-    //        for(let y = yCenter - yMax; y <= yCenter + yMax; y++) {
-    //            let [r, phi] = cartesianToPolar(x, y);
-    //            if(r > RADIUS) continue;
-
-    //            let distanceFromSelection = Math.sqrt((xCenter - x) ** 2
-    //                + (yCenter - y) ** 2);
-    //            if(distanceFromSelection < INNER_RADIUS
-    //                || distanceFromSelection > OUTER_RADIUS)
-    //                continue;
-
-    //            // Need to convert coordinates from [-RADIUS,RADIUS] to
-    //            // [0,RADIUS] for getting index of Image Data Array
-    //            let rowLength = 2 * RADIUS;
-    //            let adjustedX = x + RADIUS;
-    //            let adjustedY = y + RADIUS;
-    //            let index = (adjustedX + (adjustedY * rowLength)) * PIXEL_BYTES;
-
-    //            data[index] = 255;
-    //            data[index+1] = 255;
-    //            data[index+2] = 255;
-    //            data[index+3] = 255;
-    //        }
-    //    }
-    //}
-
     _updateLightnessBar() {
-        let image = this._lightnessContext.getImageData(0, 0, LIGHTNESS_WIDTH, LIGHTNESS_HEIGHT);
+        let image = this._lightnessContext.getImageData(0, 0, LIGHTNESS_WIDTH,
+            LIGHTNESS_HEIGHT);
         let data = image.data;
         for(let x = 0; x < LIGHTNESS_WIDTH; x++) {
             for(let y = 0; y < LIGHTNESS_HEIGHT; y++) {
@@ -38755,9 +38241,8 @@ class EditAcknowledgementsPage extends MenuPage {
                 'onBlur': (oldValue, newValue) => {
                     this._acknowledgements[this._page][key] = newValue;
                 },
-                'getFromSource': () => {
-                    return this._acknowledgements[this._page][key] || '';
-                },
+                'getFromSource': () =>
+                    this._acknowledgements[this._page][key] || '',
             });
             field.addToScene(columnBlock, this._acknowledgementsInteractable);
             this._fields.push(field);
@@ -38936,9 +38421,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'onBlur': (oldValue, newValue) => {
                 settingsHandler.setEditorSetting('Movement Speed', newValue);
             },
-            'getFromSource': () => {
-                return settingsHandler.getEditorSettings()['Movement Speed'];
-            },
+            'getFromSource': () =>
+                settingsHandler.getEditorSettings()['Movement Speed'],
         }));
         fields.push(new NumberInput({
             'title': 'User Scale',
@@ -38949,9 +38433,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
                 global$1.userController.setScale([newValue, newValue, newValue]);
                 settingsHandler.setEditorSetting('User Scale', newValue);
             },
-            'getFromSource': () => {
-                return settingsHandler.getEditorSettings()['User Scale'];
-            },
+            'getFromSource': () =>
+                settingsHandler.getEditorSettings()['User Scale'],
         }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
@@ -38959,9 +38442,8 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'onUpdate': (value) => {
                 settingsHandler.setEditorSetting('Enable Flying', value);
             },
-            'getFromSource': () => {
-                return settingsHandler.getEditorSettings()['Enable Flying'];
-            },
+            'getFromSource': () =>
+                settingsHandler.getEditorSettings()['Enable Flying'],
         }));
         if(global$1.deviceType == "XR") {
             fields.push(new CheckboxInput({
@@ -39128,7 +38610,7 @@ class HostPartyPage extends MenuPage {
         this._container.remove(this._connectingBlock);
         this._container.add(this._contentBlock);
         this._container.update(false, false, true);
-        if(this._controller._getCurrentPage() == this) this._controller.back();
+        if(this._controller.getCurrentPage() == this) this._controller.back();
         pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
             text: 'Party Started',
         });
@@ -39264,7 +38746,7 @@ class JoinPartyPage extends MenuPage {
         this._container.remove(this._connectingBlock);
         this._container.add(this._contentBlock);
         this._container.update(false, false, true);
-        if(this._controller._getCurrentPage() == this) this._controller.back();
+        if(this._controller.getCurrentPage() == this) this._controller.back();
         pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
             text: 'Party Joined',
         });
@@ -39279,7 +38761,8 @@ class JoinPartyPage extends MenuPage {
             });
         } else if(topic == 'rtc-timeout') {
             pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                text: 'Could not connect to all other users in time, please try again',
+                text: 'Could not connect to all other users in time, '
+                    + 'please try again',
             });
         } else if(topic == 'could-not-connect') {
             pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
@@ -39324,6 +38807,7 @@ class JoinPartyPage extends MenuPage {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+/* global gapi, google, JSZip */
 const CLIENT_ID = '791471431939-q3fifjtaq8mhlhce0l5h96k38m8fchn2.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyBdadP7BFyNpPCRAlCfV-ikXklXkdJ188s';
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
@@ -39405,8 +38889,8 @@ class GoogleDrive {
 
     _createFolder() {
         let fileMetadata = {
-          'name': 'Digital Bacon',
-          'mimeType': 'application/vnd.google-apps.folder'
+            'name': 'Digital Bacon',
+            'mimeType': 'application/vnd.google-apps.folder'
         };
         gapi.client.drive.files.create({
             'resource': fileMetadata,
@@ -39660,7 +39144,8 @@ class LoadFromGDrivePage extends PaginatedPage$1 {
                 if(!this._isLoadingSaving) {
                     this._container.remove(this._loadingSavingBlock);
                     this._container.add(this._optionsContainer);
-                    this._containerInteractable.addChild(this._optionsInteractable);
+                    this._containerInteractable.addChild(
+                        this._optionsInteractable);
                 }
             }
             this._instances = files;
@@ -39674,7 +39159,8 @@ class LoadFromGDrivePage extends PaginatedPage$1 {
                 if(!this._isLoadingSaving) {
                     this._container.remove(this._loadingSavingBlock);
                     this._container.add(this._optionsContainer);
-                    this._containerInteractable.addChild(this._optionsInteractable);
+                    this._containerInteractable.addChild(
+                        this._optionsInteractable);
                 }
             }
         }
@@ -39798,7 +39284,8 @@ let PaginatedIconsPage$1 = class PaginatedIconsPage extends MenuPage {
                         this._handleItemInteraction(this._items[index]);
                     } else {
                         console.error(
-                            "PaginatedIconsPage displaying non existant option");
+                            "PaginatedIconsPage displaying non existant option"
+                        );
                     }
                 });
                 this._optionsInteractable.addChild(interactable);
@@ -39922,50 +39409,50 @@ let PaginatedIconsPage$1 = class PaginatedIconsPage extends MenuPage {
 
 
 const ASSETS = [{
-        'text': 'Models',
-        'icon': Textures.objectIcon,
-        'assetType': AssetTypes.MODEL,
-    }, {
-        'text': 'Images',
-        'icon': Textures.imageIcon,
-        'assetType': AssetTypes.IMAGE,
-    }, {
-        'text': 'Shapes',
-        'icon': Textures.shapesIcon,
-        'assetType': AssetTypes.SHAPE,
-    }, {
-        'text': 'Lights',
-        'icon': Textures.lightbulbIcon,
-        'assetType': AssetTypes.LIGHT,
-    }, {
-        'text': 'Materials',
-        'icon': Textures.materialIcon,
-        'assetType': AssetTypes.MATERIAL,
-    }, {
-        'text': 'Textures',
-        'icon': Textures.textureIcon,
-        'assetType': AssetTypes.TEXTURE,
-    }, {
-        'text': 'Audio',
-        'icon': Textures.audioIcon,
-        'assetType': AssetTypes.AUDIO,
-    }, {
-//        'text': 'Video',
-//        'icon': Textures.videoIcon,
-//        'assetType': AssetTypes.VIDEO,
-//    }, {
-        'text': 'Components',
-        'icon': Textures.componentIcon,
-        'assetType': AssetTypes.COMPONENT,
-    }, {
-        'text': 'Systems',
-        'icon': Textures.systemIcon,
-        'assetType': AssetTypes.SYSTEM,
-    }, {
-        'text': 'Other Assets',
-        'icon': Textures.ellipsisIcon,
-        'assetType': AssetTypes.CUSTOM_ASSET,
-    }
+    'text': 'Models',
+    'icon': Textures.objectIcon,
+    'assetType': AssetTypes.MODEL,
+}, {
+    'text': 'Images',
+    'icon': Textures.imageIcon,
+    'assetType': AssetTypes.IMAGE,
+}, {
+    'text': 'Shapes',
+    'icon': Textures.shapesIcon,
+    'assetType': AssetTypes.SHAPE,
+}, {
+    'text': 'Lights',
+    'icon': Textures.lightbulbIcon,
+    'assetType': AssetTypes.LIGHT,
+}, {
+    'text': 'Materials',
+    'icon': Textures.materialIcon,
+    'assetType': AssetTypes.MATERIAL,
+}, {
+    'text': 'Textures',
+    'icon': Textures.textureIcon,
+    'assetType': AssetTypes.TEXTURE,
+}, {
+    'text': 'Audio',
+    'icon': Textures.audioIcon,
+    'assetType': AssetTypes.AUDIO,
+}, {
+    'text': 'Video',
+    'icon': Textures.videoIcon,
+    'assetType': AssetTypes.VIDEO,
+}, {
+    'text': 'Components',
+    'icon': Textures.componentIcon,
+    'assetType': AssetTypes.COMPONENT,
+}, {
+    'text': 'Systems',
+    'icon': Textures.systemIcon,
+    'assetType': AssetTypes.SYSTEM,
+}, {
+    'text': 'Other Assets',
+    'icon': Textures.ellipsisIcon,
+    'assetType': AssetTypes.CUSTOM_ASSET,
+}
 ];
 
 class LibraryPage extends PaginatedIconsPage$1 {
@@ -40003,7 +39490,10 @@ class LibraryPage extends PaginatedIconsPage$1 {
             'width': 0.04,
             'padding': 0.01,
         });
-        searchButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        searchButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         searchButtonParent.position.fromArray([-0.175, 0.12, -0.001]);
         searchButtonParent.add(searchButton);
         let interactable = new PointerInteractable(searchButton, true);
@@ -40363,7 +39853,10 @@ class ListComponentsPage extends PaginatedPage {
             'height': 0.04,
             'width': 0.04,
         });
-        this._addButtonParent.set({ fontFamily: Fonts.defaultFamily, fontTexture: Fonts.defaultTexture });
+        this._addButtonParent.set({
+            fontFamily: Fonts.defaultFamily,
+            fontTexture: Fonts.defaultTexture,
+        });
         this._addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         this._addButtonParent.add(addButton);
         this._addInteractable = new PointerInteractable(addButton, true);
@@ -40397,6 +39890,7 @@ class ListComponentsPage extends PaginatedPage {
     }
 
     _selectNewComponent() {
+        let currentPage = this._controller.getCurrentPage();
         let page = this._controller.getPage(MenuPages.NEW_COMPONENT);
         page.setContent((component) => {
             if(!component.supports(this._asset)) {
@@ -40406,6 +39900,7 @@ class ListComponentsPage extends PaginatedPage {
                 return;
             }
             this._asset.editorHelper.addComponent(component.getId());
+            if(currentPage != this._controller.getCurrentPage()) return;
             this._controller.back();
             let componentPage = this._controller.getPage(MenuPages.COMPONENT);
             componentPage.setAsset(component);
@@ -40581,6 +40076,23 @@ class Sketchfab {
     constructor() {
         this._authToken = localStorage.getItem(AUTH_KEY);
         this._authExpiry = localStorage.getItem(AUTH_EXPIRY_KEY);
+        this._listenForMessages();
+    }
+
+    _listenForMessages() {
+        window.addEventListener('message', (event) => {
+            if(event.origin != VALID_CALLBACK_ORIGIN) return;
+            if(event.data.topic != 'sketchfab_auth_token') return;
+            clearInterval(this._intervalId);
+            this._tab.postMessage('close_tab', VALID_CALLBACK_ORIGIN);
+            this._authToken = event.data.authToken;
+            this._authExpiry = event.data.authExpiry;
+            if(this._staySignedIn) {
+                localStorage.setItem(AUTH_KEY, this._authToken);
+                localStorage.setItem(AUTH_EXPIRY_KEY, this._authExpiry);
+            }
+            if(this._callback) this._callback();
+        });
     }
 
     isSignedIn() {
@@ -40589,37 +40101,24 @@ class Sketchfab {
     }
 
     signIn(staySignedIn, callback) {
+        this._staySignedIn = staySignedIn;
+        this._callback = callback;
         if(this._intervalId) {
             clearInterval(this._intervalId);
             this._intervalId = null;
         }
 
-        let tab = window.open(AUTH_URL, '_blank');
-        if(!tab) {
+        this._tab = window.open(AUTH_URL, '_blank');
+        if(!this._tab) {
             pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Please check your popup blocker settings',
             });
             return;
         }
-        tab.focus();
-        window._tab = tab;
+        this._tab.focus();
         this._intervalId = setInterval(() => {
-            tab.postMessage('fetch_auth_token', VALID_CALLBACK_ORIGIN);
+            this._tab.postMessage('fetch_auth_token', VALID_CALLBACK_ORIGIN);
         }, 1000);
-
-        window.addEventListener('message', (event) => {
-            if(event.origin != VALID_CALLBACK_ORIGIN) return;
-            if(event.data.topic != 'sketchfab_auth_token') return;
-            clearInterval(this._intervalId);
-            tab.postMessage('close_tab', VALID_CALLBACK_ORIGIN);
-            this._authToken = event.data.authToken;
-            this._authExpiry = event.data.authExpiry;
-            if(staySignedIn) {
-                localStorage.setItem(AUTH_KEY, this._authToken);
-                localStorage.setItem(AUTH_EXPIRY_KEY, this._authExpiry);
-            }
-            if(callback) callback();
-        });
     }
 
     search(query, successCallback, errorCallback) {
@@ -40632,9 +40131,7 @@ class Sketchfab {
             headers: {
                 Authorization: 'Bearer ' + this._authToken,
             }
-        }).then((response) => {
-            return response.json();
-        }).then((body) => {
+        }).then((response) => response.json()).then((body) => {
             if(successCallback) successCallback(body);
         }).catch((error) => {
             console.error(error);
@@ -40687,7 +40184,13 @@ let sketchfab = new Sketchfab();
  */
 
 
+const URL_PREFIX_PATTERN = /^https:\/\//i;
+
 const SPECIAL_OPTIONS = {
+    CDN: {
+        assetName: 'Load from CDN',
+        handler: '_loadFromCDN',
+    },
     DEVICE: {
         assetName: 'Select from Device',
         handler: '_uploadFromDevice',
@@ -40734,6 +40237,90 @@ class NewAssetPage extends PaginatedPage$1 {
         }
         let asset = projectHandler.addNewAsset(item.assetId, params);
         this.back();
+        if(this._additionalAction) this._additionalAction(asset);
+    }
+
+    _loadFromCDN() {
+        let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
+        inputPage.setContent("Load from CDN", "URL", "Load",
+            (url) => {
+                if(!this._isUrlValid(url)) return;
+                this._controller.back();
+                let textPage = this._controller.getPage(MenuPages.TEXT);
+                textPage.setContent("Load from CDN", "Loading...");
+                this._controller.pushPage(MenuPages.TEXT);
+                libraryHandler.loadExternalAsset(url, (assetId) => {
+                    this._handleExternalAsset(assetId);
+                }, () => {
+                    pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Sorry, something went wrong while loading the '
+                            + 'file'
+                    });
+                    if(this._controller.getCurrentPage() == textPage)
+                        this._controller.back();
+                });
+            }
+        );
+        this._controller.pushPage(MenuPages.TEXT_INPUT);
+    }
+
+    _isUrlValid(url) {
+        if(!URL_PREFIX_PATTERN.test(url)) {
+            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'URL must begin with https://',
+            });
+            return false;
+        }
+        let extension = url.split('.').pop().toLowerCase();
+        if(this._assetType == AssetTypes.MODEL) {
+            if(!(extension in FileTypes$2)) {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'File type not supported for Model'
+                });
+                return false;
+            }
+        } else if(this._assetType == AssetTypes.IMAGE) {
+            if(!(extension in FileTypes$3)) {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'File type not supported for Image'
+                });
+                return false;
+            }
+        } else if(this._assetType == AssetTypes.AUDIO) {
+            if(!(extension in FileTypes$4)) {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'File type not supported for Audio'
+                });
+                return false;
+            }
+        } else if(this._assetType == AssetTypes.VIDEO) {
+            if(!(extension in FileTypes$1)) {
+                pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                    text: 'File type not supported for Video'
+                });
+                return false;
+            }
+        } else if(extension != 'js') {
+            pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                text: 'File type not supported for script'
+            });
+            return false;
+        }
+        return true;
+    }
+
+    _handleExternalAsset(assetId) {
+        let params;
+        let assetType = libraryHandler.getType(assetId);
+        if(assetType in AssetEntityTypes) {
+            params = this._getNewEntityParams();
+            params['assetId'] = assetId;
+        }
+        let asset = projectHandler.addNewAsset(assetId, params);
+        let textPage = this._controller.getPage(MenuPages.TEXT);
+        if(textPage._object.parent) this._controller.back();
+        if(assetType != this._assetType) return;
+        if(this._object.parent) this._controller.back();
         if(this._additionalAction) this._additionalAction(asset);
     }
 
@@ -40789,6 +40376,7 @@ class NewAssetPage extends PaginatedPage$1 {
             if(this._assetType == AssetEntityTypes.MODEL)
                 this._items.push(SPECIAL_OPTIONS.SKETCHFAB);
             this._items.push(SPECIAL_OPTIONS.DEVICE);
+            this._items.push(SPECIAL_OPTIONS.CDN);
             for(let assetId in libraryHandler.library) {
                 let libraryAsset = libraryHandler.library[assetId];
                 if(libraryAsset['Type']  == this._assetType) {
@@ -40800,6 +40388,8 @@ class NewAssetPage extends PaginatedPage$1 {
             }
         } else {
             this._items =projectHandler.getAssetClassesForType(this._assetType);
+            if(this._assetType == AssetTypes.TEXTURE) return;
+            this._items.unshift(SPECIAL_OPTIONS.CDN);
             this._items.unshift(SPECIAL_OPTIONS.DEVICE);
         }
     }
@@ -40991,7 +40581,7 @@ class PartyPage extends DynamicFieldsPage {
         return different;
     }
 
-    _abdicateHost(peerId) {
+    _abdicateHost() {
         for(let peerId in this._peerFields) {
             this._peerFields[peerId].toggleHost(false);
         }
@@ -41352,6 +40942,1191 @@ class PeerPage extends MenuPage {
  */
 
 
+const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+  
+class Avatar extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = Avatar.assetId;
+        super(params);
+        if(params == null) {
+            params = {};
+        }
+        this._avatarParent = new THREE.Object3D();
+        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
+        this._verticalOffset = params['verticalOffset'] || 0;
+        this._object.position.setY(this._verticalOffset);
+        this._object.add(this._avatarParent);
+
+        this._createMesh(this._avatarUrl);
+        let parentAsset = projectHandler.getSessionAsset(this._parentId);
+        if(parentAsset && parentAsset.registerAvatar) {
+            parentAsset.registerAvatar(this);
+        }
+    }
+
+    _createMesh(filename) {
+        if(/\.glb/.test(filename)) {
+            let gltfLoader = new GLTFLoader();
+            gltfLoader.load(filename, (gltf) => {
+                gltf.scene.rotateY(Math.PI);
+                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
+                    let hands = new Set();
+                    gltf.scene.traverse((child) => {
+                        if(child.name.toLowerCase().includes("hand")) {
+                            hands.add(child);
+                        }
+                    });
+                    hands.forEach((hand) => { hand.parent.remove(hand); });
+                    gltf.scene.position.setY(-0.65);
+                }
+                this._avatarParent.add(gltf.scene);
+                this._saveOriginalTransparencyStates();
+                this._dimensions = 3;
+            }, () => {}, (error) => {
+                console.log(error);
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
+            new THREE.TextureLoader().load(filename, (texture) => {
+                let width = texture.image.width;
+                let height = texture.image.height;
+                if(width > height) {
+                    let factor = 0.3 / width;
+                    width = 0.3;
+                    height *= factor;
+                } else {
+                    let factor = 0.3 / height;
+                    height = 0.3;
+                    width *= factor;
+                }
+                let material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                });
+                let geometry = new THREE.PlaneGeometry(width, height);
+                geometry.rotateY(Math.PI);
+                let mesh = new THREE.Mesh(geometry, material);
+                this._avatarParent.add(mesh);
+                this._saveOriginalTransparencyStates();
+                //let sprite = new THREE.Sprite(material);
+                //this._avatarParent.add(sprite);
+                this._dimensions = 2;
+            }, () => {}, () => {
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else {
+            if(filename != DEFAULT_URL) {
+                this._createMesh(DEFAULT_URL);
+            } else {
+                console.error("Default avatar URL is invalid :(");
+            }
+        }
+    }
+
+    _saveOriginalTransparencyStates() {
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.userData['transparent'] = material.transparent;
+                        material.userData['opacity'] = material.opacity;
+                    }
+                } else {
+                    let material = node.material;
+                    material.userData['transparent'] = material.transparent;
+                    material.userData['opacity'] = material.opacity;
+                }
+            }
+        });
+    }
+
+    fade(percent) {
+        this._isFading = true;
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                node.renderOrder = Infinity;
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        if(!material.transparent) {
+                            material.transparent = true;
+                            material.needsUpdate = true;
+                        }
+                        material.opacity = material.userData['opacity']*percent;
+                    }
+                } else {
+                    let material = node.material;
+                    if(!material.transparent) {
+                        material.transparent = true;
+                        material.needsUpdate = true;
+                    }
+                    material.opacity = material.userData['opacity'] * percent;
+                }
+            }
+        });
+    }
+
+    endFade() {
+        if(!this._isFading) return;
+        this._isFading = false;
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let mtrl = node.material[i];
+                        if(mtrl.transparent != mtrl.userData['transparent']) {
+                            mtrl.transparent = mtrl.userData['transparent'];
+                            mtrl.needsUpdate = true;
+                        }
+                        mtrl.opacity = mtrl.userData['opacity'];
+                    }
+                } else {
+                    let mtrl = node.material;
+                    if(mtrl.transparent != mtrl.userData['transparent']) {
+                        mtrl.transparent = mtrl.userData['transparent'];
+                        mtrl.needsUpdate = true;
+                    }
+                    mtrl.opacity = mtrl.userData['opacity'];
+                }
+            }
+        });
+    }
+
+    lookAtLocal(point) {
+        if(this._object.parent) {
+            vector3s[0].copy(point);
+            this._object.parent.localToWorld(vector3s[0]);
+            this._object.lookAt(vector3s[0]);
+        }
+    }
+
+    updateSourceUrl(url) {
+        while(this._avatarParent.children[0]) {
+            let child = this._avatarParent.children[0];
+            this._avatarParent.remove(child);
+            fullDispose(child, true);
+        }
+        this._avatarUrl = url;
+        this._createMesh(url);
+    }
+
+    getAvatarUrl() {
+        return this._avatarUrl;
+    }
+
+    getVerticalOffset() {
+        return this._verticalOffset;
+    }
+
+    setAvatarUrl(avatarUrl) {
+        this.updateSourceUrl(avatarUrl);
+    }
+
+    setVerticalOffset(verticalOffset) {
+        this._verticalOffsert = verticalOffset;
+        this._object.position.setY(verticalOffset);
+    }
+
+    displayAvatar() {
+        this._object.add(this._avatarParent);
+    }
+
+    hideAvatar() {
+        this._object.remove(this._avatarParent);
+    }
+
+    isDisplayingAvatar() {
+        return this._avatarParent.parent == this._object;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['avatarUrl'] = this._avatarUrl;
+        params['verticalOffset'] = this._verticalOffset;
+        return params;
+    }
+
+    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
+    static assetName = 'Avatar';
+}
+
+projectHandler.registerAsset(Avatar);
+libraryHandler.loadBuiltIn(Avatar);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class BasicMovement {
+    constructor(params) {
+        if(params == null) {
+            params = {};
+        }
+        this._avatar = params['Avatar'];
+        this._userObj = params['User Object'];
+        this._velocity = new THREE.Vector3();
+        this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
+        this._snapRotationTriggered = false;
+        this._disabled = false;
+    }
+
+    _setupMobileFlyingButtons() {
+        this._mobileUp = false;
+        this._mobileDown = false;
+        let upButton = inputHandler.addExtraControlsButton(
+            'mobile-flying-up-button', 'UP');
+        let downButton = inputHandler.addExtraControlsButton(
+            'mobile-flying-down-button', 'DOWN');
+        upButton.addEventListener('touchstart',
+            () => { this._mobileUp = true; });
+        upButton.addEventListener('touchend',
+            () => { this._mobileUp = false; });
+        downButton.addEventListener('touchstart',
+            () => { this._mobileDown = true; });
+        downButton.addEventListener('touchend',
+            () => { this._mobileDown = false; });
+    }
+
+    _moveForward(velocity, timeDelta) {
+        // move forward parallel to the xz-plane
+        // assumes camera.up is y-up
+        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
+        // not using addScaledVector because we use vector3s[0] later
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s[0]);
+    }
+
+    _moveRight(velocity, timeDelta) {
+        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s[0].y = 0;
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s[0]);
+    }
+
+    _moveUp(velocity, timeDelta) {
+        velocity = this._userObj.scale.y * velocity;
+        this._worldVelocity.setY(velocity);
+        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
+        this._userObj.position.add(vector3s[0]);
+    }
+
+    _snapLeft() {
+        this._userObj.rotateY(Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
+    }
+
+    _snapRight() {
+        this._userObj.rotateY(-Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
+    }
+
+    disable() {
+        this._disabled = true;
+    }
+
+    enable() {
+        this._enabled = true;
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
+    }
+
+    setPerspective(perspective) {
+        this._perspective = perspective;
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updatePositionVR(timeDelta);
+            this.update = this._updatePositionVR;
+        } else if(global$1.deviceType == "POINTER") {
+            this._updatePosition(timeDelta);
+            this.update = this._updatePosition;
+        } else if(global$1.deviceType == "MOBILE") {
+            this._setupMobileFlyingButtons();
+            this._updatePositionMobile(timeDelta);
+            this.update = this._updatePositionMobile;
+        }
+    }
+
+    _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        // Decrease the velocity.
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
+        if(flightEnabled)
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
+
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            if (inputHandler.isKeyCodePressed("ArrowUp")
+                    || inputHandler.isKeyCodePressed("KeyW"))
+                this._velocity.z += movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowDown")
+                    || inputHandler.isKeyCodePressed("KeyS"))
+                this._velocity.z -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowLeft")
+                    || inputHandler.isKeyCodePressed("KeyA"))
+                this._velocity.x -= movementSpeed / 4;
+            if (inputHandler.isKeyCodePressed("ArrowRight")
+                    || inputHandler.isKeyCodePressed("KeyD"))
+                this._velocity.x += movementSpeed / 4;
+            if (flightEnabled && inputHandler.isKeyCodePressed("Space")
+                    != inputHandler.isKeyPressed("Shift")
+                    && !inputHandler.isKeyPressed("Meta")) {
+                this._verticalVelocity =
+                    (inputHandler.isKeyCodePressed("Space"))
+                        ? movementSpeed
+                        : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s[1].copy(vector3s[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s[1].add(vector3s[0]);
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * settingsHandler.getUserScale()) {
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.getObject().position);
+                this._avatar.lookAtLocal(vector3s[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        this._velocity.x = 0;
+        if(flightEnabled)
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
+        this._velocity.z = 0;
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            let joystickAngle = inputHandler.getJoystickAngle();
+            let joystickDistance = inputHandler.getJoystickDistance();
+            let movingDistance = movementSpeed * joystickDistance;
+            this._velocity.x = movingDistance * Math.cos(joystickAngle);
+            this._velocity.z = movingDistance * Math.sin(joystickAngle);
+            if(flightEnabled && this._mobileUp != this._mobileDown) {
+                this._verticalVelocity = (this._mobileUp)
+                    ? movementSpeed
+                    : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s[1].copy(vector3s[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s[1].add(vector3s[0]);
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * settingsHandler.getUserScale()) {
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.getObject().position);
+                this._avatar.lookAtLocal(vector3s[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || global$1.xrSessionType=='AR' || timeDelta >1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        let movementGamepad;
+        let rotationGamepad;
+        if(settingsHandler.areJoysticksSwapped()) {
+            movementGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
+            rotationGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
+        } else {
+            movementGamepad = inputHandler.getXRGamepad(Handedness.LEFT);
+            rotationGamepad = inputHandler.getXRGamepad(Handedness.RIGHT);
+        }
+        this._velocity.x = 0;
+        this._velocity.y = 0;
+        this._velocity.z = 0;
+        if(movementGamepad) {
+            let axes = movementGamepad.axes;
+            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
+            this._velocity.x = movementSpeed * axes[2];//Left/Right
+
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        if(rotationGamepad) {
+            let verticalForce = rotationGamepad.axes[3];
+            let rotationForce = rotationGamepad.axes[2];
+            if(Math.abs(rotationForce) > 0.7) {
+                if(!this._snapRotationTriggered) {
+                    this._snapRotationTriggered = true; 
+                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
+                }
+            } else {
+                this._snapRotationTriggered = false;
+            }
+            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
+                this._velocity.y = -1 * movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+        } else {
+            this._snapRotationTriggered = false;
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const TTL = 5;
+
+class XRDevice extends InternalAssetEntity {
+    constructor(params = {}) {
+        if(!params['assetId']) params['assetId'] = XRDevice.assetId;
+        super(params);
+        this._ttl = TTL;
+        this._ownerId = params['ownerId'];
+        this._modelUrl = params['modelUrl'];
+        if(this._modelUrl) {
+            this._loadModelFromUrl();
+        }
+        this._vector3 = new Vector3();
+        this._euler = new Euler();
+        this._quaternion = new Quaternion();
+        this._registerOwner(params);
+    }
+
+    _loadModelFromUrl() {
+        let gltfLoader = new GLTFLoader();
+        gltfLoader.load(this._modelUrl, (gltf) => {
+            this._modelObject = gltf.scene;
+            this._object.add(gltf.scene);
+        });
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRDevice(this);
+        }
+    }
+
+    _enableARMask() {
+        this._isAR = global$1.xrSessionType == 'AR';
+        if(this._isAR) this._setARMask();
+        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            let isAR = global$1.xrSessionType == 'AR';
+            if(this._isAR == isAR) return;
+            this._isAR = isAR;
+            if(isAR) {
+                this._setARMask();
+            } else {
+                this._removeARMask();
+            }
+        });
+    }
+
+    _setARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = -Infinity;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = false;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = false;
+                    }
+                }
+            }
+        });
+    }
+
+    _removeARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = 0;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = true;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = true;
+                    }
+                }
+            }
+        });
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['ownerId'] = this._ownerId;
+        params['modelUrl'] = this._modelUrl;
+        return params;
+    }
+
+    isInScene() {
+        return this._object.parent != null;
+    }
+
+    getModelObject() {
+        return this._modelObject;
+    }
+
+    getModelUrl() {
+        return this._modelUrl;
+    }
+
+    getOwnerId() {
+        return this._ownerId;
+    }
+
+    getWorldPosition() {
+        this._object.getWorldPosition(this._vector3);
+        return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._object.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._object.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
+    }
+
+    setModelUrl(modelUrl) {
+        this._modelUrl = modelUrl;
+    }
+
+    setOwnerId(ownerId) {
+        this._ownerId = ownerId;
+    }
+
+    decrementTTL(timeDelta) {
+        this._ttl -= timeDelta;
+        if(this._ttl < 0) {
+            projectHandler.deleteAsset(this);
+        }
+    }
+
+    resetTTL() {
+        this._ttl = TTL;
+    }
+
+    static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';
+    static assetName = 'XR Device';
+}
+
+projectHandler.registerAsset(XRDevice);
+libraryHandler.loadBuiltIn(XRDevice);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class XRController extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRController.assetId;
+        super(params);
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = controllerModel.motionController.assetUrl;
+        }
+        this._handedness = params['handedness'];
+        if(!(this._handedness in Handedness)) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRController(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let controller = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        let assetObject = asset.getObject();
+        if(!controller) return;
+        controller.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    getHandedness() {
+        return this._handedness;
+    }
+
+    getTargetRayDirection() {
+        let xrController = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrController = inputHandler.getXRController(
+            XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldPosition(this._raycasterOrigin);
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    isButtonPressed(index) {
+        let gamepad = inputHandler.getXRGamepad(this._handedness);
+        return gamepad != null && gamepad.buttons[index].pressed;
+    }
+
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
+    static assetName = 'XR Controller';
+}
+
+projectHandler.registerAsset(XRController);
+libraryHandler.loadBuiltIn(XRController);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
+
+class XRHand extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRHand.assetId;
+        super(params);
+        this._handedness = params['handedness'];
+        if(!(this._handedness in Handedness)) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = DEFAULT_HAND_PROFILE_PATH
+                + this._handedness.toLowerCase() + '.glb';
+            this._isUsers = true;
+            this._enableARMask();
+        }
+        this._palmDirection = new Vector3();
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['ownerId']);
+        if(owner) {
+            owner.registerXRHand(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let hand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        let assetObject = asset.getObject();
+        if(!hand) return;
+        hand.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    getHandedness() {
+        return this._handedness;
+    }
+
+    getTargetRayDirection() {
+        let xrController = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrHand = inputHandler.getXRController(XRInputDeviceTypes.HAND,
+            this._handedness, 'targetRay');
+        if(!xrHand) return null;
+        xrHand.getWorldPosition(this._raycasterOrigin);
+        xrHand.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    getPalmDirection() {
+        if(this._isUsers) {
+            let model = inputHandler.getXRControllerModel(
+                XRInputDeviceTypes.HAND, this._handedness);
+            this._palmDirection.copy(model.motionController.palmDirection);
+        } else if(this._handedness == Handedness.LEFT) {
+            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
+                0.1958660688459766);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        } else {
+            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
+                0.19586401335899684);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        }
+        return this._palmDirection;
+    }
+
+    isButtonPressed(index) {
+        let model = inputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
+            this._handedness);
+        if(index == 0) {
+            return model.motionController.isPinching;
+        } else if(index == 1) {
+            return model.motionController.isGrabbing;
+        }
+        return false;
+    }
+
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
+    static assetName = 'XR Hand';
+}
+
+projectHandler.registerAsset(XRHand);
+libraryHandler.loadBuiltIn(XRHand);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const AVATAR_KEY = "DigitalBacon:Avatar";
+const USERNAME_KEY = "DigitalBacon:Username";
+const FADE_START = 0.6;
+const FADE_END = 0.2;
+//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
+const FADE_RANGE = FADE_START - FADE_END;
+const EPSILON = 0.00000000001;
+  
+class UserController extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = UserController.assetId;
+        super(params);
+        this._isXR = false;
+        this._username = localStorage.getItem(USERNAME_KEY)
+            || generateRandomUsername();
+        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
+            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._avatarFadeUpdateNumber = 0;
+        this._xrControllers = {};
+        this._xrHands = {};
+        this._xrDevices = new Set();
+    }
+
+    init() {
+        if(global$1.deviceType == 'XR') {
+            this.setIsXR(true);
+        }
+        let scale = settingsHandler.getUserScale();
+        this.setScale([scale, scale, scale]);
+        this._setup();
+    }
+
+    _setup() {
+        if(global$1.deviceType != "XR") {
+            this._avatar = new Avatar({
+                'avatarUrl': this._avatarUrl,
+                'parentId': this._id,
+                'verticalOffset': global$1.cameraFocus.position.y,
+            });
+            audioHandler.setListenerParent(this._avatar.getObject());
+        } else {
+            this._avatar = new Avatar({
+                'object': global$1.camera,
+                'parentId': this._id,
+                'avatarUrl': this._avatarUrl,
+            });
+        }
+        this._avatar.parent = this;
+        projectHandler.addAsset(this._avatar);
+        this._basicMovement = new BasicMovement({
+            'User Object': this._object,
+            'Avatar': this._avatar,
+        });
+    }
+
+    getAvatar() {
+        return this._avatar;
+    }
+
+    getIsXR() {
+        return this._isXR;
+    }
+
+    getUsername() {
+        return this._username;
+    }
+
+    setAvatarUrl(url, ignorePublish) {
+        localStorage.setItem(AVATAR_KEY, url);
+        this._avatarUrl = url;
+        this._avatar.updateSourceUrl(url);
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this._avatar, fields: ['avatarUrl'] });
+    }
+
+    setIsXR(isXR) {
+        this._isXR = isXR;
+    }
+
+    setScale(scale, ignorePublish) {
+        super.setScale(scale);
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this, fields: ['scale'] });
+    }
+    setUsername(username, ignorePublish) {
+        localStorage.setItem(USERNAME_KEY, username);
+        this._username = username;
+        if(ignorePublish) return;
+        pubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
+    }
+
+    getController(handedness) {
+        return this._xrControllers[handedness];
+    }
+
+    getHand(handedness) {
+        return this._xrHands[handedness];
+    }
+
+    getXRDevices() {
+        return this._xrDevices;
+    }
+
+    registerXRController(handedness, xrController) {
+        this._xrControllers[handedness] = xrController;
+        this._xrDevices.add(xrController);
+    }
+
+    registerXRHand(handedness, xrHand) {
+        this._xrHands[handedness] = xrHand;
+        this._xrDevices.add(xrHand);
+    }
+
+    registerXRDevice(xrDevice) {
+        this._xrDevices.add(xrDevice);
+    }
+
+    disableBasicMovement() {
+        this._basicMovement.disable();
+    }
+
+    enableBasicMovement() {
+        this._basicMovement.enable();
+    }
+
+    getDistanceBetweenHands() {
+        if(global$1.deviceType != 'XR') return;
+        let leftController = this._xrControllers[Handedness.LEFT];
+        let rightController = this._xrControllers[Handedness.RIGHT];
+        if(!leftController || !rightController) return;
+        if(!leftController.isInScene()) {
+            leftController = this._xrHands[Handedness.LEFT];
+            rightController = this._xrHands[Handedness.RIGHT];
+            if(!leftController || !rightController) return;
+        }
+
+        let leftPosition = leftController.getWorldPosition();
+        let rightPosition = rightController.getWorldPosition();
+        return leftPosition.distanceTo(rightPosition);
+    }
+
+    getDataForRTC() {
+        let codes = 0;
+        let data = [];
+        if(global$1.deviceType == "XR") {
+            codes += this._pushAvatarDataForRTC(data);
+            codes += this._pushHandsDataForRTC(data);
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            codes += this._pushAvatarDataForRTC(data);
+        }
+        let worldVelocity = this._basicMovement.getWorldVelocity();
+        if(worldVelocity.length() >= 0.00001) {
+            data.push(...this._basicMovement.getWorldVelocity().toArray());
+            codes += UserMessageCodes.USER_VELOCITY;
+        }
+        if(global$1.renderer.info.render.frame % 300 == 0) {
+            this._object.getWorldPosition(vector3s[0]);
+            data.push(...vector3s[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
+    }
+
+    _pushAvatarDataForRTC(data) {
+        let position = global$1.camera.position.toArray();
+        let rotation = global$1.camera.rotation.toArray();
+        rotation.pop();
+
+        data.push(...position);
+        data.push(...rotation);
+        return UserMessageCodes.AVATAR;
+    }
+
+    _pushHandsDataForRTC(data) {
+        let codes = 0;
+        for(let type of ['CONTROLLER', 'HAND']) {
+            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
+            for(let handedness of [Handedness.LEFT, Handedness.RIGHT]) {
+                let controller = this[map][handedness];
+                if(controller && controller.isInScene()) {
+                    controller.pushDataForRTC(data);
+                    codes += UserMessageCodes[handedness + '_' + type];
+                }
+            }
+        }
+        return codes;
+    }
+
+    hasChild(object) {
+        return object.parent == this._object;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['isXR'] = this._isXR;
+        params['username'] = this._username;
+        return params;
+    }
+
+    _updateAvatar() {
+        if(!this._avatar.isDisplayingAvatar()) {
+            let data = [];
+            this._pushAvatarDataForRTC(data);
+            let rotation = data.slice(3, 6);
+            this._avatar.getObject().rotation.fromArray(rotation);
+        }
+        let updateNumber = sessionHandler.getControlsUpdateNumber();
+        if(this._avatarFadeUpdateNumber == updateNumber) return;
+        this._avatarFadeUpdateNumber = updateNumber;
+        let cameraDistance = sessionHandler.getCameraDistance();
+        if(cameraDistance > FADE_START * 2) return;
+        let diff = cameraDistance - this._avatarFadeCameraDistance;
+        if(Math.abs(diff) < EPSILON) return;
+        //Fade Logic Start
+        this._avatarFadeCameraDistance = cameraDistance;
+        let fadePercent = Math.max(cameraDistance, FADE_END);
+        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
+        if(fadePercent == 0) {
+            if(this._avatar.isDisplayingAvatar()) {
+                this._basicMovement.setPerspective(1);
+                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
+                    1);
+                this._avatar.hideAvatar();
+            }
+            return;
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            this._basicMovement.setPerspective(3);
+            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
+            this._avatar.displayAvatar();
+        }
+        (fadePercent < 1)
+            ? this._avatar.fade(fadePercent)
+            : this._avatar.endFade();
+        //Fade Logic end
+
+        //Disappear Logic start
+        //let object = this._avatar.getObject();
+        //if(cameraDistance < FADE_MIDDLE) {
+        //    if(object.parent) this._avatar.removeFromScene();
+        //} else if(!object.parent) {
+        //    this._avatar.addToScene(global.cameraFocus,
+        //        this._pointerInteractable, this._gripInteractable);
+        //}
+        //Disappear Logic end
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updateHands(timeDelta);
+        } else if(this._avatar) {
+            this._updateAvatar();
+        }
+        this._basicMovement.update(timeDelta);
+    }
+
+    _getControllerModelUrl(object) {
+        if(object && object.motionController) {
+            return object.motionController.assetUrl;
+        }
+    }
+
+    _updateHands(timeDelta) {
+        for(let side in Handedness) {
+            this._updateHand(timeDelta, XRInputDeviceTypes.CONTROLLER, side);
+            this._updateHand(timeDelta, XRInputDeviceTypes.HAND, side);
+        }
+    }
+
+    _updateHand(timeDelta, type, handedness) {
+        let controller = (type == XRInputDeviceTypes.HAND)
+            ? this._xrHands[handedness]
+            : this._xrControllers[handedness];
+        let controllerModel = inputHandler.getXRControllerModel(type,
+            handedness);
+        let source = inputHandler.getXRInputSource(type, handedness);
+        if(controller && controller.isInScene()) {
+            if(source) {
+                controller.resetTTL();
+            } else {
+                controller.decrementTTL(timeDelta);
+            }
+        } else if(source && this._getControllerModelUrl(controllerModel)) {
+            if(!controller) {
+                if(controllerModel.children.length == 0) return;
+                let assetClass = (type == XRInputDeviceTypes.HAND)
+                    ? XRHand
+                    : XRController;
+                controller = new assetClass({
+                    handedness: handedness,
+                    ownerId: this._id,
+                    controllerModel: controllerModel,
+                    object: inputHandler.getXRController(type, handedness,
+                        'grip'),
+                });
+                projectHandler.addAsset(controller, false, true);
+                controller.attachTo(this);
+            } else {
+                projectHandler.addAsset(controller, false, true);
+            }
+        }
+    }
+
+    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
+    static assetName = 'User';
+}
+
+function generateRandomUsername() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
+}
+
+let userController = new UserController();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
 class DelayedClickEventHandler {
     constructor() {
         this._triggerDelayedClickEvent = false;
@@ -41363,7 +42138,7 @@ class DelayedClickEventHandler {
             this._eventType = global$1.deviceType == "MOBILE"
                 ? 'touchend'
                 : 'click';
-            this._clickListener = (e) => {
+            this._clickListener = () => {
                 setTimeout(() => {
                     if(this._triggerDelayedClickEvent) {
                         this._triggerDelayedClickEvent = false;
@@ -41404,6 +42179,10 @@ let delayedClickEventHandler = new DelayedClickEventHandler();
  */
 
 
+/* global saveAs, JSZip */
+
+const PREVIEW_URL = 'https://digitalbacon.io/preview';
+const PREVIEW_ORIGIN = 'https://digitalbacon.io';
 const OPTIONS$2 = {
     'New Project': '_newProject',
     'Load from Device': '_localLoad',
@@ -41411,6 +42190,7 @@ const OPTIONS$2 = {
     'Save to Device': '_localSave',
     'Save to Google Drive': '_googleDriveSave',
     'Sign out of Google Drive': '_googleDriveSignout',
+    'Preview Live': '_previewLive',
 };
 
 class ProjectPage extends PaginatedPage$1 {
@@ -41451,11 +42231,12 @@ class ProjectPage extends PaginatedPage$1 {
     }
 
     _refreshItems() {
-        if(googleDrive.isSignedIn()) {
-            this._items = Object.keys(OPTIONS$2);
-        } else {
-            this._items = Object.keys(OPTIONS$2).slice(0, -1);
-        }
+        let isSignedIn = googleDrive.isSignedIn();
+        this._items = Object.keys(OPTIONS$2).filter((v, i) => {
+            if((!isSignedIn && i == 5) || (this._isLoadingPreview && i == 6))
+                return false;
+            return true;
+        });
     }
 
     _newProject() {
@@ -41598,6 +42379,51 @@ class ProjectPage extends PaginatedPage$1 {
         this._updateItemsGUI();
     }
 
+    _previewLive() {
+        this._stopPreviewAttempt();
+        this._isLoadingPreview = true;
+        this._refreshItems();
+        this._updateItemsGUI();
+        let jsZip = projectHandler.exportProject();
+        jsZip.generateAsync({type:"blob"}).then((blob) => {
+            let reader = new FileReader();
+            reader.onloadend = () => {
+                this._previewBlob = reader.result;
+                this._tab = window.open(PREVIEW_URL, '_blank');
+                if(!this._tab) {
+                    this._stopPreviewAttempt();
+                    pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Please check your popup blocker settings',
+                    });
+                    return;
+                }
+                this._tab.focus();
+                this._intervalCount = 0;
+                this._intervalId = setInterval(() => {
+                    this._tab.postMessage({ topic: 'PREVIEW' }, PREVIEW_ORIGIN);
+                    this._intervalCount++;
+                    if(this._intervalCount > 10) this._stopPreviewAttempt();
+                }, 1000);
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    _stopPreviewAttempt() {
+        if(this._intervalId) {
+            clearInterval(this._intervalId);
+            this._intervalId = null;
+        }
+        if(this._tab) {
+            this._tab.close();
+            this._tab = null;
+        }
+        this._previewBlob = null;
+        this._isLoadingPreview = false;
+        this._refreshItems();
+        this._updateItemsGUI();
+    }
+
     _handleLocalFile(file) {
         this._updateLoading(false);
         JSZip.loadAsync(file).then((jsZip) => {
@@ -41661,6 +42487,19 @@ class ProjectPage extends PaginatedPage$1 {
             (finished) => { this._updateLoading(finished); });
         pubSub.subscribe(this._id, PubSubTopics.PROJECT_SAVING,
             (finished) => { this._updateSaving(finished); });
+        window.addEventListener('message', (event) => {
+            if(event.origin != PREVIEW_ORIGIN) return;
+            if(event.data != 'READY_FOR_PREVIEW_PROJECT') return;
+            clearInterval(this._intervalId);
+            if(!this._previewBlob || !this._tab) return;
+            this._tab.postMessage({
+                topic: 'PREVIEW_PROJECT',
+                blob: this._previewBlob,
+            }, PREVIEW_ORIGIN);
+            this._isLoadingPreview = false;
+            this._refreshItems();
+            this._updateItemsGUI();
+        });
     }
 
     _updateLoading(finished) {
@@ -41697,7 +42536,8 @@ class ProjectPage extends PaginatedPage$1 {
                     () => { this._handleGoogleAuthResponse(); });
             } catch(error) {
                 pubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Google could not be reached. Please check your internet connection and then try refreshing the page',
+                    text: 'Google could not be reached. Please check your '
+                        +'internet connection and then try refreshing the page',
                 });
             }
         });
@@ -41760,8 +42600,7 @@ class ReadyPlayerMe {
                     target: 'readyplayerme',
                     type: 'subscribe',
                     eventName: 'v1.**'
-                }),
-            '*');
+                }), '*');
         }
 
         // Get avatar GLB URL
@@ -41769,9 +42608,6 @@ class ReadyPlayerMe {
             userController.setAvatarUrl(json.data.url + '?useHands=false');
             this._close();
         }
-
-        // Get user id
-        if(json.eventName === 'v1.user.set') ;
     }
 
     _close() {
@@ -42033,7 +42869,7 @@ class ClickAction {
             this._eventType = global$1.deviceType == "MOBILE"
                 ? 'touchend'
                 : 'click';
-            this._clickListener = (e) => {
+            this._clickListener = () => {
                 setTimeout(() => {
                     if(this._triggerAction) {
                         this._triggerAction = false;
@@ -42108,9 +42944,7 @@ class SketchfabLoginPage extends MenuPage {
             'onUpdate': (value) => {
                 this._staySignedIn = value;
             },
-            'getFromSource': () => {
-                return this._staySignedIn;
-            },
+            'getFromSource': () => this._staySignedIn,
         });
         staySignedInCheckbox.addToScene(columnBlock,
             this._containerInteractable);
@@ -42222,7 +43056,8 @@ class PaginatedIconsPage extends MenuPage {
                         this._handleItemInteraction(this._items[index]);
                     } else {
                         console.error(
-                            "PaginatedIconsPage displaying non existant option");
+                            "PaginatedIconsPage displaying non existant option"
+                        );
                     }
                 });
                 this._optionsInteractable.addChild(interactable);
@@ -42614,7 +43449,7 @@ class SkyboxPage extends MenuPage {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+        pubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, () => {
             this._setTextures();
         });
     }
@@ -42634,6 +43469,43 @@ class SkyboxPage extends MenuPage {
         this._removeSubscriptions();
     }
 
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class TextPage extends MenuPage {
+    constructor(controller) {
+        super(controller, true);
+        this._addPageContent();
+    }
+
+    _addPageContent() {
+        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': ' ',
+            'fontSize': FontSizes.header,
+            'height': 0.04,
+            'width': 0.4,
+        });
+        this._container.add(this._titleBlock);
+
+        this._textBlock = ThreeMeshUIHelper.createTextBlock({
+            'text': 'Loading...',
+            'fontSize': 0.025,
+            'height': 0.04,
+            'width': 0.4,
+        });
+        this._container.add(this._textBlock);
+    }
+
+    setContent(title, text) {
+        this._titleBlock.children[1].set({ content: title });
+        this._textBlock.children[1].set({ content: text });
+    }
 }
 
 /*
@@ -42906,9 +43778,8 @@ class UserSettingsPage extends DynamicFieldsPage {
             'onBlur': (oldValue, newValue) => {
                 settingsHandler.setUserSetting('Movement Speed', newValue);
             },
-            'getFromSource': () => {
-                return settingsHandler.getUserSettings()['Movement Speed'];
-            },
+            'getFromSource': () =>
+                settingsHandler.getUserSettings()['Movement Speed'],
         }));
         fields.push(new NumberInput({
             'title': 'User Scale',
@@ -42922,9 +43793,8 @@ class UserSettingsPage extends DynamicFieldsPage {
                 }
                 settingsHandler.setUserSetting('User Scale', newValue);
             },
-            'getFromSource': () => {
-                return settingsHandler.getUserSettings()['User Scale'];
-            },
+            'getFromSource': () =>
+                settingsHandler.getUserSettings()['User Scale'],
         }));
         fields.push(new CheckboxInput({
             'title': 'Enable Flying',
@@ -42932,9 +43802,8 @@ class UserSettingsPage extends DynamicFieldsPage {
             'onUpdate': (value) => {
                 settingsHandler.setUserSetting('Enable Flying', value);
             },
-            'getFromSource': () => {
-                return settingsHandler.getUserSettings()['Enable Flying'];
-            },
+            'getFromSource': () =>
+                settingsHandler.getUserSettings()['Enable Flying'],
         }));
         if(global$1.deviceType == "XR" && !global$1.isEditor) {
             fields.push(new CheckboxInput({
@@ -42953,7 +43822,7 @@ class UserSettingsPage extends DynamicFieldsPage {
     }
 
     _addSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, (message) => {
+        pubSub.subscribe(this._id, PubSubTopics.SETTINGS_UPDATED, () => {
             for(let field of this._fields) {
                 field.updateFromSource();
             }
@@ -42992,7 +43861,8 @@ class EditorMenuController extends MenuController {
         this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
         this._pages[MenuPages.COLOR_WHEEL] = new ColorWheelPage(this);
-        this._pages[MenuPages.EDIT_ACKNOWLEDGEMENTS] =new EditAcknowledgementsPage(this);
+        this._pages[MenuPages.EDIT_ACKNOWLEDGEMENTS]
+            = new EditAcknowledgementsPage(this);
         this._pages[MenuPages.EDITOR_SETTINGS] = new EditorSettingsPage(this);
         this._pages[MenuPages.HOST_PARTY] = new HostPartyPage(this);
         this._pages[MenuPages.JOIN_PARTY] = new JoinPartyPage(this);
@@ -43009,6 +43879,7 @@ class EditorMenuController extends MenuController {
         this._pages[MenuPages.SKETCHFAB_LOGIN] = new SketchfabLoginPage(this);
         this._pages[MenuPages.SKETCHFAB_SEARCH] = new SketchfabSearchPage(this);
         this._pages[MenuPages.SKYBOX] = new SkyboxPage(this);
+        this._pages[MenuPages.TEXT] = new TextPage(this);
         this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
         this._pages[MenuPages.TWO_BUTTON] = new TwoButtonPage(this);
         this._pages[MenuPages.UPLOAD] = new UploadPage(this);
@@ -43319,9 +44190,10 @@ class Main {
     }
 
     _createCamera() {
+        let ratio = this._container.clientWidth / this._container.clientHeight;
         this._camera = new THREE.PerspectiveCamera(
             global$1.deviceType != "XR" ? 45 : 90, //Field of View Angle
-            this._container.clientWidth / this._container.clientHeight, //Aspect Ratio
+            ratio, //Aspect Ratio
             0.1, //Clipping for things closer than this amount
             1000 //Clipping for things farther than this amount
         );
@@ -43405,7 +44277,7 @@ class Main {
         window.addEventListener('resize', () => { this._onResize(); });
         if(!global$1.disableImmersion) {
             this._container.addEventListener('wheel', function(event) {
-                        event.preventDefault();
+                event.preventDefault();
             }, {passive: false, capture: true});
         }
         
@@ -43520,7 +44392,9 @@ function start(callback, containerId, params) {
 }
 
 function hasPointerLock() {
-    let capableOfPointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+    let capableOfPointerLock = 'pointerLockElement' in document
+        || 'mozPointerLockElement' in document
+        || 'webkitPointerLockElement' in document;
     return capableOfPointerLock;
 }
 
@@ -43536,9 +44410,7 @@ function detectMobile() {
         /Windows Phone/i
     ];
 
-    return toMatch.some((toMatchItem) => {
-        return navigator.userAgent.match(toMatchItem);
-    });
+    return toMatch.some((toMatchItem) =>navigator.userAgent.match(toMatchItem));
 }
 
 function checkIfPointer() {
@@ -43810,16 +44682,16 @@ var Assets = /*#__PURE__*/Object.freeze({
   BasicTexture: BasicTexture,
   BoxShape: BoxShape,
   CircleShape: CircleShape,
-  ClampedTexturePlane: ClampedTexturePlane,
   Component: Component,
   ConeShape: ConeShape,
   CubeTexture: CubeTexture,
   CustomAsset: CustomAsset,
   CustomAssetEntity: CustomAssetEntity,
   CylinderShape: CylinderShape,
-  GLTFAsset: GLTFAsset,
+  ImageAsset: ImageAsset,
   Light: Light,
   Material: Material,
+  ModelAsset: ModelAsset,
   PlaneShape: PlaneShape,
   PointLight: PointLight,
   RingShape: RingShape,
@@ -43845,18 +44717,17 @@ class CustomAssetEntityHelper extends AssetEntityHelper {
     }
 }
 
-editorHelperFactory.registerEditorHelper(CustomAssetEntityHelper, CustomAssetEntity);
+editorHelperFactory.registerEditorHelper(CustomAssetEntityHelper,
+    CustomAssetEntity);
 
 var EditorHelpers = /*#__PURE__*/Object.freeze({
   __proto__: null,
   AssetEntityHelper: AssetEntityHelper,
-  ClampedTexturePlaneHelper: ClampedTexturePlaneHelper,
   ComponentHelper: ComponentHelper,
   CustomAssetEntityHelper: CustomAssetEntityHelper,
   CustomAssetHelper: CustomAssetHelper,
   EditorHelper: EditorHelper,
   EditorHelperFactory: editorHelperFactory,
-  GLTFAssetHelper: GLTFAssetHelper,
   LightHelper: LightHelper,
   MaterialHelper: MaterialHelper,
   ShapeHelper: ShapeHelper,
@@ -43899,7 +44770,7 @@ var MenuInputs = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.2.0";
+const version = "0.2.1";
 
 global$1.version = version;
 
