@@ -1,0 +1,32 @@
+name: Update Build Files
+
+on: workflow_dispatch
+
+jobs:
+  update-build:
+    name: Update build files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v3
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build process
+        run: npm run build
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "no-reply@github.com"
+          git config --global user.name "GitHub Actions"
+          git add build/*
+          git commit -m "Update build files"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
