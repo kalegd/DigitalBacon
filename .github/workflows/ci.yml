@@ -30,7 +30,7 @@ jobs:
       - name: === Lint testing ===
         run: npm run lint
 
-test:
+  test:
     name: Automated Tests
     runs-on: ubuntu-latest
     steps:
