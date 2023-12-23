@@ -10,6 +10,7 @@
     "url": "git+https://github.com/kalegd/DigitalBacon.git"
   },
   "bugs": "https://github.com/kalegd/DigitalBacon/issues",
+  "homepage": "https://digitalbacon.io",
   "keywords": [
     "webxr",
     "threejs",
