@@ -1,6 +1,8 @@
 import { expect, jest, test, beforeEach } from '@jest/globals';
 import PointerInteractable from '../../../../scripts/core/interactables/PointerInteractable.js';
 
+import toolHandler from '../../../../scripts/core/handlers/ToolHandler.js';
+
 
 let pointerInteractable;
 
@@ -27,4 +29,10 @@ test('multiple actions triggered', () => {
     pointerInteractable.triggerActions(null, null, 0);
     expect(receivedAction1.clickAction).toHaveBeenCalled();
     expect(receivedAction2.clickAction).toHaveBeenCalled();
+});
+
+test('action for tool triggered', () => {
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 'mockTool');
+    pointerInteractable.triggerActions(null, null, 0);
+    expect(receivedAction.clickAction).not.toHaveBeenCalled();
 });
