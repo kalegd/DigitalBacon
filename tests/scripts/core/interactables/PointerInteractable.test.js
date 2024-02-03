@@ -32,7 +32,10 @@ test('multiple actions triggered', () => {
 });
 
 test('action for tool triggered', () => {
-    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 'mockTool');
+    toolHandler.setTool('mockTool');
+    console.log(toolHandler.getTool());
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, toolHandler.getTool());
+    console.log(receivedAction);
     pointerInteractable.triggerActions(null, null, 0);
-    expect(receivedAction.clickAction).not.toHaveBeenCalled();
+    expect(receivedAction.clickAction).toHaveBeenCalled();
 });
