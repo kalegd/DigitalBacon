@@ -105,3 +105,9 @@ test('draggable action with maxDistance going out of range still triggered', () 
     pointerInteractable.triggerDraggableActions(dummyOwner, dummyClosestPoint, 110);
     expect(receivedAction.draggableAction).toHaveBeenCalledTimes(2);
 });
+
+test('draggable action triggered by state change', () => {
+    const receivedAction = pointerInteractable.addAction(null, jest.fn(), 0);
+    pointerInteractable.addSelectedBy(dummyOwner, dummyClosestPoint, 0);
+    expect(receivedAction.draggableAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
+});
