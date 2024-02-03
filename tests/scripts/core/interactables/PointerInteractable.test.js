@@ -80,3 +80,9 @@ test('action not triggered by state changes from different owners', () => {
     pointerInteractable.addHoveredBy("differentOwner", dummyClosestPoint, 0);
     expect(receivedAction.clickAction).not.toHaveBeenCalled();
 });
+
+test('draggable action triggered', () => {
+    const receivedAction = pointerInteractable.addAction(null, jest.fn(), 0);
+    pointerInteractable.triggerDraggableActions(dummyOwner, dummyClosestPoint, 0);
+    expect(receivedAction.draggableAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
+});
