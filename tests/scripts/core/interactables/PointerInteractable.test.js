@@ -73,3 +73,10 @@ test('action triggered by state change', () => {
     pointerInteractable.addHoveredBy(dummyOwner, dummyClosestPoint, 0);
     expect(receivedAction.clickAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
 });
+
+test('action not triggered by state changes from different owners', () => {
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0);
+    pointerInteractable.addSelectedBy(dummyOwner, dummyClosestPoint, 0);
+    pointerInteractable.addHoveredBy("differentOwner", dummyClosestPoint, 0);
+    expect(receivedAction.clickAction).not.toHaveBeenCalled();
+});
