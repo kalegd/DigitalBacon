@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { uuidv4, fullDispose } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, fullDispose } from '../../../scripts/core/helpers/utils.module.js';
 import { Object3D } from 'three';
 
 export default class Entity {

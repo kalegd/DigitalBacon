@@ -4,9 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import PubSubTopics from '../../../scripts/core/enums/PubSubTopics.js';
+import PubSub from '../../../scripts/core/handlers/PubSub.js';
+import { uuidv4 } from '../../../scripts/core/helpers/utils.module.js';
 
 class ToolHandler {
     constructor() {

@@ -4,9 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import States from '/scripts/core/enums/InteractableStates.js';
-import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import States from '../../../scripts/core/enums/InteractableStates.js';
+import ToolHandler from '../../../scripts/core/handlers/ToolHandler.js';
+import { uuidv4 } from '../../../scripts/core/helpers/utils.module.js';
 
 class Interactable {
     constructor(threeObj) {
