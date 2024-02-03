@@ -50,3 +50,9 @@ test('action with maxDistance triggered', () => {
     pointerInteractable.triggerActions(null, null, 50);
     expect(receivedAction.clickAction).toHaveBeenCalled();
 });
+
+test('action with maxDistance not triggered', () => {
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 100);
+    pointerInteractable.triggerActions(null, null, 110);
+    expect(receivedAction.clickAction).not.toHaveBeenCalled();
+});
