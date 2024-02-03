@@ -20,3 +20,11 @@ test('action triggered', () => {
     pointerInteractable.triggerActions(null, null, 0);
     expect(receivedAction.clickAction).toHaveBeenCalled();
 });
+
+test('multiple actions triggered', () => {
+    const receivedAction1 = pointerInteractable.addAction(jest.fn());
+    const receivedAction2 = pointerInteractable.addAction(jest.fn());
+    pointerInteractable.triggerActions(null, null, 0);
+    expect(receivedAction1.clickAction).toHaveBeenCalled();
+    expect(receivedAction2.clickAction).toHaveBeenCalled();
+});
