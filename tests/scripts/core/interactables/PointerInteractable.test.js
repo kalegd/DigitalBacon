@@ -12,6 +12,9 @@ function createThreeObj() {
     };
 }
 
+const dummyOwner = 'dummyOwner';
+const dummyClosestPoint = 10;
+
 beforeEach(() => {
     pointerInteractable = new PointerInteractable(createThreeObj(), true, null);
     jest.clearAllMocks();
@@ -19,47 +22,47 @@ beforeEach(() => {
 
 test('action triggered', () => {
     const receivedAction = pointerInteractable.addAction(jest.fn());
-    pointerInteractable.triggerActions(null, null, 0);
-    expect(receivedAction.clickAction).toHaveBeenCalled();
+    pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 0);
+    expect(receivedAction.clickAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
 });
 
 test('multiple actions triggered', () => {
     const receivedAction1 = pointerInteractable.addAction(jest.fn());
     const receivedAction2 = pointerInteractable.addAction(jest.fn());
-    pointerInteractable.triggerActions(null, null, 0);
-    expect(receivedAction1.clickAction).toHaveBeenCalled();
-    expect(receivedAction2.clickAction).toHaveBeenCalled();
+    pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 0);
+    expect(receivedAction1.clickAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
+    expect(receivedAction2.clickAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
 });
 
 test('action for tool triggered', () => {
     ToolHandler.setTool('mockTool');
     const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, ToolHandler.getTool());
-    pointerInteractable.triggerActions(null, null, 0);
-    expect(receivedAction.clickAction).toHaveBeenCalled();
+    pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 0);
+    expect(receivedAction.clickAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
 });
 
 test('action for different tool not triggered', () => {
     ToolHandler.setTool('mockTool');
     const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, 'differentTool');
-    pointerInteractable.triggerActions(null, null, 0);
+    pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 0);
     expect(receivedAction.clickAction).not.toHaveBeenCalled();
 });
 
 test('action with maxDistance triggered', () => {
     const receivedAction = pointerInteractable.addAction(jest.fn(), null, 100);
-    pointerInteractable.triggerActions(null, null, 50);
-    expect(receivedAction.clickAction).toHaveBeenCalled();
+    pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 50);
+    expect(receivedAction.clickAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
 });
 
 test('action with maxDistance not triggered', () => {
     const receivedAction = pointerInteractable.addAction(jest.fn(), null, 100);
-    pointerInteractable.triggerActions(null, null, 110);
+    pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 110);
     expect(receivedAction.clickAction).not.toHaveBeenCalled();
 });
 
 test('removed action not triggered', () => {
     const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0);
     pointerInteractable.removeAction(receivedAction.id);
-    pointerInteractable.triggerActions(null, null, 0);
+    pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 0);
     expect(receivedAction.clickAction).not.toHaveBeenCalled();
 });
