@@ -1,7 +1,7 @@
 import { expect, jest, test, beforeEach } from '@jest/globals';
 import PointerInteractable from '../../../../scripts/core/interactables/PointerInteractable.js';
 
-import toolHandler from '../../../../scripts/core/handlers/ToolHandler.js';
+import ToolHandler from '../../../../scripts/core/handlers/ToolHandler.js';
 
 
 let pointerInteractable;
@@ -32,15 +32,21 @@ test('multiple actions triggered', () => {
 });
 
 test('action for tool triggered', () => {
-    toolHandler.setTool('mockTool');
-    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, toolHandler.getTool());
+    ToolHandler.setTool('mockTool');
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, ToolHandler.getTool());
     pointerInteractable.triggerActions(null, null, 0);
     expect(receivedAction.clickAction).toHaveBeenCalled();
 });
 
 test('action for different tool not triggered', () => {
-    toolHandler.setTool('mockTool');
+    ToolHandler.setTool('mockTool');
     const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, 'differentTool');
     pointerInteractable.triggerActions(null, null, 0);
     expect(receivedAction.clickAction).not.toHaveBeenCalled();
+});
+
+test('action with maxDistance triggered', () => {
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 100);
+    pointerInteractable.triggerActions(null, null, 50);
+    expect(receivedAction.clickAction).toHaveBeenCalled();
 });
