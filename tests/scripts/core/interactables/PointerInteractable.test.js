@@ -33,9 +33,14 @@ test('multiple actions triggered', () => {
 
 test('action for tool triggered', () => {
     toolHandler.setTool('mockTool');
-    console.log(toolHandler.getTool());
     const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, toolHandler.getTool());
-    console.log(receivedAction);
     pointerInteractable.triggerActions(null, null, 0);
     expect(receivedAction.clickAction).toHaveBeenCalled();
+});
+
+test('action for different tool not triggered', () => {
+    toolHandler.setTool('mockTool');
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0, 'differentTool');
+    pointerInteractable.triggerActions(null, null, 0);
+    expect(receivedAction.clickAction).not.toHaveBeenCalled();
 });
