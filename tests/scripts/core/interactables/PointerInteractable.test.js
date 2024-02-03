@@ -66,3 +66,10 @@ test('removed action not triggered', () => {
     pointerInteractable.triggerActions(dummyOwner, dummyClosestPoint, 0);
     expect(receivedAction.clickAction).not.toHaveBeenCalled();
 });
+
+test('action triggered by state change', () => {
+    const receivedAction = pointerInteractable.addAction(jest.fn(), null, 0);
+    pointerInteractable.addSelectedBy(dummyOwner, dummyClosestPoint, 0);
+    pointerInteractable.addHoveredBy(dummyOwner, dummyClosestPoint, 0);
+    expect(receivedAction.clickAction).toHaveBeenCalledWith(dummyOwner, dummyClosestPoint);
+});
