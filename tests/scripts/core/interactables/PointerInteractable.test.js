@@ -3,17 +3,17 @@ import PointerInteractable from '/scripts/core/interactables/PointerInteractable
 
 import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 
+import * as THREE from 'three';
+
 
 let pointerInteractable;
 
 function createThreeObj() {
-    return {
-        pointerInteractable: null,
-    };
+    return new THREE.Object3D();
 }
 
 const sampleOwner = 'sampleOwner';
-const sampleClosestPoint = 10;
+const sampleClosestPoint = new THREE.Vector3();
 
 beforeEach(() => {
     pointerInteractable = new PointerInteractable(createThreeObj(), true, null);
