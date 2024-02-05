@@ -24,6 +24,15 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "justjo3l",
+      "name": "Joel Jose",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63659576?v=4",
+      "profile": "https://github.com/justjo3l",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
