@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '../../../scripts/core/global.js';
+import global from '/scripts/core/global.js';
 
 class ClickAction {
     constructor(action) {

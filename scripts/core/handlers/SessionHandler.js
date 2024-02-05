@@ -4,13 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '../../../scripts/core/global.js';
-import XRPlanes from '../../../scripts/core/assets/XRPlanes.js';
-import PubSubTopics from '../../../scripts/core/enums/PubSubTopics.js';
-import AudioHandler from '../../../scripts/core/handlers/AudioHandler.js';
-import InputHandler from '../../../scripts/core/handlers/InputHandler.js';
-import PubSub from '../../../scripts/core/handlers/PubSub.js';
-import { OrbitControls } from '../../../scripts/three/examples/jsm/controls/OrbitControls.js';
+import global from '/scripts/core/global.js';
+import XRPlanes from '/scripts/core/assets/XRPlanes.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
+import InputHandler from '/scripts/core/handlers/InputHandler.js';
+import PubSub from '/scripts/core/handlers/PubSub.js';
+import { OrbitControls } from '/scripts/three/examples/jsm/controls/OrbitControls.js';
 import { Vector3 } from 'three';
 
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';

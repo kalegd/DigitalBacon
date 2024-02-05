@@ -5,13 +5,13 @@ import {
 	SphereGeometry,
 } from 'three';
 
-import { GLTFLoader } from '../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 
 import {
 	Constants as MotionControllerConstants,
 	fetchProfile,
 	MotionController
-} from '../../../../../node_modules/three/examples/jsm/libs/motion-controllers.module.js';
+} from '/node_modules/three/examples/jsm/libs/motion-controllers.module.js';
 
 const DEFAULT_PROFILES_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles';
 const DEFAULT_PROFILE = 'generic-trigger';

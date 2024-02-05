@@ -4,9 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '../../../scripts/core/global.js';
-import Entity from '../../../scripts/core/assets/Entity.js';
-import { matrix4 } from '../../../scripts/core/helpers/constants.js';
+import global from '/scripts/core/global.js';
+import Entity from '/scripts/core/assets/Entity.js';
+import { matrix4 } from '/scripts/core/helpers/constants.js';
 import { DoubleSide, Mesh, MeshBasicMaterial, BoxGeometry } from 'three';
 
 class XRPlanes extends Entity {

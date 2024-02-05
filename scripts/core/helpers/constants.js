@@ -4,8 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '../../../scripts/core/global.js';
-import { uuidv4 } from '../../../scripts/core/helpers/utils.module.js';
+import global from '/scripts/core/global.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 import * as THREE from 'three';
 

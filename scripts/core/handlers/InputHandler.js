@@ -4,12 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '../../../scripts/core/global.js';
-import Handedness from '../../../scripts/core/enums/Handedness.js';
-import XRInputDeviceTypes from '../../../scripts/core/enums/XRInputDeviceTypes.js';
+import global from '/scripts/core/global.js';
+import Handedness from '/scripts/core/enums/Handedness.js';
+import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import { Object3D, Vector2 } from 'three';
-import { XRControllerModelFactory } from '../../../scripts/three/examples/jsm/webxr/XRControllerModelFactory.js';
-import { XRHandModelFactory } from '../../../scripts/three/examples/jsm/webxr/XRHandModelFactory.js';
+import { XRControllerModelFactory } from '/scripts/three/examples/jsm/webxr/XRControllerModelFactory.js';
+import { XRHandModelFactory } from '/scripts/three/examples/jsm/webxr/XRHandModelFactory.js';
 
 /* global nipplejs */
 const controllerModelFactory = new XRControllerModelFactory();

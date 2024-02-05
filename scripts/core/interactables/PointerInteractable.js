@@ -4,11 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import global from '../../../scripts/core/global.js';
-import States from '../../../scripts/core/enums/InteractableStates.js';
-import SessionHandler from '../../../scripts/core/handlers/SessionHandler.js';
-import ToolHandler from '../../../scripts/core/handlers/ToolHandler.js';
-import Interactable from '../../../scripts/core/interactables/Interactable.js';
+import global from '/scripts/core/global.js';
+import States from '/scripts/core/enums/InteractableStates.js';
+import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
+import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
+import Interactable from '/scripts/core/interactables/Interactable.js';
 
 class PointerInteractable extends Interactable {
     constructor(threeObj, canDisableOrbit) {

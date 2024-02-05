@@ -1,7 +1,7 @@
 import { expect, jest, test, beforeEach } from '@jest/globals';
-import PointerInteractable from '../../../../scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 
-import ToolHandler from '../../../../scripts/core/handlers/ToolHandler.js';
+import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 
 
 let pointerInteractable;

@@ -46,6 +46,10 @@
     "rollup-plugin-root-import": "^1.0.0"
   },
   "jest": {
-    "testEnvironment": "jsdom"
+    "testEnvironment": "jsdom",
+    "moduleNameMapper": {
+      "/scripts/(.*)": "<rootDir>/scripts/$1",
+      "/node_modules/(.*)": "<rootDir>/node_modules/$1"
+    }
   }
 }
