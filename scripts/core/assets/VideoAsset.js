@@ -5,30 +5,21 @@
  */
 
 import global from '/scripts/core/global.js';
-import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import PlayableMediaAsset from '/scripts/core/assets/PlayableMediaAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { defaultImageSize } from '/scripts/core/helpers/constants.js';
-import { concatenateArrayBuffers, numberOr } from '/scripts/core/helpers/utils.module.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const PLAY = 0;
-const PAUSE = 1;
-const STOP = 2;
-
-export default class VideoAsset extends AssetEntity {
+export default class VideoAsset extends PlayableMediaAsset {
     constructor(params = {}) {
         super(params);
-        this._autoplay = params['autoplay'] || false;
-        this._loop = params['loop'] || false;
         this._side = numberOr(params['side'], THREE.DoubleSide);
         this._createMesh(params['assetId']);
-        this.setPlayTopic(params['playTopic'] || '');
-        this.setPauseTopic(params['pauseTopic'] || '');
-        this.setStopTopic(params['stopTopic'] || '');
         if(!global.isEditor) this._addPartySubscriptions();
     }
 
@@ -60,38 +51,17 @@ export default class VideoAsset extends AssetEntity {
         };
         this._video.crossOrigin = "anonymous";
         this._video.src = videoUrl;
-
+        super._setMedia(this._video);
     }
 
     _getDefaultName() {
-        return LibraryHandler.getAssetName(this._assetId) || 'Video';
+        return super._getDefaultName() || 'Video';
     }
 
     exportParams() {
         let params = super.exportParams();
-        params['autoplay'] = this._autoplay;
-        params['loop'] = this._loop;
-        params['pauseTopic'] = this._pauseTopic;
-        params['playTopic'] = this._playTopic;
         params['side'] = this._material.side;
-        params['stopTopic'] = this._stopTopic;
         return params;
-    }
-
-    getAutoplay() {
-        return this._autoplay;
-    }
-
-    getLoop() {
-        return this._loop;
-    }
-
-    getPlayTopic() {
-        return this._playTopic;
-    }
-
-    getPauseTopic() {
-        return this._pauseTopic;
     }
 
     getSide() {
@@ -106,38 +76,9 @@ export default class VideoAsset extends AssetEntity {
         return this._video;
     }
 
-    setAutoplay(autoplay) {
-        this._autoplay = autoplay;
-        if(!global.isEditor) this._video.autoplay = autoplay;
-    }
-
     setLoop(loop) {
-        this._loop = loop;
+        super.setLoop(loop);
         this._video.loop = loop;
-    }
-
-    setPlayTopic(playTopic) {
-        if(this._playTopic) {
-            PubSub.unsubscribe(this._id, this._playTopic);
-        }
-        this._playTopic = playTopic;
-        if(this._playTopic) {
-            PubSub.subscribe(this._id, this._playTopic, () => {
-                if(!global.isEditor) this.play(null, true);
-            });
-        }
-    }
-
-    setPauseTopic(pauseTopic) {
-        if(this._pauseTopic) {
-            PubSub.unsubscribe(this._id, this._pauseTopic);
-        }
-        this._pauseTopic = pauseTopic;
-        if(this._pauseTopic) {
-            PubSub.subscribe(this._id, this._pauseTopic, () => {
-                if(!global.isEditor) this.pause(null, true);
-            });
-        }
     }
 
     setSide(side) {
@@ -147,48 +88,31 @@ export default class VideoAsset extends AssetEntity {
         this._material.needsUpdate = true;
     }
 
-    setStopTopic(stopTopic) {
-        if(this._stopTopic) {
-            PubSub.unsubscribe(this._id, this._stopTopic);
-        }
-        this._stopTopic = stopTopic;
-        if(this._stopTopic) {
-            PubSub.subscribe(this._id, this._stopTopic, () => {
-                if(!global.isEditor) this.stop(true);
-            });
-        }
-    }
-
     play(position, ignorePublish) {
         if(position != null) {
             this._video.currentTime = position || 0;
         }
-        this._video.play();
+        super.play();
         if(ignorePublish) return;
-        let type = new Uint8Array([PLAY]);
         position = new Float64Array([this._video.currentTime]);
-        let message = concatenateArrayBuffers(type, position);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
+        this.publishMessage(PLAY, position, "");
     }
 
     pause(position, ignorePublish) {
-        this._video.pause();
+        super.pause();
         if(position != null) {
             this._video.currentTime = position || 0;
         }
         if(ignorePublish) return;
-        let type = new Uint8Array([PAUSE]);
         position = new Float64Array([this._video.currentTime]);
-        let message = concatenateArrayBuffers(type, position);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
+        this.publishMessage(PAUSE, position, "");
     }
 
     stop(ignorePublish) {
         this._video.pause();
         this._video.currentTime = 0;
         if(ignorePublish) return;
-        let message = new Uint8Array([STOP]);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
+        super.stop();
     }
 
     _addPartySubscriptions() {
@@ -201,21 +125,6 @@ export default class VideoAsset extends AssetEntity {
         PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
             this._onPeerReady(message.peer);
         });
-        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
-            this._onPartyStarted(PartyHandler.isHost());
-        });
-        PartyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
-            let type = new Uint8Array(m, 0, 1);
-            if(type[0] == PLAY) {
-                let message = new Float64Array(m.slice(1));
-                this.play(message[0], true);
-            } else if(type[0] == PAUSE) {
-                let message = new Float64Array(m.slice(1));
-                this.pause(message[0], true);
-            } else if(type[0] == STOP) {
-                this.stop(true);
-            }
-        });
     }
 
     _isPlaying() {
@@ -226,15 +135,8 @@ export default class VideoAsset extends AssetEntity {
     _onPeerReady(peer) {
         if(!PartyHandler.isHost()) return;
         let topic = (this._isPlaying()) ? PLAY : PAUSE;
-        let type = new Uint8Array([topic]);
         let position = new Float64Array([this._video.currentTime]);
-        let message = concatenateArrayBuffers(type, position);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
-    }
-
-    _onPartyStarted(isHost) {
-        if(isHost) return;
-        this.stop(true);
+        this.publishMessage(topic, position, peer);
     }
 
     removeFromScene() {
