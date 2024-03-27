@@ -116,6 +116,7 @@ export default class VideoAsset extends PlayableMediaAsset {
     }
 
     _addPartySubscriptions() {
+        super._addPartySubscriptions();
         PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
             if(this._autoplay && !this._alreadyAutoplayed) {
                 this.play(null, true);

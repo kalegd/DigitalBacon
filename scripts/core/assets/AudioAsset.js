@@ -177,6 +177,7 @@ export default class AudioAsset extends PlayableMediaAsset {
     }
 
     _addPartySubscriptions() {
+        super._addPartySubscriptions();
         PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
             this._onPeerReady(message.peer);
         });

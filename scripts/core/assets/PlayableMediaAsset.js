@@ -20,7 +20,6 @@ export default class PlayableMediaEntity extends AssetEntity{
         this.setPlayTopic(params['playTopic'] || '');
         this.setPauseTopic(params['pauseTopic'] || '');
         this.setStopTopic(params['stopTopic'] || '');
-        if(!global.isEditor) this._addPartySubscriptions();
         this.PLAY = 0;
         this.PAUSE = 1;
         this.STOP = 2;
