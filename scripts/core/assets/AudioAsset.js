@@ -7,11 +7,8 @@
 import global from '/scripts/core/global.js';
 import PlayableMediaAsset from '/scripts/core/assets/PlayableMediaAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
@@ -32,20 +29,19 @@ export default class AudioAsset extends PlayableMediaAsset {
 
     _createMesh(assetId) {
         let audioBuffer = LibraryHandler.getBuffer(assetId);
-        this._audio = new THREE.PositionalAudio(AudioHandler.getListener());
-        if(!global.isEditor) this._audio.autoplay = this._autoplay;
-        this._audio.autoplay = this._autoplay;
-        this._audio.setDirectionalCone(this._coneInnerAngle,
+        this._media = new THREE.PositionalAudio(AudioHandler.getListener());
+        if(!global.isEditor) this._media.autoplay = this._autoplay;
+        this._media.autoplay = this._autoplay;
+        this._media.setDirectionalCone(this._coneInnerAngle,
             this._coneOuterAngle, this._coneOuterGain);
-        this._audio.setDistanceModel(this._distanceModel);
-        this._audio.setLoop(this._loop);
-        this._audio.setMaxDistance(this._maxDistance);
-        this._audio.setRefDistance(this._refDistance);
-        this._audio.setRolloffFactor(this._rolloffFactor);
-        this._audio.setVolume(this._volume);
-        this._audio.setBuffer(audioBuffer);
-        this._object.add(this._audio);
-        super._setMedia(this._audio);
+        this._media.setDistanceModel(this._distanceModel);
+        this._media.setLoop(this._loop);
+        this._media.setMaxDistance(this._maxDistance);
+        this._media.setRefDistance(this._refDistance);
+        this._media.setRolloffFactor(this._rolloffFactor);
+        this._media.setVolume(this._volume);
+        this._media.setBuffer(audioBuffer);
+        this._object.add(this._media);
     }
 
     _getDefaultName() {
@@ -66,7 +62,7 @@ export default class AudioAsset extends PlayableMediaAsset {
     }
 
     getAudio() {
-        return this._audio;
+        return this._media;
     }
 
     getConeInnerAngle() {
@@ -103,96 +99,72 @@ export default class AudioAsset extends PlayableMediaAsset {
 
     setConeInnerAngle(coneInnerAngle) {
         this._coneInnerAngle = coneInnerAngle;
-        this._audio.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
+        this._media.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
             this._coneOuterGain);
     }
 
     setConeOuterAngle(coneOuterAngle) {
         this._coneOuterAngle = coneOuterAngle;
-        this._audio.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
+        this._media.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
             this._coneOuterGain);
     }
 
     setConeOuterGain(coneOuterGain) {
         this._coneOuterGain = coneOuterGain;
-        this._audio.setDirectionalCone(this._coneInnerAngle,
+        this._media.setDirectionalCone(this._coneInnerAngle,
             this._coneOuterAngle, coneOuterGain);
     }
 
     setDistanceModel(distanceModel) {
         this._distanceModel = distanceModel;
-        this._audio.setDistanceModel(distanceModel);
+        this._media.setDistanceModel(distanceModel);
     }
 
     setLoop(loop) {
         super.setLoop(loop);
-        this._audio.setLoop(loop);
+        this._media.setLoop(loop);
     }
 
     setMaxDistance(maxDistance) {
         this._maxDistance = maxDistance;
-        this._audio.setMaxDistance(maxDistance);
+        this._media.setMaxDistance(maxDistance);
     }
 
     setRefDistance(refDistance) {
         this._refDistance = refDistance;
-        this._audio.setRefDistance(refDistance);
+        this._media.setRefDistance(refDistance);
     }
 
     setRolloffFactor(rolloffFactor) {
         this._rolloffFactor = rolloffFactor;
-        this._audio.setRolloffFactor(rolloffFactor);
+        this._media.setRolloffFactor(rolloffFactor);
     }
 
     setVolume(volume) {
         this._volume = volume;
-        this._audio.setVolume(volume);
-    }
-
-    play(position, ignorePublish) {
-        this._audio.pause();//pause() update audio._progress
-        if(position != null) {
-            this._audio._progress = position || 0;
-        }
-        super.play();
-        if(ignorePublish) return;
-        position = new Float64Array([this._audio._progress]);
-        this.publishMessage(PLAY, position, "");
-    }
-
-    pause(position, ignorePublish) {
-        super.pause();
-        if(position != null) {
-            this._audio._progress = position || 0;
-        }
-        if(ignorePublish) return;
-        position = new Float64Array([this._audio._progress]);
-        this.publishMessage(PAUSE, position, "");
-    }
-
-    stop(ignorePublish) {
-        this._audio.stop();
-        if(ignorePublish) return;
-        super.stop();
+        this._media.setVolume(volume);
     }
 
     _addPartySubscriptions() {
         super._addPartySubscriptions();
-        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            this._onPeerReady(message.peer);
-        });
     }
 
-    _onPeerReady(peer) {
-        if(!PartyHandler.isHost()) return;
-        let topic = PAUSE;
-        if(this._audio.isPlaying) {
-            this._audio.pause();//pause() update audio._progress
-            this._audio.play();
-            topic = PLAY;
+    isPlaying() {
+        if(this._media.isPlaying) {
+            this._media.pause();//pause() update audio._progress
+            this._media.play();
         }
-        let position = new Float64Array([this._audio._progress]);
-        this.publishMessage(topic, position, peer);
+        return this._media.isPlaying;
+    }
+
+    getProgress() {
+        return this._media._progress;
+    }
+
+    setProgress(position) {
+        if(position != null) {
+            this._media._progress = position || 0;
+        }
     }
 
     static assetType = AssetTypes.AUDIO;

@@ -11,6 +11,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { concatenateArrayBuffers } from '/scripts/core/helpers/utils.module.js';
+import PlayableMediaActions from '/scripts/core/enums/PlayableMediaActions.js';
 
 export default class PlayableMediaEntity extends AssetEntity{
     constructor(params = {}) {
@@ -20,13 +21,6 @@ export default class PlayableMediaEntity extends AssetEntity{
         this.setPlayTopic(params['playTopic'] || '');
         this.setPauseTopic(params['pauseTopic'] || '');
         this.setStopTopic(params['stopTopic'] || '');
-        this.PLAY = 0;
-        this.PAUSE = 1;
-        this.STOP = 2;
-    }
-
-    _setMedia(_media) {
-        this._media = _media;
     }
 
     _getDefaultName() {
@@ -112,32 +106,58 @@ export default class PlayableMediaEntity extends AssetEntity{
         }
     }
 
-    publishMessage(action, position, peer) {
+    publishPartyMessage(action, position, peer) {
         let type = new Uint8Array([action]);
-        let message = concatenateArrayBuffers(type, position);
-        if (peer) {
-            PartyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
+        let message;
+        if(position) {
+            message = concatenateArrayBuffers(type, position);
+        } else {
+            message = concatenateArrayBuffers(type);
+        }
+        
+        if(peer) {
+            PartyHandler.publishInternalBufferMessage(this._idBytes, message, 
+                peer);
         } else {
             PartyHandler.publishInternalBufferMessage(this._idBytes, message);
         }
     }
 
-    publishStopMessage() {
-        let message = new Uint8Array([STOP]);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
-    }
-
-    play() {
+    play(position, ignorePublish) {
+        this.setProgress(position);
         this._media.play();
+        if(ignorePublish) return;
+        position = new Float64Array([this.getProgress()]);
+        this.publishPartyMessage(PlayableMediaActions.PLAY, position);
     }
 
-    pause() {
+    pause(position, ignorePublish) {
         this._media.pause();
+        this.setProgress(position);
+        if(ignorePublish) return;
+        position = new Float64Array([this.getProgress()]);
+        this.publishPartyMessage(PlayableMediaActions.PAUSE, position);
     }
 
-    stop() {
-        publishStopMessage()
+    stop(ignorePublish) {
+        this._media.pause();
+        this.setProgress(0);
+        if(ignorePublish) return;
+        this.publishPartyMessage(PlayableMediaActions.STOP);
     }
+
+    isPlaying() {
+        console.error("PlayableMediaAsset.isPlaying() should be overridden");
+    }
+
+    getProgress() {
+        console.error("PlayableMediaAsset.getProgress() should be overridden");
+    }
+
+    setProgress(progress) {
+        console.error("PlayableMediaAsset.setProgress() should be overridden", progress);
+    }
+
 
     _addPartySubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
@@ -145,16 +165,27 @@ export default class PlayableMediaEntity extends AssetEntity{
         });
         PartyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
             let type = new Uint8Array(m, 0, 1);
-            if(type[0] == PLAY) {
+            if(type[0] == PlayableMediaActions.PLAY) {
                 let message = new Float64Array(m.slice(1));
                 this.play(message[0], true);
-            } else if(type[0] == PAUSE) {
+            } else if(type[0] == PlayableMediaActions.PAUSE) {
                 let message = new Float64Array(m.slice(1));
                 this.pause(message[0], true);
-            } else if(type[0] == STOP) {
+            } else if(type[0] == PlayableMediaActions.STOP) {
                 this.stop(true);
             }
         });
+        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            this._onPeerReady(message.peer);
+        });
+    }
+
+    _onPeerReady(peer) {
+        if(!PartyHandler.isHost()) return;
+        let topic = (this.isPlaying()) ? PlayableMediaActions.PLAY
+            : PlayableMediaActions.PAUSE;
+        let position = new Float64Array([this.getProgress()]);
+        this.publishPartyMessage(topic, position, peer);
     }
 
     _onPartyStarted(isHost) {

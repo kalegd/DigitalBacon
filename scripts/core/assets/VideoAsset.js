@@ -9,7 +9,6 @@ import PlayableMediaAsset from '/scripts/core/assets/PlayableMediaAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { defaultImageSize } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
@@ -30,12 +29,12 @@ export default class VideoAsset extends PlayableMediaAsset {
         });
         let videoUrl = LibraryHandler.getUrl(assetId);
         if(!videoUrl) return;
-        this._video = document.createElement('video');
-        this._video.onloadedmetadata = () => {
-            let texture = new THREE.VideoTexture(this._video);
+        this._media = document.createElement('video');
+        this._media.onloadedmetadata = () => {
+            let texture = new THREE.VideoTexture(this._media);
             texture.colorSpace = THREE.SRGBColorSpace;
-            let width = this._video.videoWidth;
-            let height = this._video.videoHeight;
+            let width = this._media.videoWidth;
+            let height = this._media.videoHeight;
             if(width > height) {
                 height *= defaultImageSize / width;
                 width = defaultImageSize;
@@ -49,9 +48,8 @@ export default class VideoAsset extends PlayableMediaAsset {
             let mesh = new THREE.Mesh( geometry, this._material );
             this._object.add(mesh);
         };
-        this._video.crossOrigin = "anonymous";
-        this._video.src = videoUrl;
-        super._setMedia(this._video);
+        this._media.crossOrigin = "anonymous";
+        this._media.src = videoUrl;
     }
 
     _getDefaultName() {
@@ -73,12 +71,12 @@ export default class VideoAsset extends PlayableMediaAsset {
     }
 
     getVideo() {
-        return this._video;
+        return this._media;
     }
 
     setLoop(loop) {
         super.setLoop(loop);
-        this._video.loop = loop;
+        this._media.loop = loop;
     }
 
     setSide(side) {
@@ -86,33 +84,6 @@ export default class VideoAsset extends PlayableMediaAsset {
         this._side = side;
         this._material.side = side;
         this._material.needsUpdate = true;
-    }
-
-    play(position, ignorePublish) {
-        if(position != null) {
-            this._video.currentTime = position || 0;
-        }
-        super.play();
-        if(ignorePublish) return;
-        position = new Float64Array([this._video.currentTime]);
-        this.publishMessage(PLAY, position, "");
-    }
-
-    pause(position, ignorePublish) {
-        super.pause();
-        if(position != null) {
-            this._video.currentTime = position || 0;
-        }
-        if(ignorePublish) return;
-        position = new Float64Array([this._video.currentTime]);
-        this.publishMessage(PAUSE, position, "");
-    }
-
-    stop(ignorePublish) {
-        this._video.pause();
-        this._video.currentTime = 0;
-        if(ignorePublish) return;
-        super.stop();
     }
 
     _addPartySubscriptions() {
@@ -123,21 +94,21 @@ export default class VideoAsset extends PlayableMediaAsset {
                 this._alreadyAutoplayed = true;
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            this._onPeerReady(message.peer);
-        });
     }
 
-    _isPlaying() {
-        return !this._video.paused && !this._video.ended
-            && this._video.currentTime > 0 && this._video.readyState > 2;
+    isPlaying() {
+        return !this._media.paused && !this._media.ended
+            && this._media.currentTime > 0 && this._media.readyState > 2;
     }
 
-    _onPeerReady(peer) {
-        if(!PartyHandler.isHost()) return;
-        let topic = (this._isPlaying()) ? PLAY : PAUSE;
-        let position = new Float64Array([this._video.currentTime]);
-        this.publishMessage(topic, position, peer);
+    getProgress() {
+        return this._media.currentTime;
+    }
+
+    setProgress(position) {
+        if(position != null) {
+            this._media.currentTime = position || 0;
+        }
     }
 
     removeFromScene() {
