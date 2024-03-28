@@ -46,4 +46,3 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
     };
     
 }
-

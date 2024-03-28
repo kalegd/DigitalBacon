@@ -114,7 +114,6 @@ export default class PlayableMediaEntity extends AssetEntity{
         } else {
             message = concatenateArrayBuffers(type);
         }
-        
         if(peer) {
             PartyHandler.publishInternalBufferMessage(this._idBytes, message, 
                 peer);
@@ -157,7 +156,6 @@ export default class PlayableMediaEntity extends AssetEntity{
     setProgress(progress) {
         console.error("PlayableMediaAsset.setProgress() should be overridden", progress);
     }
-
 
     _addPartySubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
