@@ -7,7 +7,7 @@ Create 3D websites easily that run on AR, VR, Desktop, and Mobile devices with D
 <div align="center">
   
   [![NPM Package](https://img.shields.io/npm/v/digitalbacon)](https://www.npmjs.com/package/digitalbacon) [![Build Size](https://badgen.net/bundlephobia/minzip/digitalbacon)](https://bundlephobia.com/result?p=digitalbacon) [![NPM Downloads](https://img.shields.io/npm/dw/digitalbacon)](https://www.npmtrends.com/digitalbacon) <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
   
 </div>
@@ -64,6 +64,7 @@ A special thanks to the following people for taking time to contribute to this p
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/prajwalbandak"><img src="https://avatars.githubusercontent.com/u/62823252?v=4?s=100" width="100px;" alt="prajwalbandak"/><br /><sub><b>prajwalbandak</b></sub></a><br /><a href="#infra-prajwalbandak" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/laurittab"><img src="https://avatars.githubusercontent.com/u/57863817?v=4?s=100" width="100px;" alt="Lauritta"/><br /><sub><b>Lauritta</b></sub></a><br /><a href="#infra-laurittab" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/justjo3l"><img src="https://avatars.githubusercontent.com/u/63659576?v=4?s=100" width="100px;" alt="Joel Jose"/><br /><sub><b>Joel Jose</b></sub></a><br /><a href="https://github.com/kalegd/DigitalBacon/commits?author=justjo3l" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ShaunFrost"><img src="https://avatars.githubusercontent.com/u/7031459?v=4?s=100" width="100px;" alt="Rasesh Kumar Rout"/><br /><sub><b>Rasesh Kumar Rout</b></sub></a><br /><a href="https://github.com/kalegd/DigitalBacon/commits?author=ShaunFrost" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
