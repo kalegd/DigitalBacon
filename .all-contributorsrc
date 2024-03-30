@@ -33,6 +33,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "ShaunFrost",
+      "name": "Rasesh Kumar Rout",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7031459?v=4",
+      "profile": "https://github.com/ShaunFrost",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
