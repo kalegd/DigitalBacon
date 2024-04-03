@@ -573,7 +573,7 @@ class PartyMessageHelper {
         let message = {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
-            option: data.option,
+            ownerId: data.ownerId,
             type: data.type,
         };
         if(global.deviceType == 'XR') {
@@ -590,7 +590,7 @@ class PartyMessageHelper {
         let message = {
             id: data.instance.getId(),
             assetId: data.instance.getAssetId(),
-            option: data.option,
+            ownerId: data.ownerId,
             type: data.type,
         };
         if(global.deviceType == 'XR') {

@@ -6,10 +6,10 @@
 
 import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { GripInteractableHandler } from '/scripts/DigitalBacon-UI.js';
 
 class CopyPasteControlsHandler {
     constructor() {
@@ -49,7 +49,7 @@ class CopyPasteControlsHandler {
     }
 
     _toolHandler(controller) {
-        let ownerId = controller.option;
+        let ownerId = controller.owner.id;
         if(!this._copiedAssets[ownerId]) return false;
         let alreadyPasted = Boolean(this._assetAlreadyPastedByGrip[ownerId]);
         if(controller.isPressed != alreadyPasted) {

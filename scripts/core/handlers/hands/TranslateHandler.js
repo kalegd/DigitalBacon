@@ -77,14 +77,14 @@ class TranslateHandler {
         }
     }
 
-    attach(owner, asset, positionDifference) {
-        let otherOwner = this._otherOwner(owner, asset);
+    attach(ownerId, asset, positionDifference) {
+        let otherOwner = this._otherOwner(ownerId, asset);
         if(otherOwner) {
-            this._swapToOwner(owner, otherOwner, positionDifference);
+            this._swapToOwner(ownerId, otherOwner, positionDifference);
         } else {
             let heldAsset = {
                 asset: asset,
-                ownerId: owner,
+                ownerId: ownerId,
             };
             if(positionDifference) {
                 heldAsset.positionDifference = positionDifference;
@@ -92,25 +92,25 @@ class TranslateHandler {
                 let position = asset.getWorldPosition();
                 heldAsset.preTransformState = asset.getPosition();
                 heldAsset.positionDifference = position.sub(ProjectHandler
-                    .getAsset(owner).getWorldPosition()).toArray();
+                    .getAsset(ownerId).getWorldPosition()).toArray();
             }
-            this._heldAssets[owner] = heldAsset;
+            this._heldAssets[ownerId] = heldAsset;
         }
         if(!positionDifference) {
-            let heldAsset = this._heldAssets[owner];
+            let heldAsset = this._heldAssets[ownerId];
             PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'translate',
                 position: heldAsset.positionDifference,
             });
         }
     }
 
-    detach(owner, position) {
-        let heldAsset = this._heldAssets[owner];
+    detach(ownerId, position) {
+        let heldAsset = this._heldAssets[ownerId];
         if(!heldAsset) return;
-        delete this._heldAssets[owner];
+        delete this._heldAssets[ownerId];
         if(!position) {
             position = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -120,7 +120,7 @@ class TranslateHandler {
                 preState);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'translate',
                 position: position,
             });

@@ -85,14 +85,14 @@ class RotateHandler {
         }
     }
 
-    attach(owner, asset, rotationDifference) {
-        let otherOwner = this._otherOwner(owner, asset);
+    attach(ownerId, asset, rotationDifference) {
+        let otherOwner = this._otherOwner(ownerId, asset);
         if(otherOwner) {
-            this._swapToOwner(owner, otherOwner, rotationDifference);
+            this._swapToOwner(ownerId, otherOwner, rotationDifference);
         } else {
             let heldAsset = {
                 asset: asset,
-                ownerId: owner,
+                ownerId: ownerId,
             };
             if(rotationDifference) {
                 heldAsset.rotationDifference = rotationDifference;
@@ -100,27 +100,27 @@ class RotateHandler {
                 let rotation = asset.getWorldQuaternion();
                 heldAsset.preTransformState = asset.getObject().quaternion
                     .toArray();
-                heldAsset.rotationDifference = ProjectHandler.getAsset(owner)
+                heldAsset.rotationDifference = ProjectHandler.getAsset(ownerId)
                     .getWorldQuaternion().conjugate().multiply(rotation)
                     .toArray();
             }
-            this._heldAssets[owner] = heldAsset;
+            this._heldAssets[ownerId] = heldAsset;
         }
         if(!rotationDifference) {
-            let heldAsset = this._heldAssets[owner];
+            let heldAsset = this._heldAssets[ownerId];
             PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'rotate',
                 rotation: heldAsset.rotationDifference,
             });
         }
     }
 
-    detach(owner, rotation) {
-        let heldAsset = this._heldAssets[owner];
+    detach(ownerId, rotation) {
+        let heldAsset = this._heldAssets[ownerId];
         if(!heldAsset) return;
-        delete this._heldAssets[owner];
+        delete this._heldAssets[ownerId];
         if(!rotation) {
             rotation = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -134,7 +134,7 @@ class RotateHandler {
                 preState);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'rotate',
                 rotation: rotation,
             });

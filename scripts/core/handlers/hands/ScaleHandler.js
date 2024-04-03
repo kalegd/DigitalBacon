@@ -75,41 +75,41 @@ class ScaleHandler {
         }
     }
 
-    attach(owner, asset, scaleIdentity) {
-        let otherOwner = this._otherOwner(owner, asset);
+    attach(ownerId, asset, scaleIdentity) {
+        let otherOwner = this._otherOwner(ownerId, asset);
         if(otherOwner) {
-            this._swapToOwner(owner, otherOwner, scaleIdentity);
+            this._swapToOwner(ownerId, otherOwner, scaleIdentity);
         } else {
             let heldAsset = {
                 asset: asset,
-                ownerId: owner,
+                ownerId: ownerId,
             };
             if(scaleIdentity) {
                 heldAsset.scaleIdentity = scaleIdentity;
             } else {
-                let distance = ProjectHandler.getAsset(owner).getWorldPosition()
-                    .distanceTo(asset.getWorldPosition());
+                let distance = ProjectHandler.getAsset(ownerId)
+                    .getWorldPosition().distanceTo(asset.getWorldPosition());
                 let scale = asset.getWorldScale();
                 heldAsset.preTransformState = asset.getScale();
                 heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
             }
-            this._heldAssets[owner] = heldAsset;
+            this._heldAssets[ownerId] = heldAsset;
         }
         if(!scaleIdentity) {
-            let heldAsset = this._heldAssets[owner];
+            let heldAsset = this._heldAssets[ownerId];
             PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'scale',
                 scale: heldAsset.scaleIdentity,
             });
         }
     }
 
-    detach(owner, scale) {
-        let heldAsset = this._heldAssets[owner];
+    detach(ownerId, scale) {
+        let heldAsset = this._heldAssets[ownerId];
         if(!heldAsset) return;
-        delete this._heldAssets[owner];
+        delete this._heldAssets[ownerId];
         if(!scale) {
             scale = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -119,7 +119,7 @@ class ScaleHandler {
                 preState);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'scale',
                 scale: scale,
             });

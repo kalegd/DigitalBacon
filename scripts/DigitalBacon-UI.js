@@ -9219,7 +9219,7 @@ class LayoutComponent extends UIComponent {
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class InteractionTool {
+class InteractionToolHandler {
     constructor() {
         this._tool = null;
         this._listeners = new Set();
@@ -9245,7 +9245,7 @@ class InteractionTool {
     }
 }
 
-let interactionTool = new InteractionTool();
+let interactionToolHandler = new InteractionToolHandler();
 
 const InteractableStates = {
     IDLE: "IDLE",
@@ -9298,7 +9298,7 @@ class Interactable {
 
     dispatchEvent(type, e) {
         if(!(type in this._callbacks)) return;
-        let tool = interactionTool.getTool();
+        let tool = interactionToolHandler.getTool();
         for(let [callback, options] of this._callbacks[type]) {
             let callbackTool = options?.tool;
             if(!callbackTool || callbackTool == tool) callback(e);
@@ -9348,7 +9348,7 @@ class Interactable {
     }
 
     supportsTool() {
-        let tool = interactionTool.getTool();
+        let tool = interactionToolHandler.getTool();
         return this._toolCounts['none'] || this._toolCounts[tool];
     }
 
@@ -9480,6 +9480,7 @@ class PointerInteractable extends Interactable {
         super(object);
         if(object) object.pointerInteractable = this;
         this._maxDistance = -Infinity;
+        this.hoveredCursor = 'pointer';
     }
 
     addEventListener(type, callback, options = {}) {
@@ -9511,7 +9512,7 @@ class PointerInteractable extends Interactable {
 
     dispatchEvent(type, e) {
         if(!(type in this._callbacks)) return;
-        let tool = interactionTool.getTool();
+        let tool = interactionToolHandler.getTool();
         for(let [callback, options] of this._callbacks[type]) {
             let callbackTool = options.tool;
             if(callbackTool && callbackTool != tool) continue;
@@ -15446,7 +15447,7 @@ class InputHandler {
         this._extraControls = {};
         this._extraControlsDiv = document.createElement('div');
         this._extraControlsDiv.style.position = 'absolute';
-        this._extraControlsDiv.style.top = '10px';
+        this._extraControlsDiv.style.bottom = '10px';
         this._extraControlsDiv.style.right = '10px';
         this._container.appendChild(this._extraControlsDiv);
     }
@@ -15499,9 +15500,17 @@ class InputHandler {
         return this._extraControls[id];
     }
 
+    hideExtraControls() {
+        this._extraControlsDiv.style.display = 'none';
+    }
+
     hideExtraControlsButton(id) {
         let button = this._extraControls[id];
         if(button) button.style.display = 'none';
+    }
+
+    showExtraControls() {
+        this._extraControlsDiv.style.display = 'block';
     }
 
     showExtraControlsButton(id) {
@@ -15579,6 +15588,9 @@ class InteractableHandler {
         this._selectedInteractables = new Map();
         this._capturedInteractables = new Map();
         this._overInteractables = new Map();
+        this._owners = new Map();
+        this._owners.set('POINTER', { id: 'POINTER' });
+        this._owners.set('TOUCH_SCREEN', { id: 'TOUCH_SCREEN' });
         this._wasPressed = new Map();
         this._listeners = {};
         this._tool = null;
@@ -15586,7 +15598,7 @@ class InteractableHandler {
     }
 
     _setupXRSubscription() {
-        interactionTool.addUpdateListener((tool) => {
+        interactionToolHandler.addUpdateListener((tool) => {
             for(let [option, interactable] of this._hoveredInteractables) {
                 if(interactable) interactable.removeHoveredBy(option);
                 this._hoveredInteractables.delete(option);
@@ -15604,6 +15616,12 @@ class InteractableHandler {
             }
             this._tool = tool;
         });
+    }
+
+    _getOwner(key) {
+        if(!this._owners.has(key))
+            this._owners.set(key, { id: key.uuid, object: key });
+        return this._owners.get(key);
     }
 
     init() {
@@ -15708,8 +15726,6 @@ class PointerInteractableHandler extends InteractableHandler {
         this._scene = scene;
         this._camera = camera;
         this._cameraFocus = orbitTarget || camera;
-        if(DeviceTypes.active != 'XR')
-            this._option = { type: DeviceTypes.active };
     }
 
     _getXRCursor(hand) {
@@ -15740,12 +15756,11 @@ class PointerInteractableHandler extends InteractableHandler {
         return this._cursors[hand];
     }
 
-    _getRaycaster() {
-        if(!this._option.raycaster)
-            this._option.raycaster = new THREE.Raycaster();
+    _getRaycaster(owner) {
+        if(!owner.raycaster) owner.raycaster = new THREE.Raycaster();
         let position = inputHandler.getPointerPosition();
-        this._option.raycaster.setFromCamera(position, this._camera);
-        return this._option.raycaster;
+        owner.raycaster.setFromCamera(position, this._camera);
+        return owner.raycaster;
     }
 
     _getXRRaycaster(xrController) {
@@ -15755,17 +15770,6 @@ class PointerInteractableHandler extends InteractableHandler {
         xrController.getWorldDirection(xrController.raycaster.ray.direction)
             .negate().normalize();
         return xrController.raycaster;
-    }
-
-    _isControllerPressed(option) {
-        if(option == Handedness.LEFT || option == Handedness.RIGHT) {
-            let gamepad = inputHandler.getXRGamepad(option);
-            return gamepad != null && gamepad.buttons[0].pressed;
-        } else if(option == "POINTER") {
-            return inputHandler.isPointerPressed();
-        } else if(option == "TOUCH_SCREEN") {
-            return inputHandler.isScreenTouched();
-        }
     }
 
     _isXRControllerPressed(type, handedness) {
@@ -15778,12 +15782,12 @@ class PointerInteractableHandler extends InteractableHandler {
         }
     }
 
-    _squashInteractables(option, interactables, objects) {
+    _squashInteractables(owner, interactables, objects) {
         for(let interactable of interactables) {
             let object = interactable.getObject();
             if(object && !interactable.isOnlyGroup()) objects.push(object);
             if(interactable.children.size != 0) {
-                this._squashInteractables(option, interactable.children,
+                this._squashInteractables(owner, interactable.children,
                     objects);
             }
         }
@@ -15804,7 +15808,7 @@ class PointerInteractableHandler extends InteractableHandler {
         raycaster.firstHitOnly = true;
         raycaster.params.Line.threshold = 0.01;
         let objects = [];
-        this._squashInteractables(controller.option, interactables, objects);
+        this._squashInteractables(controller.owner, interactables, objects);
         let intersections = raycaster.intersectObjects(objects);
         for(let intersection of intersections) {
             let interactable = this._getObjectInteractable(intersection.object);
@@ -15841,22 +15845,22 @@ class PointerInteractableHandler extends InteractableHandler {
     }
 
     _updateInteractables(controller) {
-        let option = controller['option'];
+        let owner = controller['owner'];
         let isPressed = controller['isPressed'];
-        let hovered = this._hoveredInteractables.get(option);
-        let selected = this._selectedInteractables.get(option);
-        let over = this._overInteractables.get(option);
+        let hovered = this._hoveredInteractables.get(owner);
+        let selected = this._selectedInteractables.get(owner);
+        let over = this._overInteractables.get(owner);
         let closest = controller['closestInteractable'];
         let closestPoint = controller['closestPoint'];
         let userDistance = controller['userDistance'];
         if(closest != hovered) {
             if(hovered) {
-                hovered.removeHoveredBy(option);
-                this._hoveredInteractables.delete(option);
+                hovered.removeHoveredBy(owner);
+                this._hoveredInteractables.delete(owner);
             }
             if(closest && ((!selected && !isPressed) || closest == selected)) {
-                closest.addHoveredBy(option);
-                this._hoveredInteractables.set(option, closest);
+                closest.addHoveredBy(owner);
+                this._hoveredInteractables.set(owner, closest);
                 hovered = closest;
             }
         }
@@ -15876,22 +15880,22 @@ class PointerInteractableHandler extends InteractableHandler {
         //        captured pointer is anywhere
         //drag  - when uncaptured pointer over selected interactable. Also when
         //        captured pointer is anywhere
-        let basicEvent = { owner: option };
+        let basicEvent = { owner: owner };
         let detailedEvent = {
-            owner: option,
+            owner: owner,
             closestPoint: closestPoint,
             userDistance,
         };
         if(selected) {
             if(!isPressed) {
-                selected.removeSelectedBy(option);
-                this._selectedInteractables.delete(option);
+                selected.removeSelectedBy(owner);
+                this._selectedInteractables.delete(owner);
             }
             if(selected == closest) {
                 if(over != closest) {
                     if(over) over.out(basicEvent);
                     closest.over(detailedEvent);
-                    this._overInteractables.set(option, closest);
+                    this._overInteractables.set(owner, closest);
                 }
                 closest.move(detailedEvent);
                 closest.drag(detailedEvent);
@@ -15899,11 +15903,11 @@ class PointerInteractableHandler extends InteractableHandler {
                     this._trigger('up', detailedEvent, closest);
                     closest.click(detailedEvent);
                 }
-            } else if(selected.isCapturedBy(option)) {
+            } else if(selected.isCapturedBy(owner)) {
                 if(selected != over) {
                     if(over) over.out(basicEvent);
                     selected.over(basicEvent);
-                    this._overInteractables.set(option, selected);
+                    this._overInteractables.set(owner, selected);
                     over = selected;
                 }
                 selected.move(basicEvent);
@@ -15914,16 +15918,16 @@ class PointerInteractableHandler extends InteractableHandler {
                     if(over) over.out(basicEvent);
                     if(closest) {
                         closest.over(detailedEvent);
-                        this._overInteractables.set(option, closest);
+                        this._overInteractables.set(owner, closest);
                     } else {
-                        this._overInteractables.delete(option);
+                        this._overInteractables.delete(owner);
                     }
                 }
             } else if(closest) {
                 if(over != closest) {
                     if(over) over.out(basicEvent);
                     closest.over(detailedEvent);
-                    this._overInteractables.set(option, closest);
+                    this._overInteractables.set(owner, closest);
                 }
                 closest.move(detailedEvent);
                 if(!isPressed) {
@@ -15931,37 +15935,37 @@ class PointerInteractableHandler extends InteractableHandler {
                 }
             } else if(over) {
                 over.out(basicEvent);
-                this._overInteractables.delete(option);
+                this._overInteractables.delete(owner);
             }
         } else {
             if(closest) {
                 if(over != closest) {
                     if(over) over.out(basicEvent);
                     closest.over(detailedEvent);
-                    this._overInteractables.set(option, closest);
+                    this._overInteractables.set(owner, closest);
                 }
                 closest.move(detailedEvent);
-                if(isPressed && !this._wasPressed.get(option)) {
+                if(isPressed && !this._wasPressed.get(owner)) {
                     this._trigger('down', detailedEvent, closest);
-                    closest.addSelectedBy(option);
-                    this._selectedInteractables.set(option, closest);
-                } else if(!isPressed && this._wasPressed.get(option)) {
+                    closest.addSelectedBy(owner);
+                    this._selectedInteractables.set(owner, closest);
+                } else if(!isPressed && this._wasPressed.get(owner)) {
                     this._trigger('up', detailedEvent, closest);
                 }
             } else {
                 if(over) {
                     over.out(basicEvent);
-                    this._overInteractables.delete(option);
+                    this._overInteractables.delete(owner);
                 }
                 if(isPressed) {
-                    if(!this._wasPressed.get(option))
+                    if(!this._wasPressed.get(owner))
                         this._trigger('down', basicEvent);
-                } else if(this._wasPressed.get(option)) {
+                } else if(this._wasPressed.get(owner)) {
                     this._trigger('up', basicEvent);
                 }
             }
         }
-        this._wasPressed.set(option, isPressed);
+        this._wasPressed.set(owner, isPressed);
     }
 
     _updateCursor(controller) {
@@ -15987,6 +15991,7 @@ class PointerInteractableHandler extends InteractableHandler {
                 let xrController = inputHandler.getXRController(type,
                     handedness, 'grip');
                 if(!xrController) continue;
+                let owner = this._getOwner(xrController);
                 let active = isDescendant(this._scene, xrController);
                 if(active) {
                     if(type == XRInputDeviceTypes.CONTROLLER) {
@@ -16000,12 +16005,12 @@ class PointerInteractableHandler extends InteractableHandler {
                     let targetRay = inputHandler.getXRController(type,
                         handedness, 'targetRay');
                     raycaster = this._getXRRaycaster(targetRay);
-                    if(!xrController.raycaster)
-                        xrController.raycaster = raycaster;
+                    if(!owner.raycaster)
+                        owner.raycaster = raycaster;
                     isPressed = this._isXRControllerPressed(type, handedness);
                 }
                 let controller = {
-                    option: xrController,
+                    owner: owner,
                     raycaster: raycaster,
                     isPressed: isPressed,
                     closestPoint: null,
@@ -16027,10 +16032,11 @@ class PointerInteractableHandler extends InteractableHandler {
     }
 
     _updateForPointer() {
+        let owner = this._getOwner(DeviceTypes.POINTER);
         let controller = {
-            option: this._option,
-            raycaster: this._getRaycaster(),
-            isPressed: this._isControllerPressed("POINTER"),
+            owner: owner,
+            raycaster: this._getRaycaster(owner),
+            isPressed: inputHandler.isPointerPressed(),
             closestPoint: null,
             closestPointDistance: Number.MAX_SAFE_INTEGER,
             userDistance: Number.MAX_SAFE_INTEGER,
@@ -16044,25 +16050,26 @@ class PointerInteractableHandler extends InteractableHandler {
             this._updateInteractables(controller);
         }
         let style = this._renderer.domElement.style;
-        if(!this._selectedInteractables.get(this._option)
-                && this._hoveredInteractables.get(this._option)) {
-            if(!style.cursor) style.cursor = 'pointer';
-        } else if(style.cursor == 'pointer') {
+        let hoveredInteractable = this._hoveredInteractables.get(owner);
+        if(hoveredInteractable && !this._selectedInteractables.get(owner)) {
+            style.cursor = hoveredInteractable.hoveredCursor;
+        } else if(style.cursor != '') {
             style.cursor = '';
         }
     }
 
     _updateForTouchScreen() {
+        let owner = this._getOwner(DeviceTypes.TOUCH_SCREEN);
         let controller = {
-            option: this._option,
-            raycaster: this._getRaycaster(),
-            isPressed: this._isControllerPressed("TOUCH_SCREEN"),
+            owner: owner,
+            raycaster: this._getRaycaster(owner),
+            isPressed: inputHandler.isScreenTouched(),
             closestPoint: null,
             closestPointDistance: Number.MAX_SAFE_INTEGER,
             userDistance: Number.MAX_SAFE_INTEGER,
         };
         controller.raycaster.disabled = !controller.isPressed
-            && !this._wasPressed.get(this._option);
+            && !this._wasPressed.get(owner);
         let skipUpdate = false;
         if(this._toolHandlers[this._tool]) {
             skipUpdate = this._toolHandlers[this._tool](controller);
@@ -16071,7 +16078,7 @@ class PointerInteractableHandler extends InteractableHandler {
             this._raycastInteractables(controller, this._interactables);
             this._updateInteractables(controller);
         } else {
-            this._wasPressed.set(this._option, controller.isPressed);
+            this._wasPressed.set(owner, controller.isPressed);
         }
     }
 }
@@ -16130,7 +16137,8 @@ class TouchInteractableHandler extends InteractableHandler {
             if(object == null || interactable.isOnlyGroup()) continue;
             let intersects = interactable.intersectsSphere(boundingSphere);
             if(intersects && !this._checkClipped(object)) {
-                let controllerObject = controller.model || controller.option;
+                let controllerObject = controller.model
+                    || controller.owner.object;
                 let frames = skipIntersectsCheck.get(interactable);
                 if(!frames) {
                     if(interactable.intersectsObject(controllerObject)) {
@@ -16138,7 +16146,7 @@ class TouchInteractableHandler extends InteractableHandler {
                     }
                     skipIntersectsCheck.set(interactable, FRAMES_TO_SKIP);
                 } else {
-                    if(this._selectedInteractables.get(controller.option)
+                    if(this._selectedInteractables.get(controller.owner)
                             .has(interactable)) {
                         controller['touchedInteractables'].add(interactable);
                     }
@@ -16160,16 +16168,16 @@ class TouchInteractableHandler extends InteractableHandler {
     }
 
     _updateInteractables(controller) {
-        let option = controller.option;
+        let owner = controller.owner;
         this._scopeInteractables(controller, this._interactables);
-        if(!this._selectedInteractables.get(option))
-            this._selectedInteractables.set(option, new Set());
-        let selectedInteractables = this._selectedInteractables.get(option);
+        if(!this._selectedInteractables.get(owner))
+            this._selectedInteractables.set(owner, new Set());
+        let selectedInteractables = this._selectedInteractables.get(owner);
         let touchedInteractables = controller['touchedInteractables'];
-        let basicEvent = { owner: option };
+        let basicEvent = { owner: owner };
         for(let interactable of selectedInteractables) {
             if(!touchedInteractables.has(interactable)) {
-                interactable.removeSelectedBy(option);
+                interactable.removeSelectedBy(owner);
                 selectedInteractables.delete(interactable);
                 interactable.drag(basicEvent);
                 this._trigger('up', basicEvent, interactable);
@@ -16180,7 +16188,7 @@ class TouchInteractableHandler extends InteractableHandler {
             if(selectedInteractables.has(interactable)) {
                 interactable.drag(basicEvent);
             } else {
-                interactable.addSelectedBy(option);
+                interactable.addSelectedBy(owner);
                 selectedInteractables.add(interactable);
                 this._trigger('down', basicEvent, interactable);
             }
@@ -16197,6 +16205,7 @@ class TouchInteractableHandler extends InteractableHandler {
                 let xrControllerModel = inputHandler.getXRControllerModel(type,
                     handedness);
                 if(!xrController) continue;
+                let owner = this._getOwner(xrController);
                 let active = isDescendant(this._scene, xrController);
                 if(active) {
                     if(type == XRInputDeviceTypes.CONTROLLER) {
@@ -16214,7 +16223,7 @@ class TouchInteractableHandler extends InteractableHandler {
                     skipIntersectsCheck = this._skipIntersectsCheck.get(object);
                 }
                 let controller = {
-                    option: xrController,
+                    owner: owner,
                     model: xrControllerModel,
                     boundingSphere: boundingSphere,
                     touchedInteractables: new Set(),
@@ -16575,7 +16584,7 @@ class ScrollableComponent extends InteractableComponent {
 
     handleTouchScroll(owner, interactable) {
         if(!this._scrollStart) {
-            let details = interactable.getClosestPointTo(owner);
+            let details = interactable.getClosestPointTo(owner.object);
             this._scrollController = details[1].object;
             this._scrollVertex = this._scrollController.bvhGeometry.index.array[
                 details[1].faceIndex * 3];
@@ -23721,20 +23730,20 @@ class GripInteractableHandler extends InteractableHandler {
     }
 
     _updateInteractables(controller) {
-        let option = controller['option'];
+        let owner = controller['owner'];
         let isPressed = controller['isPressed'];
-        let hovered = this._hoveredInteractables.get(option);
-        let selected = this._selectedInteractables.get(option);
-        let over = this._overInteractables.get(option);
+        let hovered = this._hoveredInteractables.get(owner);
+        let selected = this._selectedInteractables.get(owner);
+        let over = this._overInteractables.get(owner);
         let closest = controller['closestInteractable'];
         if(closest != hovered) {
             if(hovered) {
-                hovered.removeHoveredBy(option);
-                this._hoveredInteractables.delete(option);
+                hovered.removeHoveredBy(owner);
+                this._hoveredInteractables.delete(owner);
             }
             if(closest && ((!selected && !isPressed) || closest == selected)) {
-                closest.addHoveredBy(option);
-                this._hoveredInteractables.set(option, closest);
+                closest.addHoveredBy(owner);
+                this._hoveredInteractables.set(owner, closest);
                 hovered = closest;
             }
         }
@@ -23754,17 +23763,17 @@ class GripInteractableHandler extends InteractableHandler {
         //        captured pointer is anywhere
         //drag  - when uncaptured pointer over selected interactable. Also when
         //        captured pointer is anywhere
-        let basicEvent = { owner: option };
+        let basicEvent = { owner: owner };
         if(selected) {
             if(!isPressed) {
-                selected.removeSelectedBy(option);
-                this._selectedInteractables.delete(option);
+                selected.removeSelectedBy(owner);
+                this._selectedInteractables.delete(owner);
             }
             if(selected == closest) {
                 if(over != closest) {
                     if(over) over.out(basicEvent);
                     closest.over(basicEvent);
-                    this._overInteractables.set(option, closest);
+                    this._overInteractables.set(owner, closest);
                 }
                 closest.move(basicEvent);
                 closest.drag(basicEvent);
@@ -23772,11 +23781,11 @@ class GripInteractableHandler extends InteractableHandler {
                     this._trigger('up', basicEvent, closest);
                     closest.click(basicEvent);
                 }
-            } else if(selected.isCapturedBy(option)) {
+            } else if(selected.isCapturedBy(owner)) {
                 if(selected != over) {
                     if(over) over.out(basicEvent);
                     selected.over(basicEvent);
-                    this._overInteractables.set(option, selected);
+                    this._overInteractables.set(owner, selected);
                     over = selected;
                 }
                 selected.move(basicEvent);
@@ -23787,16 +23796,16 @@ class GripInteractableHandler extends InteractableHandler {
                     if(over) over.out(basicEvent);
                     if(closest) {
                         closest.over(basicEvent);
-                        this._overInteractables.set(option, closest);
+                        this._overInteractables.set(owner, closest);
                     } else {
-                        this._overInteractables.delete(option);
+                        this._overInteractables.delete(owner);
                     }
                 }
             } else if(closest) {
                 if(over != closest) {
                     if(over) over.out(basicEvent);
                     closest.over(basicEvent);
-                    this._overInteractables.set(option, closest);
+                    this._overInteractables.set(owner, closest);
                 }
                 closest.move(basicEvent);
                 if(!isPressed) {
@@ -23804,37 +23813,37 @@ class GripInteractableHandler extends InteractableHandler {
                 }
             } else if(over) {
                 over.out(basicEvent);
-                this._overInteractables.delete(option);
+                this._overInteractables.delete(owner);
             }
         } else {
             if(closest) {
                 if(over != closest) {
                     if(over) over.out(basicEvent);
                     closest.over(basicEvent);
-                    this._overInteractables.set(option, closest);
+                    this._overInteractables.set(owner, closest);
                 }
                 closest.move(basicEvent);
-                if(isPressed && !this._wasPressed.get(option)) {
+                if(isPressed && !this._wasPressed.get(owner)) {
                     this._trigger('down', basicEvent, closest);
-                    closest.addSelectedBy(option);
-                    this._selectedInteractables.set(option, closest);
-                } else if(!isPressed && this._wasPressed.get(option)) {
+                    closest.addSelectedBy(owner);
+                    this._selectedInteractables.set(owner, closest);
+                } else if(!isPressed && this._wasPressed.get(owner)) {
                     this._trigger('up', basicEvent, closest);
                 }
             } else {
                 if(over) {
                     over.out(basicEvent);
-                    this._overInteractables.delete(option);
+                    this._overInteractables.delete(owner);
                 }
                 if(isPressed) {
-                    if(!this._wasPressed.get(option))
+                    if(!this._wasPressed.get(owner))
                         this._trigger('down', basicEvent);
-                } else if(this._wasPressed.get(option)) {
+                } else if(this._wasPressed.get(owner)) {
                     this._trigger('up', basicEvent);
                 }
             }
         }
-        this._wasPressed.set(option, isPressed);
+        this._wasPressed.set(owner, isPressed);
     }
 
     _updateForXR() {
@@ -23847,6 +23856,7 @@ class GripInteractableHandler extends InteractableHandler {
                 let xrControllerModel = inputHandler.getXRControllerModel(type,
                     handedness);
                 if(!xrController) continue;
+                let owner = this._getOwner(xrController);
                 let active = isDescendant(this._scene, xrController);
                 if(active) {
                     if(type == XRInputDeviceTypes.CONTROLLER) {
@@ -23864,7 +23874,7 @@ class GripInteractableHandler extends InteractableHandler {
                     isPressed = this._isXRControllerPressed(type, handedness);
                 }
                 let controller = {
-                    option: xrController,
+                    owner: owner,
                     boundingSphere: boundingSphere,
                     isPressed: isPressed,
                     closestPointDistance: Number.MAX_SAFE_INTEGER,
@@ -24157,8 +24167,8 @@ class Keyboard extends InteractableComponent {
     }
 
     _isXRControllerPressed(owner) {
-        let type = owner.xrInputDeviceType;
-        let handedness = owner.handedness;
+        let type = owner.object.xrInputDeviceType;
+        let handedness = owner.object.handedness;
         if(type == XRInputDeviceTypes.HAND) {
             let model = inputHandler.getXRControllerModel(type, handedness);
             return model?.motionController?.isPinching == true;
@@ -24315,11 +24325,11 @@ class Keyboard extends InteractableComponent {
     setupGripInteractable(scene) {
         this.gripInteractable = new GripInteractable(this);
         this.gripInteractable.addEventListener('down', (e) => {
-            e.owner.attach(this);
+            e.owner.object.attach(this);
             this.gripInteractable.capture(e.owner);
         });
         this.gripInteractable.addEventListener('click', (e) => {
-            if(this.parent == e.owner) scene.attach(this);
+            if(this.parent == e.owner.object) scene.attach(this);
         });
     }
 
@@ -24566,7 +24576,7 @@ class TextArea extends ScrollableComponent {
     }
 
     _selectTouch(e) {
-        let details = this.touchInteractable.getClosestPointTo(e.owner);
+        let details = this.touchInteractable.getClosestPointTo(e.owner.object);
         let object = details[1].object;
         let vertex = object.bvhGeometry.index.array[details[1].faceIndex * 3];
         let positionAttribute = object.bvhGeometry.getAttribute('position');
@@ -25680,4 +25690,4 @@ const update = (frame) => {
     updateHandler.update();
 };
 
-export { Body, Checkbox, delayedClickHandler as DelayedClickHandler, DeviceTypes, Div, GripInteractable, gripInteractableHandler as GripInteractableHandler, HSLColor, Image$1 as Image, inputHandler as InputHandler, keyboard as Keyboard, NumberInput, PointerInteractable, pointerInteractableHandler as PointerInteractableHandler, Radio, Range, Select, Span, Style, TextComponent as Text, TextArea, TextInput, ThreeMeshBVH, Toggle, TouchInteractable, touchInteractableHandler as TouchInteractableHandler, troikaThreeText_esm as TroikaThreeText, updateHandler as UpdateHandler, addGripInteractable, addPointerInteractable, addTouchInteractable, init, removeGripInteractable, removePointerInteractable, removeTouchInteractable, update, utils, version };
+export { Body, Checkbox, delayedClickHandler as DelayedClickHandler, DeviceTypes, Div, GripInteractable, gripInteractableHandler as GripInteractableHandler, HSLColor, Image$1 as Image, inputHandler as InputHandler, Interactable, interactionToolHandler as InteractionToolHandler, keyboard as Keyboard, NumberInput, PointerInteractable, pointerInteractableHandler as PointerInteractableHandler, Radio, Range, Select, Span, Style, TextComponent as Text, TextArea, TextInput, ThreeMeshBVH, Toggle, TouchInteractable, touchInteractableHandler as TouchInteractableHandler, troikaThreeText_esm as TroikaThreeText, updateHandler as UpdateHandler, XRInputDeviceTypes, addGripInteractable, addPointerInteractable, addTouchInteractable, init, removeGripInteractable, removePointerInteractable, removeTouchInteractable, update, utils, version };
