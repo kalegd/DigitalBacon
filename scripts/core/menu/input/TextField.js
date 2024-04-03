@@ -6,14 +6,13 @@
 
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
-import InteractableStates from '/scripts/core/enums/InteractableStates.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { ValidKeys } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import Keyboard from '/scripts/core/menu/input/Keyboard.js';
+import { InputHandler, InteractableStates } from '/scripts/DigitalBacon-UI.js';
 
 import ThreeMeshUI from 'three-mesh-ui';
 

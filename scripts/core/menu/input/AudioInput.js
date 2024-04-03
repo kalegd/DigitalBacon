@@ -84,14 +84,12 @@ class AudioInput extends PointerInteractableEntity {
                 if(assetId == "null\n") assetId = null;
                 this._handleAssetSelection(assetId);
             }, () => {
-                UploadHandler.triggerUpload();
-            }, () => {
-                UploadHandler.stopListening();
+                UploadHandler.triggerAssetsUpload((assetIds) => {
+                    if(assetIds.length > 0)
+                        this._handleAssetSelection(assetIds[0]);
+                }, false, AssetTypes.AUDIO);
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
-            UploadHandler.listenForAssets((assetIds) => {
-                if(assetIds.length > 0) this._handleAssetSelection(assetIds[0]);
-            }, false, AssetTypes.AUDIO);
         });
         this._pointerInteractable.addChild(interactable);
     }

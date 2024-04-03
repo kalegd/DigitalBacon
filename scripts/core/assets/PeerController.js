@@ -5,13 +5,13 @@
  */
 
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { vector3s, Fonts } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Handedness } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 const ERROR_FIX_FRAMES = 30;

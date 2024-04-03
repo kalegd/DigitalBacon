@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -17,7 +17,7 @@ class CopyPasteControlsHandler {
         this._assetAlreadyPastedByGrip = {};
         this._copiedAssets = {};
         this._previewAssets = {};
-        GripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
+        GripInteractableHandler.registerToolHandler(InteractionTools.COPY_PASTE,
             (controller) => this._toolHandler(controller));
         PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();

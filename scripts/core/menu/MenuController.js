@@ -7,18 +7,17 @@
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import NotificationHub from '/scripts/core/menu/NotificationHub.js';
 import Keyboard from '/scripts/core/menu/input/Keyboard.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
+import { Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 export default class MenuController extends PointerInteractableEntity {
@@ -38,6 +37,9 @@ export default class MenuController extends PointerInteractableEntity {
     _addEventListeners() {
         let menuToggle = document.getElementById("mobile-menu-open-button");
         menuToggle.addEventListener('click', () => { this._openMenu(); });
+        PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            if(global.deviceType != 'XR') menuToggle.classList.remove("hidden");
+        });
     }
 
     _setupNotificationHub() {

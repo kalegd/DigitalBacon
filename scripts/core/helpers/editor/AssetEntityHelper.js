@@ -6,8 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
-import States from '/scripts/core/enums/InteractableStates.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
@@ -32,9 +31,10 @@ const TRANSFORM_PUBLISH_FUNCTIONS = {
     rotation: 'publishRotation',
     scale: 'publishScale',
 };
-const TRS_HANDLERS = [{ handler: TranslateHandler, tool: HandTools.TRANSLATE },
-                      { handler: RotateHandler, tool: HandTools.ROTATE },
-                      { handler: ScaleHandler, tool: HandTools.SCALE },
+const TRS_HANDLERS = [
+    { handler: TranslateHandler, tool: InteractionTools.TRANSLATE },
+    { handler: RotateHandler, tool: InteractionTools.ROTATE },
+    { handler: ScaleHandler, tool: InteractionTools.SCALE },
 ];
 
 export default class AssetEntityHelper extends EditorHelper {
@@ -58,19 +58,19 @@ export default class AssetEntityHelper extends EditorHelper {
                     TransformControlsHandler.attach(this._asset, ownerId);
                 }, (ownerId) => {
                     TransformControlsHandler.detach(ownerId);
-                }, HandTools.EDIT));
+                }, InteractionTools.EDIT));
             this._gripActions.push(
                 this._asset.addGripAction(() => {
                     ProjectHandler.deleteAsset(this._asset);
-                }, null, HandTools.DELETE));
+                }, null, InteractionTools.DELETE));
             this._pointerActions.push(
                 this._asset.addPointerAction(() => {
                     ProjectHandler.deleteAsset(this._asset);
-                }, null, null, HandTools.DELETE));
+                }, null, null, InteractionTools.DELETE));
             this._pointerActions.push(
                 this._asset.addPointerAction((ownerId) => {
                     CopyPasteControlsHandler.copy(ownerId, this._asset);
-                }, null, null, HandTools.COPY_PASTE));
+                }, null, null, InteractionTools.COPY_PASTE));
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;

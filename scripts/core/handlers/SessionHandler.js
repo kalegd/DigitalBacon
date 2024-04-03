@@ -8,9 +8,9 @@ import global from '/scripts/core/global.js';
 import XRPlanes from '/scripts/core/assets/XRPlanes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { OrbitControls } from '/scripts/three/examples/jsm/controls/OrbitControls.js';
+import { InputHandler } from '/scripts/DigitalBacon-UI.js';
 import { Vector3 } from 'three';
 
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
@@ -31,6 +31,7 @@ class SessionHandler {
         this._container = container;
         this._orbitControlsTarget = new Vector3(0,0,0);
         this._onStart = onStart;
+        InputHandler.hideExtraControls();
         global.sessionActive = false;
         if(global.deviceType == "XR") {
             this._configureForXR();
@@ -141,7 +142,7 @@ class SessionHandler {
             this._controls.enabled = true;
             global.sessionActive = true;
             AudioHandler.resume();
-            InputHandler.createPointerControls();
+            InputHandler.showExtraControls();
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
@@ -178,7 +179,7 @@ class SessionHandler {
             this._controls.enabled = true;
             global.sessionActive = true;
             AudioHandler.resume();
-            InputHandler.createMobileControls();
+            InputHandler.showExtraControls();
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();

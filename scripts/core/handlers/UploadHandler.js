@@ -16,6 +16,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { DelayedClickHandler } from '/scripts/DigitalBacon-UI.js';
 
 class UploadHandler {
     constructor() {
@@ -24,7 +25,6 @@ class UploadHandler {
         this._locks = new Set();
         this._assetIds = [];
         this._fileListenerActive = false;
-        this._triggerUpload = false;
         this._addEventListeners();
     }
 
@@ -33,31 +33,19 @@ class UploadHandler {
         if(global.deviceType != "XR") {
             this._input.addEventListener("click",
                 (e) => { e.stopPropagation(); });
-            this._eventType = global.deviceType == "MOBILE"
-                ? 'touchend'
-                : 'click';
-            this._clickListener = () => {
-                setTimeout(() => {
-                    if(this._triggerUpload) {
-                        this._triggerUpload = false;
-                        this._input.click();
-                    }
-                }, 20);
-            };
-            //Why this convoluted chain of event listener checking a variable
-            //set by interactable action (which uses polling)? Because we can't
-            //trigger the file input with a click event outside of an event
-            //listener on Firefox and Safari :(
         }
     }
 
     _uploadProjectFile() {
-        if(this._input.files.length > 0 && this._callback)
+        if(this._input.files.length > 0 && this._callback) {
             this._callback(this._input.files[0]);
+            this._callback = null;
+        }
     }
 
     _uploadAssets() {
         this.uploadFiles(this._input.files, this._callback);
+        this._callback = null;
     }
 
     uploadFiles(files, callback) {
@@ -140,7 +128,7 @@ class UploadHandler {
         }
     }
 
-    listenForAssets(callback, supportMultipleFiles, type) {
+    triggerAssetsUpload(callback, supportMultipleFiles, type) {
         if(this._fileListenerActive)
             throw new Error("File listener already in use");
         this._callback = callback;
@@ -156,10 +144,15 @@ class UploadHandler {
         } else {
             this._input.accept = '';
         }
-        document.addEventListener(this._eventType, this._clickListener);
+        if(global.deviceType == 'XR') {
+            SessionHandler.exitXRSession();
+            this._input.click();
+        } else {
+            DelayedClickHandler.trigger(() => this._input.click());
+        }
     }
 
-    listenForProjectFile(callback) {
+    triggerProjectFileUpload(callback) {
         if(this._fileListenerActive)
             throw new Error("File listener already in use");
         this._callback = callback;
@@ -167,24 +160,13 @@ class UploadHandler {
         this._input.multiple = false;
         this._input.accept = '.zip';
         this._upload = this._uploadProjectFile;
-        document.addEventListener(this._eventType, this._clickListener);
-    }
-
-    triggerUpload() {
         if(global.deviceType == 'XR') {
             SessionHandler.exitXRSession();
             this._input.click();
         } else {
-            this._triggerUpload = true;
+            DelayedClickHandler.trigger(() => this._input.click());
         }
     }
-
-    stopListening() {
-        this._callback = null;
-        this._fileListenerActive = false;
-        document.removeEventListener(this._eventType, this._clickListener);
-    }
-
 }
 
 let uploadHandler = new UploadHandler();

@@ -51,7 +51,9 @@ class UploadPage extends PaginatedPage {
     }
 
     _uploadAsset() {
-        UploadHandler.triggerUpload();
+        UploadHandler.triggerAssetsUpload((assetIds) => {
+            this._uploadCallback(assetIds);
+        }, true);
     }
 
     _selectFromSketchfab() {
@@ -88,18 +90,6 @@ class UploadPage extends PaginatedPage {
                 ProjectHandler.addNewAsset(assetId);
             }
         }
-    }
-
-    addToScene(scene, parentInteractable) {
-        UploadHandler.listenForAssets((assetIds) => {
-            this._uploadCallback(assetIds);
-        }, true);
-        super.addToScene(scene, parentInteractable);
-    }
-
-    removeFromScene() {
-        UploadHandler.stopListening();
-        super.removeFromScene();
     }
 }
 

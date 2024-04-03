@@ -9,10 +9,10 @@ import Scene from '/scripts/core/assets/Scene.js';
 import Skybox from '/scripts/core/assets/Skybox.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
+import { InputHandler } from '/scripts/DigitalBacon-UI.js';
 
 class SettingsHandler {
     constructor() {

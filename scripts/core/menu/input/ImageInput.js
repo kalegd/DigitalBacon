@@ -7,7 +7,6 @@
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import InteractableStates from '/scripts/core/enums/InteractableStates.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
@@ -17,6 +16,7 @@ import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.05;
@@ -90,14 +90,12 @@ class ImageInput extends PointerInteractableEntity {
                 if(assetId == "null\n") assetId = null;
                 this._handleAssetSelection(assetId);
             }, () => {
-                UploadHandler.triggerUpload();
-            }, () => {
-                UploadHandler.stopListening();
+                UploadHandler.triggerAssetsUpload((assetIds) => {
+                    if(assetIds.length > 0)
+                        this._handleAssetSelection(assetIds[0]);
+                }, false, AssetTypes.IMAGE);
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
-            UploadHandler.listenForAssets((assetIds) => {
-                if(assetIds.length > 0) this._handleAssetSelection(assetIds[0]);
-            }, false, AssetTypes.IMAGE);
         });
         this._pointerInteractable.addChild(interactable);
     }

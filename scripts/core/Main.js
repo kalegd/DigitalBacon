@@ -11,12 +11,9 @@ import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
@@ -28,6 +25,7 @@ import ScaleHandler from '/scripts/core/handlers/hands/ScaleHandler.js';
 import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import global from '/scripts/core/global.js';
+import * as DigitalBaconUI from '/scripts/DigitalBacon-UI.js';
 import Stats from '/node_modules/three/examples/jsm/libs/stats.module.js';
 import ThreeMeshUI from 'three-mesh-ui';
 import * as THREE from 'three';
@@ -46,6 +44,7 @@ export default class Main {
         this._createRenderer();
         this._createCamera();
         this._createUser();
+        this._setupDigitalBaconUI();
         this._createHandlers(params.onStart);
         this._createClients();
         this._createAssets(params.projectFilePath);
@@ -90,18 +89,25 @@ export default class Main {
         global.userController = UserController;
     }
 
+    _setupDigitalBaconUI() {
+        DigitalBaconUI.InputHandler.enableXRControllerManagement(
+            UserController.getObject());
+        DigitalBaconUI.init(this._container, this._renderer, this._scene,
+            this._camera, global.deviceType, this._cameraFocus);
+        DigitalBaconUI.GripInteractableHandler.addInteractable(
+            Scene.getGripInteractable());
+        DigitalBaconUI.PointerInteractableHandler.addInteractable(
+            Scene.getPointerInteractable());
+        DigitalBaconUI.TouchInteractableHandler.addInteractable(
+            Scene.getTouchInteractable());
+    }
+
     _createHandlers(onStart) {
         AudioHandler.init();
         if(global.disableImmersion) return;
         SessionHandler.init(this._container, onStart);
-        InputHandler.init(this._container, this._renderer,
-            UserController.getObject());
-        PointerInteractableHandler.init();
         UndoRedoHandler.init();
-        if(global.deviceType == "XR") {
-            GripInteractableHandler.init();
-            ToolHandler.setTool(HandTools.EDIT);
-        }
+        DigitalBaconUI.InteractionToolHandler.setTool(InteractionTools.EDIT);
         TransformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);
     }
@@ -197,7 +203,7 @@ export default class Main {
             } else if(global.deviceType == "XR") {
                 this._renderer.setAnimationLoop((time, frame) => {
                     global.frame = frame;
-                    InputHandler.update(frame);
+                    DigitalBaconUI.InputHandler.update(frame);
                     this._update();
                 });
             } else if (global.deviceType == "POINTER") {
@@ -217,9 +223,13 @@ export default class Main {
                 global.dynamicAssets.add(RotateHandler);
                 global.dynamicAssets.add(ScaleHandler);
             }
-            global.dynamicAssets.add(PointerInteractableHandler);
+            global.dynamicAssets.add(DigitalBaconUI.PointerInteractableHandler);
             if(global.deviceType == "XR")
-                global.dynamicAssets.add(GripInteractableHandler);
+                global.dynamicAssets.add(
+                    DigitalBaconUI.GripInteractableHandler);
+                global.dynamicAssets.add(
+                    DigitalBaconUI.TouchInteractableHandler);
+                global.dynamicAssets.add(DigitalBaconUI.UpdateHandler);
             if(this._callback) this._callback(this);
         } else {
             $(this._loadingMessage.children[0]).html("Loading "

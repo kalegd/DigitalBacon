@@ -8,19 +8,18 @@ import global from '/scripts/core/global.js';
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import ClickAction from '/scripts/core/helpers/ClickAction.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
+import { DelayedClickHandler } from '/scripts/DigitalBacon-UI.js';
 
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
         super(controller, true);
         this._staySignedIn = false;
-        this._clickAction = new ClickAction(() => { this._handleLogin(); });
         this._addPageContent();
     }
 
@@ -62,7 +61,9 @@ class SketchfabLoginPage extends MenuPage {
         });
         columnBlock.add(loginButton);
         let interactable = new PointerInteractable(loginButton, true);
-        interactable.addAction(() => this._clickAction.triggerAction());
+        interactable.addAction(() => {
+            DelayedClickHandler.trigger(() => this._handleLogin());
+        });
         this._containerInteractable.addChild(interactable);
         this._container.add(columnBlock);
     }
@@ -76,15 +77,6 @@ class SketchfabLoginPage extends MenuPage {
     _handleLoginCallback() {
         this._controller.popPage();
         this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
-    }
-
-    back() {
-        this._clickAction.stopListening();
-    }
-
-    addToScene(scene, parentInteractable) {
-        this._clickAction.listen();
-        super.addToScene(scene, parentInteractable);
     }
 }
 

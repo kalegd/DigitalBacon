@@ -10,7 +10,6 @@ import * as Assets from '/scripts/core/assets/Assets.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -21,6 +20,7 @@ import * as utils from '/scripts/core/helpers/utils.module.js';
 import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
 import * as Interactables from '/scripts/core/interactables/Interactables.js';
 import * as MenuInputs from '/scripts/core/menu/input/MenuInputs.js';
+import * as DigitalBaconUI from '/scripts/DigitalBacon-UI.js';
 
 const version = "0.2.1";
 
@@ -46,8 +46,8 @@ if(window != null) {
     window.DigitalBacon =  {
         Assets: Assets,
         AudioHandler: AudioHandler,
+        DigitalBaconUI: DigitalBaconUI,
         EditorHelpers: EditorHelpers,
-        InputHandler: InputHandler,
         Interactables: Interactables,
         LibraryHandler: LibraryHandler,
         MenuInputs: MenuInputs,
@@ -71,8 +71,8 @@ if(window != null) {
 
 export { Assets };
 export { AudioHandler };
+export { DigitalBaconUI };
 export { EditorHelpers };
-export { InputHandler };
 export { Interactables };
 export { LibraryHandler };
 export { MenuInputs };

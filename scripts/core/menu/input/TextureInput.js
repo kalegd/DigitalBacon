@@ -6,7 +6,6 @@
 
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
-import InteractableStates from '/scripts/core/enums/InteractableStates.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -15,6 +14,7 @@ import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/consta
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.05;

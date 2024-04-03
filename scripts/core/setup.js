@@ -71,14 +71,10 @@ import '/node_modules/jszip-utils/dist/jszip-utils.js';
 import '/node_modules/nipplejs/dist/nipplejs.js';
 import Main from '/scripts/core/Main.js';
 import * as THREE from 'three';
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { DeviceTypes } from '/scripts/DigitalBacon-UI.js';
 
-global.deviceType = "MOBILE";
+global.deviceType = DeviceTypes.TOUCH_SCREEN;
 global.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
-
-THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
-THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 function start(callback, containerId, params) {
     setupContainer(containerId);
@@ -109,7 +105,7 @@ function detectMobile() {
 
 function checkIfPointer() {
     if(hasPointerLock() && !detectMobile()) {
-        global.deviceType = "POINTER";
+        global.deviceType = DeviceTypes.POINTER;
     }
 }
 
@@ -173,41 +169,20 @@ function setupContainer(containerId) {
     animation: animatedScale 1s ease-in-out alternate infinite;
 }
 
-#mobile-joystick {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    left: 10px;
-    bottom: 10px;
-}
-
 #mobile-menu-open-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-#extra-controls {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-}
-
-#extra-controls > button, #mobile-menu-open-button {
     border-width: 1px;
     border-style: solid;
     border-color: #fff;
     border-radius: 4px;
     background: rgba(0,0,0,0.5);
-    padding: 12px;
     color: #fff;
     font: normal 13px sans-serif;
     margin-left: 5px;
     opacity: 0.75;
-}
-
-#extra-controls > button {
-    width: 70px;
+    padding: 12px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
 }
 
 #container button:hover {
@@ -273,7 +248,7 @@ function setupContainer(containerId) {
     outline: none;
 }
     `.replaceAll("container", containerId);
-    if(global.deviceType == "MOBILE")
+    if(global.deviceType == DeviceTypes.TOUCH_SCREEN)
         style.innerHTML += `
 @media screen and (max-height: 500px) {
     #transform-controls {
@@ -306,9 +281,7 @@ function setupContainer(containerId) {
         <button id="delete-button"><i class="las la-trash"></i>Delete</button>
         <button id="close-button"><i class="las la-times-circle"></i>Close</button>
       </div>
-      <div id="mobile-joystick" class="hidden"></div>
-      <button id="mobile-menu-open-button" class="hidden">OPEN MENU</button>
-      <div id="extra-controls" class="hidden"></div>`;
+      <button id="mobile-menu-open-button" class="hidden">OPEN MENU</button>`;
     container.style.position = 'relative';
 }
 
@@ -327,7 +300,7 @@ function setup(containerId, params) {
             start(resolve, containerId, params);
             return;
         } else if(localStorage.getItem('DigitalBacon:PointerOverride')) {
-            global.deviceType = "POINTER";
+            global.deviceType = DeviceTypes.POINTER;
             start(resolve, containerId, params);
             return;
         }
@@ -335,7 +308,7 @@ function setup(containerId, params) {
             isVRSupported().then((vrSupported) => {
                 isARSupported().then((arSupported) => {
                     if(vrSupported || arSupported) {
-                        global.deviceType = "XR";
+                        global.deviceType = DeviceTypes.XR;
                     } else {
                         checkIfPointer();
                     }

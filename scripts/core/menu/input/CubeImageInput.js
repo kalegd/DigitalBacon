@@ -140,16 +140,14 @@ class CubeImageInput extends PointerInteractableEntity {
             this._handleAssetSelection(side, assetId);
         }, () => {
             this._fileUploadSide = side;
-            UploadHandler.triggerUpload();
-        }, () => {
-            UploadHandler.stopListening();
+            UploadHandler.triggerAssetsUpload((assetIds) => {
+                if(assetIds.length > 0) {
+                    this._handleAssetSelection(this._fileUploadSide,
+                        assetIds[0]);
+                }
+            }, false, AssetTypes.IMAGE);
         });
         global.menuController.pushPage(MenuPages.ASSET_SELECT);
-        document.addEventListener(this._eventType, this._clickListener);
-        UploadHandler.listenForAssets((assetIds) => {
-            if(assetIds.length > 0)
-                this._handleAssetSelection(this._fileUploadSide, assetIds[0]);
-        }, false, AssetTypes.IMAGE);
     }
 
     _handleAssetSelection(side, assetId) {

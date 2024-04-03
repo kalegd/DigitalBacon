@@ -5,12 +5,11 @@
  */
 
 import global from '/scripts/core/global.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
+import { Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 export default class BasicMovement {

@@ -163,7 +163,9 @@ class NewAssetPage extends PaginatedPage {
     }
 
     _uploadFromDevice() {
-        UploadHandler.triggerUpload();
+        UploadHandler.triggerAssetsUpload((assetIds) => {
+            this._uploadCallback(assetIds);
+        }, true);
     }
 
     _uploadCallback(assetIds) {
@@ -234,18 +236,6 @@ class NewAssetPage extends PaginatedPage {
 
     setContent(additionalAction) {
         this._additionalAction = additionalAction;
-    }
-
-    addToScene(scene, parentInteractable) {
-        UploadHandler.listenForAssets((assetIds) => {
-            this._uploadCallback(assetIds);
-        }, true);
-        super.addToScene(scene, parentInteractable);
-    }
-
-    removeFromScene() {
-        UploadHandler.stopListening();
-        super.removeFromScene();
     }
 }
 

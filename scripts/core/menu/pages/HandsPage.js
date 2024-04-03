@@ -4,19 +4,19 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
 const hands = [
-    { "title": "Edit", "type": HandTools.EDIT },
-    { "title": "Copy / Paste", "type": HandTools.COPY_PASTE },
-    { "title": "Delete", "type": HandTools.DELETE },
-    { "title": "Translate", "type": HandTools.TRANSLATE },
-    { "title": "Rotate", "type": HandTools.ROTATE },
-    { "title": "Scale", "type": HandTools.SCALE },
+    { "title": "Edit", "type": InteractionTools.EDIT },
+    { "title": "Copy / Paste", "type": InteractionTools.COPY_PASTE },
+    { "title": "Delete", "type": InteractionTools.DELETE },
+    { "title": "Translate", "type": InteractionTools.TRANSLATE },
+    { "title": "Rotate", "type": InteractionTools.ROTATE },
+    { "title": "Scale", "type": InteractionTools.SCALE },
 ];
 
 class HandsPage extends PaginatedPage {
@@ -43,9 +43,8 @@ class HandsPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        if(HandTools.ACTIVE == item.type) return;
-        HandTools.ACTIVE = item.type;
-        ToolHandler.setTool(item.type);
+        if(InteractionToolHandler.getTool() == item.type) return;
+        InteractionToolHandler.setTool(item.type);
     }
 
     _refreshItems() {

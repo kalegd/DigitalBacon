@@ -5,11 +5,9 @@
  */
 
 import XRDevice from '/scripts/core/assets/XRDevice.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
-import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { Handedness, InputHandler, XRInputDeviceTypes } from '/scripts/DigitalBacon-UI.js';
 import { Raycaster, Vector3 } from 'three';
 
 const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';

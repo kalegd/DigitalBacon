@@ -10,7 +10,6 @@ import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import DelayedClickEventHandler from '/scripts/core/handlers/DelayedClickEventHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -19,6 +18,7 @@ import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import { DelayedClickHandler } from '/scripts/DigitalBacon-UI.js';
 
 /* global saveAs, JSZip */
 
@@ -122,7 +122,9 @@ class ProjectPage extends PaginatedPage {
             });
             return;
         }
-        UploadHandler.triggerUpload();
+        UploadHandler.triggerProjectFileUpload((file) => {
+            this._handleLocalFile(file);
+        });
     }
 
     _googleDriveSave() {
@@ -201,7 +203,18 @@ class ProjectPage extends PaginatedPage {
             GoogleDrive.handleAuthButton(
                 () => { this._handleGoogleAuthResponse(); });
         } else {
-            DelayedClickEventHandler.triggerEvent();
+            DelayedClickHandler.trigger(() => {
+                try {
+                    GoogleDrive.handleAuthButton(
+                        () => { this._handleGoogleAuthResponse(); });
+                } catch(error) {
+                    PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Google could not be reached. Please check your '
+                            + 'internet connection and then try refreshing the '
+                            + 'page',
+                    });
+                }
+            });
         }
     }
 
@@ -369,31 +382,6 @@ class ProjectPage extends PaginatedPage {
             this._containerInteractable.removeChild(this._optionsInteractable);
         }
     }
-
-    addToScene(scene, parentInteractable) {
-        DelayedClickEventHandler.listenForClick(() => {
-            try {
-                GoogleDrive.handleAuthButton(
-                    () => { this._handleGoogleAuthResponse(); });
-            } catch(error) {
-                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Google could not be reached. Please check your '
-                        +'internet connection and then try refreshing the page',
-                });
-            }
-        });
-        UploadHandler.listenForProjectFile((file) => {
-            this._handleLocalFile(file);
-        });
-        super.addToScene(scene, parentInteractable);
-    }
-
-    removeFromScene() {
-        DelayedClickEventHandler.stopListening();
-        UploadHandler.stopListening();
-        super.removeFromScene();
-    }
-
 }
 
 export default ProjectPage;

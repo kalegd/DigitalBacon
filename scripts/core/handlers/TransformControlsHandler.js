@@ -7,10 +7,8 @@
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
@@ -20,6 +18,7 @@ import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { TransformControls } from '/node_modules/three/examples/jsm/controls/TransformControls.js';
+import { Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
 
 const MODES = ['translate', 'rotate', 'scale'];
 
@@ -33,7 +32,7 @@ class TransformControlsHandler {
         this._placingObject = {};
         this._preTransformStates = {};
         this._id = uuidv4();
-        let tool = (global.deviceType == 'XR') ? HandTools.EDIT : null;
+        let tool = (global.deviceType == 'XR') ? InteractionTools.EDIT : null;
         PointerInteractableHandler.registerToolHandler(tool,
             (controller) => this._toolHandler(controller));
         if(global.deviceType != 'XR') {
@@ -41,7 +40,7 @@ class TransformControlsHandler {
             this._addEventListeners();
         }
         PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
-            if(handTool == HandTools.EDIT) return;
+            if(handTool == InteractionTools.EDIT) return;
             for(let option in this._attachedAssets) {
                 this.detach(option);
             }

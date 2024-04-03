@@ -10,17 +10,15 @@ import BasicMovement from '/scripts/core/assets/BasicMovement.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import XRController from '/scripts/core/assets/XRController.js';
 import XRHand from '/scripts/core/assets/XRHand.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
-import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
+import { Handedness, InputHandler, XRInputDeviceTypes } from '/scripts/DigitalBacon-UI.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
 const USERNAME_KEY = "DigitalBacon:Username";

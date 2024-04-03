@@ -82,18 +82,15 @@ class SkyboxPage extends MenuPage {
                     this._controller.back();
                 }, () => {
                     this._fileUploadSide = sides[i];
-                    UploadHandler.triggerUpload();
-                }, () => {
-                    UploadHandler.stopListening();
+                    UploadHandler.triggerAssetsUpload((assetIds) => {
+                        if(assetIds.length > 0) {
+                            SettingsHandler.setSkyboxSide(this._fileUploadSide,
+                                assetIds[0]);
+                            this._controller.back();
+                        }
+                    }, false, AssetTypes.IMAGE);
                 });
                 this._controller.pushPage(MenuPages.ASSET_SELECT);
-                UploadHandler.listenForAssets((assetIds) => {
-                    if(assetIds.length > 0) {
-                        SettingsHandler.setSkyboxSide(this._fileUploadSide,
-                            assetIds[0]);
-                        this._controller.back();
-                    }
-                }, false, AssetTypes.IMAGE);
             });
             this._containerInteractable.addChild(interactable);
             if(i == 0) {
