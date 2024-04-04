@@ -9,7 +9,7 @@ import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 import { TextureLoader } from 'three';
@@ -89,9 +89,8 @@ class AcknowledgementsPage extends MenuPage {
             'margin': 0.006,
         });
         columnBlock.add(this._sourceButton);
-        this._sourceInteractable = new PointerInteractable(this._sourceButton,
-            true);
-        this._sourceInteractable.addAction(() => {
+        this._sourceInteractable = new PointerInteractable(this._sourceButton);
+        this._sourceInteractable.addEventListener('click', () => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._acknowledgements[this._page]['Source URL'],
                 '_blank');
@@ -121,14 +120,14 @@ class AcknowledgementsPage extends MenuPage {
             'fontTexture': Fonts.defaultTexture,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton, true);
-        this._previousInteractable.addAction(() => {
+            this._previousButton);
+        this._previousInteractable.addEventListener('click', () => {
             this._page += this._acknowledgements.length - 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
         });
-        this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextInteractable.addAction(() => {
+        this._nextInteractable = new PointerInteractable(this._nextButton);
+        this._nextInteractable.addEventListener('click', () => {
             this._page += 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();

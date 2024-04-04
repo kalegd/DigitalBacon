@@ -320,8 +320,8 @@ class ProjectHandler {
         if(asset.addToScene) {
             if(asset.parent) {
                 asset.addToScene(asset.parent.getObject(),
-                    asset.parent.getPointerInteractable(),
-                    asset.parent.getGripInteractable());
+                    asset.parent.pointerInteractable,
+                    asset.parent.gripInteractable);
             } else {
                 asset.addToScene();
             }

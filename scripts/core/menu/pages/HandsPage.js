@@ -5,10 +5,10 @@
  */
 
 import InteractionTools from '/scripts/core/enums/InteractionTools.js';
-import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import { InteractionToolHandler } from '/scripts/DigitalBacon-UI.js';
 
 const hands = [
     { "title": "Edit", "type": InteractionTools.EDIT },

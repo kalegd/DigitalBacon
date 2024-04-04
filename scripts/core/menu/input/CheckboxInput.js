@@ -9,7 +9,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.05;
@@ -58,8 +58,8 @@ class CheckboxInput extends PointerInteractableEntity {
         });
         this._object.add(titleBlock);
         this._object.add(this._selectBox);
-        let interactable = new PointerInteractable(this._selectBox, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(this._selectBox);
+        interactable.addEventListener('click', () => {
             let value = this._selectBox.toggle();
             if(this._onUpdate) this._onUpdate(Boolean(value));
             PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {

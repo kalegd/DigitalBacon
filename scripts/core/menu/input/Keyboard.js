@@ -4,12 +4,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import States from '/scripts/core/enums/InteractableStates.js';
 import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { PointerInteractable, PointerInteractableHandler, InteractableStates as States } from '/scripts/DigitalBacon-UI.js';
 import ThreeMeshUI from 'three-mesh-ui';
 import { Object3D } from 'three';
 
@@ -122,10 +120,11 @@ class Keyboard {
         if(key.info.command == 'switch') {
             // switch between panels
             interactable = new PointerInteractable(key);
-            interactable.addAction(() => { this._switchPanel(); });
+            interactable.addEventListener('click',
+                () => { this._switchPanel(); });
         } else {
             interactable = new PointerInteractable(key);
-            interactable.addAction(emptyFunction);
+            interactable.addEventListener('click', emptyFunction);
         }
         if(index <= 32) {
             this._pageInteractables[0].push(interactable);

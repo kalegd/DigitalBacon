@@ -14,7 +14,7 @@ import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/consta
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -84,8 +84,8 @@ class MaterialInput extends PointerInteractableEntity {
         this._object.add(titleBlock);
         this._object.add(this._materialBlock);
         this._object.add(this._editButton);
-        let interactable = new PointerInteractable(this._materialBlock, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(this._materialBlock);
+        interactable.addEventListener('click', () => {
             let materials = MaterialsHandler.getAssets();
             let filteredMaterials = {};
             filteredMaterials["null\n"] = { Name: "Blank" };
@@ -102,8 +102,8 @@ class MaterialInput extends PointerInteractableEntity {
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
         });
-        this._editInteractable = new PointerInteractable(this._editButton,true);
-        this._editInteractable.addAction(() => {
+        this._editInteractable = new PointerInteractable(this._editButton);
+        this._editInteractable.addEventListener('click', () => {
             if(!this._lastValue) return;
             let material = MaterialsHandler.getAsset(this._lastValue);
             let materialPage = global.menuController.getPage(

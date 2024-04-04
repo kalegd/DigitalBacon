@@ -56,23 +56,27 @@ class ColorWheelPage extends MenuPage {
             'backgroundSize': 'stretch',
             'margin': 0.02,
         });
-        let colorInteractable = PointerInteractable.createDraggable(
-            this._colorBlock,
-            (owner, point) => {
-                this._handleColorCursorDrag(point);
-                this._isDraggingColorCursor = false;
-                if(this._onEnter) this._onEnter();
-            },
-            (owner, point) => { this._handleColorCursorDrag(point); },
-        );
-        let lightnessInteractable = PointerInteractable.createDraggable(
-            this._lightnessBlock,
-            (owner, point) => {
-                this._handleLightnessCursorDrag(point);
-                this._isDraggingLightnessCursor = false;
-                if(this._onEnter) this._onEnter();
-            },
-            (owner, point) => { this._handleLightnessCursorDrag(point); });
+        let colorInteractable = new PointerInteractable(this._colorBlock);
+        colorInteractable.addEventListener('down',
+            (message) => colorInteractable.capture(message.owner));
+        colorInteractable.addEventListener('drag',
+            (message) => this._handleColorCursorDrag(message.point));
+        colorInteractable.addEventListener('click', (message) => {
+            this._handleColorCursorDrag(message.point);
+            this._isDraggingColorCursor = false;
+            if(this._onEnter) this._onEnter();
+        });
+        let lightnessInteractable=new PointerInteractable(this._lightnessBlock);
+        lightnessInteractable.addEventListener('down',
+            (message) => lightnessInteractable.capture(message.owner));
+        lightnessInteractable.addEventListener('drag', (message) => {
+            this._handleLightnessCursorDrag(message.point);
+        });
+        lightnessInteractable.addEventListener('click', (message) => {
+            this._handleLightnessCursorDrag(message.point);
+            this._isDraggingLightnessCursor = false;
+            if(this._onEnter) this._onEnter();
+        });
         rowBlock.add(this._colorBlock);
         rowBlock.add(this._lightnessBlock);
         this._container.add(rowBlock);

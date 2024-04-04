@@ -15,7 +15,7 @@ import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.05;
@@ -69,8 +69,8 @@ class AudioInput extends PointerInteractableEntity {
         this._updateAudio();
         this._object.add(titleBlock);
         this._object.add(this._audioSelection);
-        let interactable = new PointerInteractable(this._audioSelection, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(this._audioSelection);
+        interactable.addEventListener('click', () => {
             let library = LibraryHandler.getLibrary();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };

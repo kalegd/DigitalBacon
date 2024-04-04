@@ -13,8 +13,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
 import { concatenateArrayBuffers, fullDispose } from '/scripts/core/helpers/utils.module.js';
-import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import { GripInteractable, PointerInteractable } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 export default class AssetEntity extends Asset {
@@ -83,25 +82,11 @@ export default class AssetEntity extends Asset {
         return params;
     }
 
-    addGripAction(selectedFunc, releasedFunc, tool, option){
-        let action = this._gripInteractable.addAction(selectedFunc,
-            releasedFunc, tool, option);
-        return action;
-    }
+    get gripInteractable() { return this._gripInteractable; }
+    get pointerInteractable() { return this._pointerInteractable; }
 
-    addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
-        let action = this._pointerInteractable.addAction(actionFunc,
-            draggableActionFunc, maxDistance, tool, option);
-        return action;
-    }
-
-    getGripInteractable() {
-        return this._gripInteractable;
-    }
-
-    getPointerInteractable() {
-        return this._pointerInteractable;
-    }
+    set gripInteractable(_) {}
+    set pointerInteractable(_) {}
 
     removeGripAction(id) {
         this._gripInteractable.removeAction(id);
@@ -240,8 +225,8 @@ export default class AssetEntity extends Asset {
         this._parentId = newParent.getId();
         if(ProjectHandler.getAsset(this._id)) {
             this.addToScene(newParent.getObject(),
-                newParent.getPointerInteractable(),
-                newParent.getGripInteractable());
+                newParent.pointerInteractable,
+                newParent.gripInteractable);
         }
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
@@ -263,8 +248,8 @@ export default class AssetEntity extends Asset {
         this._parentId = newParent.getId();
         if(ProjectHandler.getAsset(this._id)) {
             this.attachToScene(newParent.getObject(),
-                newParent.getPointerInteractable(),
-                newParent.getGripInteractable());
+                newParent.pointerInteractable,
+                newParent.gripInteractable);
         }
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {

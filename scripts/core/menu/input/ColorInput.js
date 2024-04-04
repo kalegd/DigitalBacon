@@ -12,7 +12,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUI from 'three-mesh-ui';
 import * as THREE from 'three';
 
@@ -61,8 +61,8 @@ class ColorInput extends PointerInteractableEntity {
         });
         this._object.add(titleBlock);
         this._object.add(this._colorBlock);
-        let interactable = new PointerInteractable(this._colorBlock, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(this._colorBlock);
+        interactable.addEventListener('click', () => {
             let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);
             colorPage.setContent(this._id, this._color,
                 (color) => {

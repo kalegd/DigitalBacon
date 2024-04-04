@@ -10,7 +10,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -59,15 +59,16 @@ class AssetPage extends DynamicFieldsPage {
         this._titleBlock.add(deleteButton);
         this._titleField.setPointerInteractableParent(
             this._containerInteractable);
-        let interactable = new PointerInteractable(componentsButton, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(componentsButton);
+        interactable.addEventListener('click', () => {
             let page = this._controller.getPage(MenuPages.LIST_COMPONENTS);
             page.setContent(this._asset);
             this._controller.pushPage(MenuPages.LIST_COMPONENTS);
         });
         this._containerInteractable.addChild(interactable);
-        interactable = new PointerInteractable(deleteButton, true);
-        interactable.addAction(() => ProjectHandler.deleteAsset(this._asset));
+        interactable = new PointerInteractable(deleteButton);
+        interactable.addEventListener('click',
+            () => ProjectHandler.deleteAsset(this._asset));
         this._containerInteractable.addChild(interactable);
     }
 

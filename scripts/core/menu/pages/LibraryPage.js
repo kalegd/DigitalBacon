@@ -6,7 +6,7 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import PaginatedIconsPage from '/scripts/core/menu/pages/PaginatedIconsPage.js';
@@ -100,8 +100,8 @@ class LibraryPage extends PaginatedIconsPage {
         });
         searchButtonParent.position.fromArray([-0.175, 0.12, -0.001]);
         searchButtonParent.add(searchButton);
-        let interactable = new PointerInteractable(searchButton, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(searchButton);
+        interactable.addEventListener('click', () => {
             this._controller.pushPage(MenuPages.LIBRARY_SEARCH);
         });
         this._containerInteractable.addChild(interactable);

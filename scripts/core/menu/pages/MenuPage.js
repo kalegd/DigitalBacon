@@ -6,7 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -46,8 +46,8 @@ class MenuPage extends PointerInteractableEntity {
         });
         backButtonParent.position.fromArray([-.225, 0.15, -0.001]);
         backButtonParent.add(backButton);
-        let interactable = new PointerInteractable(backButton, true);
-        interactable.addAction(() => this.back());
+        let interactable = new PointerInteractable(backButton);
+        interactable.addEventListener('click', () => this.back());
         this._pointerInteractable.addChild(interactable);
         this._object.add(backButtonParent);
         this._createHomeButton();
@@ -71,8 +71,9 @@ class MenuPage extends PointerInteractableEntity {
         });
         homeButtonParent.position.fromArray([-.225, 0.1, -0.001]);
         homeButtonParent.add(homeButton);
-        let interactable = new PointerInteractable(homeButton, true);
-        interactable.addAction(() => this._controller.popAllPages());
+        let interactable = new PointerInteractable(homeButton);
+        interactable.addEventListener('click',
+            () => this._controller.popAllPages());
         this._pointerInteractable.addChild(interactable);
         this._object.add(homeButtonParent);
     }
@@ -96,8 +97,9 @@ class MenuPage extends PointerInteractableEntity {
         });
         closeButtonParent.position.fromArray([.225, 0.15, -0.001]);
         closeButtonParent.add(closeButton);
-        let interactable = new PointerInteractable(closeButton, true);
-        interactable.addAction(() => this._controller.closeMenu());
+        let interactable = new PointerInteractable(closeButton);
+        interactable.addEventListener('click',
+            () => this._controller.closeMenu());
         this._pointerInteractable.addChild(interactable);
         this._object.add(closeButtonParent);
     }
@@ -126,7 +128,7 @@ class MenuPage extends PointerInteractableEntity {
         this._containerInteractable = new PointerInteractable(
             this._container.children[0]);
         if(global.deviceType == 'XR')
-            this._containerInteractable.addAction(() => {});
+            this._containerInteractable.addEventListener('click', () => {});
         this._pointerInteractable.addChild(this._containerInteractable);
         borderedBlock.add(this._container);
         this._object.add(borderedBlock);

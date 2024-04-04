@@ -6,7 +6,7 @@
 
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -45,8 +45,9 @@ class TextInputPage extends MenuPage {
             'width': 0.25,
             'margin': 0.002,
         });
-        let buttonInteractable = new PointerInteractable(this._button, true);
-        buttonInteractable.addAction(() => this._inputConfirmed());
+        let buttonInteractable = new PointerInteractable(this._button);
+        buttonInteractable.addEventListener('click',
+            () => this._inputConfirmed());
         this._textField.addToScene(columnBlock, this._containerInteractable);
         columnBlock.add(this._button);
         this._container.add(columnBlock);

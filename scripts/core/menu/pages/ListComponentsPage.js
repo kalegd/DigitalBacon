@@ -6,7 +6,7 @@
 
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ComponentsHandler from '/scripts/core/handlers/assetTypes/ComponentsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
@@ -56,8 +56,8 @@ class ListComponentsPage extends PaginatedListPage {
         });
         this._addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         this._addButtonParent.add(addButton);
-        this._addInteractable = new PointerInteractable(addButton, true);
-        this._addInteractable.addAction(() => {
+        this._addInteractable = new PointerInteractable(addButton);
+        this._addInteractable.addEventListener('click', () => {
             let assetComponents = this._asset.getComponents(true);
             let components = ComponentsHandler.getAssets();
             let filteredComponents = {};

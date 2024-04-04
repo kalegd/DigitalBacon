@@ -7,7 +7,7 @@
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -55,8 +55,8 @@ class NavigationPage extends MenuPage {
                 'margin': 0.002,
             });
             columnBlock.add(button);
-            let interactable = new PointerInteractable(button, true);
-            interactable.addAction(() => {
+            let interactable = new PointerInteractable(button);
+            interactable.addEventListener('click', () => {
                 this._controller.pushPage(page.menuPage);
             });
             this._containerInteractable.addChild(interactable);

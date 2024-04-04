@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
@@ -53,8 +53,8 @@ class AssetSelectPage extends PaginatedPage {
         });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(this._addButton);
-        this._addInteractable = new PointerInteractable(this._addButton, true);
-        this._addInteractable.addAction(() => {
+        this._addInteractable = new PointerInteractable(this._addButton);
+        this._addInteractable.addEventListener('click', () => {
             if(this._addAction) this._addAction();
         });
         this._containerInteractable.addChild(this._addInteractable);

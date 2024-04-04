@@ -10,7 +10,7 @@ import PointerInteractable from '/scripts/core/interactables/PointerInteractable
 export default class PointerInteractableEntity extends Entity {
     constructor() {
         super();
-        this._pointerInteractable = PointerInteractable.emptyGroup();
+        this._pointerInteractable = new PointerInteractable();
     }
     
     setPointerInteractableParent(interactableParent) {

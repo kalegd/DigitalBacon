@@ -8,7 +8,7 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
@@ -65,8 +65,8 @@ class SkyboxPage extends MenuPage {
                 'margin': 0.002,
                 'borderRadius': 0.00001,
             });
-            let interactable = new PointerInteractable(button, true);
-            interactable.addAction(() => {
+            let interactable = new PointerInteractable(button);
+            interactable.addEventListener('click', () => {
                 let library = LibraryHandler.getLibrary();
                 let filteredAssets = {};
                 filteredAssets["null\n"] = { Name: "Blank" };

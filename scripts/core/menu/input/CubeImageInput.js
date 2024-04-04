@@ -15,7 +15,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.2;
@@ -93,8 +93,9 @@ class CubeImageInput extends PointerInteractableEntity {
                 'margin': 0.002,
                 'borderRadius': 0.00001,
             });
-            let interactable = new PointerInteractable(button, true);
-            interactable.addAction(() => this._handleInteractable(SIDES[i]));
+            let interactable = new PointerInteractable(button);
+            interactable.addEventListener('click',
+                () => this._handleInteractable(SIDES[i]));
             this._pointerInteractable.addChild(interactable);
             if(i == 0) {
                 let topRowBlock = new ThreeMeshUI.Block({

@@ -23,6 +23,7 @@ import AssetEntityInput from '/scripts/core/menu/input/AssetEntityInput.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import EulerInput from '/scripts/core/menu/input/EulerInput.js';
 import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
+import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
@@ -42,53 +43,50 @@ export default class AssetEntityHelper extends EditorHelper {
         super(asset, updatedTopic);
         this._object = asset.getObject();
         this._attachedPeers = new Set();
-        this._gripActions = [];
-        this._pointerActions = [];
+        this._eventListeners = [];
         this._boundingBox = new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
         this._overwriteAssetFunctions();
         this._addDeleteSubscriptionForPromotions();
+        this._createActions();
     }
 
-    _addActions() {
-        if(this._pointerActions.length > 0) return;
+    _createActions() {
         if(global.deviceType == "XR") {
-            this._gripActions.push(
-                this._asset.addGripAction((owner) => {
-                    TransformControlsHandler.attach(this._asset, owner.id);
-                }, (owner) => {
-                    TransformControlsHandler.detach(owner.id);
-                }, InteractionTools.EDIT));
-            this._gripActions.push(
-                this._asset.addGripAction(() => {
-                    ProjectHandler.deleteAsset(this._asset);
-                }, null, InteractionTools.DELETE));
-            this._pointerActions.push(
-                this._asset.addPointerAction(() => {
-                    ProjectHandler.deleteAsset(this._asset);
-                }, null, null, InteractionTools.DELETE));
-            this._pointerActions.push(
-                this._asset.addPointerAction((owner) => {
-                    CopyPasteControlsHandler.copy(owner.id, this._asset);
-                }, null, null, InteractionTools.COPY_PASTE));
+            this._eventListeners.push({ type: 'grip', callback: (message) => {
+                this._asset.gripInteractable.capture(message.owner);
+                TransformControlsHandler.attach(this._asset, message.owner.id);
+            }, tool: InteractionTools.EDIT, topic: 'down' });
+            this._eventListeners.push({ type: 'grip', callback: (message) => {
+                TransformControlsHandler.detach(message.owner.id);
+            }, tool: InteractionTools.EDIT, topic: 'up' });
+            this._eventListeners.push({ type: 'grip', callback: (_) => {
+                ProjectHandler.deleteAsset(this._asset);
+            }, tool: InteractionTools.DELETE, topic: 'down' });
+            this._eventListeners.push({ type: 'pointer', callback: (_) => {
+                ProjectHandler.deleteAsset(this._asset);
+            }, tool: InteractionTools.DELETE, topic: 'down' });
+            this._eventListeners.push({ type: 'pointer', callback: (message) =>{
+                CopyPasteControlsHandler.copy(message.owner.id, this._asset);
+            }, tool: InteractionTools.COPY_PASTE, topic: 'click' });
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;
-                this._gripActions.push(
-                    this._asset.addGripAction((owner) => {
-                        handler.attach(owner.id, this._asset);
-                    }, (owner) => {
-                        handler.detach(owner.id);
-                    }, tool));
+                this._eventListeners.push({ type: 'grip', callback: (message)=>{
+                    this._asset.gripInteractable.capture(message.owner);
+                    handler.attach(message.owner.id, this._asset);
+                }, tool: tool, topic: 'down' });
+                this._eventListeners.push({ type: 'grip', callback: (message)=>{
+                    handler.detach(message.owner.id);
+                }, tool: tool, topic: 'up' });
             }
         } else {
-            this._object.states = States;
-            this._object.setState = (state) => {
-                if(state == States.HOVERED) {
+            this._asset.pointerInteractable.addStateCallback((state) => {
+                if(state == InteractableStates.HOVERED) {
                     this._boundingBox.setFromObject(this._object);
                     global.scene.add(this._boundingBoxObj);
                 } else {
-                    if(state == States.SELECTED
+                    if(state == InteractableStates.SELECTED
                         && this._object == TransformControlsHandler.getObject()
                         && !TransformControlsHandler._isDragging())
                     {
@@ -96,23 +94,24 @@ export default class AssetEntityHelper extends EditorHelper {
                     }
                     global.scene.remove(this._boundingBoxObj);
                 }
-            };
-            this._pointerActions.push(
-                this._asset.addPointerAction(() => {
-                    TransformControlsHandler.attach(this._asset);
-                }));
+            });
+            this._eventListeners.push({ type: 'pointer', callback: (_) => {
+                TransformControlsHandler.attach(this._asset);
+            }, tool: InteractionTools.EDIT, topic: 'down' });
+        }
+    }
+    _addActions() {
+        for(let details of this._eventListeners) {
+            this._asset[details.type + 'Interactable'].addEventListener(
+                details.topic, details.callback, { tool: details.tool });
         }
     }
 
     _removeActions() {
-        for(let action of this._gripActions) {
-            this._asset.removeGripAction(action.id);
+        for(let details of this._eventListeners) {
+            this._asset[details.type + 'Interactable'].removeEventListener(
+                details.topic, details.callback);
         }
-        this._gripActions = [];
-        for(let action of this._pointerActions) {
-            this._asset.removePointerAction(action.id);
-        }
-        this._pointerActions = [];
         this._attachedPeers = new Set();
     }
 

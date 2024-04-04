@@ -17,7 +17,6 @@ import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
@@ -95,11 +94,11 @@ export default class Main {
         DigitalBaconUI.init(this._container, this._renderer, this._scene,
             this._camera, global.deviceType, this._cameraFocus);
         DigitalBaconUI.GripInteractableHandler.addInteractable(
-            Scene.getGripInteractable());
+            Scene.gripInteractable);
         DigitalBaconUI.PointerInteractableHandler.addInteractable(
-            Scene.getPointerInteractable());
-        DigitalBaconUI.TouchInteractableHandler.addInteractable(
-            Scene.getTouchInteractable());
+            Scene.pointerInteractable);
+        //DigitalBaconUI.TouchInteractableHandler.addInteractable(
+        //    Scene.touchInteractable);
     }
 
     _createHandlers(onStart) {

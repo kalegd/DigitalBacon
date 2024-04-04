@@ -7,7 +7,7 @@
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import TextInput from '/scripts/core/menu/input/TextInput.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -40,8 +40,9 @@ class EditAcknowledgementsPage extends MenuPage {
             'margin': 0,
         });
         this._addFirstInteractable = new PointerInteractable(
-            this._addFirstAcknowledgement, true);
-        this._addFirstInteractable.addAction(() => this._addAcknowledgement());
+            this._addFirstAcknowledgement);
+        this._addFirstInteractable.addEventListener('click',
+            () => this._addAcknowledgement());
 
         this._noAcknowledgements.add(this._addFirstAcknowledgement);
 
@@ -54,7 +55,7 @@ class EditAcknowledgementsPage extends MenuPage {
             'offset': 0,
         });
 
-        this._acknowledgementsInteractable = PointerInteractable.emptyGroup();
+        this._acknowledgementsInteractable = new PointerInteractable();
 
         let columnBlock = new ThreeMeshUI.Block({
             'height': 0.3,
@@ -104,14 +105,14 @@ class EditAcknowledgementsPage extends MenuPage {
             'fontTexture': Fonts.defaultTexture,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton, true);
-        this._previousInteractable.addAction(() => {
+            this._previousButton);
+        this._previousInteractable.addEventListener('click', () => {
             this._page += this._acknowledgements.length - 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
         });
-        this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextInteractable.addAction(() => {
+        this._nextInteractable = new PointerInteractable(this._nextButton);
+        this._nextInteractable.addEventListener('click', () => {
             this._page += 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
@@ -146,11 +147,12 @@ class EditAcknowledgementsPage extends MenuPage {
         addDeleteRow.add(this._deleteButton);
         columnBlock.add(addDeleteRow);
 
-        this._addInteractable = new PointerInteractable(this._addButton, true);
-        this._addInteractable.addAction(() => this._addAcknowledgement() );
-        this._deleteInteractable = new PointerInteractable(this._deleteButton,
-            true);
-        this._deleteInteractable.addAction(() => this._deleteAcknowledgement());
+        this._addInteractable = new PointerInteractable(this._addButton);
+        this._addInteractable.addEventListener('click',
+            () => this._addAcknowledgement() );
+        this._deleteInteractable = new PointerInteractable(this._deleteButton);
+        this._deleteInteractable.addEventListener('click',
+            () => this._deleteAcknowledgement());
         this._acknowledgementsInteractable.addChild(this._addInteractable);
         this._acknowledgementsInteractable.addChild(this._deleteInteractable);
     }

@@ -13,7 +13,7 @@ import TexturesHandler from '/scripts/core/handlers/assetTypes/TexturesHandler.j
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -80,8 +80,8 @@ class TextureInput extends PointerInteractableEntity {
         this._object.add(titleBlock);
         this._object.add(this._textureSelection);
         this._object.add(this._editButton);
-        let interactable = new PointerInteractable(this._textureSelection,true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(this._textureSelection);
+        interactable.addEventListener('click', () => {
             let textures = TexturesHandler.getAssets();
             let filteredTextures = {};
             filteredTextures["null\n"] = { Name: "Blank" };
@@ -102,8 +102,8 @@ class TextureInput extends PointerInteractableEntity {
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
         });
-        this._editInteractable = new PointerInteractable(this._editButton,true);
-        this._editInteractable.addAction(() => {
+        this._editInteractable = new PointerInteractable(this._editButton);
+        this._editInteractable.addEventListener('click', () => {
             if(!this._lastValue) return;
             let texture = TexturesHandler.getAsset(this._lastValue);
             let texturePage = global.menuController.getPage(

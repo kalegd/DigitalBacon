@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -19,7 +19,7 @@ class PaginatedIconsPage extends MenuPage {
         this._paginatedListButtons = [];
         this._paginatedListInteractables = [];
         this._page = 0;
-        this._optionsInteractable = PointerInteractable.emptyGroup();
+        this._optionsInteractable = new PointerInteractable();
     }
 
     _addList() {
@@ -77,8 +77,8 @@ class PaginatedIconsPage extends MenuPage {
                 button.add(textBlock);
                 row.add(button);
                 this._paginatedListButtons.push(button);
-                let interactable = new PointerInteractable(button, true);
-                interactable.addAction(() => {
+                let interactable = new PointerInteractable(button);
+                interactable.addEventListener('click', () => {
                     let index = this._page * ROWS * OPTIONS + OPTIONS * i + j;
                     if(this._items.length > index) {
                         this._handleItemInteraction(this._items[index]);
@@ -119,13 +119,13 @@ class PaginatedIconsPage extends MenuPage {
             'fontTexture': Fonts.defaultTexture,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton, true);
-        this._previousInteractable.addAction(() => {
+            this._previousButton);
+        this._previousInteractable.addEventListener('click', () => {
             this._page -= 1;
             this._updateItemsGUI();
         });
-        this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextInteractable.addAction(() => {
+        this._nextInteractable = new PointerInteractable(this._nextButton);
+        this._nextInteractable.addEventListener('click', () => {
             this._page += 1;
             this._updateItemsGUI();
         });

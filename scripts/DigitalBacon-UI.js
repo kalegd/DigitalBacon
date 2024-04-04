@@ -9268,6 +9268,8 @@ class Interactable {
         this._hoveredOwners = new Set();
         this._selectedOwners = new Set();
         this._capturedOwners = new Set();
+        this._stateCallbacks = new Set();
+        this._hoveredCallbacks = new Set();
         this._callbacks = {};
         this._callbacksLength = 0;
         this._toolCounts = {};
@@ -9371,16 +9373,26 @@ class Interactable {
     setState(newState) {
         if(this._state != newState) {
             this._state = newState;
-            if(this._stateCallback) this._stateCallback(newState);
+            for(let callback of this._stateCallbacks) {
+                callback(newState);
+            }
         }
     }
 
-    setStateCallback(callback) {
-        this._stateCallback = callback;
+    addStateCallback(callback) {
+        this._stateCallbacks.add(callback);
     }
 
-    setHoveredCallback(callback) {
-        this._hoveredCallback = callback;
+    addHoveredCallback(callback) {
+        this._hoveredCallbacks.add(callback);
+    }
+
+    removeStateCallback(callback) {
+        this._stateCallbacks.delete(callback);
+    }
+
+    removeHoveredCallback(callback) {
+        this._hoveredCallbacks.delete(callback);
     }
 
     _determineAndSetState() {
@@ -15883,7 +15895,7 @@ class PointerInteractableHandler extends InteractableHandler {
         let basicEvent = { owner: owner };
         let detailedEvent = {
             owner: owner,
-            closestPoint: closestPoint,
+            point: closestPoint,
             userDistance,
         };
         if(selected) {
@@ -16106,6 +16118,25 @@ class TouchInteractableHandler extends InteractableHandler {
     init(scene) {
         super.init();
         this._scene = scene;
+    }
+
+    _setupXRSubscription() {
+        interactionToolHandler.addUpdateListener((tool) => {
+            for(let [option, interactables] of this._selectedInteractables) {
+                for(let interactable of interactables) {
+                    if(!interactable) continue;
+                    let count = 0;
+                    if(tool) count += interactable.getCallbacksLength(tool);
+                    if(this._tool) count += interactable.getCallbacksLength(
+                        this._tool);
+                    if(count) {
+                        interactable.removeSelectedBy(option);
+                        this._selectedInteractables.delete(option);
+                    }
+                }
+            }
+            this._tool = tool;
+        });
     }
 
     _getBoundingSphere(object) {
@@ -24009,7 +24040,7 @@ class Keyboard extends InteractableComponent {
         let languagesText = new TextComponent('🌐', DEFAULT_FONT_STYLE);
         this._optionsPanel.add(languagesButton);
         languagesButton.add(languagesText);
-        languagesButton.pointerInteractable.setHoveredCallback((hovered) => {
+        languagesButton.pointerInteractable.addHoveredCallback((hovered) => {
             languagesText.position.z = (hovered) ? HOVERED_Z_OFFSET : 0;
         });
         languagesButton.onClick = languagesButton.onTouch = () => {
@@ -24062,7 +24093,7 @@ class Keyboard extends InteractableComponent {
                 let text = new TextComponent(content, DEFAULT_FONT_STYLE);
                 keyDiv.add(text);
                 span.add(keyDiv);
-                keyDiv.pointerInteractable.setHoveredCallback((hovered) => {
+                keyDiv.pointerInteractable.addHoveredCallback((hovered) => {
                     text.position.z = (hovered) ? HOVERED_Z_OFFSET : 0;
                 });
                 if(typeof key != 'string' && key.additionalCharacters) {
@@ -24246,7 +24277,7 @@ class Keyboard extends InteractableComponent {
             let text = new TextComponent(language, DEFAULT_FONT_STYLE);
             keyDiv.add(text);
             span.add(keyDiv);
-            keyDiv.pointerInteractable.setHoveredCallback((hovered) => {
+            keyDiv.pointerInteractable.addHoveredCallback((hovered) => {
                 text.position.z = (hovered) ? HOVERED_Z_OFFSET : 0;
             });
             keyDiv.onClick = keyDiv.onTouch = () => {
@@ -25467,7 +25498,7 @@ class Select extends ScrollableComponent {
             let text = new TextComponent(option, this._optionsTextStyle);
             span.onClick = span.onTouch = () => this._selectOption(text.text);
             span.add(text);
-            span.pointerInteractable.setStateCallback((state) => {
+            span.pointerInteractable.addStateCallback((state) => {
                 if(state == InteractableStates.HOVERED) {
                     span.material.color.set(0x0075ff);
                 } else if(state == InteractableStates.IDLE) {
@@ -25690,4 +25721,4 @@ const update = (frame) => {
     updateHandler.update();
 };
 
-export { Body, Checkbox, delayedClickHandler as DelayedClickHandler, DeviceTypes, Div, GripInteractable, gripInteractableHandler as GripInteractableHandler, HSLColor, Image$1 as Image, inputHandler as InputHandler, Interactable, interactionToolHandler as InteractionToolHandler, keyboard as Keyboard, NumberInput, PointerInteractable, pointerInteractableHandler as PointerInteractableHandler, Radio, Range, Select, Span, Style, TextComponent as Text, TextArea, TextInput, ThreeMeshBVH, Toggle, TouchInteractable, touchInteractableHandler as TouchInteractableHandler, troikaThreeText_esm as TroikaThreeText, updateHandler as UpdateHandler, XRInputDeviceTypes, addGripInteractable, addPointerInteractable, addTouchInteractable, init, removeGripInteractable, removePointerInteractable, removeTouchInteractable, update, utils, version };
+export { Body, Checkbox, delayedClickHandler as DelayedClickHandler, DeviceTypes, Div, GripInteractable, gripInteractableHandler as GripInteractableHandler, HSLColor, Handedness, Image$1 as Image, inputHandler as InputHandler, Interactable, InteractableStates, interactionToolHandler as InteractionToolHandler, keyboard as Keyboard, NumberInput, PointerInteractable, pointerInteractableHandler as PointerInteractableHandler, Radio, Range, Select, Span, Style, TextComponent as Text, TextArea, TextInput, ThreeMeshBVH, Toggle, TouchInteractable, touchInteractableHandler as TouchInteractableHandler, troikaThreeText_esm as TroikaThreeText, updateHandler as UpdateHandler, XRInputDeviceTypes, addGripInteractable, addPointerInteractable, addTouchInteractable, init, removeGripInteractable, removePointerInteractable, removeTouchInteractable, update, utils, version };

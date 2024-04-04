@@ -8,7 +8,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -54,8 +54,8 @@ class HostPartyPage extends MenuPage {
             'margin': 0.002,
         });
         this._contentBlock.add(button);
-        let interactable = new PointerInteractable(button, true);
-        interactable.addAction(() => this._hostParty());
+        let interactable = new PointerInteractable(button);
+        interactable.addEventListener('click', () => this._hostParty());
         this._containerInteractable.addChild(interactable);
         this._container.add(this._contentBlock);
 

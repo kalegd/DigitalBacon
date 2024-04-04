@@ -11,7 +11,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -50,8 +50,9 @@ class PeerPage extends MenuPage {
                 'width': 0.3,
                 'margin': 0.002,
             });
-            let buttonInteractable = new PointerInteractable(button, true);
-            buttonInteractable.addAction(() => this[option.handler]());
+            let buttonInteractable = new PointerInteractable(button);
+            buttonInteractable.addEventListener('click',
+                () => this[option.handler]());
             columnBlock.add(button);
             this._containerInteractable.addChild(buttonInteractable);
         }

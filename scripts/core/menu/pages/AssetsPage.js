@@ -5,7 +5,7 @@
  */
 
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
@@ -59,8 +59,8 @@ class AssetsPage extends PaginatedPage {
         });
         addButtonParent.position.fromArray([.175, 0.12, -0.001]);
         addButtonParent.add(addButton);
-        let interactable = new PointerInteractable(addButton, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(addButton);
+        interactable.addEventListener('click', () => {
             let page = this._controller.getPage('NEW_' + this._assetType);
             page.setContent((asset) => {
                 if(asset.constructor.assetType == this._assetType)

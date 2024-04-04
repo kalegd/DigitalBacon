@@ -5,9 +5,8 @@
  */
 
 import global from '/scripts/core/global.js';
-import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import { quaternion, vector3s } from '/scripts/core/helpers/constants.js';
+import { GripInteractable, PointerInteractable } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 class Scene {
@@ -32,13 +31,11 @@ class Scene {
         return 'Scene';
     }
 
-    getGripInteractable() {
-        return this._gripInteractable;
-    }
+    get gripInteractable() { return this._gripInteractable; }
+    get pointerInteractable() { return this._pointerInteractable; }
 
-    getPointerInteractable() {
-        return this._pointerInteractable;
-    }
+    set gripInteractable(_) {}
+    set pointerInteractable(_) {}
 
     getWorldPosition(vector3) {
         if(!vector3) vector3 = vector3s[0];

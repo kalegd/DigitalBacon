@@ -6,7 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { ValidKeys } from '/scripts/core/helpers/constants.js';
@@ -28,8 +28,9 @@ class TextField extends PointerInteractableEntity {
         this.content = "";
         if(global.deviceType == "POINTER") this._setupEventListeners();
         this._object = ThreeMeshUIHelper.createInputBlock(params);
-        this._pointerInteractable = new PointerInteractable(this._object, true);
-        this._pointerInteractable.addAction(() => { this._activate(); });
+        this._pointerInteractable = new PointerInteractable(this._object);
+        this._pointerInteractable.addEventListener('click',
+            () => { this._activate(); });
         this._active = false;
 
         if(this._initialContent) this.setContent(this._initialContent);

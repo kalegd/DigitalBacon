@@ -6,7 +6,7 @@
 
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -46,12 +46,12 @@ class TwoButtonPage extends MenuPage {
             'width': 0.25,
             'margin': 0.002,
         });
-        let interactable1 = new PointerInteractable(this._button1, true);
-        interactable1.addAction(() => {
+        let interactable1 = new PointerInteractable(this._button1);
+        interactable1.addEventListener('click', () => {
             if(this._action1) this._action1();
         });
-        let interactable2 = new PointerInteractable(this._button2, true);
-        interactable2.addAction(() => {
+        let interactable2 = new PointerInteractable(this._button2);
+        interactable2.addEventListener('click', () => {
             if(this._action2) this._action2();
         });
         columnBlock.add(this._button1);

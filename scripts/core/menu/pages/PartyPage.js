@@ -14,7 +14,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -284,8 +284,8 @@ class ButtonEntity extends MenuEntity {
             'width': 0.3,
             'margin': 0.002,
         });
-        this._pointerInteractable = new PointerInteractable(this._object, true);
-        this._pointerInteractable.addAction(action);
+        this._pointerInteractable = new PointerInteractable(this._object);
+        this._pointerInteractable.addEventListener('click', action);
     }
 }
 
@@ -366,18 +366,20 @@ class PeerEntity extends MenuEntity {
 
     _addInteractables() {
         this._usernameInteractable = new PointerInteractable(
-            this._usernameBlock, true);
-        this._usernameInteractable.addAction(() => {
+            this._usernameBlock);
+        this._usernameInteractable.addEventListener('click', () => {
             let peerPage = this._controller.getPage(MenuPages.PEER);
             peerPage.setContent(this._peer, this._designateHostCallback);
             this._controller.pushPage(MenuPages.PEER);
         });
         this._muteMyselfInteractable = new PointerInteractable(
-            this._muteMyselfButton, true);
-        this._muteMyselfInteractable.addAction(() => this.toggleMyselfMuted());
+            this._muteMyselfButton);
+        this._muteMyselfInteractable.addEventListener('click',
+            () => this.toggleMyselfMuted());
         this._mutePeerInteractable = new PointerInteractable(
-            this._mutePeerButton, true);
-        this._mutePeerInteractable.addAction(() => this.togglePeerMuted());
+            this._mutePeerButton);
+        this._mutePeerInteractable.addEventListener('click',
+            () => this.togglePeerMuted());
         if(PartyHandler.isHost()) {
             this._pointerInteractable.addChild(this._usernameInteractable);
         }

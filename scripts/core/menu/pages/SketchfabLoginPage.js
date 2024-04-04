@@ -10,7 +10,7 @@ import MenuPages from '/scripts/core/enums/MenuPages.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
@@ -60,8 +60,8 @@ class SketchfabLoginPage extends MenuPage {
             'width': 0.3,
         });
         columnBlock.add(loginButton);
-        let interactable = new PointerInteractable(loginButton, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(loginButton);
+        interactable.addEventListener('click', () => {
             DelayedClickHandler.trigger(() => this._handleLogin());
         });
         this._containerInteractable.addChild(interactable);

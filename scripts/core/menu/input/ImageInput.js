@@ -15,7 +15,7 @@ import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -75,8 +75,8 @@ class ImageInput extends PointerInteractableEntity {
         this._updateImage();
         this._object.add(titleBlock);
         this._object.add(this._imageSelection);
-        let interactable = new PointerInteractable(this._imageSelection, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(this._imageSelection);
+        interactable.addEventListener('click', () => {
             let library = LibraryHandler.getLibrary();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };

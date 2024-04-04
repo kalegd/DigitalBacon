@@ -6,7 +6,7 @@
 
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -73,10 +73,12 @@ class DynamicFieldsPage extends MenuPage {
             'width': 0.04,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton, true);
-        this._previousInteractable.addAction(() => this._loadPrevPage());
-        this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextInteractable.addAction(() => this._loadNextPage());
+            this._previousButton);
+        this._previousInteractable.addEventListener('click',
+            () => this._loadPrevPage());
+        this._nextInteractable = new PointerInteractable(this._nextButton);
+        this._nextInteractable.addEventListener('click',
+            () => this._loadNextPage());
     }
 
     _setFields(fields) {

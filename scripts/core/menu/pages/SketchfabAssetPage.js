@@ -13,7 +13,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { euler, quaternion, vector3s, FontSizes, ValidKeys } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
@@ -65,8 +65,8 @@ class SketchfabLoginPage extends MenuPage {
         });
         columnBlock.add(this._downloadButton);
         this._downloadInteractable = new PointerInteractable(
-            this._downloadButton, true);
-        this._downloadInteractable.addAction(() => {
+            this._downloadButton);
+        this._downloadInteractable.addEventListener('click', () => {
             if(this._assetId) {
                 this._handleDownloadSuccess(this._assetId);
                 return;
@@ -88,8 +88,8 @@ class SketchfabLoginPage extends MenuPage {
             'margin': 0.006,
         });
         columnBlock.add(button);
-        let interactable = new PointerInteractable(button, true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(button);
+        interactable.addEventListener('click', () => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._sketchfabAsset.viewerUrl, '_blank');
         });

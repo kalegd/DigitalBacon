@@ -4,9 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import States from '/scripts/core/enums/InteractableStates.js';
 import { Colors, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
+import { InteractableStates as States } from '/scripts/DigitalBacon-UI.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const defaultOffset = 0.008;

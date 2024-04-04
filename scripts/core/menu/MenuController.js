@@ -11,13 +11,11 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import NotificationHub from '/scripts/core/menu/NotificationHub.js';
 import Keyboard from '/scripts/core/menu/input/Keyboard.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import { Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractableHandler, PointerInteractableHandler, Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 export default class MenuController extends PointerInteractableEntity {
@@ -26,7 +24,7 @@ export default class MenuController extends PointerInteractableEntity {
         this._object.position.setZ(-100);
         this._pages = {};
         this._pageCalls = [];
-        this._gripInteractable = MenuGripInteractable.emptyGroup();
+        this._gripInteractable = new MenuGripInteractable();
         this._gripOwners = new Set();
         this._eventAlreadyTriggered = false;
         this._addEventListeners();
@@ -121,15 +119,16 @@ export default class MenuController extends PointerInteractableEntity {
         if(global.deviceType != 'XR') return;
         let border = this._createBorder();
         let interactable = new MenuGripInteractable(this._object, border);
-        interactable.addAction((ownerId) => {
-            let asset = ProjectHandler.getAsset(ownerId);
+        interactable.addEventListener('down', (message) => {
+            let asset = ProjectHandler.getAsset(message.owner.id);
             if(asset) asset.getObject().attach(this._object);
-            this._gripOwners.add(ownerId);
-        }, (ownerId) => {
-            let asset = ProjectHandler.getAsset(ownerId);
+            this._gripOwners.add(message.owner.id);
+        });
+        interactable.addEventListener('up', (message) => {
+            let asset = ProjectHandler.getAsset(message.owner.id);
             if(this._object.parent == asset.getObject())
                 Scene.getObject().attach(this._object);
-            this._gripOwners.delete(ownerId);
+            this._gripOwners.delete(message.owner.id);
         });
         this._gripInteractable.addChild(interactable);
         Keyboard.init(this._object);

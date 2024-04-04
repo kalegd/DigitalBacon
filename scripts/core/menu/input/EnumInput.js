@@ -10,7 +10,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.05;
@@ -67,7 +67,7 @@ class EnumInput extends PointerInteractableEntity {
             //'offset': 0,
         });
         this._optionsInteractable = new PointerInteractable(
-            this._optionsContainer, true);
+            this._optionsContainer);
         for(let option of options) {
             let optionButton = ThreeMeshUIHelper.createButtonBlock({
                 'text': option,
@@ -77,15 +77,16 @@ class EnumInput extends PointerInteractableEntity {
                 'margin': 0,
             });
             this._optionsContainer.add(optionButton);
-            let interactable = new PointerInteractable(optionButton, true);
-            interactable.addAction(() => { this._handleSelection(option); });
+            let interactable = new PointerInteractable(optionButton);
+            interactable.addEventListener('click',
+                () => { this._handleSelection(option); });
             this._optionsInteractable.addChild(interactable);
         }
         this._object.add(titleBlock);
         this._object.add(this._optionSelection);
         this._selectionInteractable = new PointerInteractable(
-            this._optionSelection, true);
-        this._selectionInteractable.addAction(() => {
+            this._optionSelection);
+        this._selectionInteractable.addEventListener('click', () => {
             if(options.length == 0) return;
             this._optionSelection.add(this._optionsContainer);
             this._selectionInteractable.addChild(this._optionsInteractable);

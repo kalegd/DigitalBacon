@@ -5,7 +5,7 @@
  */
 
 import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 
 import ThreeMeshUI from 'three-mesh-ui';
@@ -47,9 +47,9 @@ class UndoRedoHandler {
         this._undoRedoParent.add(this._redoButton);
         this._containerInteractable = new PointerInteractable();
         this._undoInteractable = new PointerInteractable(this._undoButton);
-        this._undoInteractable.addAction(() => { this._undo(); });
+        this._undoInteractable.addEventListener('click', () => this._undo());
         this._redoInteractable = new PointerInteractable(this._redoButton);
-        this._redoInteractable.addAction(() => { this._redo(); });
+        this._redoInteractable.addEventListener('click', () => this._redo());
     }
 
     addButtons(menu, interactable) {

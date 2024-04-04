@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -19,7 +19,7 @@ class PaginatedIconsPage extends MenuPage {
         this._paginatedListButtons = [];
         this._paginatedListInteractables = [];
         this._page = 0;
-        this._optionsInteractable = PointerInteractable.emptyGroup();
+        this._optionsInteractable = new PointerInteractable();
     }
 
     _addList() {
@@ -70,8 +70,8 @@ class PaginatedIconsPage extends MenuPage {
                 button.add(textBlock);
                 row.add(button);
                 this._paginatedListButtons.push(button);
-                let interactable = new PointerInteractable(button, true);
-                interactable.addAction(() => {
+                let interactable = new PointerInteractable(button);
+                interactable.addEventListener('click', () => {
                     let index = this._page * ROWS * OPTIONS + OPTIONS * i + j;
                     if(this._items.length > index) {
                         this._handleItemInteraction(this._items[index]);
@@ -112,21 +112,23 @@ class PaginatedIconsPage extends MenuPage {
             'fontTexture': Fonts.defaultTexture,
         });
         this._previousInteractable = new PointerInteractable(
-            this._previousButton, true);
-        this._previousInteractable.addAction(() => {
+            this._previousButton);
+        this._previousInteractable.addEventListener('click', () => {
             this._page -= 1;
             this._updateItemsGUI();
         });
-        this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextAction = this._nextInteractable.addAction(() => {
+        this._nextInteractable = new PointerInteractable(this._nextButton);
+        this._nextAction = () => {
             this._page += 1;
             this._updateItemsGUI();
-        });
-        this._fetchNextAction = this._nextInteractable.addAction(() => {
+        };
+        this._nextInteractable.addEventListener('click', this._nextAction);
+        this._fetchNextAction = () => {
             this._page += 1;
             this._fetchNextItems();
             this._updateItemsGUI();
-        });
+        };
+        this._nextInteractable.addEventListener('click', this._fetchNextAction);
     }
 
     _updateItemsGUI() {
@@ -155,14 +157,17 @@ class PaginatedIconsPage extends MenuPage {
         if(this._items.length > firstIndex + ROWS * OPTIONS) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
-            this._nextInteractable.addAction(this._nextAction);
-            this._nextInteractable.removeAction(this._fetchNextAction.id);
+            this._nextInteractable.addEventListener('click', this._nextAction);
+            this._nextInteractable.removeEventListener('click',
+                this._fetchNextAction);
         } else if(this._items.length == firstIndex + ROWS * OPTIONS
                 && this._canFetchMore) {
             this._nextButton.visible = true;
             this._optionsInteractable.addChild(this._nextInteractable);
-            this._nextInteractable.addAction(this._fetchNextAction);
-            this._nextInteractable.removeAction(this._nextAction.id);
+            this._nextInteractable.addEventListener('click',
+                this._fetchNextAction);
+            this._nextInteractable.removeEventListener('click',
+                this._nextAction);
         } else {
             this._nextButton.visible = false;
             this._optionsInteractable.removeChild(this._nextInteractable);

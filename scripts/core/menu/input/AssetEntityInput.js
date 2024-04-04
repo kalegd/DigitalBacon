@@ -16,7 +16,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ThreeMeshUI from 'three-mesh-ui';
 
 const HEIGHT = 0.05;
@@ -73,9 +73,8 @@ class AssetEntityInput extends PointerInteractableEntity {
         this._updateAssetEntity();
         this._object.add(titleBlock);
         this._object.add(this._assetEntitySelection);
-        let interactable = new PointerInteractable(this._assetEntitySelection,
-            true);
-        interactable.addAction(() => {
+        let interactable = new PointerInteractable(this._assetEntitySelection);
+        interactable.addEventListener('click', () => {
             let assets = ProjectHandler.getAssets();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };
