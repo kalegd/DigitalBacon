@@ -5,7 +5,7 @@
  */
 
 import Entity from '/scripts/core/assets/Entity.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import { PointerInteractable } from '/scripts/DigitalBacon-UI.js';
 
 export default class PointerInteractableEntity extends Entity {
     constructor() {

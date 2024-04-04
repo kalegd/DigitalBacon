@@ -120,11 +120,12 @@ export default class MenuController extends PointerInteractableEntity {
         let border = this._createBorder();
         let interactable = new MenuGripInteractable(this._object, border);
         interactable.addEventListener('down', (message) => {
+            interactable.capture(message.owner);
             let asset = ProjectHandler.getAsset(message.owner.id);
             if(asset) asset.getObject().attach(this._object);
             this._gripOwners.add(message.owner.id);
         });
-        interactable.addEventListener('up', (message) => {
+        interactable.addEventListener('click', (message) => {
             let asset = ProjectHandler.getAsset(message.owner.id);
             if(this._object.parent == asset.getObject())
                 Scene.getObject().attach(this._object);

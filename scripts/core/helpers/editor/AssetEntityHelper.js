@@ -59,7 +59,7 @@ export default class AssetEntityHelper extends EditorHelper {
             }, tool: InteractionTools.EDIT, topic: 'down' });
             this._eventListeners.push({ type: 'grip', callback: (message) => {
                 TransformControlsHandler.detach(message.owner.id);
-            }, tool: InteractionTools.EDIT, topic: 'up' });
+            }, tool: InteractionTools.EDIT, topic: 'click' });
             this._eventListeners.push({ type: 'grip', callback: (_) => {
                 ProjectHandler.deleteAsset(this._asset);
             }, tool: InteractionTools.DELETE, topic: 'down' });
@@ -78,7 +78,7 @@ export default class AssetEntityHelper extends EditorHelper {
                 }, tool: tool, topic: 'down' });
                 this._eventListeners.push({ type: 'grip', callback: (message)=>{
                     handler.detach(message.owner.id);
-                }, tool: tool, topic: 'up' });
+                }, tool: tool, topic: 'click' });
             }
         } else {
             this._asset.pointerInteractable.addStateCallback((state) => {
