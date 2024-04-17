@@ -11,9 +11,9 @@ import { SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import EnumField from '/scripts/core/menu/input/EnumField.js';
+import NumberField from '/scripts/core/menu/input/NumberField.js';
 
 export default class MaterialHelper extends EditorHelper {
     constructor(asset) {
@@ -78,11 +78,11 @@ export default class MaterialHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "transparent", "name": "Transparent",
-            "type": CheckboxInput },
+            "type": CheckboxField },
         { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
-            "type": EnumInput },
+            "type": EnumField },
     ];
 }
 

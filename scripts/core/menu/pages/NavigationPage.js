@@ -6,11 +6,10 @@
 
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Text } from '/scripts/DigitalBacon-UI.js';
 
 const pages = [
     { "title": "Hand Tools", "menuPage": MenuPages.HANDS },
@@ -27,41 +26,24 @@ class NavigationPage extends MenuPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Menu',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Menu', Styles.title);
+        this.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.2,
+            width: 0.45,
         });
         let supportsParty = global.authUrl && global.socketUrl;
         for(let page of pages) {
             if(global.deviceType != 'XR' && page['menuPage'] == MenuPages.HANDS)
                 continue;
             if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': page.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
+            let button = createWideButton(page.title);
+            button.margin = 0.004;
             columnBlock.add(button);
-            let interactable = new PointerInteractable(button);
-            interactable.addEventListener('click', () => {
-                this._controller.pushPage(page.menuPage);
-            });
-            this._containerInteractable.addChild(interactable);
+            button.onClick = () => this._controller.pushPage(page.menuPage);
         }
-        this._container.add(columnBlock);
+        this.add(columnBlock);
     }
 
 }

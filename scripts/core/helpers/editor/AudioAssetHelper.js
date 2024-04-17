@@ -10,9 +10,9 @@ import { Colors, DISTANCE_MODEL_MAP } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMediaAssetHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import EnumField from '/scripts/core/menu/input/EnumField.js';
+import NumberField from '/scripts/core/menu/input/NumberField.js';
 import * as THREE from 'three';
 
 export default class AudioAssetHelper extends PlayableMediaAssetHelper {
@@ -41,25 +41,25 @@ export default class AudioAssetHelper extends PlayableMediaAssetHelper {
     static fields = [
         this.commonFields.visualEdit,
         { "parameter": "previewMedia", "name": "Preview Audio",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput},
+            "suppressMenuFocusEvent": true, "type": CheckboxField},
         this.commonFields.autoplay,
         { "parameter": "coneInnerAngle", "name": "Cone Inner Angle", "min": 0,
-            "max": 360, "type": NumberInput },
+            "max": 360, "type": NumberField },
         { "parameter": "coneOuterAngle", "name": "Cone Outer Angle", "min": 0,
-            "max": 360, "type": NumberInput },
+            "max": 360, "type": NumberField },
         { "parameter": "coneOuterGain", "name": "Cone Outer Gain", "min": 0,
-            "max": 1, "type": NumberInput },
+            "max": 1, "type": NumberField },
         { "parameter": "distanceModel", "name": "Distance Model",
-            "map": DISTANCE_MODEL_MAP, "type": EnumInput },
+            "map": DISTANCE_MODEL_MAP, "type": EnumField },
         this.commonFields.loop,
         { "parameter": "maxDistance", "name": "Max Rolloff Distance",
-            "min": 0.01, "type": NumberInput },
+            "min": 0.01, "type": NumberField },
         { "parameter": "refDistance", "name": "Min Rolloff Distance", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "rolloffFactor", "name": "Rolloff Factor", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "volume", "name": "Volume", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         this.commonFields.playTopic,
         this.commonFields.pauseTopic,
         this.commonFields.stopTopic,

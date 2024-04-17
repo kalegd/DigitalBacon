@@ -5,71 +5,46 @@
  */
 
 import global from '/scripts/core/global.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import MenuField from '/scripts/core/menu/input/MenuField.js';
+import { Span, Text } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
-const HEIGHT = 0.05;
-const WIDTH = 0.31;
-const TITLE_WIDTH = 0.14;
-const COLOR_BOX_WIDTH = 0.08;
-const COLOR_BOX_HEIGHT = 0.04;
-
-class ColorInput extends PointerInteractableEntity {
+class ColorField extends MenuField {
     constructor(params) {
-        super();
+        super(params);
         let title = params['title'] || 'Missing Field Name...';
         this._lastValue = numberOr(params['initialValue'], 0x2abbd5);
         this._color = new THREE.Color(this._lastValue);
         this._onBlur = params['onBlur'];
-        this._onUpdate = params['onUpdate'];
-        this._getFromSource = params['getFromSource'];
         this._createInputs(title);
     }
 
     _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT,
-            'width': WIDTH,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
+        this._addTitle(title, 0.14);
+        this._colorBlock = new Span({
+            backgroundVisible: true,
+            borderRadius: 0.01,
+            height: 0.04,
+            width: 0.08,
         });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT,
-            'width': TITLE_WIDTH,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._colorBlock = ThreeMeshUIHelper.createColorBlock({
-            'height': COLOR_BOX_HEIGHT,
-            'width': COLOR_BOX_WIDTH,
-            'margin': 0,
-            'selectedColor': this._color,
-        });
-        this._object.add(titleBlock);
-        this._object.add(this._colorBlock);
-        let interactable = new PointerInteractable(this._colorBlock);
-        interactable.addEventListener('click', () => {
+        this._colorBlock.material.color = this._color;
+        configureOrbitDisabling(this._colorBlock);
+        this.add(this._colorBlock);
+        this._colorBlock.onClick = () => {
             let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);
             colorPage.setContent(this._id, this._color,
                 (color) => {
+                    if(this._color.getHex() == color) return;
                     this._color.setHex(color);
                     if(this._onUpdate) this._onUpdate(color);
                 }, ()   => {
-                    if(colorPage.isDraggingCursors()) return;
+                    if(colorPage.isDragging()) return;
                     let oldColor = this._lastValue;
                     let newColor = this._color.getHex();
                     if(this._onBlur) this._onBlur(oldColor, newColor);
@@ -81,20 +56,7 @@ class ColorInput extends PointerInteractableEntity {
                 'id': this._id,
                 'targetOnlyMenu': true,
             });
-        });
-        this._pointerInteractable.addChild(interactable);
-    }
-
-    getWidth() {
-        return WIDTH;
-    }
-
-    getHeight() {
-        return HEIGHT;
-    }
-
-    deactivate() {
-        //Required method
+        };
     }
 
     updateFromSource() {
@@ -107,4 +69,4 @@ class ColorInput extends PointerInteractableEntity {
     }
 }
 
-export default ColorInput;
+export default ColorField;

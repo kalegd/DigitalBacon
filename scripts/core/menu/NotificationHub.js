@@ -7,11 +7,10 @@
 import Entity from '/scripts/core/assets/Entity.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Colors, Styles } from '/scripts/core/helpers/constants.js';
+import { Span, Text } from '/scripts/DigitalBacon-UI.js';
 
 const BACKGROUND_OPACITY = 0.8;
-const FONT_OPACITY = 1;
 const FADE_TIME = 1;
 const SUSTAIN_TIME = 3;
 const NOTIFICATION_STATES = {
@@ -31,25 +30,16 @@ class NotificationHub extends Entity {
     }
 
     _createNotification() {
-        this._container = new ThreeMeshUI.Block({
+        this._container = new Span({
+            backgroundVisible: true,
+            borderRadius: 0.01,
             height: 0.04,
-            width: 0.3,
-            interline: 0.01,
-            backgroundColor: Colors.defaultMenuBackground,
-            backgroundOpacity: BACKGROUND_OPACITY,
             justifyContent: 'center',
+            materialColor: Colors.defaultMenuBackground,
+            opacity: BACKGROUND_OPACITY,
+            width: 0.3,
         });
-        this._container.set({
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture,
-        });
-        this._textComponent = new ThreeMeshUI.Text({
-            content: 'Notificaton Placeholder',
-            fontColor: Colors.white,
-            fontSize: FontSizes.body,
-            fontOpacity: FONT_OPACITY,
-            offset: 0,
-        });
+        this._textComponent = new Text('Placeholder', Styles.bodyText);
         this._container.add(this._textComponent);
         this._object.add(this._container);
         this._container.visible = false;
@@ -81,17 +71,15 @@ class NotificationHub extends Entity {
             if(notification.timeInState == 0) {
                 this._container.visible = true;
                 let height = Math.ceil(notification.text.length/20) * 0.02+0.02;
-                this._container.set({ height: height });
-                this._textComponent.set({ content: notification.text });
+                this._container.height = height;
+                this._textComponent.text = notification.text;
                 this._object.position.setY(this._notificationHeight);
             }
             notification.timeInState = Math.min(
                 notification.timeInState + timeDelta, notification.fadeTime);
             let fadePercent = notification.timeInState / notification.fadeTime;
-            this._container.set({
-                backgroundOpacity: BACKGROUND_OPACITY * fadePercent
-            });
-            this._textComponent.set({ fontOpacity: FONT_OPACITY * fadePercent});
+            this._container.material.opacity = BACKGROUND_OPACITY * fadePercent;
+            this._textComponent.material.opacity = fadePercent;
             if(fadePercent == 1) {
                 notification.state = NOTIFICATION_STATES.SUSTAIN;
                 notification.timeInState = 0;
@@ -107,10 +95,8 @@ class NotificationHub extends Entity {
                 notification.timeInState + timeDelta, notification.fadeTime);
             let fadePercent
                 = 1 - (notification.timeInState / notification.fadeTime);
-            this._container.set({
-                backgroundOpacity: BACKGROUND_OPACITY * fadePercent
-            });
-            this._textComponent.set({ fontOpacity: FONT_OPACITY * fadePercent});
+            this._container.material.opacity = BACKGROUND_OPACITY * fadePercent;
+            this._textComponent.material.opacity = fadePercent;
             if(fadePercent == 0) {
                 this._notifications.shift();
                 this._object.position.setY(0);

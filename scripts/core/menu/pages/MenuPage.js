@@ -7,131 +7,53 @@
 import global from '/scripts/core/global.js';
 import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Colors, Textures } from '/scripts/core/helpers/constants.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import { Body, Div, Style, Text } from '/scripts/DigitalBacon-UI.js';
 
-const FONT_FAMILY = Fonts.defaultFamily;
-const FONT_TEXTURE = Fonts.defaultTexture;
-const UI_BACKGROUND_COLOR = Colors.defaultMenuBackground;
-const UI_BACKGROUND_OPACITY = 0.7;
+const BODY_STYLE = new Style({
+    borderRadius: 0.01,
+    borderWidth: 0.001,
+    height: 0.3,
+    materialColor: Colors.defaultMenuBackground,
+    opacity: 0.7,
+    width: 0.45,
+});
 
-class MenuPage extends PointerInteractableEntity {
+class MenuPage extends Body {
     constructor(controller, hasBackButton) {
-        super();
+        super(BODY_STYLE);
+        this._id = uuidv4();
         this._controller = controller;
-        this._createPage();
         this._createCloseButton();
-        if(hasBackButton) {
-            this._createBackButton();
-        }
+        if(hasBackButton) this._createBackButton();
+        if(global.deviceType == 'XR') this.onClick = () => {};
     }
 
     _createBackButton() {
-        let backButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: UI_BACKGROUND_COLOR,
-            backgroundOpacity: 0,
-        });
-        let backButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '<',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        backButtonParent.set({
-            fontFamily: FONT_FAMILY,
-            fontTexture: FONT_TEXTURE,
-        });
-        backButtonParent.position.fromArray([-.225, 0.15, -0.001]);
-        backButtonParent.add(backButton);
-        let interactable = new PointerInteractable(backButton);
-        interactable.addEventListener('click', () => this.back());
-        this._pointerInteractable.addChild(interactable);
-        this._object.add(backButtonParent);
+        let backButton = createSmallButton('<');
+        backButton.bypassContentPositioning = true;
+        backButton.position.fromArray([-.225, 0.15, 0.001]);
+        backButton.onClick = () => this.back();
+        this.add(backButton);
         this._createHomeButton();
     }
 
     _createHomeButton() {
-        let homeButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: UI_BACKGROUND_COLOR,
-            backgroundOpacity: 0,
-        });
-        let homeButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.homeIcon,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        homeButtonParent.set({
-            fontFamily: FONT_FAMILY,
-            fontTexture: FONT_TEXTURE,
-        });
-        homeButtonParent.position.fromArray([-.225, 0.1, -0.001]);
-        homeButtonParent.add(homeButton);
-        let interactable = new PointerInteractable(homeButton);
-        interactable.addEventListener('click',
-            () => this._controller.popAllPages());
-        this._pointerInteractable.addChild(interactable);
-        this._object.add(homeButtonParent);
+        let homeButton = createSmallButton(Textures.homeIcon, 0.9);
+        homeButton.bypassContentPositioning = true;
+        homeButton.position.fromArray([-.225, 0.1, 0.001]);
+        homeButton.onClick = () => this._controller.popAllPages();
+        this.add(homeButton);
     }
 
     _createCloseButton() {
-        let closeButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: UI_BACKGROUND_COLOR,
-            backgroundOpacity: 0,
-        });
-        let closeButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "X",
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        closeButtonParent.set({
-            fontFamily: FONT_FAMILY,
-            fontTexture: FONT_TEXTURE,
-        });
-        closeButtonParent.position.fromArray([.225, 0.15, -0.001]);
-        closeButtonParent.add(closeButton);
-        let interactable = new PointerInteractable(closeButton);
-        interactable.addEventListener('click',
-            () => this._controller.closeMenu());
-        this._pointerInteractable.addChild(interactable);
-        this._object.add(closeButtonParent);
-    }
-
-    _createPage() {
-        this._container = new ThreeMeshUI.Block({
-            height: 0.3,
-            width: 0.45,
-            borderWidth: 0,
-            offset: 0,
-            backgroundOpacity: 0,
-        });
-        let borderedBlock = new ThreeMeshUI.Block({
-            height: 0.3,
-            width: 0.45,
-            backgroundColor: UI_BACKGROUND_COLOR,
-            backgroundOpacity: UI_BACKGROUND_OPACITY,
-            borderWidth: 0.001,
-            borderColor: Colors.white,
-            borderOpacity: 0.75,
-        });
-        this._container.set({
-            fontFamily: FONT_FAMILY,
-            fontTexture: FONT_TEXTURE,
-        });
-        this._containerInteractable = new PointerInteractable(
-            this._container.children[0]);
-        if(global.deviceType == 'XR')
-            this._containerInteractable.addEventListener('click', () => {});
-        this._pointerInteractable.addChild(this._containerInteractable);
-        borderedBlock.add(this._container);
-        this._object.add(borderedBlock);
+        let closeButton = createSmallButton('X');
+        closeButton.bypassContentPositioning = true;
+        closeButton.position.fromArray([.225, 0.15, 0.001]);
+        closeButton.onClick = () => this._controller.closeMenu();
+        this.add(closeButton);
     }
 
     //Can be overwritten to add functionality to back button being pressed

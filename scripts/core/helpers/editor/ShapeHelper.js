@@ -9,7 +9,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import MaterialInput from '/scripts/core/menu/input/MaterialInput.js';
+import MaterialField from '/scripts/core/menu/input/MaterialField.js';
 
 export default class ShapeHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -66,7 +66,7 @@ export default class ShapeHelper extends AssetEntityHelper {
     }
 
     static fields = [
-        { 'parameter': 'material', 'name': 'Material', "type": MaterialInput }
+        { 'parameter': 'material', 'name': 'Material', "type": MaterialField }
     ];
 }
 

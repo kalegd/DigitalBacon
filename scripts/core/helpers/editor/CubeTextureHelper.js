@@ -8,8 +8,8 @@ import CubeTexture from '/scripts/core/assets/textures/CubeTexture.js';
 import { MAPPING_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
+import EnumField from '/scripts/core/menu/input/EnumField.js';
+import CubeImageField from '/scripts/core/menu/input/CubeImageField.js';
 
 export default class CubeTextureHelper extends TextureHelper {
     constructor(asset) {
@@ -17,9 +17,9 @@ export default class CubeTextureHelper extends TextureHelper {
     }
 
     static fields = [
-        { "parameter": "images", "name": "Images", "type": CubeImageInput },
+        { "parameter": "images", "name": "Images", "type": CubeImageField },
         { "parameter": "mapping", "name": "Mapping", "map": MAPPING_MAP,
-            "type": EnumInput },
+            "type": EnumField },
         { "parameter": "colorSpace" },
     ];
 }

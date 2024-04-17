@@ -7,12 +7,10 @@
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
+import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
+import { createTextInput, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Text } from '/scripts/DigitalBacon-UI.js';
 
 class JoinPartyPage extends MenuPage {
     constructor(controller) {
@@ -21,66 +19,48 @@ class JoinPartyPage extends MenuPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Join Party',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Join Party', Styles.title);
+        this.add(titleBlock);
 
-        this._contentBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
+        this._contentBlock = new Div();
+        this._textInput = createTextInput({
+            borderRadius: 0.02,
+            fontSize: FontSizes.body,
+            height: 0.04,
+            marginBottom: 0.004,
+            marginTop: 0.01,
+            width: 0.4,
         });
-        this._textField = new TextField({
-            'height': 0.03,
-            'width': 0.4,
-            'text': 'Party Name',
-            'onEnter': () => { this._joinParty(); },
-        });
-        this._textField.addToScene(this._contentBlock,
-            this._containerInteractable);
-        let button = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Join",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.2,
-            'margin': 0.002,
-        });
+        this._textInput.onEnter = () => {
+            this._textInput.blur();
+            this._joinParty();
+        };
+        let button = createWideButton('Join');
+        button.width = 0.2;
+        button.onClick = () => this._joinParty();
+        this._contentBlock.add(this._textInput);
         this._contentBlock.add(button);
-        let interactable = new PointerInteractable(button);
-        interactable.addEventListener('click', () => this._joinParty());
-        this._containerInteractable.addChild(interactable);
-        this._container.add(this._contentBlock);
+        this.add(this._contentBlock);
 
-        this._connectingBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Connecting...',
-            'fontSize': 0.025,
-            'height': 0.04,
-            'width': 0.4,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
+        this._connectingBlock = new Div({
+            height: 0.1,
+            justifyContent: 'center',
+            width: 0.4,
         });
+        let connectingText = new Text('Connecting...', Styles.bodyText);
+        this._connectingBlock.add(connectingText);
     }
 
     _joinParty() {
-        this._textField.deactivate();
-        let roomId = this._textField.content;
+        let roomId = this._textInput.value;
         if(roomId.length == 0) {
             PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                 text: 'Missing Party Name',
             });
             return;
         }
-        this._container.remove(this._contentBlock);
-        this._container.add(this._connectingBlock);
-        this._pointerInteractable.removeChild(this._containerInteractable);
+        this.remove(this._contentBlock);
+        this.add(this._connectingBlock);
         this._isConnecting = true;
         PartyHandler.join(roomId, () => { this._successCallback(); },
             (m) => { this._errorCallback(m); });
@@ -89,10 +69,8 @@ class JoinPartyPage extends MenuPage {
     _successCallback() {
         if(!this._isConnecting) return;
         this._isConnecting = false;
-        this._pointerInteractable.addChild(this._containerInteractable);
-        this._container.remove(this._connectingBlock);
-        this._container.add(this._contentBlock);
-        this._container.update(false, false, true);
+        this.remove(this._connectingBlock);
+        this.add(this._contentBlock);
         if(this._controller.getCurrentPage() == this) this._controller.back();
         PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
             text: 'Party Joined',
@@ -129,22 +107,18 @@ class JoinPartyPage extends MenuPage {
                 text: 'Unexpected Error',
             });
         }
-        this._pointerInteractable.addChild(this._containerInteractable);
-        this._container.remove(this._connectingBlock);
-        this._container.add(this._contentBlock);
-        this._container.update(false, false, true);
+        this.remove(this._connectingBlock);
+        this.add(this._contentBlock);
     }
 
     //TODO: Instead of this, we should just call errorCallback if connecting
     //      hangs in Party.js
-    addToScene(scene, interactableParent) {
+    _onAdded() {
         if(this._isConnecting && !PartyHandler.isPartyActive()) {
-            this._pointerInteractable.addChild(this._containerInteractable);
-            this._container.remove(this._connectingBlock);
-            this._container.add(this._contentBlock);
-            this._container.update(false, false, true);
+            this.remove(this._connectingBlock);
+            this.add(this._contentBlock);
         }
-        super.addToScene(scene, interactableParent);
+        super._onAdded();
     }
 }
 

@@ -7,11 +7,10 @@
 import global from '/scripts/core/global.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
+import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { createSmallButton, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Image, Text, Span } from '/scripts/DigitalBacon-UI.js';
 import { TextureLoader } from 'three';
 
 class AcknowledgementsPage extends MenuPage {
@@ -24,132 +23,81 @@ class AcknowledgementsPage extends MenuPage {
 
     _addPageContent() {
         this._createPreviousAndNextButtons();
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': ' ',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.3,
-        });
-        this._container.add(this._titleBlock);
+        this._titleBlock = new Text('', Styles.title);
+        this.add(this._titleBlock);
 
-        this._noAcknowledgements = ThreeMeshUIHelper.createTextBlock({
-            'text': 'No Acknowledgements to Display',
-            'fontSize': 0.025,
-            'height': 0.04,
-            'width': 0.4,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
+        this._noAcknowledgements = new Text('No Acknowledgements to Display',
+            Styles.bodyText);
+
+        this._acknowledgementsContainer = new Span({
+            height: 0.2,
+            width: 0.45,
         });
 
-        this._acknowledgementsContainer = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'row',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
-            'offset': 0,
+        let columnBlock = new Div({
+            height: 0.2,
+            justifyContent: 'center',
+            width: 0.31,
         });
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.31,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-        });
-
-        this._textureBlock = new ThreeMeshUI.Block({
-            'height': 0.085,
-            'width': 0.1,
-            'backgroundOpacity': 1,
+        this._textureBlock = new Image(Textures.ellipsisIcon, {
+            height: 0.085,
+            width: 0.1,
         });
         columnBlock.add(this._textureBlock);
 
-        this._authorBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Author: ',
-            'fontSize': FontSizes.body,
-            'height': 0.025,
-            'width': 0.3,
-        });
+        this._authorBlock = new Text('Author: ', Styles.bodyText);
         columnBlock.add(this._authorBlock);
 
-        this._licenseBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'License: ',
-            'fontSize': FontSizes.body,
-            'height': 0.025,
-            'width': 0.3,
-        });
+        this._licenseBlock = new Text('License: ', Styles.bodyText);
         columnBlock.add(this._licenseBlock);
 
-        this._sourceButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "View Source",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'margin': 0.006,
-        });
-        columnBlock.add(this._sourceButton);
-        this._sourceInteractable = new PointerInteractable(this._sourceButton);
-        this._sourceInteractable.addEventListener('click', () => {
+        this._sourceButtonParent = new Div();
+        let sourceButton = createWideButton('View Source');
+        this._sourceButtonParent.add(sourceButton);
+        columnBlock.add(this._sourceButtonParent);
+        sourceButton.onClick = () => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._acknowledgements[this._page]['Source URL'],
                 '_blank');
-        });
-        this._containerInteractable.addChild(this._sourceInteractable);
-        this._container.add(this._acknowledgementsContainer);
-        this._acknowledgementsContainer.add(this._previousButton);
+        };
+        this.add(this._acknowledgementsContainer);
+        this._acknowledgementsContainer.add(this._previousButtonParent);
         this._acknowledgementsContainer.add(columnBlock);
-        this._acknowledgementsContainer.add(this._nextButton);
+        this._acknowledgementsContainer.add(this._nextButtonParent);
     }
 
     _createPreviousAndNextButtons() {
-        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '<',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '>',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._previousInteractable = new PointerInteractable(
-            this._previousButton);
-        this._previousInteractable.addEventListener('click', () => {
+        this._previousButtonParent = new Div();
+        this._previousButton = createSmallButton('<');
+        this._previousButton.onClick = () => {
             this._page += this._acknowledgements.length - 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
-        });
-        this._nextInteractable = new PointerInteractable(this._nextButton);
-        this._nextInteractable.addEventListener('click', () => {
+        };
+        this._previousButtonParent.add(this._previousButton);
+        this._nextButtonParent = new Div();
+        this._nextButton = createSmallButton('>');
+        this._nextButton.onClick = () => {
             this._page += 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
-        });
+        };
+        this._nextButtonParent.add(this._nextButton);
     }
 
     _refreshAssets() {
         this._acknowledgements = SettingsHandler.getAcknowledgements();
         if(this._acknowledgements.length > 1) {
             if(this._page >= this._acknowledgements.length) this._page = 0;
-            this._previousButton.visible = true;
-            this._nextButton.visible = true;
-            this._containerInteractable.addChild(this._previousInteractable);
-            this._containerInteractable.addChild(this._nextInteractable);
+            this._previousButtonParent.add(this._previousButton);
+            this._nextButtonParent.add(this._nextButton);
         } else {
-            this._previousButton.visible = false;
-            this._nextButton.visible = false;
-            this._containerInteractable.removeChild(this._previousInteractable);
-            this._containerInteractable.removeChild(this._nextInteractable);
+            this._previousButtonParent.remove(this._previousButton);
+            this._nextButtonParent.remove(this._nextButton);
             if(this._acknowledgements.length == 0) {
-                this._container.remove(this._acknowledgementsContainer);
-                this._container.add(this._noAcknowledgements);
+                this.remove(this._acknowledgementsContainer);
+                this.add(this._noAcknowledgements);
                 return;
             }
         }
@@ -159,27 +107,21 @@ class AcknowledgementsPage extends MenuPage {
     _setAsset() {
         let page = this._page;
         let acknowledgement = this._acknowledgements[page];
-        this._titleBlock.children[1].set({ content: acknowledgement['Asset'] });
+        this._titleBlock.text = acknowledgement['Asset'];
         if(acknowledgement['Author']) {
-            this._authorBlock.children[1].set({
-                content: 'Author: ' + acknowledgement['Author'],
-            });
+            this._authorBlock.text = 'Author: ' + acknowledgement['Author'];
             this._authorBlock.visible = true;
         } else {
             this._authorBlock.visible = false;
         }
         if(acknowledgement['License']) {
-            this._licenseBlock.children[1].set({
-                content: 'License: ' + acknowledgement['License'],
-            });
+            this._licenseBlock.text = 'License: ' + acknowledgement['License'];
             this._licenseBlock.visible = true;
         } else {
             this._licenseBlock.visible = false;
         }
         if(acknowledgement.previewTexture) {
-            this._textureBlock.set({
-                backgroundTexture: acknowledgement.previewTexture
-            });
+            this._textureBlock.updateTexture(acknowledgement.previewTexture);
             this._textureBlock.visible = true;
         } else if(acknowledgement['Preview Image URL']
             && !acknowledgement.isLoadingTexture)
@@ -197,18 +139,15 @@ class AcknowledgementsPage extends MenuPage {
             this._textureBlock.visible = false;
         }
         if(acknowledgement['Source URL']) {
-            this._sourceButton.visible = true;
-            this._containerInteractable.addChild(this._sourceInteractable);
+            this._sourceButtonParent.add(sourceButton);
         } else {
-            this._sourceButton.visible = false;
-            this._containerInteractable.removeChild(
-                this._sourceInteractable);
+            this._sourceButtonParent.remove(sourceButton);
         }
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         this._refreshAssets();
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
 }
 

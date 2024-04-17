@@ -7,11 +7,10 @@
 import global from '/scripts/core/global.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Text } from '/scripts/DigitalBacon-UI.js';
 
 const pages = [
     { "title": "Backdrop", "menuPage": MenuPages.SKYBOX, isEditorOnly: true },
@@ -30,43 +29,29 @@ class SettingsPage extends MenuPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Settings',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Settings', Styles.title);
+        this.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.2,
+            width: 0.45,
         });
         for(let page of pages) {
             if(!global.isEditor && page.isEditorOnly) continue;
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': page.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
+            let button = createWideButton(page.title);
+            button.margin = 0.004;
             columnBlock.add(button);
-            let interactable = new PointerInteractable(button);
-            interactable.addEventListener('click', () => {
+            button.onClick = () => this._controller.pushPage(page.menuPage);
+            button.onClick = () => {
                 if(page.menuPage) {
                     this._controller.pushPage(page.menuPage);
                 } else {
                     ReadyPlayerMe.selectAvatar();
                 }
 
-            });
-            this._containerInteractable.addChild(interactable);
+            };
         }
-        this._container.add(columnBlock);
+        this.add(columnBlock);
     }
 
 }

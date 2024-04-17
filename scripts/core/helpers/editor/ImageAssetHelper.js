@@ -10,7 +10,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
+import EnumField from '/scripts/core/menu/input/EnumField.js';
 
 export default class ImageAssetHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -32,7 +32,7 @@ export default class ImageAssetHelper extends AssetEntityHelper {
     static fields = [
         { "parameter": "visualEdit" },
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
-            "type": EnumInput },
+            "type": EnumField },
         { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },

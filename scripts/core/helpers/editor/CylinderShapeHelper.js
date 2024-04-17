@@ -7,8 +7,8 @@
 import CylinderShape from '/scripts/core/assets/primitives/CylinderShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import NumberField from '/scripts/core/menu/input/NumberField.js';
 
 export default class CylinderShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -19,18 +19,18 @@ export default class CylinderShapeHelper extends ShapeHelper {
         { "parameter": "visualEdit" },
         { "parameter": "material" },
         { "parameter": "height", "name": "Height", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "radiusTop", "name": "Top Radius", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "radiusBottom", "name": "Bottom Radius", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "radialSegments", "name": "Sides", "min": 3,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-            "type": NumberInput },
-        { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxInput},
+            "type": NumberField },
+        { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxField},
         { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },

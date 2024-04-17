@@ -9,19 +9,21 @@ import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableE
 import Scene from '/scripts/core/assets/Scene.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import NotificationHub from '/scripts/core/menu/NotificationHub.js';
-import Keyboard from '/scripts/core/menu/input/Keyboard.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import { GripInteractableHandler, PointerInteractableHandler, Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractableHandler, PointerInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 export default class MenuController extends PointerInteractableEntity {
     constructor() {
         super();
         this._object.position.setZ(-100);
+        this._object.pointerInteractable =new PointerInteractable(this._object);
+        this._object.touchInteractable = new TouchInteractable(this._object);
         this._pages = {};
         this._pageCalls = [];
         this._gripInteractable = new MenuGripInteractable();
@@ -56,27 +58,27 @@ export default class MenuController extends PointerInteractableEntity {
 
     setPage(page) {
         let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
+        currentPage.parent.remove(currentPage);
         this._pageCalls = [page];
         currentPage = this.getCurrentPage();
-        currentPage.addToScene(this._object, this._pointerInteractable);
+        this._object.add(currentPage);
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     pushPage(page) {
         let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
+        currentPage.parent.remove(currentPage);
         this._pageCalls.push(page);
-        this._pages[page].addToScene(this._object, this._pointerInteractable);
+        this._object.add(this._pages[page]);
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     popPage() {
         let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
+        currentPage.parent.remove(currentPage);
         this._pageCalls.pop();
         currentPage = this.getCurrentPage();
-        currentPage.addToScene(this._object, this._pointerInteractable);
+        this._object.add(currentPage);
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
@@ -132,7 +134,6 @@ export default class MenuController extends PointerInteractableEntity {
             this._gripOwners.delete(message.owner.id);
         });
         this._gripInteractable.addChild(interactable);
-        Keyboard.init(this._object);
     }
 
     getPosition(vector3) {
@@ -228,22 +229,23 @@ export default class MenuController extends PointerInteractableEntity {
 
     addToScene(scene) {
         if(this._object.parent == scene) return;
-        super.addToScene(scene);
+        scene.add(this._object);
         this._scene = scene;
-        this.getCurrentPage().addToScene(this._object,
-            this._pointerInteractable);
+        this._object.add(this.getCurrentPage());
         if(global.deviceType == "XR")
             GripInteractableHandler.addInteractable(this._gripInteractable);
-        PointerInteractableHandler.addInteractable(this._pointerInteractable);
+        PointerInteractableHandler.addInteractable(
+            this._object.pointerInteractable);
     }
 
     removeFromScene() {
         super.removeFromScene();
+        if(this._object.parent) this._object.parent.remove(this._object);
         let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
+        currentPage.parent.remove(currentPage);
         if(global.deviceType == "XR")
             GripInteractableHandler.removeInteractable(this._gripInteractable);
         PointerInteractableHandler.removeInteractable(
-            this._pointerInteractable);
+            this._object.pointerInteractable);
     }
 }

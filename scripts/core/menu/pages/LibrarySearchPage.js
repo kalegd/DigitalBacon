@@ -8,7 +8,7 @@ import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
+import { createTextInput } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 
 const FIELD_MAX_LENGTH = 25;
@@ -22,14 +22,19 @@ class LibrarySearchPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        this._textField = new TextField({
-            'height': 0.04,
-            'width': 0.4,
-            'fontSize': FontSizes.header,
-            'onBlur': () => { this._searchUpdated(); },
-            'onUpdate': () => { this._searchUpdated(); },
+        this._searchInput = createTextInput({
+            borderRadius: 0.02,
+            fontSize: FontSizes.body,
+            height: 0.04,
+            marginBottom: 0.004,
+            marginTop: 0.01,
+            width: 0.375,
         });
-        this._textField.addToScene(this._container,this._containerInteractable);
+        this._searchInput.onEnter = () => this._searchInput.blur();
+        this._searchInput.onBlur = this._searchInput.onChange = () => {
+            this._searchUpdated();
+        };
+        this.add(this._searchInput);
 
         this._addList();
     }
@@ -61,7 +66,7 @@ class LibrarySearchPage extends PaginatedPage {
 
     _getFilteredItems() {
         let items = [];
-        let content = this._textField.content.toLowerCase();
+        let content = this._searchInput.value.toLowerCase();
         for(let id in this._assets) {
             let asset = this._assets[id];
             if(asset instanceof InternalAssetEntity) {
@@ -78,7 +83,7 @@ class LibrarySearchPage extends PaginatedPage {
     }
 
     back() {
-        this._textField.deactivate();
+        this._searchInput.blur();
         super.back();
     }
 

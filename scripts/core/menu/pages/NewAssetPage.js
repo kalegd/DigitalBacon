@@ -18,10 +18,9 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import { FontSizes, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
+import { Styles, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-
+import { Text } from '/scripts/DigitalBacon-UI.js';
 const URL_PREFIX_PATTERN = /^https:\/\//i;
 
 const SPECIAL_OPTIONS = {
@@ -48,13 +47,8 @@ class NewAssetPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Add New Asset',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.3,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Add New Asset', Styles.title);
+        this.add(titleBlock);
 
         this._addList();
     }
@@ -156,9 +150,9 @@ class NewAssetPage extends PaginatedPage {
         }
         let asset = ProjectHandler.addNewAsset(assetId, params);
         let textPage = this._controller.getPage(MenuPages.TEXT);
-        if(textPage._object.parent) this._controller.back();
+        if(textPage.parent) this._controller.back();
         if(assetType != this._assetType) return;
-        if(this._object.parent) this._controller.back();
+        if(this.parent) this._controller.back();
         if(this._additionalAction) this._additionalAction(asset);
     }
 

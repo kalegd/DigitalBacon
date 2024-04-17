@@ -5,10 +5,9 @@
  */
 
 import InteractionTools from '/scripts/core/enums/InteractionTools.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import { InteractionToolHandler } from '/scripts/DigitalBacon-UI.js';
+import { InteractionToolHandler, Text } from '/scripts/DigitalBacon-UI.js';
 
 const hands = [
     { "title": "Edit", "type": InteractionTools.EDIT },
@@ -27,13 +26,8 @@ class HandsPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Hand Tools',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Hand Tools', Styles.title);
+        this.add(titleBlock);
 
         this._addList();
     }

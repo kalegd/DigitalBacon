@@ -26,7 +26,6 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import global from '/scripts/core/global.js';
 import * as DigitalBaconUI from '/scripts/DigitalBacon-UI.js';
 import Stats from '/node_modules/three/examples/jsm/libs/stats.module.js';
-import ThreeMeshUI from 'three-mesh-ui';
 import * as THREE from 'three';
 
 export default class Main {
@@ -105,7 +104,6 @@ export default class Main {
         AudioHandler.init();
         if(global.disableImmersion) return;
         SessionHandler.init(this._container, onStart);
-        UndoRedoHandler.init();
         DigitalBaconUI.InteractionToolHandler.setTool(InteractionTools.EDIT);
         TransformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);
@@ -143,6 +141,7 @@ export default class Main {
     }
 
     _setupForImmersion() {
+        UndoRedoHandler.init();
         this._menuController = global.isEditor
             ? new EditorMenuController()
             : new LiveMenuController();
@@ -243,7 +242,6 @@ export default class Main {
             asset.update(timeDelta);
         }
         PubSub.update(timeDelta);
-        ThreeMeshUI.update(timeDelta);
         this._renderer.render(this._scene, this._camera);
         this._stats.end();
     }

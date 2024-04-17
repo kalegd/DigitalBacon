@@ -8,30 +8,19 @@ import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import MenuField from '/scripts/core/menu/input/MenuField.js';
+import { Span, Text } from '/scripts/DigitalBacon-UI.js';
 
-const HEIGHT = 0.05;
-const WIDTH = 0.31;
-const TITLE_WIDTH = 0.13;
-const FIELD_HEIGHT = 0.03;
-const FIELD_WIDTH = 0.17;
-const FIELD_MARGIN = 0.01;
-const FIELD_MAX_LENGTH = 13;
-
-class AssetEntityInput extends PointerInteractableEntity {
+class AssetEntityField extends MenuField {
     constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._onUpdate = params['onUpdate'];
+        super(params);
         this._lastValue =  params['initialValue'];
         this._exclude =  params['exclude'];
         this._filter =  params['filter'];
@@ -42,39 +31,14 @@ class AssetEntityInput extends PointerInteractableEntity {
     }
 
     _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT,
-            'width': WIDTH,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT,
-            'width': TITLE_WIDTH,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._assetEntitySelection = ThreeMeshUIHelper.createButtonBlock({
-            'text': ' ',
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT,
-            'width': FIELD_WIDTH,
-            'margin': FIELD_MARGIN,
-            'idleOpacity': 0.9,
-            'hoveredOpacity': 1,
-            'selectedOpacity': 1,
-        });
+        this._addTitle(title);
+        this._assetEntitySelection = createWideButton('');
+        this._assetEntitySelection.textComponent.fontSize = 0.017;
+        this._assetEntitySelection.height = 0.03;
+        this._assetEntitySelection.width = 0.17;
         this._updateAssetEntity();
-        this._object.add(titleBlock);
-        this._object.add(this._assetEntitySelection);
-        let interactable = new PointerInteractable(this._assetEntitySelection);
-        interactable.addEventListener('click', () => {
+        this.add(this._assetEntitySelection);
+        this._assetEntitySelection.onClick = () => {
             let assets = ProjectHandler.getAssets();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };
@@ -95,8 +59,7 @@ class AssetEntityInput extends PointerInteractableEntity {
                 this._handleAssetSelection(assetId);
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
-        });
-        this._pointerInteractable.addChild(interactable);
+        };
     }
 
     _handleAssetSelection(assetId) {
@@ -120,21 +83,8 @@ class AssetEntityInput extends PointerInteractableEntity {
         let assetEntityName = assetEntity
             ? assetEntity.getName()
             : Scene.getId() == this._lastValue ? 'Scene' : " ";
-        assetEntityName = stringWithMaxLength(assetEntityName,FIELD_MAX_LENGTH);
-        let textComponent = this._assetEntitySelection.children[1];
-        textComponent.set({ content: assetEntityName });
-    }
-
-    getWidth() {
-        return WIDTH;
-    }
-
-    getHeight() {
-        return HEIGHT;
-    }
-
-    deactivate() {
-        //Required method
+        assetEntityName = stringWithMaxLength(assetEntityName, 16);
+        this._assetEntitySelection.textComponent.text = assetEntityName;
     }
 
     updateFromSource() {
@@ -144,4 +94,4 @@ class AssetEntityInput extends PointerInteractableEntity {
     }
 }
 
-export default AssetEntityInput;
+export default AssetEntityField;

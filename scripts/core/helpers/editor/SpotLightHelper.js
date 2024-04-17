@@ -9,9 +9,9 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-//import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import TextureInput from '/scripts/core/menu/input/TextureInput.js';
+//import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import NumberField from '/scripts/core/menu/input/NumberField.js';
+import TextureField from '/scripts/core/menu/input/TextureField.js';
 import * as THREE from 'three';
 
 export default class SpotLightHelper extends LightHelper {
@@ -43,16 +43,16 @@ export default class SpotLightHelper extends LightHelper {
         { "parameter": "color" },
         { "parameter": "intensity" },
         { "parameter": "angle", "name": "Angle", "min": 0, "max": 180,
-            "type": NumberInput },
+            "type": NumberField },
         //{ "parameter": "castShadow", "name": "Cast Shadow",
-        //    "type": CheckboxInput },
+        //    "type": CheckboxField },
         { "parameter": "distance", "name": "Distance", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "decay", "name": "Decay", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "penumbra", "name": "Penumbra", "min": 0, "max": 1,
-            "type": NumberInput },
-        { "parameter": "map", "name": "Texture", "type": TextureInput },
+            "type": NumberField },
+        { "parameter": "map", "name": "Texture", "type": TextureField },
         { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },

@@ -35,7 +35,6 @@ import SkyboxPage from '/scripts/core/menu/pages/SkyboxPage.js';
 import TextPage from '/scripts/core/menu/pages/TextPage.js';
 import TextInputPage from '/scripts/core/menu/pages/TextInputPage.js';
 import TwoButtonPage from '/scripts/core/menu/pages/TwoButtonPage.js';
-import UploadPage from '/scripts/core/menu/pages/UploadPage.js';
 import UserSettingsPage from '/scripts/core/menu/pages/UserSettingsPage.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 
@@ -66,7 +65,6 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.TEXT] = new TextPage(this);
         this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
         this._pages[MenuPages.TWO_BUTTON] = new TwoButtonPage(this);
-        this._pages[MenuPages.UPLOAD] = new UploadPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         for(let assetType in AssetTypes) {
             if(assetType == AssetTypes.INTERNAL) continue;
@@ -82,6 +80,6 @@ export default class EditorMenuController extends MenuController {
 
     _createInteractables() {
         super._createInteractables();
-        UndoRedoHandler.addButtons(this._object, this._pointerInteractable);
+        UndoRedoHandler.addButtons(this._object);
     }
 }

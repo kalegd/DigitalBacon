@@ -110,7 +110,7 @@ class PartyMessageHelper {
     _handleUserController(peer, message) {
         if(!peer.controller) {
             let params = message.controllerParams;
-            peer.username = params.username;
+            this._handleUsername(peer, params.username);
             let controller = ProjectHandler.getSessionAsset(params.id);
             if(controller) {
                 ProjectHandler.addAsset(controller);

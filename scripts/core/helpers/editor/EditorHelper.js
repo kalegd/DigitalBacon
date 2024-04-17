@@ -11,36 +11,36 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import AssetEntityInput from '/scripts/core/menu/input/AssetEntityInput.js';
-import AudioInput from '/scripts/core/menu/input/AudioInput.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import ColorInput from '/scripts/core/menu/input/ColorInput.js';
-import CubeImageInput from '/scripts/core/menu/input/CubeImageInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import EulerInput from '/scripts/core/menu/input/EulerInput.js';
-import ImageInput from '/scripts/core/menu/input/ImageInput.js';
-import MaterialInput from '/scripts/core/menu/input/MaterialInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import TextInput from '/scripts/core/menu/input/TextInput.js';
-import TextureInput from '/scripts/core/menu/input/TextureInput.js';
-import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
-import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
+import AssetEntityField from '/scripts/core/menu/input/AssetEntityField.js';
+import AudioField from '/scripts/core/menu/input/AudioField.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import ColorField from '/scripts/core/menu/input/ColorField.js';
+import CubeImageField from '/scripts/core/menu/input/CubeImageField.js';
+import EnumField from '/scripts/core/menu/input/EnumField.js';
+import EulerField from '/scripts/core/menu/input/EulerField.js';
+import ImageField from '/scripts/core/menu/input/ImageField.js';
+import MaterialField from '/scripts/core/menu/input/MaterialField.js';
+import NumberField from '/scripts/core/menu/input/NumberField.js';
+import TextField from '/scripts/core/menu/input/TextField.js';
+import TextureField from '/scripts/core/menu/input/TextureField.js';
+import Vector2Field from '/scripts/core/menu/input/Vector2Field.js';
+import Vector3Field from '/scripts/core/menu/input/Vector3Field.js';
 
 const INPUT_TYPE_TO_CREATE_FUNCTION = {
-    AssetEntityInput: "_createAssetEntityInput",
-    AudioInput: "_createAudioInput",
-    CheckboxInput: "_createCheckboxInput",
-    ColorInput: "_createColorInput",
-    CubeImageInput: "_createCubeImageInput",
-    EnumInput: "_createEnumInput",
-    EulerInput: "_createEulerInput",
-    ImageInput: "_createImageInput",
-    MaterialInput: "_createMaterialInput",
-    NumberInput: "_createNumberInput",
-    TextInput: "_createTextInput",
-    TextureInput: "_createTextureInput",
-    Vector2Input: "_createVector2Input",
-    Vector3Input: "_createVector3Input",
+    AssetEntityField: "_createAssetEntityField",
+    AudioField: "_createAudioField",
+    CheckboxField: "_createCheckboxField",
+    ColorField: "_createColorField",
+    CubeImageField: "_createCubeImageField",
+    EnumField: "_createEnumField",
+    EulerField: "_createEulerField",
+    ImageField: "_createImageField",
+    MaterialField: "_createMaterialField",
+    NumberField: "_createNumberField",
+    TextField: "_createTextField",
+    TextureField: "_createTextureField",
+    Vector2Field: "_createVector2Field",
+    Vector3Field: "_createVector3Field",
 };
 
 export default class EditorHelper {
@@ -244,22 +244,22 @@ export default class EditorHelper {
             if(field.parameter in menuFieldsMap) {
                 continue;
             } else {
-                let input = this._createStandardInput(field);
+                let input = this._createStandardField(field);
                 if(input) menuFieldsMap[field.parameter] = input;
             }
         }
         return menuFieldsMap;
     }
 
-    _createStandardInput(field) {
+    _createStandardField(field) {
         if(field.type.name in INPUT_TYPE_TO_CREATE_FUNCTION) {
             return this[INPUT_TYPE_TO_CREATE_FUNCTION[field.type.name]](field);
         }
     }
 
-    _createAssetEntityInput(field) {
+    _createAssetEntityField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new AssetEntityInput({
+        return new AssetEntityField({
             'title': field.name,
             'exclude': field.excludeSelf ? this._id : null,
             'filter': typeof field.filter == 'function' ? field.filter : null,
@@ -272,9 +272,9 @@ export default class EditorHelper {
         });
     }
 
-    _createAudioInput(field) {
+    _createAudioField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new AudioInput({
+        return new AudioField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
@@ -284,9 +284,9 @@ export default class EditorHelper {
         });
     }
 
-    _createCheckboxInput(field) {
+    _createCheckboxField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new CheckboxInput({
+        return new CheckboxField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'suppressMenuFocusEvent': field.suppressMenuFocusEvent == true,
@@ -297,9 +297,9 @@ export default class EditorHelper {
         });
     }
 
-    _createColorInput(field) {
+    _createColorField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new ColorInput({
+        return new ColorField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
@@ -313,9 +313,9 @@ export default class EditorHelper {
         });
     }
 
-    _createCubeImageInput(field) {
+    _createCubeImageField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new CubeImageInput({
+        return new CubeImageField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
@@ -325,9 +325,9 @@ export default class EditorHelper {
         });
     }
 
-    _createEnumInput(field) {
+    _createEnumField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new EnumInput({
+        return new EnumField({
             'title': field.name,
             'initialValue': this._getKeyFromValue(field.map,
                 this._asset[getFunction]()),
@@ -340,9 +340,9 @@ export default class EditorHelper {
         });
     }
 
-    _createEulerInput(field) {
+    _createEulerField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new EulerInput({
+        return new EulerField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
@@ -356,9 +356,9 @@ export default class EditorHelper {
         });
     }
 
-    _createImageInput(field) {
+    _createImageField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new ImageInput({
+        return new ImageField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
@@ -368,9 +368,9 @@ export default class EditorHelper {
         });
     }
 
-    _createMaterialInput(field) {
+    _createMaterialField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new MaterialInput({
+        return new MaterialField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
@@ -380,9 +380,9 @@ export default class EditorHelper {
         });
     }
 
-    _createNumberInput(field) {
+    _createNumberField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new NumberInput({
+        return new NumberField({
             'title': field.name,
             'minValue': field.min,
             'maxValue': field.max,
@@ -398,12 +398,13 @@ export default class EditorHelper {
         });
     }
 
-    _createTextInput(field) {
+    _createTextField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new TextInput({
+        return new TextField({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
+            'singleLine': field.singleLine,
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
                     oldValue);
@@ -414,9 +415,9 @@ export default class EditorHelper {
         });
     }
 
-    _createTextureInput(field) {
+    _createTextureField(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new TextureInput({
+        return new TextureField({
             'title': field.name,
             'filter': field.filter,
             'initialValue': this._asset[getFunction](),
@@ -427,9 +428,9 @@ export default class EditorHelper {
         });
     }
 
-    _createVector2Input(field) {
+    _createVector2Field(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new Vector2Input({
+        return new Vector2Field({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),
@@ -443,9 +444,9 @@ export default class EditorHelper {
         });
     }
 
-    _createVector3Input(field) {
+    _createVector3Field(field) {
         let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
-        return new Vector3Input({
+        return new Vector3Field({
             'title': field.name,
             'initialValue': this._asset[getFunction](),
             'getFromSource': () => this._asset[getFunction](),

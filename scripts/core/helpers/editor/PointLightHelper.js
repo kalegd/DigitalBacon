@@ -9,7 +9,7 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import NumberField from '/scripts/core/menu/input/NumberField.js';
 import * as THREE from 'three';
 
 export default class PointLightHelper extends LightHelper {
@@ -40,9 +40,9 @@ export default class PointLightHelper extends LightHelper {
         { "parameter": "color" },
         { "parameter": "intensity" },
         { "parameter": "distance", "name": "Distance", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "decay", "name": "Decay", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "parentId" },
         { "parameter": "position" },
         { "parameter": "rotation" },

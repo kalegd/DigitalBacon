@@ -7,10 +7,10 @@
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedIconsPage from '/scripts/core/menu/pages/PaginatedIconsPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Text } from '/scripts/DigitalBacon-UI.js';
 
 const ASSETS = [{
     'text': 'Models',
@@ -69,43 +69,20 @@ class LibraryPage extends PaginatedIconsPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Assets',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Assets', Styles.title);
+        this.add(titleBlock);
 
         this._addList();
     }
 
     _createSearchButton() {
-        let searchButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: Colors.defaultMenuBackground,
-            backgroundOpacity: 0,
-        });
-        let searchButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.searchIcon,
-            'backgroundTextureScale': 0.8,
-            'height': 0.04,
-            'width': 0.04,
-            'padding': 0.01,
-        });
-        searchButtonParent.set({
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture,
-        });
-        searchButtonParent.position.fromArray([-0.175, 0.12, -0.001]);
-        searchButtonParent.add(searchButton);
-        let interactable = new PointerInteractable(searchButton);
-        interactable.addEventListener('click', () => {
+        let searchButton = createSmallButton(Textures.searchIcon, 0.8);
+        searchButton.bypassContentPositioning = true;
+        searchButton.position.fromArray([-0.175, 0.12, 0.001]);
+        searchButton.onClick = () => {
             this._controller.pushPage(MenuPages.LIBRARY_SEARCH);
-        });
-        this._containerInteractable.addChild(interactable);
-        this._object.add(searchButtonParent);
+        };
+        this.add(searchButton);
     }
 
     _getItemName(item) {

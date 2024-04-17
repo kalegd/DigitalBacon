@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { Style } from '/scripts/DigitalBacon-UI.js';
 
 import * as THREE from 'three';
 
@@ -143,6 +144,45 @@ export const Fonts = {
 export const FontSizes = {
     "header": 0.03,
     "body": 0.02,
+};
+
+let titleStyle = new Style({
+    color: Colors.white,
+    fontSize: FontSizes.header,
+    height: 0.05,
+});
+let smallButtonStyle = new Style({
+    backgroundVisible: true,
+    borderRadius: 0.01,
+    height: 0.04,
+    justifyContent: 'center',
+    materialColor: Colors.defaultIdle,
+    opacity: 0.7,
+    width: 0.04,
+});
+let wideButtonStyle = new Style({
+    backgroundVisible: true,
+    borderRadius: 0.01,
+    height: 0.035,
+    justifyContent: 'center',
+    materialColor: Colors.defaultIdle,
+    width: 0.3,
+});
+let wideImageButtonStyle = new Style({
+    borderRadius: 0.01,
+    height: 0.035,
+    justifyContent: 'center',
+    textureFit: 'cover',
+    width: 0.3,
+});
+
+export const Styles = {
+    bodyText: new Style({ color: Colors.white, fontSize: FontSizes.body }),
+    headerText: new Style({ color: Colors.white, fontSize: FontSizes.header }),
+    title: titleStyle,
+    smallButton: smallButtonStyle,
+    wideButton: wideButtonStyle,
+    wideImageButton: wideImageButtonStyle,
 };
 
 export const defaultImageSize = 1;

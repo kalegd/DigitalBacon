@@ -10,8 +10,8 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMediaAssetHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import EnumField from '/scripts/core/menu/input/EnumField.js';
 
 export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {
@@ -33,9 +33,9 @@ export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     static fields = [
         this.commonFields.visualEdit,
         { "parameter": "previewMedia", "name": "Preview Video",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput},
+            "suppressMenuFocusEvent": true, "type": CheckboxField},
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
-            "type": EnumInput },
+            "type": EnumField },
         this.commonFields.autoplay,
         this.commonFields.loop,
         this.commonFields.playTopic,

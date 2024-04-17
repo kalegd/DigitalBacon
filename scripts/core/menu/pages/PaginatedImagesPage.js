@@ -5,10 +5,10 @@
  */
 
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Image, Span } from '/scripts/DigitalBacon-UI.js';
 
 const ROWS = 2;
 const OPTIONS = 3;
@@ -17,162 +17,111 @@ class PaginatedIconsPage extends MenuPage {
     constructor(controller, hasBackButton) {
         super(controller, hasBackButton);
         this._paginatedListButtons = [];
-        this._paginatedListInteractables = [];
         this._page = 0;
-        this._optionsInteractable = new PointerInteractable();
     }
 
     _addList() {
         this._createPreviousAndNextButtons();
-        this._optionsContainer = new ThreeMeshUI.Block({
-            'height': 0.17,
-            'width': 0.45,
-            'contentDirection': 'row',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
-            'offset': 0,
+        this._optionsContainer = new Span({
+            height: 0.2,
+            justifyContent: 'spaceEvenly',
+            width: 0.45,
+        });
+        this._optionsBlock = new Div({
+            height: 0.178,
+            justifyContent: 'spaceBetween',
         });
         let params = {
-            'height': 0.17,
-            'width': 0.31,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
+            height: 0.085,
+            width: 0.316,
+            justifyContent: 'spaceBetween',
         };
-        this._optionsBlock = new ThreeMeshUI.Block(params);
-        params['height'] = 0.085;
-        params['contentDirection'] = 'row';
-        params['justifyContent'] = 'center';
-        params['margin'] = 0.005;
         this._rows = [];
-        this._rows.push(new ThreeMeshUI.Block(params));
-        this._rows.push(new ThreeMeshUI.Block(params));
+        this._rows.push(new Span(params));
+        this._rows.push(new Span(params));
         for(let i = 0; i < ROWS; i++) {
             let row = this._rows[i];
             for(let j = 0; j < OPTIONS; j++) {
-                let button = ThreeMeshUIHelper.createButtonBlock({
-                    'height': 0.085,
-                    'width': 0.1,
-                    'margin': 0.002,
-                    'justifyContent': 'start',
-                    'idleBackgroundColor': Colors.white,
-                    'hoveredBackgroundColor': Colors.white,
-                    'selectedBackgroundColor': Colors.white,
-                    'idleOpacity': 1,
+                let button = new Image(Textures.ellipsisIcon, {
+                    borderRadius: 0.01,
+                    height: 0.085,
+                    justifyContent: 'spaceEvenly',
+                    textureFit: 'cover',
+                    width: 0.1,
                 });
-                let textBlock = ThreeMeshUIHelper.createTextBlock({
-                    'text': ' ',
-                    'height': 0.035,
-                    'width': 0.1,
-                    'margin': 0,
-                });
-                button.add(textBlock);
+                button.pointerInteractable = new PointerInteractable(button);
                 row.add(button);
                 this._paginatedListButtons.push(button);
-                let interactable = new PointerInteractable(button);
-                interactable.addEventListener('click', () => {
+                button.onClick = () => {
                     let index = this._page * ROWS * OPTIONS + OPTIONS * i + j;
                     if(this._items.length > index) {
                         this._handleItemInteraction(this._items[index]);
                     } else {
                         console.error(
-                            "PaginatedIconsPage displaying non existant option"
+                            "PaginatedImagesPage displaying non existant option"
                         );
                     }
-                });
-                this._optionsInteractable.addChild(interactable);
-                this._paginatedListInteractables.push(interactable);
+                };
             }
         }
         this._optionsBlock.add(this._rows[0]);
         this._optionsBlock.add(this._rows[1]);
-        this._optionsContainer.add(this._previousButton);
+        this._optionsContainer.add(this._previousButtonParent);
         this._optionsContainer.add(this._optionsBlock);
-        this._optionsContainer.add(this._nextButton);
-        this._container.add(this._optionsContainer);
-        this._containerInteractable.addChild(this._optionsInteractable);
+        this._optionsContainer.add(this._nextButtonParent);
+        this.add(this._optionsContainer);
     }
 
     _createPreviousAndNextButtons() {
-        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '<',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '>',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._previousInteractable = new PointerInteractable(
-            this._previousButton);
-        this._previousInteractable.addEventListener('click', () => {
+        this._previousButtonParent = new Div();
+        this._previousButton = createSmallButton('<');
+        this._previousButton.onClick = () => {
             this._page -= 1;
             this._updateItemsGUI();
-        });
-        this._nextInteractable = new PointerInteractable(this._nextButton);
-        this._nextAction = () => {
+        };
+        this._previousButtonParent.add(this._previousButton);
+        this._nextButtonParent = new Div();
+        this._nextButton = createSmallButton('>');
+        this._nextButton.onClick = () => {
             this._page += 1;
+            if(this._fetchNext) this._fetchNextItems();
             this._updateItemsGUI();
         };
-        this._nextInteractable.addEventListener('click', this._nextAction);
-        this._fetchNextAction = () => {
-            this._page += 1;
-            this._fetchNextItems();
-            this._updateItemsGUI();
-        };
-        this._nextInteractable.addEventListener('click', this._fetchNextAction);
+        this._nextButtonParent.add(this._nextButton);
     }
 
     _updateItemsGUI() {
         let firstIndex = this._page * ROWS * OPTIONS;
         for(let i = 0; i < ROWS * OPTIONS; i++) {
-            let interactable = this._paginatedListInteractables[i];
             let button = this._paginatedListButtons[i];
             if(firstIndex + i < this._items.length) {
                 let item = this._items[firstIndex + i];
                 let image = this._getItemImage(item);
-                button.set({ backgroundTexture: image });
-                button.visible = true;
-                this._optionsInteractable.addChild(interactable);
+                button.updateTexture(image);
+                if(!button.parentComponent)
+                    this._rows[Math.floor(i / OPTIONS)].add(button);
             } else {
-                button.visible = false;
-                this._optionsInteractable.removeChild(interactable);
+                if(button.parentComponent)button.parentComponent.remove(button);
             }
         }
         if(this._page == 0) {
-            this._previousButton.visible = false;
-            this._optionsInteractable.removeChild(this._previousInteractable);
-        } else {
-            this._previousButton.visible = true;
-            this._optionsInteractable.addChild(this._previousInteractable);
+            if(this._previousButton.parentComponent)
+                this._previousButtonParent.remove(this._previousButton);
+        } else if(!this._previousButton.parentComponent) {
+            this._previousButtonParent.add(this._previousButton);
         }
         if(this._items.length > firstIndex + ROWS * OPTIONS) {
-            this._nextButton.visible = true;
-            this._optionsInteractable.addChild(this._nextInteractable);
-            this._nextInteractable.addEventListener('click', this._nextAction);
-            this._nextInteractable.removeEventListener('click',
-                this._fetchNextAction);
+            if(!this._nextButton.parentComponent)
+                this._nextButtonParent.add(this._nextButton);
+            this._fetchNext = false;
         } else if(this._items.length == firstIndex + ROWS * OPTIONS
                 && this._canFetchMore) {
-            this._nextButton.visible = true;
-            this._optionsInteractable.addChild(this._nextInteractable);
-            this._nextInteractable.addEventListener('click',
-                this._fetchNextAction);
-            this._nextInteractable.removeEventListener('click',
-                this._nextAction);
+            this._fetchNext = true;
         } else {
-            this._nextButton.visible = false;
-            this._optionsInteractable.removeChild(this._nextInteractable);
+            if(this._nextButton.parentComponent)
+                this._nextButtonParent.remove(this._nextButton);
+            this._fetchNext = false;
         }
-        //this._container.update(false, true, false);
     }
 
     //Needs to be overridden
@@ -202,12 +151,10 @@ class PaginatedIconsPage extends MenuPage {
         return;
     }
 
-    addToScene(scene, interactableParent) {
-        super.addToScene(scene, interactableParent);
-        if(scene) {
-            this._refreshItems();
-            this._updateItemsGUI();
-        }
+    _onAdded() {
+        super._onAdded();
+        this._refreshItems();
+        this._updateItemsGUI();
     }
 
 }

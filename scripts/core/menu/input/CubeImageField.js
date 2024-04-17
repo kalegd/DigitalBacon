@@ -5,7 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
@@ -13,15 +12,11 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import MenuField from '/scripts/core/menu/input/MenuField.js';
+import { Div, Image, Span, Text } from '/scripts/DigitalBacon-UI.js';
 
-const HEIGHT = 0.2;
-const WIDTH = 0.31;
-const TITLE_HEIGHT = 0.04;
-const TITLE_WIDTH = 0.31;
 const SIDES = [
     CubeSides.TOP,
     CubeSides.LEFT,
@@ -38,92 +33,52 @@ SIDES_MAP[CubeSides.RIGHT] = 3;
 SIDES_MAP[CubeSides.BACK] = 4;
 SIDES_MAP[CubeSides.BOTTOM] = 5;
 
-class CubeImageInput extends PointerInteractableEntity {
+class CubeImageField extends MenuField {
     constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._onUpdate = params['onUpdate'];
+        super(params);
+        this.height = params['title'] ? 0.244 : 0.196;
+        this.contentDirection = 'column';
         this._lastValues = {};
         if(params['initialValue']) {
             for(let key in params['initialValue']) {
                 this._lastValues[key] = params['initialValue'][key];
             }
         }
-        this._title = params['title'] || null;
+        let title = params['title'] || null;
         this._buttons = [];
-        this._createInputs();
+        this._createInputs(title);
         for(let side of SIDES) {
             this._updateImage(side, this._lastValues[side]);
         }
     }
 
-    _createInputs() {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT,
-            'width': WIDTH,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        if(this._title) {
-            let titleBlock = ThreeMeshUIHelper.createTextBlock({
-                'text': this._title,
-                'fontSize': FontSizes.body,
-                'height': TITLE_HEIGHT,
-                'width': TITLE_WIDTH,
-                'margin': 0,
-            });
-            this._object.add(titleBlock);
-        }
-        let rowBlock = new ThreeMeshUI.Block({
-            'height': 0.064,
-            'width': 0.3,
-            'contentDirection': 'row',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
+    _createInputs(title) {
+        if(title) this._addTitle(title, 0.31).height = 0.04;
+        let rowBlock = new Span({
+            height: 0.06,
+            justifyContent: 'spaceBetween',
+            width: 0.264,
         });
         for(let i = 0; i < SIDES.length; i++) {
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'backgroundTexture': Textures.searchIcon,
-                'height': 0.06,
-                'width': 0.06,
-                'margin': 0.002,
-                'borderRadius': 0.00001,
+            let button = new Image(Textures.searchIcon, {
+                height: 0.06,
+                width: 0.06,
             });
-            let interactable = new PointerInteractable(button);
-            interactable.addEventListener('click',
-                () => this._handleInteractable(SIDES[i]));
-            this._pointerInteractable.addChild(interactable);
+            button.pointerInteractable = new PointerInteractable(button);
+            button.onClick = () => this._handleInteractable(SIDES[i]);
             if(i == 0) {
-                let topRowBlock = new ThreeMeshUI.Block({
-                    'height': 0.064,
-                    'width': 0.128,
-                    'contentDirection': 'row',
-                    'justifyContent': 'start',
-                    'backgroundOpacity': 0,
-                });
-                topRowBlock.add(button);
-                this._object.add(topRowBlock);
+                button.marginRight = 0.068;
+                this.add(button);
+                this.add(rowBlock);
             } else if(i < 5) {
                 rowBlock.add(button);
             } else {
-                this._object.add(rowBlock);
-
-                let bottomRowBlock = new ThreeMeshUI.Block({
-                    'height': 0.064,
-                    'width': 0.128,
-                    'contentDirection': 'row',
-                    'justifyContent': 'start',
-                    'backgroundOpacity': 0,
-                });
-                bottomRowBlock.add(button);
-                this._object.add(bottomRowBlock);
+                button.marginRight = 0.068;
+                this.add(button);
             }
             this._buttons.push(button);
         }
+        this.add(columnBlock);
     }
 
     _handleInteractable(side) {
@@ -168,25 +123,11 @@ class CubeImageInput extends PointerInteractableEntity {
         let index = SIDES_MAP[side];
         this._lastValues[side] = assetId;
         if(assetId) {
-            this._buttons[index].children[1].set({
-                backgroundTexture: LibraryHandler.getTexture(assetId) });
+            this._buttons[index].updateTexture(
+                LibraryHandler.getTexture(assetId));
         } else {
-            this._buttons[index].children[1].set({
-                backgroundTexture: Textures.searchIcon });
+            this._buttons[index].updateTexture(Textures.searchIcon);
         }
-    }
-
-    getWidth() {
-        return WIDTH;
-    }
-
-    getHeight() {
-        if(this._title) return HEIGHT + TITLE_HEIGHT;
-        return HEIGHT;
-    }
-
-    deactivate() {
-        //Required method
     }
 
     updateFromSource() {
@@ -200,4 +141,4 @@ class CubeImageInput extends PointerInteractableEntity {
     }
 }
 
-export default CubeImageInput;
+export default CubeImageField;

@@ -6,13 +6,12 @@
 
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ComponentsHandler from '/scripts/core/handlers/assetTypes/ComponentsHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedListPage from '/scripts/core/menu/pages/PaginatedListPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Text } from '/scripts/DigitalBacon-UI.js';
 
 const FIELD_MAX_LENGTH = 25;
 
@@ -26,38 +25,17 @@ class ListComponentsPage extends PaginatedListPage {
     }
 
     _addPageContent() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Components',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(this._titleBlock);
+        let titleBlock = new Text('Components', Styles.title);
+        this.add(titleBlock);
 
         this._addList();
     }
 
     _createAddButton() {
-        this._addButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: Colors.defaultMenuBackground,
-            backgroundOpacity: 0,
-        });
-        let addButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "+",
-            'fontSize': 0.04,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        this._addButtonParent.set({
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture,
-        });
-        this._addButtonParent.position.fromArray([.175, 0.12, -0.001]);
-        this._addButtonParent.add(addButton);
-        this._addInteractable = new PointerInteractable(addButton);
-        this._addInteractable.addEventListener('click', () => {
+        let addButton = createSmallButton('+');
+        addButton.bypassContentPositioning = true;
+        addButton.position.fromArray([0.175, 0.12, 0.001]);
+        addButton.onClick = () => {
             let assetComponents = this._asset.getComponents(true);
             let components = ComponentsHandler.getAssets();
             let filteredComponents = {};
@@ -76,9 +54,8 @@ class ListComponentsPage extends PaginatedListPage {
                 this._selectNewComponent();
             });
             this._controller.pushPage(MenuPages.ASSET_SELECT);
-        });
-        this._containerInteractable.addChild(this._addInteractable);
-        this._object.add(this._addButtonParent);
+        };
+        this.add(addButton);
     }
 
     _addComponent(componentId) {
@@ -182,14 +159,14 @@ class ListComponentsPage extends PaginatedListPage {
         PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         this._addSubscriptions();
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
 
-    removeFromScene() {
+    _onRemoved() {
         this._removeSubscriptions();
-        super.removeFromScene();
+        super._onRemoved();
     }
 
 }

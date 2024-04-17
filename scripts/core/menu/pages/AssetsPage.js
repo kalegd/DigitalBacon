@@ -8,10 +8,10 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Text } from '/scripts/DigitalBacon-UI.js';
 
 const FIELD_MAX_LENGTH = 25;
 
@@ -29,47 +29,25 @@ class AssetsPage extends PaginatedPage {
         let title = (this._assetType == "CUSTOM_ASSET")
             ? "Other Assets"
             : this._assetType[0] + this._assetType.slice(1).toLowerCase();
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text(title, Styles.title);
+        this.add(titleBlock);
 
         this._addList();
     }
 
     _createAddButton() {
-        let addButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: Colors.defaultMenuBackground,
-            backgroundOpacity: 0,
-        });
-        let addButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "+",
-            'fontSize': 0.04,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        addButtonParent.set({
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture,
-        });
-        addButtonParent.position.fromArray([.175, 0.12, -0.001]);
-        addButtonParent.add(addButton);
-        let interactable = new PointerInteractable(addButton);
-        interactable.addEventListener('click', () => {
+        let addButton = createSmallButton('+');
+        addButton.bypassContentPositioning = true;
+        addButton.position.fromArray([0.175, 0.12, 0.001]);
+        addButton.onClick = () => {
             let page = this._controller.getPage('NEW_' + this._assetType);
             page.setContent((asset) => {
                 if(asset.constructor.assetType == this._assetType)
                     this._handleItemInteraction(asset.getId());
             });
             this._controller.pushPage('NEW_' + this._assetType);
-        });
-        this._containerInteractable.addChild(interactable);
-        this._object.add(addButtonParent);
+        };
+        this.add(addButton);
     }
 
     _getItemName(item) {
@@ -117,14 +95,14 @@ class AssetsPage extends PaginatedPage {
         PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         this._addSubscriptions();
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
 
-    removeFromScene() {
+    _onRemoved() {
         this._removeSubscriptions();
-        super.removeFromScene();
+        super._onRemoved();
     }
 
 }

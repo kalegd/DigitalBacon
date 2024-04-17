@@ -19,7 +19,7 @@ import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import * as utils from '/scripts/core/helpers/utils.module.js';
 import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
 import * as Interactables from '/scripts/core/interactables/Interactables.js';
-import * as MenuInputs from '/scripts/core/menu/input/MenuInputs.js';
+import * as MenuFields from '/scripts/core/menu/input/MenuFields.js';
 import * as DigitalBaconUI from '/scripts/DigitalBacon-UI.js';
 
 const version = "0.2.1";
@@ -50,7 +50,8 @@ if(window != null) {
         EditorHelpers: EditorHelpers,
         Interactables: Interactables,
         LibraryHandler: LibraryHandler,
-        MenuInputs: MenuInputs,
+        MenuFields: MenuFields,
+        MenuInputs: MenuFields,
         PartyHandler: PartyHandler,
         PartyMessageHelper: PartyMessageHelper,
         ProjectHandler: ProjectHandler,
@@ -75,7 +76,7 @@ export { DigitalBaconUI };
 export { EditorHelpers };
 export { Interactables };
 export { LibraryHandler };
-export { MenuInputs };
+export { MenuFields };
 export { PartyHandler };
 export { PartyMessageHelper };
 export { ProjectHandler };

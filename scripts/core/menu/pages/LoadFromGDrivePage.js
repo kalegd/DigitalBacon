@@ -9,9 +9,9 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import { Text } from '/scripts/DigitalBacon-UI.js';
 
 class LoadFromGDrivePage extends PaginatedPage {
     constructor(controller) {
@@ -25,23 +25,12 @@ class LoadFromGDrivePage extends PaginatedPage {
     }
 
     _addPageContent() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Load From Google Drive',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.4,
-        });
-        this._container.add(this._titleBlock);
+        let titleBlock = new Text('Load From Google Drive', Styles.title);
+        this.add(titleBlock);
 
-        this._loadingSavingBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Loading...',
-            'fontSize': 0.025,
-            'height': 0.04,
-            'width': 0.4,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._container.add(this._loadingSavingBlock);
+        this._loadingSavingBlock = new Text('Loading...',
+            Styles.bodyText, { height: 0.2 });
+        this.add(this._loadingSavingBlock);
         this._addList();
     }
 
@@ -50,9 +39,7 @@ class LoadFromGDrivePage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        this._loadingSavingBlock.children[1].set({
-            content: "Project Loading..."
-        });
+        this._loadingSavingBlock.text = 'Project Loading...';
         this._updateLoadingSaving(false);
         GoogleDrive.loadFile(this._instances[item]['id'],
             (jsZip) => { this._loadSuccessCallback(jsZip); },
@@ -88,10 +75,8 @@ class LoadFromGDrivePage extends PaginatedPage {
             if(!this._filesLoaded) {
                 this._filesLoaded = true;
                 if(!this._isLoadingSaving) {
-                    this._container.remove(this._loadingSavingBlock);
-                    this._container.add(this._optionsContainer);
-                    this._containerInteractable.addChild(
-                        this._optionsInteractable);
+                    this.remove(this._loadingSavingBlock);
+                    this.add(this._optionsContainer);
                 }
             }
             this._instances = files;
@@ -103,10 +88,8 @@ class LoadFromGDrivePage extends PaginatedPage {
             if(!this._filesLoaded) {
                 this._filesLoaded = true;
                 if(!this._isLoadingSaving) {
-                    this._container.remove(this._loadingSavingBlock);
-                    this._container.add(this._optionsContainer);
-                    this._containerInteractable.addChild(
-                        this._optionsInteractable);
+                    this.remove(this._loadingSavingBlock);
+                    this.add(this._optionsContainer);
                 }
             }
         }
@@ -114,15 +97,11 @@ class LoadFromGDrivePage extends PaginatedPage {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (finished) => {
-            this._loadingSavingBlock.children[1].set({
-                content: "Project Loading..."
-            });
+            this._loadingSavingBlock.text = 'Project Loading...';
             this._updateLoadingSaving(finished);
         });
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_SAVING, (finished) => {
-            this._loadingSavingBlock.children[1].set({
-                content: "Project Saving..."
-            });
+            this._loadingSavingBlock.text = 'Project Saving...';
             this._updateLoadingSaving(finished);
         });
     }
@@ -131,19 +110,14 @@ class LoadFromGDrivePage extends PaginatedPage {
         this._isLoadingSaving = !finished;
         if(finished) {
             if(!this._filesLoaded) {
-                this._loadingSavingBlock.children[1].set({
-                    content: "Loading..."
-                });
+                this._loadingSavingBlock.text = 'Loading...';
                 return;
             }
-            this._container.remove(this._loadingSavingBlock);
-            this._container.add(this._optionsContainer);
-            this._containerInteractable.addChild(this._optionsInteractable);
-            this._container.update(false, false, true);
+            this.remove(this._loadingSavingBlock);
+            this.add(this._optionsContainer);
         } else {
-            this._container.remove(this._optionsContainer);
-            this._container.add(this._loadingSavingBlock);
-            this._containerInteractable.removeChild(this._optionsInteractable);
+            this.remove(this._optionsContainer);
+            this.add(this._loadingSavingBlock);
         }
     }
 

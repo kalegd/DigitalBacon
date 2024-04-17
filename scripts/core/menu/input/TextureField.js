@@ -5,36 +5,19 @@
  */
 
 import global from '/scripts/core/global.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import TexturesHandler from '/scripts/core/handlers/assetTypes/TexturesHandler.js';
-import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
+import { Colors, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { createSmallButton, createWideImageButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import MenuField from '/scripts/core/menu/input/MenuField.js';
+import { Span, Text } from '/scripts/DigitalBacon-UI.js';
 
-const HEIGHT = 0.05;
-const WIDTH = 0.31;
-const TITLE_WIDTH = 0.13;
-const FIELD_HEIGHT = 0.03;
-const FIELD_WIDTH = 0.13;
-const FIELD_MARGIN = 0.01;
-const FIELD_MAX_LENGTH = 9;
-
-const STATE_COLORS = {};
-STATE_COLORS[InteractableStates.IDLE] = Colors.defaultIdle;
-STATE_COLORS[InteractableStates.HOVERED] = Colors.defaultHovered;
-STATE_COLORS[InteractableStates.SELECTED] = Colors.defaultHovered;
-
-class TextureInput extends PointerInteractableEntity {
+class TextureField extends MenuField {
     constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._onUpdate = params['onUpdate'];
+        super(params);
         this._lastValue =  params['initialValue'];
         this._filter =  params['filter'];
         let title = params['title'] || 'Missing Field Name...';
@@ -43,45 +26,20 @@ class TextureInput extends PointerInteractableEntity {
     }
 
     _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT,
-            'width': WIDTH,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT,
-            'width': TITLE_WIDTH,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._textureSelection = ThreeMeshUIHelper.createButtonBlock({
-            'text': ' ',
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT,
-            'width': FIELD_WIDTH,
-            'margin': FIELD_MARGIN,
-            'idleOpacity': 0.9,
-            'hoveredOpacity': 1,
-            'selectedOpacity': 1,
-        });
-        this._editButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.pencilIcon,
-            'height': 0.03,
-            'width': 0.03,
-            'margin': 0,
-        });
-        this._object.add(titleBlock);
-        this._object.add(this._textureSelection);
-        this._object.add(this._editButton);
-        let interactable = new PointerInteractable(this._textureSelection);
-        interactable.addEventListener('click', () => {
+        this._addTitle(title);
+        this._buttonsSpan = new Span({ height: 0.03, width: 0.17 });
+        this._textureSelection = createWideImageButton('');
+        this._textureSelection.textComponent.fontSize = 0.017;
+        this._textureSelection.height = 0.03;
+        this._textureSelection.width = 0.13;
+        this._editButton = createSmallButton(Textures.pencilIcon);
+        this._editButton.marginLeft = 0.01;
+        this._editButton.height = 0.03;
+        this._editButton.width = 0.03;
+        this._buttonsSpan.add(this._textureSelection);
+        this._buttonsSpan.add(this._editButton);
+        this.add(this._buttonsSpan);
+        this._textureSelection.onClick = () => {
             let textures = TexturesHandler.getAssets();
             let filteredTextures = {};
             filteredTextures["null\n"] = { Name: "Blank" };
@@ -101,17 +59,15 @@ class TextureInput extends PointerInteractableEntity {
                 this._selectNewTexture();
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
-        });
-        this._editInteractable = new PointerInteractable(this._editButton);
-        this._editInteractable.addEventListener('click', () => {
+        };
+        this._editButton.onClick = () => {
             if(!this._lastValue) return;
             let texture = TexturesHandler.getAsset(this._lastValue);
             let texturePage = global.menuController.getPage(
                 MenuPages.TEXTURE);
             texturePage.setAsset(texture);
             global.menuController.pushPage(MenuPages.TEXTURE);
-        });
-        this._pointerInteractable.addChild(interactable);
+        };
     }
 
     _selectNewTexture() {
@@ -161,47 +117,24 @@ class TextureInput extends PointerInteractableEntity {
         let textureName = texture
             ? texture.getName()
             : " ";
-        textureName = stringWithMaxLength(textureName, FIELD_MAX_LENGTH);
-        let textComponent = this._textureSelection.children[1];
-        textComponent.set({ content: textureName });
+        textureName = stringWithMaxLength(textureName, 12);
+        this._textureSelection.textComponent.text = textureName;
         if(texture) {
-            for(let interactableState in InteractableStates) {
-                let state = this._textureSelection.states[interactableState];
-                state.attributes.backgroundColor = Colors.white;
-            }
             this._updateTextureAndColor(texture.getPreviewTexture(),
                 Colors.white);
-            this._pointerInteractable.addChild(this._editInteractable);
-            this._editButton.visible = true;
+            this._buttonsSpan.add(this._editButton);
         } else {
-            for(let interactableState in InteractableStates) {
-                let state = this._textureSelection.states[interactableState];
-                state.attributes.backgroundColor =
-                    STATE_COLORS[interactableState];
-            }
             this._updateTextureAndColor(null, Colors.defaultIdle);
-            this._pointerInteractable.removeChild(this._editInteractable);
-            this._editButton.visible = false;
+            this._buttonsSpan.remove(this._editButton);
         }
     }
 
     _updateTextureAndColor(texture, color) {
-        if(this._textureSelection.backgroundTexture != texture)
-            this._textureSelection.set({ backgroundTexture: texture });
-        if(this._textureSelection.backgroundColor != color)
-            this._textureSelection.set({ backgroundColor: color });
-    }
-
-    getWidth() {
-        return WIDTH;
-    }
-
-    getHeight() {
-        return HEIGHT;
-    }
-
-    deactivate() {
-        //Required method
+        let material = this._textureSelection.material;
+        if(material.map?.image != texture?.image)
+            this._textureSelection.updateTexture(texture);
+        if(!material.color.equals(color))
+            material.color.set(color);
     }
 
     updateFromSource() {
@@ -210,4 +143,4 @@ class TextureInput extends PointerInteractableEntity {
     }
 }
 
-export default TextureInput;
+export default TextureField;

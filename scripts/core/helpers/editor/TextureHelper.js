@@ -9,7 +9,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { COLOR_SPACE_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
+import EnumField from '/scripts/core/menu/input/EnumField.js';
 
 export default class TextureHelper extends EditorHelper {
     constructor(asset) {
@@ -18,7 +18,7 @@ export default class TextureHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "colorSpace", "name": "Color Space",
-            "map": COLOR_SPACE_MAP, "type": EnumInput },
+            "map": COLOR_SPACE_MAP, "type": EnumField },
     ];
 }
 

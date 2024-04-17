@@ -5,8 +5,8 @@
  */
 
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import TextInput from '/scripts/core/menu/input/TextInput.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import TextField from '/scripts/core/menu/input/TextField.js';
 
 export default class PlayableMediaAssetHelper extends AssetEntityHelper {
     constructor(asset, updatedTopics) {
@@ -30,15 +30,15 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
     static commonFields = {
         visualEdit: { "parameter": "visualEdit" },
         autoplay: { "parameter": "autoplay", "name": "Auto Play",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+            "suppressMenuFocusEvent": true, "type": CheckboxField },
         loop: { "parameter": "loop", "name": "Loop",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput },
+            "suppressMenuFocusEvent": true, "type": CheckboxField },
         playTopic: { "parameter": "playTopic", "name": "Play Event",
-            "type": TextInput },
+            "singleLine": true, "type": TextField },
         pauseTopic: { "parameter": "pauseTopic", "name": "Pause Event",
-            "type": TextInput },
+            "singleLine": true, "type": TextField },
         stopTopic: { "parameter": "stopTopic", "name": "Stop Event",
-            "type": TextInput },
+            "singleLine": true, "type": TextField },
         parentId: { "parameter": "parentId" },
         position: { "parameter": "position" },
         rotation: { "parameter": "rotation" },

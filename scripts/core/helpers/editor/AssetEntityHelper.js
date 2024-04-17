@@ -19,10 +19,10 @@ import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import AssetEntityInput from '/scripts/core/menu/input/AssetEntityInput.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EulerInput from '/scripts/core/menu/input/EulerInput.js';
-import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
+import AssetEntityField from '/scripts/core/menu/input/AssetEntityField.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import EulerField from '/scripts/core/menu/input/EulerField.js';
+import Vector3Field from '/scripts/core/menu/input/Vector3Field.js';
 import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
@@ -385,12 +385,12 @@ export default class AssetEntityHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "parentId", "name": "Parent", "includeScene": true,
-            "excludeSelf": true, "type": AssetEntityInput },
-        { "parameter": "position", "name": "Position", "type": Vector3Input },
-        { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
-        { "parameter": "scale", "name": "Scale", "type": Vector3Input },
+            "excludeSelf": true, "type": AssetEntityField },
+        { "parameter": "position", "name": "Position", "type": Vector3Field },
+        { "parameter": "rotation", "name": "Rotation", "type": EulerField },
+        { "parameter": "scale", "name": "Scale", "type": Vector3Field },
         { "parameter": "visualEdit", "name": "Visually Edit",
-            "type": CheckboxInput },
+            "type": CheckboxField },
     ];
 }
 

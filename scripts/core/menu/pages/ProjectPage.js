@@ -15,10 +15,10 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 import { DelayedClickHandler } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/scripts/DigitalBacon-UI.js';
 
 /* global saveAs, JSZip */
 
@@ -43,22 +43,11 @@ class ProjectPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Project File',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Project File', Styles.title);
+        this.add(titleBlock);
 
-        this._loadingSavingBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Project Loading...',
-            'fontSize': 0.025,
-            'height': 0.04,
-            'width': 0.4,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
+        this._loadingSavingBlock = new Text('Project Loading...',
+            Styles.bodyText, { height: 0.2 });
 
         this._addList();
     }
@@ -167,6 +156,12 @@ class ProjectPage extends PaginatedPage {
         let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
         inputPage.setContent("Save Project As", "Filename", "Save",
             (projectName) => {
+                if(!projectName || projectName.length == 0) {
+                    PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Please add a filename',
+                    });
+                    return;
+                }
                 this._updateSaving(false);
                 PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING,false);
                 GoogleDrive.saveAs(
@@ -357,29 +352,22 @@ class ProjectPage extends PaginatedPage {
     }
 
     _updateLoading(finished) {
-        this._loadingSavingBlock.children[1].set({
-            content: "Project Loading..."
-        });
+        this._loadingSavingBlock.text = 'Project Loading...';
         this._updateLoadingSaving(finished);
     }
 
     _updateSaving(finished) {
-        this._loadingSavingBlock.children[1].set({
-            content: "Project Saving..."
-        });
+        this._loadingSavingBlock.text = 'Project Saving...';
         this._updateLoadingSaving(finished);
     }
 
     _updateLoadingSaving(finished) {
         if(finished) {
-            this._container.remove(this._loadingSavingBlock);
-            this._container.add(this._optionsContainer);
-            this._container.update(false, false, true);
-            this._containerInteractable.addChild(this._optionsInteractable);
+            this.remove(this._loadingSavingBlock);
+            this.add(this._optionsContainer);
         } else {
-            this._container.remove(this._optionsContainer);
-            this._container.add(this._loadingSavingBlock);
-            this._containerInteractable.removeChild(this._optionsInteractable);
+            this.remove(this._optionsContainer);
+            this.add(this._loadingSavingBlock);
         }
     }
 }

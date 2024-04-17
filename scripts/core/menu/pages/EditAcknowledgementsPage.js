@@ -5,12 +5,11 @@
  */
 
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import TextInput from '/scripts/core/menu/input/TextInput.js';
+import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { createSmallButton, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import TextField from '/scripts/core/menu/input/TextField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Span } from '/scripts/DigitalBacon-UI.js';
 
 class EditAcknowledgementsPage extends MenuPage {
     constructor(controller) {
@@ -23,51 +22,27 @@ class EditAcknowledgementsPage extends MenuPage {
     _addPageContent() {
         this._createPreviousAndNextButtons();
 
-        this._noAcknowledgements = new ThreeMeshUI.Block({
-            'backgroundOpacity': 0,
-            'height': 0.035,
-            'width': 0.3,
-            'offset': 0,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
+        this._noAcknowledgements = new Div({ height: 0.035, width: 0.3 });
 
-        this._addFirstAcknowledgement = ThreeMeshUIHelper.createButtonBlock({
-            'text': 'Add Acknowledgement',
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'margin': 0,
-        });
-        this._addFirstInteractable = new PointerInteractable(
-            this._addFirstAcknowledgement);
-        this._addFirstInteractable.addEventListener('click',
-            () => this._addAcknowledgement());
+        this._addFirstAcknowledgement = createWideButton('Add Acknowledgement');
+        this._addFirstAcknowledgement.onClick = () =>this._addAcknowledgement();
 
         this._noAcknowledgements.add(this._addFirstAcknowledgement);
 
-        this._acknowledgementsContainer = new ThreeMeshUI.Block({
-            'height': 0.3,
-            'width': 0.45,
-            'contentDirection': 'row',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
-            'offset': 0,
+        this._acknowledgementsContainer = new Span({
+            height: 0.3,
+            width: 0.45,
         });
 
-        this._acknowledgementsInteractable = new PointerInteractable();
-
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.3,
-            'width': 0.31,
-            'contentDirection': 'column',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.3,
+            justifyContent: 'center',
+            width: 0.31,
         });
 
         this._fields = [];
         for(let key of ['Asset', 'Author', 'License', 'Source URL']) {
-            let field = new TextInput({
+            let field = new TextField({
                 'title': key,
                 'onBlur': (oldValue, newValue) => {
                     this._acknowledgements[this._page][key] = newValue;
@@ -75,86 +50,52 @@ class EditAcknowledgementsPage extends MenuPage {
                 'getFromSource': () =>
                     this._acknowledgements[this._page][key] || '',
             });
-            field.addToScene(columnBlock, this._acknowledgementsInteractable);
+            columnBlock.add(field);
             this._fields.push(field);
         }
 
         this._createAddAndDeleteButtons(columnBlock);
 
-        this._container.add(this._acknowledgementsContainer);
-        this._acknowledgementsContainer.add(this._previousButton);
+        this.add(this._acknowledgementsContainer);
+        this._acknowledgementsContainer.add(this._previousButtonParent);
         this._acknowledgementsContainer.add(columnBlock);
-        this._acknowledgementsContainer.add(this._nextButton);
+        this._acknowledgementsContainer.add(this._nextButtonParent);
     }
 
     _createPreviousAndNextButtons() {
-        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '<',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '>',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._previousInteractable = new PointerInteractable(
-            this._previousButton);
-        this._previousInteractable.addEventListener('click', () => {
+        this._previousButtonParent = new Div();
+        this._previousButton = createSmallButton('<');
+        this._previousButton.onClick = () => {
             this._page += this._acknowledgements.length - 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
-        });
-        this._nextInteractable = new PointerInteractable(this._nextButton);
-        this._nextInteractable.addEventListener('click', () => {
+        };
+        this._previousButtonParent.add(this._previousButton);
+        this._nextButtonParent = new Div();
+        this._nextButton = createSmallButton('>');
+        this._nextButton.onClick = () => {
             this._page += 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
-        });
+        };
+        this._nextButtonParent.add(this._nextButton);
     }
 
     _createAddAndDeleteButtons(columnBlock) {
-        let addDeleteRow = new ThreeMeshUI.Block({
-            'height': 0.035,
-            'width': 0.4,
-            'contentDirection': 'row',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
-            'offset': 0,
+        let addDeleteRow = new Span({
+            height: 0.035,
+            justifyContent: 'spaceBetween',
+            width: 0.088,
         });
 
-        this._addButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '+',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._deleteButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.trashIcon,
-            'backgroundTextureScale': 0.7,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        addDeleteRow.add(this._addButton);
-        addDeleteRow.add(this._deleteButton);
+        let addButton = createSmallButton('+');
+        let deleteButton = createSmallButton(Textures.trashIcon, 0.7);
+        addDeleteRow.add(addButton);
+        addDeleteRow.add(deleteButton);
         columnBlock.add(addDeleteRow);
 
-        this._addInteractable = new PointerInteractable(this._addButton);
-        this._addInteractable.addEventListener('click',
-            () => this._addAcknowledgement() );
-        this._deleteInteractable = new PointerInteractable(this._deleteButton);
-        this._deleteInteractable.addEventListener('click',
-            () => this._deleteAcknowledgement());
-        this._acknowledgementsInteractable.addChild(this._addInteractable);
-        this._acknowledgementsInteractable.addChild(this._deleteInteractable);
+        addButton.onClick = () => this._addAcknowledgement();
+        addButton.onClick = () => this._deleteAcknowledgement();
     }
 
     _addAcknowledgement() {
@@ -179,31 +120,17 @@ class EditAcknowledgementsPage extends MenuPage {
         if(this._acknowledgements.length > 0) {
             if(this._page >= this._acknowledgements.length) this._page = 0;
             if(this._acknowledgements.length > 1) {
-                this._previousButton.visible = true;
-                this._nextButton.visible = true;
-                this._acknowledgementsInteractable.addChild(
-                    this._previousInteractable);
-                this._acknowledgementsInteractable.addChild(
-                    this._nextInteractable);
+                this._previousButtonParent.add(this._previousButton);
+                this._nextButtonParent.add(this._nextButton);
             } else {
-                this._previousButton.visible = false;
-                this._nextButton.visible = false;
-                this._acknowledgementsInteractable.removeChild(
-                    this._previousInteractable);
-                this._acknowledgementsInteractable.removeChild(
-                    this._nextInteractable);
+                this._previousButtonParent.remove(this._previousButton);
+                this._nextButtonParent.remove(this._nextButton);
             }
-            this._container.add(this._acknowledgementsContainer);
-            this._container.remove(this._noAcknowledgements);
-            this._containerInteractable.addChild(
-                this._acknowledgementsInteractable);
-            this._containerInteractable.removeChild(this._addFirstInteractable);
+            this.add(this._acknowledgementsContainer);
+            this.remove(this._noAcknowledgements);
         } else {
-            this._container.remove(this._acknowledgementsContainer);
-            this._container.add(this._noAcknowledgements);
-            this._containerInteractable.removeChild(
-                this._acknowledgementsInteractable);
-            this._containerInteractable.addChild(this._addFirstInteractable);
+            this.remove(this._acknowledgementsContainer);
+            this.add(this._noAcknowledgements);
             return;
         }
         this._setAsset();
@@ -215,9 +142,9 @@ class EditAcknowledgementsPage extends MenuPage {
         }
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         this._refreshAssets();
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
 }
 

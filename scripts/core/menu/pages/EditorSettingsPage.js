@@ -6,11 +6,11 @@
 
 import global from '/scripts/core/global.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
+import NumberField from '/scripts/core/menu/input/NumberField.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
+import { Text } from '/scripts/DigitalBacon-UI.js';
 
 class EditorSettingsPage extends DynamicFieldsPage {
     constructor(controller) {
@@ -19,17 +19,13 @@ class EditorSettingsPage extends DynamicFieldsPage {
     }
 
     _createTitleBlock() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Editor Settings',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.3,
-        });
+        this._titleBlock = new Text('Editor Settings', Styles.title);
+        this.add(this._titleBlock);
     }
 
     _createFields() {
         let fields = [];
-        fields.push(new NumberInput({
+        fields.push(new NumberField({
             'title': 'Movement Speed',
             'minValue': 0,
             'maxValue': 1000,
@@ -40,7 +36,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'getFromSource': () =>
                 SettingsHandler.getEditorSettings()['Movement Speed'],
         }));
-        fields.push(new NumberInput({
+        fields.push(new NumberField({
             'title': 'User Scale',
             'minValue': 0.001,
             'maxValue': 1000,
@@ -52,7 +48,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'getFromSource': () =>
                 SettingsHandler.getEditorSettings()['User Scale'],
         }));
-        fields.push(new CheckboxInput({
+        fields.push(new CheckboxField({
             'title': 'Enable Flying',
             'initialValue': true,
             'onUpdate': (value) => {
@@ -62,7 +58,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
                 SettingsHandler.getEditorSettings()['Enable Flying'],
         }));
         if(global.deviceType == "XR") {
-            fields.push(new CheckboxInput({
+            fields.push(new CheckboxField({
                 'title': 'Swap Joysticks',
                 'initialValue': false,
                 'onUpdate': (value) => {
@@ -77,17 +73,12 @@ class EditorSettingsPage extends DynamicFieldsPage {
         this._setFields(fields);
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         for(let field of this._fields) {
             field.updateFromSource();
         }
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
-
-    removeFromScene() {
-        super.removeFromScene();
-    }
-
 }
 
 export default EditorSettingsPage;

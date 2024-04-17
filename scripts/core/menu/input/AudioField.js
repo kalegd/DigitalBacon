@@ -5,32 +5,21 @@
  */
 
 import global from '/scripts/core/global.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import MenuField from '/scripts/core/menu/input/MenuField.js';
+import { Span, Text } from '/scripts/DigitalBacon-UI.js';
 
-const HEIGHT = 0.05;
-const WIDTH = 0.31;
-const TITLE_WIDTH = 0.13;
-const FIELD_HEIGHT = 0.03;
-const FIELD_WIDTH = 0.17;
-const FIELD_MARGIN = 0.01;
-const FIELD_MAX_LENGTH = 13;
-
-class AudioInput extends PointerInteractableEntity {
+class AudioField extends MenuField {
     constructor(params) {
-        super();
-        this._getFromSource = params['getFromSource'];
-        this._onUpdate = params['onUpdate'];
+        super(params);
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
@@ -38,39 +27,14 @@ class AudioInput extends PointerInteractableEntity {
     }
 
     _createInputs(title) {
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': HEIGHT,
-            'width': WIDTH,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-        });
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': title,
-            'fontSize': FontSizes.body,
-            'height': HEIGHT,
-            'width': TITLE_WIDTH,
-            'margin': 0,
-            'textAlign': 'left',
-        });
-        this._audioSelection = ThreeMeshUIHelper.createButtonBlock({
-            'text': ' ',
-            'fontSize': FontSizes.body,
-            'height': FIELD_HEIGHT,
-            'width': FIELD_WIDTH,
-            'margin': FIELD_MARGIN,
-            'idleOpacity': 0.9,
-            'hoveredOpacity': 1,
-            'selectedOpacity': 1,
-        });
+        this._addTitle(title);
+        this._audioSelection = createWideButton('');
+        this._audioSelection.textComponent.fontSize = 0.017;
+        this._audioSelection.height = 0.03;
+        this._audioSelection.width = 0.17;
         this._updateAudio();
-        this._object.add(titleBlock);
-        this._object.add(this._audioSelection);
-        let interactable = new PointerInteractable(this._audioSelection);
-        interactable.addEventListener('click', () => {
+        this.add(this._audioSelection);
+        this._audioSelection.onClick = () => {
             let library = LibraryHandler.getLibrary();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };
@@ -90,8 +54,7 @@ class AudioInput extends PointerInteractableEntity {
                 }, false, AssetTypes.AUDIO);
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
-        });
-        this._pointerInteractable.addChild(interactable);
+        };
     }
 
     _handleAssetSelection(assetId) {
@@ -116,21 +79,8 @@ class AudioInput extends PointerInteractableEntity {
         let audioName = this._lastValue
             ? LibraryHandler.getAssetName(this._lastValue)
             : " ";
-        audioName = stringWithMaxLength(audioName, FIELD_MAX_LENGTH);
-        let textComponent = this._audioSelection.children[1];
-        textComponent.set({ content: audioName });
-    }
-
-    getWidth() {
-        return WIDTH;
-    }
-
-    getHeight() {
-        return HEIGHT;
-    }
-
-    deactivate() {
-        //Required method
+        audioName = stringWithMaxLength(audioName, 16);
+        this._audioSelection.textComponent.text = audioName;
     }
 
     updateFromSource() {
@@ -140,4 +90,4 @@ class AudioInput extends PointerInteractableEntity {
     }
 }
 
-export default AudioInput;
+export default AudioField;

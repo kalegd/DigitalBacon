@@ -106,6 +106,7 @@ class UserController extends InternalAssetEntity {
         PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
             { asset: this, fields: ['scale'] });
     }
+
     setUsername(username, ignorePublish) {
         localStorage.setItem(USERNAME_KEY, username);
         this._username = username;

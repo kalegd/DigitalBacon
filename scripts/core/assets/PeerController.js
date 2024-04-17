@@ -8,10 +8,9 @@ import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { vector3s, Fonts } from '/scripts/core/helpers/constants.js';
+import { vector3s, Colors, Fonts } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import { Handedness } from '/scripts/DigitalBacon-UI.js';
+import { Handedness, Text } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 const ERROR_FIX_FRAMES = 30;
@@ -35,22 +34,21 @@ export default class PeerController extends InternalAssetEntity {
 
     _setup() {
         let usernameParams = {
-            'text': this._username, 
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'fontSize': 0.06,
-            'height': 0.04,
-            'width': 0.5,
-            'offset': 0,
-            'margin': 0,
+            color: Colors.white,
+            fontSize: 0.06,
+            maxWidth: 0.5,
         };
         this._usernameBlock = new THREE.Object3D();
-        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
-        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        let usernameFront = new Text(this._username, usernameParams);
+        let usernameBack = new Text(this._username, usernameParams);
         usernameFront.rotateY(Math.PI);
+        usernameFront.troikaText.material.side = THREE.FrontSide;
+        usernameBack.troikaText.material.side = THREE.FrontSide;
         this._usernameBlock.position.setY(0.15);
         this._usernameBlock.add(usernameFront);
         this._usernameBlock.add(usernameBack);
+        this._usernameBlock.frontTextComponent = usernameFront;
+        this._usernameBlock.backTextComponent = usernameBack;
         if(this._displayingUsername && this._avatar) {
             this._avatar.getObject().add(this._usernameBlock);
         }
@@ -121,9 +119,8 @@ export default class PeerController extends InternalAssetEntity {
         if(this._username == username) return;
         this._username = username;
         let shortName = username = stringWithMaxLength(username || '...', 17);
-        this._usernameBlock.children.forEach((block) => {
-            block.children[1].set({ content: shortName });
-        });
+        this._usernameBlock.frontTextComponent.text = shortName;
+        this._usernameBlock.backTextComponent.text = shortName;
     }
 
     getController(hand) {

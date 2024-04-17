@@ -11,11 +11,10 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import { euler, quaternion, vector3s, FontSizes, ValidKeys } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
+import { euler, quaternion, vector3s, Styles, Textures, ValidKeys } from '/scripts/core/helpers/constants.js';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Image, Text } from '/scripts/DigitalBacon-UI.js';
 
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
@@ -25,77 +24,49 @@ class SketchfabLoginPage extends MenuPage {
     }
 
     _addPageContent() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': ' ',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.3,
-        });
-        this._container.add(this._titleBlock);
+        this._titleBlock = new Text('', Styles.title);
+        this.add(this._titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.21,
+            justifyContent: 'spaceBetween',
+            marginTop: 0.004,
+            width: 0.45,
         });
 
-        this._textureBlock = new ThreeMeshUI.Block({
-            'height': 0.085,
-            'width': 0.1,
-            'backgroundOpacity': 1,
+        this._textureBlock = new Image(Textures.ellipsisIcon, {
+            height: 0.085,
+            textureFit: 'cover',
+            width: 0.1,
         });
         columnBlock.add(this._textureBlock);
 
-        this._authorBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Author: ',
-            'fontSize': FontSizes.body,
-            'height': 0.025,
-            'width': 0.3,
-        });
+        this._authorBlock = new Text('Author: ', Styles.bodyText);
         columnBlock.add(this._authorBlock);
 
-        this._downloadButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Download",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'margin': 0.006,
-        });
-        columnBlock.add(this._downloadButton);
-        this._downloadInteractable = new PointerInteractable(
-            this._downloadButton);
-        this._downloadInteractable.addEventListener('click', () => {
+        this._downloadButton = createWideButton('Download');
+        this._downloadButtonParent = new Div({ height: 0.035 });
+        this._downloadButtonParent.add(this._downloadButton);
+        columnBlock.add(this._downloadButtonParent);
+        this._downloadButton.onClick = () => {
             if(this._assetId) {
                 this._handleDownloadSuccess(this._assetId);
                 return;
             }
-            this._downloadButton.visible = false;
-            this._containerInteractable.removeChild(
-                this._downloadInteractable);
+            this._downloadButtonParent.remove(this._downloadButton);
             Sketchfab.download(this._sketchfabAsset,
                 (assetId) => { this._handleDownloadSuccess(assetId); },
                 () => { this._handleDownloadError(); });
-        });
-        this._containerInteractable.addChild(this._downloadInteractable);
+        };
 
-        let button = ThreeMeshUIHelper.createButtonBlock({
-            'text': "View on Sketchfab",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'margin': 0.006,
-        });
+        let button = createWideButton('View on Sketchfab');
         columnBlock.add(button);
-        let interactable = new PointerInteractable(button);
-        interactable.addEventListener('click', () => {
+        button.onClick = () => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._sketchfabAsset.viewerUrl, '_blank');
-        });
-        this._containerInteractable.addChild(interactable);
+        };
 
-        this._container.add(columnBlock);
+        this.add(columnBlock);
     }
 
     _handleDownloadSuccess(assetId) {
@@ -116,20 +87,18 @@ class SketchfabLoginPage extends MenuPage {
             "rotation": rotation,
             "visualEdit": true,
         });
-        this._downloadButton.visible = true;
-        this._containerInteractable.addChild(this._downloadInteractable);
+        this._downloadButtonParent.add(this._downloadButton);
         this._assetId = LibraryHandler.getAssetIdFromSketchfabId(
             this._sketchfabAsset.uid);
         if(assetId == this._assetId)
-            this._downloadButton.children[1].set({ content: 'Add'});
+            this._downloadButton.textComponent.text = 'Add';
     }
 
     _handleDownloadError() {
         PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
             text: 'Could not download model, please try again later',
         });
-        this._downloadButton.visible = true;
-        this._containerInteractable.addChild(this._downloadInteractable);
+        this._downloadButtonParent.add(this._downloadButton);
     }
 
     setContent(sketchfabAsset) {
@@ -140,23 +109,18 @@ class SketchfabLoginPage extends MenuPage {
             }
         }
         sketchfabAsset['name'] = validCharacters.join('');
-        this._titleBlock.children[1].set({ content: sketchfabAsset['name'] });
-        this._authorBlock.children[1].set({
-            content: 'Author: ' + sketchfabAsset.user.username,
-        });
+        this._titleBlock.text = sketchfabAsset['name'];
+        this._authorBlock.text = 'Author: ' + sketchfabAsset.user.username;
         if(sketchfabAsset.previewTexture) {
-            this._textureBlock.set({
-                backgroundTexture: sketchfabAsset.previewTexture
-            });
-            this._textureBlock.visible = true;
+            this._textureBlock.updateTexture(sketchfabAsset.previewTexture);
         } else {
-            this._textureBlock.visible = false;
+            this._textureBlock.updateTexture(Textures.ellipsisIcon);
         }
         this._assetId = LibraryHandler.getAssetIdFromSketchfabId(
             sketchfabAsset.uid);
-        this._downloadButton.children[1].set({
-            content: (this._assetId) ? 'Add' : 'Download'
-        });
+        this._downloadButton.textComponent.text = (this._assetId)
+            ? 'Add'
+            : 'Download';
         this._sketchfabAsset = sketchfabAsset;
     }
 }
