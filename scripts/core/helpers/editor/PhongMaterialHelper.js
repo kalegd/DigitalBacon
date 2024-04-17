@@ -9,12 +9,8 @@ import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import { COMBINE_MAP, NORMAL_TYPE_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import ColorField from '/scripts/core/menu/input/ColorField.js';
-import EnumField from '/scripts/core/menu/input/EnumField.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
-import TextureField from '/scripts/core/menu/input/TextureField.js';
-import Vector2Field from '/scripts/core/menu/input/Vector2Field.js';
+
+const { CheckboxField, ColorField, EnumField, NumberField, TextureField, Vector2Field } = MaterialHelper.FieldTypes;
 
 export default class PhongMaterialHelper extends MaterialHelper {
     constructor(asset) {

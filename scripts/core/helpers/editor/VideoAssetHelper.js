@@ -10,8 +10,8 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMediaAssetHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import EnumField from '/scripts/core/menu/input/EnumField.js';
+
+const { CheckboxField, EnumField } = PlayableMediaAssetHelper.FieldTypes;
 
 export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {

@@ -11,7 +11,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import { euler, quaternion, vector3s, Styles, Textures, ValidKeys } from '/scripts/core/helpers/constants.js';
+import { euler, quaternion, vector3s, Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import { Div, Image, Text } from '/scripts/DigitalBacon-UI.js';
@@ -102,13 +102,6 @@ class SketchfabLoginPage extends MenuPage {
     }
 
     setContent(sketchfabAsset) {
-        let validCharacters = [];
-        for(let c of sketchfabAsset['name']) {
-            if(ValidKeys.has(c)) {
-                validCharacters.push(c);
-            }
-        }
-        sketchfabAsset['name'] = validCharacters.join('');
         this._titleBlock.text = sketchfabAsset['name'];
         this._authorBlock.text = 'Author: ' + sketchfabAsset.user.username;
         if(sketchfabAsset.previewTexture) {

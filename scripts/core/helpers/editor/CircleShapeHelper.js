@@ -9,7 +9,8 @@ import CircleShape from '/scripts/core/assets/primitives/CircleShape.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
+
+const { NumberField } = ShapeHelper.FieldTypes;
 
 export default class CircleShapeHelper extends ShapeHelper {
     constructor(asset) {

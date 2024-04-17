@@ -8,8 +8,8 @@ import CubeTexture from '/scripts/core/assets/textures/CubeTexture.js';
 import { MAPPING_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
-import EnumField from '/scripts/core/menu/input/EnumField.js';
-import CubeImageField from '/scripts/core/menu/input/CubeImageField.js';
+
+const { EnumField, CubeImageField } = TextureHelper.FieldTypes;
 
 export default class CubeTextureHelper extends TextureHelper {
     constructor(asset) {

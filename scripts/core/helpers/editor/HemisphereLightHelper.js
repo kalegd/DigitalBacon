@@ -7,7 +7,8 @@
 import HemisphereLight from '/scripts/core/assets/primitives/HemisphereLight.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-import ColorField from '/scripts/core/menu/input/ColorField.js';
+
+const { ColorField } = LightHelper.FieldTypes;
 
 export default class HemisphereLightHelper extends LightHelper {
     constructor(asset) {

@@ -213,13 +213,6 @@ export const BoundingBox = {
     "material": material,
 };
 
-//For keys our 2D UI Supports
-const validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
-export const ValidKeys = new Set();
-for(let character of validKeysString) {
-    ValidKeys.add(character);
-}
-
 export const COLOR_SPACE_MAP = {
     "None": THREE.NoColorSpace,
     "sRGB": THREE.SRGBColorSpace,

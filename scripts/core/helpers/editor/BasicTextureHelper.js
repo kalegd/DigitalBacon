@@ -8,9 +8,8 @@ import BasicTexture from '/scripts/core/assets/textures/BasicTexture.js';
 import { WRAP_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
-import EnumField from '/scripts/core/menu/input/EnumField.js';
-import ImageField from '/scripts/core/menu/input/ImageField.js';
-import Vector2Field from '/scripts/core/menu/input/Vector2Field.js';
+
+const { EnumField, ImageField, Vector2Field } = TextureHelper.FieldTypes;
 
 export default class BasicTextureHelper extends TextureHelper {
     constructor(asset) {

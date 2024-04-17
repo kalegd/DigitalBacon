@@ -7,8 +7,8 @@
 import CylinderShape from '/scripts/core/assets/primitives/CylinderShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
+
+const { CheckboxField, NumberField } = ShapeHelper.FieldTypes;
 
 export default class CylinderShapeHelper extends ShapeHelper {
     constructor(asset) {

@@ -9,10 +9,9 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-//import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
-import TextureField from '/scripts/core/menu/input/TextureField.js';
 import * as THREE from 'three';
+
+const { NumberField, TextureField } = LightHelper.FieldTypes;
 
 export default class SpotLightHelper extends LightHelper {
     constructor(asset) {

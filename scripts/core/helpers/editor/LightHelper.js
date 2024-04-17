@@ -8,8 +8,8 @@ import Light from '/scripts/core/assets/primitives/Light.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import ColorField from '/scripts/core/menu/input/ColorField.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
+
+const { ColorField, NumberField } = AssetEntityHelper.FieldTypes;
 
 export default class LightHelper extends AssetEntityHelper {
     constructor(asset) {

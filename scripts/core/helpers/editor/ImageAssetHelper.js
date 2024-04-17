@@ -10,7 +10,8 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import EnumField from '/scripts/core/menu/input/EnumField.js';
+
+const { EnumField } = AssetEntityHelper.FieldTypes;
 
 export default class ImageAssetHelper extends AssetEntityHelper {
     constructor(asset) {

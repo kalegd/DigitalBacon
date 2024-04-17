@@ -9,7 +9,8 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import MaterialField from '/scripts/core/menu/input/MaterialField.js';
+
+const { MaterialField } = AssetEntityHelper.FieldTypes;
 
 export default class ShapeHelper extends AssetEntityHelper {
     constructor(asset) {

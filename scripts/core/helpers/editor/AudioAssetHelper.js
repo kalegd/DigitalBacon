@@ -10,10 +10,9 @@ import { Colors, DISTANCE_MODEL_MAP } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMediaAssetHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import EnumField from '/scripts/core/menu/input/EnumField.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
 import * as THREE from 'three';
+
+const { CheckboxField, EnumField, NumberField } = PlayableMediaAssetHelper.FieldTypes;
 
 export default class AudioAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {

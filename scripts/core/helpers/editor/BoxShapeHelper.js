@@ -7,7 +7,8 @@
 import BoxShape from '/scripts/core/assets/primitives/BoxShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
+
+const { NumberField } = ShapeHelper.FieldTypes;
 
 export default class BoxShapeHelper extends ShapeHelper {
     constructor(asset) {

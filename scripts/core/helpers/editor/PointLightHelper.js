@@ -9,8 +9,9 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
 import * as THREE from 'three';
+
+const { NumberField } = LightHelper.FieldTypes;
 
 export default class PointLightHelper extends LightHelper {
     constructor(asset) {

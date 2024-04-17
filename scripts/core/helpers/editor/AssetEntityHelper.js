@@ -19,13 +19,10 @@ import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import AssetEntityField from '/scripts/core/menu/input/AssetEntityField.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import EulerField from '/scripts/core/menu/input/EulerField.js';
-import Vector3Field from '/scripts/core/menu/input/Vector3Field.js';
 import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
+const { AssetEntityField, CheckboxField, EulerField, Vector3Field } = EditorHelper.FieldTypes;
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const TRANSFORM_PUBLISH_FUNCTIONS = {
     position: 'publishPosition',
@@ -97,7 +94,7 @@ export default class AssetEntityHelper extends EditorHelper {
             });
             this._eventListeners.push({ type: 'pointer', callback: (_) => {
                 TransformControlsHandler.attach(this._asset);
-            }, tool: InteractionTools.EDIT, topic: 'down' });
+            }, tool: InteractionTools.EDIT, topic: 'click' });
         }
     }
     _addActions() {

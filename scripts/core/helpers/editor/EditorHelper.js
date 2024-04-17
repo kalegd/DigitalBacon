@@ -465,6 +465,23 @@ export default class EditorHelper {
             if(map[key] == value) return key;
         }
     }
+
+    static FieldTypes = {
+        AssetEntityField: AssetEntityField,
+        AudioField: AudioField,
+        CheckboxField: CheckboxField,
+        ColorField: ColorField,
+        CubeImageField: CubeImageField,
+        EnumField: EnumField,
+        EulerField: EulerField,
+        ImageField: ImageField,
+        MaterialField: MaterialField,
+        NumberField: NumberField,
+        TextField: TextField,
+        TextureField: TextureField,
+        Vector2Field: Vector2Field,
+        Vector3Field: Vector3Field,
+    };
 }
 
 EditorHelperFactory.registerEditorHelper(EditorHelper, Asset);

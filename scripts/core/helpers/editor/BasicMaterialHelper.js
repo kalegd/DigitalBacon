@@ -9,11 +9,8 @@ import TextureTypes from '/scripts/core/enums/TextureTypes.js';
 import { COMBINE_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import ColorField from '/scripts/core/menu/input/ColorField.js';
-import EnumField from '/scripts/core/menu/input/EnumField.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
-import TextureField from '/scripts/core/menu/input/TextureField.js';
+
+const { CheckboxField, ColorField, EnumField, NumberField, TextureField } = MaterialHelper.FieldTypes;
 
 export default class BasicMaterialHelper extends MaterialHelper {
     constructor(asset) {

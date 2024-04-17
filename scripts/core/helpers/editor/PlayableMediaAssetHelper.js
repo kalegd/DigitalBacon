@@ -5,8 +5,8 @@
  */
 
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
+
+const { CheckboxField, TextField } = AssetEntityHelper.FieldTypes;
 
 export default class PlayableMediaAssetHelper extends AssetEntityHelper {
     constructor(asset, updatedTopics) {

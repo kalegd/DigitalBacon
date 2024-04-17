@@ -7,8 +7,8 @@
 import ConeShape from '/scripts/core/assets/primitives/ConeShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
-import NumberField from '/scripts/core/menu/input/NumberField.js';
+
+const { CheckboxField, NumberField } = ShapeHelper.FieldTypes;
 
 export default class ConeShapeHelper extends ShapeHelper {
     constructor(asset) {
