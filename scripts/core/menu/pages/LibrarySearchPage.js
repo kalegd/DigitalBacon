@@ -9,11 +9,11 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import { createTextInput } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 
 const FIELD_MAX_LENGTH = 25;
 
-class LibrarySearchPage extends PaginatedPage {
+class LibrarySearchPage extends PaginatedButtonsPage {
     constructor(controller) {
         super(controller, true);
         this._assets = ProjectHandler.getAssets();

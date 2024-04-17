@@ -19,7 +19,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Styles, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 import { Text } from '/scripts/DigitalBacon-UI.js';
 const URL_PREFIX_PATTERN = /^https:\/\//i;
 
@@ -38,7 +38,7 @@ const SPECIAL_OPTIONS = {
     },
 };
 
-class NewAssetPage extends PaginatedPage {
+class NewAssetPage extends PaginatedButtonsPage {
     constructor(controller, assetType) {
         super(controller, true);
         this._assetType = assetType;

@@ -5,19 +5,17 @@
  */
 
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { Colors, FontSizes, Styles, Textures } from '/scripts/core/helpers/constants.js';
-import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
-import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
+import { Colors, FontSizes, Styles } from '/scripts/core/helpers/constants.js';
+import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 import { Div, Image, Span, Text } from '/scripts/DigitalBacon-UI.js';
 
 const ROWS = 2;
 const OPTIONS = 3;
 
-class PaginatedIconsPage extends MenuPage {
+class PaginatedIconsPage extends PaginatedPage {
     constructor(controller, hasBackButton) {
         super(controller, hasBackButton);
         this._paginatedListButtons = [];
-        this._page = 0;
     }
 
     _addList() {
@@ -51,7 +49,7 @@ class PaginatedIconsPage extends MenuPage {
                     width: 0.1,
                 });
                 button.pointerInteractable = new PointerInteractable(button);
-                let image = new Image(Textures.searchIcon, {
+                let image = new Image(null, {
                     height: 0.04,
                     width: 0.04,
                 });
@@ -85,23 +83,6 @@ class PaginatedIconsPage extends MenuPage {
         this.add(this._optionsContainer);
     }
 
-    _createPreviousAndNextButtons() {
-        this._previousButtonParent = new Div();
-        this._previousButton = createSmallButton('<');
-        this._previousButton.onClick = () => {
-            this._page -= 1;
-            this._updateItemsGUI();
-        };
-        this._previousButtonParent.add(this._previousButton);
-        this._nextButtonParent = new Div();
-        this._nextButton = createSmallButton('>');
-        this._nextButton.onClick = () => {
-            this._page += 1;
-            this._updateItemsGUI();
-        };
-        this._nextButtonParent.add(this._nextButton);
-    }
-
     _updateItemsGUI() {
         let firstIndex = this._page * ROWS * OPTIONS;
         for(let i = 0; i < ROWS * OPTIONS; i++) {
@@ -116,18 +97,7 @@ class PaginatedIconsPage extends MenuPage {
                 if(button.parentComponent)button.parentComponent.remove(button);
             }
         }
-        if(this._page == 0) {
-            if(this._previousButton.parentComponent)
-                this._previousButtonParent.remove(this._previousButton);
-        } else if(!this._previousButton.parentComponent) {
-            this._previousButtonParent.add(this._previousButton);
-        }
-        if(this._items.length > firstIndex + ROWS * OPTIONS) {
-            if(!this._nextButton.parentComponent)
-                this._nextButtonParent.add(this._nextButton);
-        } else if(this._nextButton.parentComponent) {
-            this._nextButtonParent.remove(this._nextButton);
-        }
+        this._updatePreviousAndNextButtons(firstIndex + ROWS * OPTIONS);
     }
 
     //Needs to be overridden

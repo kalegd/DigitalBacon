@@ -16,7 +16,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Styles } from '/scripts/core/helpers/constants.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 import { DelayedClickHandler } from '/scripts/DigitalBacon-UI.js';
 import { Text } from '/scripts/DigitalBacon-UI.js';
 
@@ -34,7 +34,7 @@ const OPTIONS = {
     'Preview Live': '_previewLive',
 };
 
-class ProjectPage extends PaginatedPage {
+class ProjectPage extends PaginatedButtonsPage {
     constructor(controller) {
         super(controller, true);
         this._items = Object.keys(OPTIONS).slice(0, -1);

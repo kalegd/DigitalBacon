@@ -6,16 +6,15 @@
 
 import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
-import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
+import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 import { Div, Span, Text } from '/scripts/DigitalBacon-UI.js';
 
 const OPTIONS = 5;
 
-class PaginatedPage extends MenuPage {
+class PaginatedListPage extends PaginatedPage {
     constructor(controller, hasBackButton) {
         super(controller, hasBackButton);
         this._paginatedListRows = [];
-        this._page = 0;
     }
 
     _addList() {
@@ -53,7 +52,7 @@ class PaginatedPage extends MenuPage {
                     this._handleEditItemInteraction(this._items[index]);
                 } else {
                     console.error(
-                        "PaginatedPage displaying non existant option");
+                        "PaginatedListPage displaying non existant option");
                 }
             };
             deleteButton.onClick = () => {
@@ -62,7 +61,7 @@ class PaginatedPage extends MenuPage {
                     this._handleDeleteItemInteraction(this._items[index]);
                 } else {
                     console.error(
-                        "PaginatedPage displaying non existant option");
+                        "PaginatedListPage displaying non existant option");
                 }
             };
         }
@@ -70,23 +69,6 @@ class PaginatedPage extends MenuPage {
         this._optionsContainer.add(this._optionsBlock);
         this._optionsContainer.add(this._nextButtonParent);
         this.add(this._optionsContainer);
-    }
-
-    _createPreviousAndNextButtons() {
-        this._previousButtonParent = new Div();
-        this._previousButton = createSmallButton('<');
-        this._previousButton.onClick = () => {
-            this._page -= 1;
-            this._updateItemsGUI();
-        };
-        this._previousButtonParent.add(this._previousButton);
-        this._nextButtonParent = new Div();
-        this._nextButton = createSmallButton('>');
-        this._nextButton.onClick = () => {
-            this._page += 1;
-            this._updateItemsGUI();
-        };
-        this._nextButtonParent.add(this._nextButton);
     }
 
     _updateItemsGUI() {
@@ -102,44 +84,33 @@ class PaginatedPage extends MenuPage {
                 if(row.parentComponent) row.parentComponent.remove(row);
             }
         }
-        if(this._page == 0) {
-            if(this._previousButton.parentComponent)
-                this._previousButtonParent.remove(this._previousButton);
-        } else if(!this._previousButton.parentComponent) {
-            this._previousButtonParent.add(this._previousButton);
-        }
-        if(this._items.length > firstIndex + OPTIONS) {
-            if(!this._nextButton.parentComponent)
-                this._nextButtonParent.add(this._nextButton);
-        } else if(this._nextButton.parentComponent) {
-            this._nextButtonParent.remove(this._nextButton);
-        }
+        this._updatePreviousAndNextButtons(firstIndex + OPTIONS)
     }
 
     //Needs to be overridden
     _getItemName() {
-        console.error("PaginatedPage._getItemName() should be overridden");
+        console.error("PaginatedListPage._getItemName() should be overridden");
         return "";
     }
 
     //Needs to be overridden
     _handleEditItemInteraction() {
         console.error(
-            "PaginatedPage._handleEditItemInteraction() should be overridden");
+            "PaginatedListPage._handleEditItemInteraction() should be overridden");
         return;
     }
 
     //Needs to be overridden
     _handleDeleteItemInteraction() {
         console.error(
-            "PaginatedPage._handleDeleteItemInteraction() should be overridden"
+            "PaginatedListPage._handleDeleteItemInteraction() should be overridden"
         );
         return;
     }
 
     //Needs to be overridden
     _refreshItems() {
-        console.error("PaginatedPage._refreshItems() should be overridden");
+        console.error("PaginatedListPage._refreshItems() should be overridden");
         return;
     }
 
@@ -151,4 +122,4 @@ class PaginatedPage extends MenuPage {
 
 }
 
-export default PaginatedPage;
+export default PaginatedListPage;

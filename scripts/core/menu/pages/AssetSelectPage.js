@@ -5,12 +5,12 @@
  */
 
 import { FontSizes } from '/scripts/core/helpers/constants.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 import { createTextInput, createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 
 const FIELD_MAX_LENGTH = 25;
 
-class AssetSelectPage extends PaginatedPage {
+class AssetSelectPage extends PaginatedButtonsPage {
     constructor(controller) {
         super(controller, true);
         this._assets = {};

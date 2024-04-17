@@ -13,7 +13,7 @@ import { Div, Image, Span } from '/scripts/DigitalBacon-UI.js';
 const ROWS = 2;
 const OPTIONS = 3;
 
-class PaginatedIconsPage extends MenuPage {
+class PaginatedImagesPage extends MenuPage {
     constructor(controller, hasBackButton) {
         super(controller, hasBackButton);
         this._paginatedListButtons = [];
@@ -127,27 +127,27 @@ class PaginatedIconsPage extends MenuPage {
     //Needs to be overridden
     _fetchNextItems() {
         console.error(
-            "PaginatedIconsPage._fetchNextItems() should be overridden");
+            "PaginatedImagesPage._fetchNextItems() should be overridden");
         return "";
     }
 
     //Needs to be overridden
     _getItemImage() {
         console.error(
-            "PaginatedIconsPage._getItemImage() should be overridden");
+            "PaginatedImagesPage._getItemImage() should be overridden");
         return "";
     }
 
     //Needs to be overridden
     _handleItemInteraction() {
         console.error(
-            "PaginatedIconsPage._handleItemInteraction() should be overridden");
+            "PaginatedImagesPage._handleItemInteraction() should be overridden");
         return;
     }
 
     //Needs to be overridden
     _refreshItems() {
-        console.error("PaginatedIconsPage._refreshItems() should be overridden");
+        console.error("PaginatedImagesPage._refreshItems() should be overridden");
         return;
     }
 
@@ -159,4 +159,4 @@ class PaginatedIconsPage extends MenuPage {
 
 }
 
-export default PaginatedIconsPage;
+export default PaginatedImagesPage;
