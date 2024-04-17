@@ -16,8 +16,8 @@ export default class ConeShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "material",
         { "parameter": "height", "name": "Height", "min": 0,
             "type": NumberField },
         { "parameter": "radius", "name": "Radius", "min": 0,
@@ -29,10 +29,10 @@ export default class ConeShapeHelper extends ShapeHelper {
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberField },
         { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxField},
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

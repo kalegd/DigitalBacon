@@ -38,10 +38,9 @@ export default class AudioAssetHelper extends PlayableMediaAssetHelper {
     }
 
     static fields = [
-        this.commonFields.visualEdit,
-        { "parameter": "previewMedia", "name": "Preview Audio",
-            "suppressMenuFocusEvent": true, "type": CheckboxField},
-        this.commonFields.autoplay,
+        "visualEdit",
+        "previewMedia",
+        "autoplay",
         { "parameter": "coneInnerAngle", "name": "Cone Inner Angle", "min": 0,
             "max": 360, "type": NumberField },
         { "parameter": "coneOuterAngle", "name": "Cone Outer Angle", "min": 0,
@@ -50,7 +49,7 @@ export default class AudioAssetHelper extends PlayableMediaAssetHelper {
             "max": 1, "type": NumberField },
         { "parameter": "distanceModel", "name": "Distance Model",
             "map": DISTANCE_MODEL_MAP, "type": EnumField },
-        this.commonFields.loop,
+        "loop",
         { "parameter": "maxDistance", "name": "Max Rolloff Distance",
             "min": 0.01, "type": NumberField },
         { "parameter": "refDistance", "name": "Min Rolloff Distance", "min": 0,
@@ -59,13 +58,13 @@ export default class AudioAssetHelper extends PlayableMediaAssetHelper {
             "type": NumberField },
         { "parameter": "volume", "name": "Volume", "min": 0,
             "type": NumberField },
-        this.commonFields.playTopic,
-        this.commonFields.pauseTopic,
-        this.commonFields.stopTopic,
-        this.commonFields.parentId,
-        this.commonFields.position,
-        this.commonFields.rotation,
-        this.commonFields.scale,
+        "playTopic",
+        "pauseTopic",
+        "stopTopic",
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];   
 }
 

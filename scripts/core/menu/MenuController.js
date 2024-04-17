@@ -58,7 +58,7 @@ export default class MenuController extends PointerInteractableEntity {
 
     setPage(page) {
         let currentPage = this.getCurrentPage();
-        currentPage.parent.remove(currentPage);
+        if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls = [page];
         currentPage = this.getCurrentPage();
         this._object.add(currentPage);
@@ -67,7 +67,7 @@ export default class MenuController extends PointerInteractableEntity {
 
     pushPage(page) {
         let currentPage = this.getCurrentPage();
-        currentPage.parent.remove(currentPage);
+        if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls.push(page);
         this._object.add(this._pages[page]);
         PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
@@ -75,7 +75,7 @@ export default class MenuController extends PointerInteractableEntity {
 
     popPage() {
         let currentPage = this.getCurrentPage();
-        currentPage.parent.remove(currentPage);
+        if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls.pop();
         currentPage = this.getCurrentPage();
         this._object.add(currentPage);
@@ -242,7 +242,7 @@ export default class MenuController extends PointerInteractableEntity {
         super.removeFromScene();
         if(this._object.parent) this._object.parent.remove(this._object);
         let currentPage = this.getCurrentPage();
-        currentPage.parent.remove(currentPage);
+        if(currentPage.parent) currentPage.parent.remove(currentPage);
         if(global.deviceType == "XR")
             GripInteractableHandler.removeInteractable(this._gripInteractable);
         PointerInteractableHandler.removeInteractable(

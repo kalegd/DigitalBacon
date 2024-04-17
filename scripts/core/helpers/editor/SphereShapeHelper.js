@@ -16,8 +16,8 @@ export default class SphereShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "material",
         { "parameter": "radius", "name": "Radius", "min": 0,
             "type": NumberField },
         { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,
@@ -28,10 +28,10 @@ export default class SphereShapeHelper extends ShapeHelper {
             "max": 360, "type": NumberField },
         { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
             "max": 180, "type": NumberField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

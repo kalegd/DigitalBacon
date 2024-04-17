@@ -20,7 +20,7 @@ export default class CubeTextureHelper extends TextureHelper {
         { "parameter": "images", "name": "Images", "type": CubeImageField },
         { "parameter": "mapping", "name": "Mapping", "map": MAPPING_MAP,
             "type": EnumField },
-        { "parameter": "colorSpace" },
+        "colorSpace",
     ];
 }
 

@@ -37,17 +37,17 @@ export default class PointLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "color" },
-        { "parameter": "intensity" },
+        "visualEdit",
+        "color",
+        "intensity",
         { "parameter": "distance", "name": "Distance", "min": 0,
             "type": NumberField },
         { "parameter": "decay", "name": "Decay", "min": 0,
             "type": NumberField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

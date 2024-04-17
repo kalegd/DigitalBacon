@@ -18,9 +18,9 @@ export default class NormalMaterialHelper extends MaterialHelper {
     }
 
     static fields = [
-        { "parameter": "side" },
-        { "parameter": "transparent" },
-        { "parameter": "opacity" },
+        "side",
+        "transparent",
+        "opacity",
         { "parameter": "flatShading","name": "Flat Shading",
             "type": CheckboxField },
         { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxField},

@@ -31,13 +31,13 @@ export default class ImageAssetHelper extends AssetEntityHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
+        "visualEdit",
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
             "type": EnumField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

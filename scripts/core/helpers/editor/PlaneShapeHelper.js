@@ -30,18 +30,18 @@ export default class PlaneShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "material",
         { "parameter": "width", "name": "Width", "min": 0, "type": NumberField},
         { "parameter": "height", "name": "Height", "min": 0,"type":NumberField},
         { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
             "type": NumberField },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
             "type": NumberField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

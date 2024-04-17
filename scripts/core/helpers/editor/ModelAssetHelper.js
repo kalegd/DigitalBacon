@@ -15,11 +15,11 @@ export default class ModelAssetHelper extends AssetEntityHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "visualEdit",
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

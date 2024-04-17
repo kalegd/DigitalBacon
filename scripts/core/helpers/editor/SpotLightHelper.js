@@ -38,9 +38,9 @@ export default class SpotLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "color" },
-        { "parameter": "intensity" },
+        "visualEdit",
+        "color",
+        "intensity",
         { "parameter": "angle", "name": "Angle", "min": 0, "max": 180,
             "type": NumberField },
         //{ "parameter": "castShadow", "name": "Cast Shadow",
@@ -52,10 +52,10 @@ export default class SpotLightHelper extends LightHelper {
         { "parameter": "penumbra", "name": "Penumbra", "min": 0, "max": 1,
             "type": NumberField },
         { "parameter": "map", "name": "Texture", "type": TextureField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

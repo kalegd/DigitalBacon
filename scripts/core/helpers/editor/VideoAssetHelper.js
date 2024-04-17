@@ -31,20 +31,20 @@ export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     }
 
     static fields = [
-        this.commonFields.visualEdit,
+        "visualEdit",
         { "parameter": "previewMedia", "name": "Preview Video",
             "suppressMenuFocusEvent": true, "type": CheckboxField},
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
             "type": EnumField },
-        this.commonFields.autoplay,
-        this.commonFields.loop,
-        this.commonFields.playTopic,
-        this.commonFields.pauseTopic,
-        this.commonFields.stopTopic,
-        this.commonFields.parentId,
-        this.commonFields.position,
-        this.commonFields.rotation,
-        this.commonFields.scale,
+        "autoplay",
+        "loop",
+        "playTopic",
+        "pauseTopic",
+        "stopTopic",
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

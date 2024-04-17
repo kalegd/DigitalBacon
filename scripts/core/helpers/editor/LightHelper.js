@@ -17,14 +17,14 @@ export default class LightHelper extends AssetEntityHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
+        "visualEdit",
         { "parameter": "intensity", "name": "Intensity", "min": 0,
             "type": NumberField },
         { "parameter": "color", "name": "Color", "type": ColorField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

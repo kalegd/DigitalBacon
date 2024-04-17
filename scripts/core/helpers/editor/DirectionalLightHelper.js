@@ -16,8 +16,8 @@ export default class DirectionalLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "intensity" },
-        { "parameter": "color" },
+        "intensity",
+        "color",
         { "parameter": "direction", "name": "Direction", "type": Vector3Field },
     ];
 }

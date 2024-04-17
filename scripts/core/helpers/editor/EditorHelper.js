@@ -227,8 +227,9 @@ export default class EditorHelper {
         this._menuFieldsMap = this._getMenuFieldsMap(thisClass);
         let menuFields = [];
         for(let field of thisClass.fields) {
-            if(field.parameter in this._menuFieldsMap) {
-                menuFields.push(this._menuFieldsMap[field.parameter]);
+            let parameter = (typeof field == 'string') ? field :field.parameter;
+            if(parameter in this._menuFieldsMap) {
+                menuFields.push(this._menuFieldsMap[parameter]);
             }
         }
         this._menuFields = menuFields;
@@ -241,7 +242,9 @@ export default class EditorHelper {
         let menuFieldsMap = this._getMenuFieldsMap(parentClass);
         if(!helperClass.fields) return menuFieldsMap;
         for(let field of helperClass.fields) {
-            if(field.parameter in menuFieldsMap) {
+            if(typeof field == 'string') {
+                continue;
+            } else if(field.parameter in menuFieldsMap) {
                 continue;
             } else {
                 let input = this._createStandardField(field);

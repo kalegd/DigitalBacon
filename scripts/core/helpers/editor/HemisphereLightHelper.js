@@ -16,8 +16,8 @@ export default class HemisphereLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "intensity" },
-        { "parameter": "color" },
+        "intensity",
+        "color",
         { "parameter": "groundColor", "name": "Ground Color","type":ColorField},
     ];
 }

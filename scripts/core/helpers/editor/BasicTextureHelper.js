@@ -24,7 +24,7 @@ export default class BasicTextureHelper extends TextureHelper {
             "type": EnumField },
         { "parameter": "repeat", "name": "Repeat", "type": Vector2Field },
         { "parameter": "offset", "name": "Offset", "type": Vector2Field },
-        { "parameter": "colorSpace" },
+        "colorSpace",
     ];
 }
 

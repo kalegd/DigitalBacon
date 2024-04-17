@@ -16,8 +16,8 @@ export default class BoxShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "material",
         { "parameter": "width", "name": "Width", "min": 0,
             "type": NumberField },
         { "parameter": "height", "name": "Height", "min": 0,
@@ -30,10 +30,10 @@ export default class BoxShapeHelper extends ShapeHelper {
             "type": NumberField },
         { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
             "type": NumberField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

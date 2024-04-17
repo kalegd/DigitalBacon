@@ -30,18 +30,18 @@ export default class CircleShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "material",
         { "parameter": "radius", "name": "Radius", "min": 0,
             "type": NumberField },
         { "parameter": "segments", "name": "Sides", "min": 3,
             "type": NumberField },
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

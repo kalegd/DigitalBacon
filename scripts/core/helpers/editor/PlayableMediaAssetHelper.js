@@ -4,13 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PlayableMediaAsset from '/scripts/core/assets/PlayableMediaAsset.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 
 const { CheckboxField, TextField } = AssetEntityHelper.FieldTypes;
 
 export default class PlayableMediaAssetHelper extends AssetEntityHelper {
-    constructor(asset, updatedTopics) {
-        super(asset, updatedTopics);
+    constructor(asset, updatedTopic) {
+        super(asset, updatedTopic);
         this._createPreviewFunctions();
     }
 
@@ -27,22 +29,25 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
         };
     }
 
-    static commonFields = {
-        visualEdit: { "parameter": "visualEdit" },
-        autoplay: { "parameter": "autoplay", "name": "Auto Play",
+    static fields = [
+        "visualEdit",
+        { "parameter": "previewMedia", "name": "Preview Audio",
             "suppressMenuFocusEvent": true, "type": CheckboxField },
-        loop: { "parameter": "loop", "name": "Loop",
+        { "parameter": "autoplay", "name": "Auto Play",
             "suppressMenuFocusEvent": true, "type": CheckboxField },
-        playTopic: { "parameter": "playTopic", "name": "Play Event",
-            "singleLine": true, "type": TextField },
-        pauseTopic: { "parameter": "pauseTopic", "name": "Pause Event",
-            "singleLine": true, "type": TextField },
-        stopTopic: { "parameter": "stopTopic", "name": "Stop Event",
-            "singleLine": true, "type": TextField },
-        parentId: { "parameter": "parentId" },
-        position: { "parameter": "position" },
-        rotation: { "parameter": "rotation" },
-        scale: { "parameter": "scale" },
-    };
-    
+        { "parameter": "loop", "name": "Loop",
+            "suppressMenuFocusEvent": true, "type": CheckboxField },
+        { "parameter": "playTopic", "name": "Play Event", "singleLine": true,
+            "type": TextField },
+        { "parameter": "pauseTopic", "name": "Pause Event", "singleLine": true,
+            "type": TextField },
+        { "parameter": "stopTopic", "name": "Stop Event", "singleLine": true,
+            "type": TextField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
+    ];
 }
+
+EditorHelperFactory.registerEditorHelper(PlayableMediaAssetHelper, PlayableMediaAsset);

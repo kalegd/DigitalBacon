@@ -16,8 +16,8 @@ export default class TorusShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "material",
         { "parameter": "radius", "name": "Radius", "min": 0,
             "type": NumberField },
         { "parameter": "tube", "name": "Tube Radius", "min": 0,
@@ -28,10 +28,10 @@ export default class TorusShapeHelper extends ShapeHelper {
             "type": NumberField },
         { "parameter": "arc", "name": "Degrees", "min": 0, "max": 360,
             "type": NumberField },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 
