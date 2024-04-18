@@ -37,10 +37,6 @@ class EnumField extends MenuField {
         if(this._lastValue != option) {
             if(this._onUpdate) this._onUpdate(option);
             this._lastValue = option;
-            PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-                'id': this._id,
-                'targetOnlyMenu': true,
-            });
         }
     }
 

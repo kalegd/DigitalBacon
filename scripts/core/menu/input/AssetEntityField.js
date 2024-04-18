@@ -71,10 +71,6 @@ class AssetEntityField extends MenuField {
             this._updateAssetEntity(assetId);
         }
         global.menuController.back();
-        PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id,
-            'targetOnlyMenu': true,
-        });
     }
 
     _updateAssetEntity(assetId) {

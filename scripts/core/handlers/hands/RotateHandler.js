@@ -25,14 +25,6 @@ class RotateHandler {
                     this.detach(heldAsset.ownerId);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
-            if(message['targetOnlyMenu']) return;
-            for(let key in this._heldAssets) {
-                let heldAsset = this._heldAssets[key];
-                if(heldAsset.preTransformState)
-                    this.detach(heldAsset.ownerId);
-            }
-        });
         for(let assetType in AssetEntityTypes) {
             PubSub.subscribe(this._id, assetType + '_DELETED', (message) => {
                 for(let key in this._heldAssets) {

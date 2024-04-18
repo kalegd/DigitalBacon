@@ -38,10 +38,6 @@ class CheckboxField extends MenuField {
         this._checkbox.checked = initialValue;
         this._checkbox.onChange = (value) => {
             if(this._onUpdate) this._onUpdate(value);
-            PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-                'id': this._id,
-                'targetOnlyMenu': this._suppressMenuFocusEvent,
-            });
         };
     }
 

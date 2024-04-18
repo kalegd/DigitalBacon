@@ -44,12 +44,6 @@ class TransformControlsHandler {
                 this.detach(ownerId);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
-            if(message['targetOnlyMenu']) return;
-            for(let ownerId in this._attachedAssets) {
-                this.detach(ownerId);
-            }
-        });
         for(let assetType in AssetEntityTypes) {
             PubSub.subscribe(this._id, assetType + '_DELETED', (e) => {
                 for(let ownerId in this._attachedAssets) {

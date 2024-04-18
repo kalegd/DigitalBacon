@@ -105,10 +105,6 @@ class TextureField extends MenuField {
         }
         if(!callingPage || callingPage ==global.menuController.getCurrentPage())
             global.menuController.back();
-        PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-            'id': this._id,
-            'targetOnlyMenu': true,
-        });
     }
 
     _updateTexture(textureId) {

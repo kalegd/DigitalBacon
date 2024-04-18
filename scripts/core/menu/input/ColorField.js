@@ -52,10 +52,6 @@ class ColorField extends MenuField {
                     this._color.setHex(this._lastValue);
                 });
             global.menuController.pushPage(MenuPages.COLOR_WHEEL);
-            PubSub.publish(this._id, PubSubTopics.MENU_FIELD_FOCUSED, {
-                'id': this._id,
-                'targetOnlyMenu': true,
-            });
         };
     }
 
