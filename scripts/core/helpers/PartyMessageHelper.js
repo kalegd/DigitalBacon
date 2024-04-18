@@ -342,7 +342,8 @@ class PartyMessageHelper {
         let asset = ProjectHandler.getAsset(message.id);
         if(asset) {
             ProjectHandler.deleteAsset(asset, true, true);
-            let topic = message.assetType + '_DELETED:' + message.id;
+            let topic = message.assetType + '_DELETED:' + message.assetId + ':'
+                + message.id;
             PubSub.publish(this._id, topic, { asset: asset });
         } else {
             console.error("Asset to delete does not exist");
@@ -445,7 +446,8 @@ class PartyMessageHelper {
     }
 
     handlePeerDisconnected(peer) {
-        PubSub.publish(this._id, PubSubTopics.PEER_DISCONNECTED,{ peer: peer });
+        let topic = PubSubTopics.PEER_DISCONNECTED + ':' + peer.id;
+        PubSub.publish(this._id, topic, { peer: peer });
     }
 
     handleDiffLoaded() {

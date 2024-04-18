@@ -51,11 +51,20 @@ export default class AssetEntityHelper extends EditorHelper {
     _createActions() {
         if(global.deviceType == "XR") {
             this._eventListeners.push({ type: 'grip', callback: (message) => {
+                this._disableParam('position');
+                this._disableParam('rotation');
+                this._disableParam('scale');
                 this._asset.gripInteractable.capture(message.owner);
                 TransformControlsHandler.attach(this._asset, message.owner.id);
             }, tool: InteractionTools.EDIT, topic: 'down' });
             this._eventListeners.push({ type: 'grip', callback: (message) => {
+                let twoHandScaling = !TransformControlsHandler._twoHandScaling;
                 TransformControlsHandler.detach(message.owner.id);
+                if(!twoHandScaling) {
+                    this._enableParam('position');
+                    this._enableParam('rotation');
+                    this._enableParam('scale');
+                }
             }, tool: InteractionTools.EDIT, topic: 'click' });
             this._eventListeners.push({ type: 'grip', callback: (_) => {
                 ProjectHandler.deleteAsset(this._asset);
@@ -70,11 +79,17 @@ export default class AssetEntityHelper extends EditorHelper {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;
                 this._eventListeners.push({ type: 'grip', callback: (message)=>{
+                    this._disableParam('position');
+                    this._disableParam('rotation');
+                    this._disableParam('scale');
                     this._asset.gripInteractable.capture(message.owner);
                     handler.attach(message.owner.id, this._asset);
                 }, tool: tool, topic: 'down' });
                 this._eventListeners.push({ type: 'grip', callback: (message)=>{
                     handler.detach(message.owner.id);
+                    this._enableParam('position');
+                    this._enableParam('rotation');
+                    this._enableParam('scale');
                 }, tool: tool, topic: 'click' });
             }
         } else {
@@ -126,6 +141,10 @@ export default class AssetEntityHelper extends EditorHelper {
 
     attachToPeer(peer, message) {
         this._attachedPeers.add(message.ownerId);
+        this._disableParam('position');
+        this._disableParam('rotation');
+        this._disableParam('scale');
+        this._subscribeToPeerDisconnected(peer.id);
         if(message.isXR) {
             if(message.type == 'translate') {
                 TranslateHandler.attach(message.ownerId, this._asset,
@@ -164,9 +183,27 @@ export default class AssetEntityHelper extends EditorHelper {
                 if(message.twoHandScaling) return;
             }
         }
+        this._enableParam('position');
+        this._enableParam('rotation');
+        this._enableParam('scale');
+        this._unsubscribeFromPeerDisconnected(peer.id);
         if(!this._asset.visualEdit) return;
 
         this._addActions();
+    }
+
+    _subscribeToPeerDisconnected(peerId) {
+        PubSub.subscribe(this._id, 'PEER_DISCONNECTED:' + peerId, () => {
+            this._enableParam('position');
+            this._enableParam('rotation');
+            this._enableParam('scale');
+            if(this._asset.visualEdit) this._addActions();
+            this._unsubscribeFromPeerDisconnected(peerId);
+        });
+    }
+
+    _unsubscribeFromPeerDisconnected(peerId) {
+        PubSub.unsubscribe(this._id, 'PEER_DISCONNECTED:' + peerId);
     }
 
     makeTranslucent() {
@@ -304,9 +341,12 @@ export default class AssetEntityHelper extends EditorHelper {
 
     _addDeleteSubscriptionForPromotions() {
         let topic = this._asset.constructor.assetType + '_DELETED:'
-            + this._asset.getAssetId();
+            + this._asset.getAssetId() + ':' + this._id;
         PubSub.subscribe(this._id, topic, (message) => {
             if(message.asset != this._asset) return;
+            this._enableParam('position');
+            this._enableParam('rotation');
+            this._enableParam('scale');
             let action = message.undoRedoAction;
             if(!action || action.promotionUpdateAdded) return;
             this._promoteChildren(action);

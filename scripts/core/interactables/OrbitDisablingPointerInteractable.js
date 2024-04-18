@@ -14,7 +14,7 @@ class OrbitDisablingPointerInteractable extends PointerInteractable {
 
     addSelectedBy(owner) {
         super.addSelectedBy(owner);
-        SessionHandler.disableOrbit();
+        if(!this._disabled) SessionHandler.disableOrbit();
     }
 
     removeSelectedBy(owner) {

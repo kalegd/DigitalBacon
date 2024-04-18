@@ -50,6 +50,7 @@ export default class EditorHelper {
         this._updatedTopic = updatedTopic + ':' + asset.getAssetId() + ':'
             + this._id;
         this._deletedAttachedComponents = new Set();
+        this._disabledParams = new Set();
         this._addComponentSubscriptions();
     }
 
@@ -79,9 +80,9 @@ export default class EditorHelper {
         }
     }
 
-    _updateEuler(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
+    _updateEuler(param, newValue, ignorePublish, ignoreUndoRedo, oldValue, ignoreDisabledCheck) {
         this._updateVector3(param, newValue, ignorePublish, ignoreUndoRedo,
-            oldValue);
+            oldValue, ignoreDisabledCheck);
     }
 
     _updateVector2(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
@@ -89,13 +90,15 @@ export default class EditorHelper {
             oldValue);
     }
 
-    _updateVector3(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
+    _updateVector3(param, newValue, ignorePublish, ignoreUndoRedo, oldValue, ignoreDisabledCheck) {
         let capitalizedParam = capitalizeFirstLetter(param);
         let currentValue = this._asset['get' + capitalizedParam]();
-        if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
-            this._asset['set' + capitalizedParam](newValue);
-            if(!ignorePublish)
-                this._publish([param]);
+        if(!this._disabledParams.has(param) || ignoreDisabledCheck) {
+            if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
+                this._asset['set' + capitalizedParam](newValue);
+                if(!ignorePublish)
+                    this._publish([param]);
+            }
         }
         if(!oldValue) oldValue = currentValue;
         if(!ignoreUndoRedo && !oldValue
@@ -217,6 +220,17 @@ export default class EditorHelper {
                 this._asset._components.delete(component);
             }
         });
+    }
+
+    _disableParam(param) {
+        this._disabledParams.add(param);
+        if(this._menuFields) this._menuFieldsMap[param].disabled = true;
+    }
+
+    _enableParam(param) {
+        if(!this._disabledParams.has(param)) return;
+        this._disabledParams.delete(param);
+        if(this._menuFields) this._menuFieldsMap[param].disabled = false;
     }
 
     getMenuFields() {

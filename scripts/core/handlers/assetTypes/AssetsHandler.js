@@ -62,7 +62,8 @@ export default class AssetsHandler {
         ProjectHandler.deleteAssetFromHandler(asset);
         if(asset.update) global.dynamicAssets.delete(asset);
         if(ignorePublish) return;
-        let topic = this._deletedTopic + ':' + asset.getAssetId();
+        let topic = this._deletedTopic + ':' + asset.getAssetId() + ':'
+            + asset.getId();
         PubSub.publish(this._id, topic, {
             asset: asset,
             undoRedoAction: undoRedoAction,

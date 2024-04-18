@@ -377,6 +377,9 @@ class TransformControlsHandler {
             publishMessage.rotation = asset.getRotation();
             UndoRedoHandler.disable(this._id);
         } else {
+            asset.editorHelper._disableParam('position');
+            asset.editorHelper._disableParam('rotation');
+            asset.editorHelper._disableParam('scale');
             this._transformControls.attach(asset.getObject());
             $("#transform-controls").removeClass("hidden");
             $("#transform-controls > button").removeClass("selected");
@@ -428,6 +431,10 @@ class TransformControlsHandler {
             publishMessage.rotation = asset.getRotation();
             if(Object.keys(this._attachedAssets).length == 1)
                 UndoRedoHandler.enable(this._id);
+        } else {
+            asset.editorHelper._enableParam('position');
+            asset.editorHelper._enableParam('rotation');
+            asset.editorHelper._enableParam('scale');
         }
         delete this._attachedAssets[ownerId];
         this._placingObject[ownerId] = false;

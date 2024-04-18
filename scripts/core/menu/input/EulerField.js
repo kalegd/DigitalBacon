@@ -99,6 +99,23 @@ class EulerField extends MenuField {
             this._zInput.value = toDegrees(value[2]);
         }
     }
+
+    get disabled() { return this._disabled; }
+    set disabled(disabled) {
+        this._disabled = disabled;
+        if(disabled) {
+            for(let input of [this._xInput, this._yInput, this._zInput]) {
+                input.blur();
+                input.pointerInteractable.disabled = true;
+                input.touchInteractable.disabled = true;
+            }
+        } else {
+            for(let input of [this._xInput, this._yInput, this._zInput]) {
+                input.pointerInteractable.disabled = false;
+                input.touchInteractable.disabled = false;
+            }
+        }
+    }
 }
 
 export default EulerField;

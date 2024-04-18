@@ -19,6 +19,7 @@ class MenuField extends Span {
     constructor(params = {}) {
         super(SPAN_STYLE);
         this._id = uuidv4();
+        this._disabled = false;
         this._getFromSource = params['getFromSource'];
         this._onUpdate = params['onUpdate'];
     }
@@ -32,8 +33,10 @@ class MenuField extends Span {
     }
 
     deactivate() {}
-
     updateFromSource() {}
+
+    get disabled() { return this._disabled; }
+    set disabled(disabled) { this._disabled = disabled; }
 }
 
 export default MenuField;

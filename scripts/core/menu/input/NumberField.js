@@ -62,6 +62,19 @@ class NumberField extends MenuField {
             this._numberInput.value = this._lastValue = this._getFromSource();
         }
     }
+
+    get disabled() { return this._disabled; }
+    set disabled(disabled) {
+        this._disabled = disabled;
+        if(disabled) {
+            this._numberInput.blur();
+            this._numberInput.pointerInteractable.disabled = true;
+            this._numberInput.touchInteractable.disabled = true;
+        } else {
+            this._numberInput.pointerInteractable.disabled = false;
+            this._numberInput.touchInteractable.disabled = false;
+        }
+    }
 }
 
 export default NumberField;

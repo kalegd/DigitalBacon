@@ -131,7 +131,7 @@ class RotateHandler {
             let preState = this._euler1.toArray();
             let postState = this._euler2.toArray();
             assetHelper._updateEuler('rotation', postState, false, false,
-                preState);
+                preState, true);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
                 ownerId: ownerId,
