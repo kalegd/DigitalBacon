@@ -76,6 +76,7 @@ export default class EditorMenuController extends MenuController {
         if(global.deviceType == 'XR') {
             this._pages[MenuPages.HANDS] = new HandsPage(this);
         }
+        this._object.add(this.getCurrentPage());
     }
 
     _createInteractables() {

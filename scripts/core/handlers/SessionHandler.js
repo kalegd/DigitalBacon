@@ -66,7 +66,7 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.resume();
             global.renderer.xr.setFoveation(0);
-            if(global.xrSessionType == 'AR') XRPlanes.addToScene(global.scene);
+            if(global.xrSessionType == 'AR') global.scene.add(XRPlanes);
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
@@ -74,7 +74,7 @@ class SessionHandler {
             }
         });
         global.renderer.xr.addEventListener("sessionend", () => {
-            XRPlanes.removeFromScene();
+            global.scene.remove(XRPlanes);
             PubSub.publish(null, PubSubTopics.SESSION_ENDED);
             global.sessionActive = false;
             AudioHandler.suspend();

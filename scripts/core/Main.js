@@ -145,7 +145,6 @@ export default class Main {
         this._menuController = global.isEditor
             ? new EditorMenuController()
             : new LiveMenuController();
-        this._menuController.addToScene(this._scene);
         global.menuController = this._menuController;
 
         ProjectHandler.addAsset(UserController, true, true);

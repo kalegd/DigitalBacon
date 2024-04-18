@@ -5,7 +5,6 @@
  */
 
 import global from '/scripts/core/global.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -15,15 +14,19 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { GripInteractableHandler, PointerInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
-export default class MenuController extends PointerInteractableEntity {
+export default class MenuController {
     constructor() {
-        super();
+        this._id = uuidv4();
+        this._object = new THREE.Object3D();
         this._object.position.setZ(-100);
         this._object.pointerInteractable =new PointerInteractable(this._object);
         this._object.touchInteractable = new TouchInteractable(this._object);
+        this._object.addEventListener('added', () => this._onAdded());
+        this._object.addEventListener('removed', () => this._onRemoved());
         this._pages = {};
         this._pageCalls = [];
         this._gripInteractable = new MenuGripInteractable();
@@ -44,7 +47,7 @@ export default class MenuController extends PointerInteractableEntity {
 
     _setupNotificationHub() {
         this._notificationHub = new NotificationHub();
-        this._notificationHub.addToScene(this._object);
+        this._object.add(this._notificationHub);
         this._notificationHub.setNotificationHeight(0.18);
     }
 
@@ -180,12 +183,11 @@ export default class MenuController extends PointerInteractableEntity {
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
         this._object.scale.set(userScale, userScale, userScale);
-        this.addToScene(this._scene);
+        Scene.getObject().add(this._object);
     }
 
     closeMenu() {
-        //this._object.remove(this._object);
-        this.removeFromScene();
+        if(this._object.parent) this._object.parent.remove(this._object);
     }
 
     _updateVR(timeDelta) {
@@ -227,22 +229,14 @@ export default class MenuController extends PointerInteractableEntity {
         this._notificationHub.update(timeDelta);
     }
 
-    addToScene(scene) {
-        if(this._object.parent == scene) return;
-        scene.add(this._object);
-        this._scene = scene;
-        this._object.add(this.getCurrentPage());
+    _onAdded() {
         if(global.deviceType == "XR")
             GripInteractableHandler.addInteractable(this._gripInteractable);
         PointerInteractableHandler.addInteractable(
             this._object.pointerInteractable);
     }
 
-    removeFromScene() {
-        super.removeFromScene();
-        if(this._object.parent) this._object.parent.remove(this._object);
-        let currentPage = this.getCurrentPage();
-        if(currentPage.parent) currentPage.parent.remove(currentPage);
+    _onRemoved() {
         if(global.deviceType == "XR")
             GripInteractableHandler.removeInteractable(this._gripInteractable);
         PointerInteractableHandler.removeInteractable(
