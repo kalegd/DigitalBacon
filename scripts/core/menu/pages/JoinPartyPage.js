@@ -27,7 +27,7 @@ class JoinPartyPage extends MenuPage {
             borderRadius: 0.02,
             fontSize: FontSizes.body,
             height: 0.04,
-            marginBottom: 0.004,
+            marginBottom: 0.008,
             marginTop: 0.01,
             width: 0.4,
         });

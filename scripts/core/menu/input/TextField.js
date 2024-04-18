@@ -36,6 +36,7 @@ class TextField extends MenuField {
             });
         }
         configureOrbitDisabling(this._textInput);
+        this._textInput.pointerInteractable.hoveredCursor = 'text';
         this._textInput.onBlur = () => this._blur();
         this._textInput.onChange = () => this._update();
         this._textInput.onEnter = () => this._textInput.blur();

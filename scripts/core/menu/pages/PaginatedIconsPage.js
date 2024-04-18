@@ -6,6 +6,7 @@
 
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { Colors, FontSizes, Styles } from '/scripts/core/helpers/constants.js';
+import { addHoveredButtonCallback } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
 import { Div, Image, Span, Text } from '/scripts/DigitalBacon-UI.js';
 
@@ -49,6 +50,7 @@ class PaginatedIconsPage extends PaginatedPage {
                     width: 0.1,
                 });
                 button.pointerInteractable = new PointerInteractable(button);
+                addHoveredButtonCallback(button);
                 let image = new Image(null, {
                     height: 0.04,
                     width: 0.04,

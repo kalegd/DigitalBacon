@@ -45,6 +45,7 @@ class Vector3Field extends MenuField {
             width: 0.17,
         });
         configureOrbitDisabling(input);
+        input.pointerInteractable.hoveredCursor = 'text';
         input.onBlur = () => this._blur();
         input.onChange = () => this._update();
         input.onEnter = () => input.blur();

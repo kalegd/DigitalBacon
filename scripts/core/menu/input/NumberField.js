@@ -29,6 +29,7 @@ class NumberField extends MenuField {
             width: 0.17,
         });
         configureOrbitDisabling(this._numberInput);
+        this._numberInput.pointerInteractable.hoveredCursor = 'text';
         this._numberInput.onBlur = () => this._blur();
         this._numberInput.onChange = () => this._update();
         this._numberInput.onEnter = () => this._numberInput.blur();

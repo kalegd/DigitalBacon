@@ -128,12 +128,8 @@ export const Colors = {
     "white": new THREE.Color(0xffffff),
     "yellow": new THREE.Color(0xffff00),
     "defaultIdle": new THREE.Color(0x969696),
-    "defaultHovered": new THREE.Color(0x63666b),
+    "hoveredButton": new THREE.Color(0x63666b),
     "defaultMenuBackground": new THREE.Color(0x000000),
-    "keyboard": new THREE.Color(0x858585),
-    "keyboardButtonIdle": new THREE.Color(0x363636),
-    "keyboardButtonHovered": new THREE.Color(0x1c1c1c),
-    "keyboardButtonSelected": new THREE.Color(0x109c5d),
 };
 
 export const Fonts = {
@@ -151,6 +147,7 @@ let titleStyle = new Style({
     fontSize: FontSizes.header,
     height: 0.05,
 });
+let hoveredButtonStyle = new Style({ materialColor: Colors.hoveredButton });
 let smallButtonStyle = new Style({
     backgroundVisible: true,
     borderRadius: 0.01,
@@ -180,6 +177,7 @@ export const Styles = {
     bodyText: new Style({ color: Colors.white, fontSize: FontSizes.body }),
     headerText: new Style({ color: Colors.white, fontSize: FontSizes.header }),
     title: titleStyle,
+    hoveredButton: hoveredButtonStyle,
     smallButton: smallButtonStyle,
     wideButton: wideButtonStyle,
     wideImageButton: wideImageButtonStyle,

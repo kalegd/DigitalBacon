@@ -31,6 +31,7 @@ class EditAcknowledgementsPage extends MenuPage {
 
         this._acknowledgementsContainer = new Span({
             height: 0.3,
+            justifyContent: 'spaceEvenly',
             width: 0.45,
         });
 
@@ -44,6 +45,7 @@ class EditAcknowledgementsPage extends MenuPage {
         for(let key of ['Asset', 'Author', 'License', 'Source URL']) {
             let field = new TextField({
                 'title': key,
+                'singleLine': true,
                 'onBlur': (oldValue, newValue) => {
                     this._acknowledgements[this._page][key] = newValue;
                 },
