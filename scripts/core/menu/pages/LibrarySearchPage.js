@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -30,10 +31,13 @@ class LibrarySearchPage extends PaginatedButtonsPage {
             marginTop: 0.01,
             width: 0.375,
         });
-        this._searchInput.onEnter = () => this._searchInput.blur();
-        this._searchInput.onBlur = this._searchInput.onChange = () => {
+        this._searchInput.onBlur = () => {
+            global.keyboardLock = false;
             this._searchUpdated();
         };
+        this._searchInput.onChange = () => this._searchUpdated();
+        this._searchInput.onEnter = () => this._searchInput.blur();
+        this._searchInput.onFocus = () => { global.keyboardLock = true; };
         this.add(this._searchInput);
 
         this._addList();

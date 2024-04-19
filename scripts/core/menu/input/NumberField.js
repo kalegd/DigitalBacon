@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
@@ -33,6 +34,7 @@ class NumberField extends MenuField {
         this._numberInput.onBlur = () => this._blur();
         this._numberInput.onChange = () => this._update();
         this._numberInput.onEnter = () => this._numberInput.blur();
+        this._numberInput.onFocus = () => { global.keyboardLock = true };
         this._numberInput.minValue = this._minValue;
         this._numberInput.maxValue = this._maxValue;
         this._numberInput.value = this._lastValue;
@@ -45,6 +47,7 @@ class NumberField extends MenuField {
     }
 
     _blur() {
+        global.keyboardLock = false;
         let newValue = this.getValue();
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
         this._lastValue = newValue;

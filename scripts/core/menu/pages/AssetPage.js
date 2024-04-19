@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -32,10 +33,12 @@ class AssetPage extends DynamicFieldsPage {
             height: 0.04,
             width: 0.29,
         });
-        this._titleField.onEnter = () => this._titleField.blur();
         this._titleField.onBlur = () => {
+            global.keyboardLock = false;
             this._asset.editorHelper.updateName(this._titleField.value);
         };
+        this._titleField.onEnter = () => this._titleField.blur();
+        this._titleField.onFocus = () => { global.keyboardLock = true; };
         let componentsButton = createSmallButton(Textures.componentIcon, 0.7);
         let deleteButton = createSmallButton(Textures.trashIcon, 0.7);
         this._titleBlock.add(componentsButton);

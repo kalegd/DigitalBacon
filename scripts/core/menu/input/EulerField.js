@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { roundWithPrecision } from '/scripts/core/helpers/utils.module.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
@@ -51,6 +52,7 @@ class EulerField extends MenuField {
         input.onBlur = () => this._blur();
         input.onChange = () => this._update();
         input.onEnter = () => input.blur();
+        input.onFocus = () => { global.keyboardLock = true };
         input.value = initialValue;
         row.add(label);
         row.add(input);
@@ -65,6 +67,7 @@ class EulerField extends MenuField {
     }
 
     _blur() {
+        global.keyboardLock = false;
         let newValue = [this.getX(), this.getY(), this.getZ()];
         newValue.forEach((v, i) => newValue[i] = MathUtils.degToRad(v));
         if(this._onBlur) this._onBlur(this._lastValue, newValue);

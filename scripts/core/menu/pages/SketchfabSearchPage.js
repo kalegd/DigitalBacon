@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
@@ -32,6 +33,7 @@ class SketchfabSearchPage extends PaginatedImagesPage {
         });
         this._searchInput.onBlur = () => this._searchUpdated();
         this._searchInput.onEnter = () => this._searchInput.blur();
+        this._searchInput.onFocus = () => { global.keyboardLock = true };
         this.add(this._searchInput);
         this._loadingBlock = new Text('Loading...', Styles.bodyText,
             { height: 0.2 });
@@ -40,6 +42,7 @@ class SketchfabSearchPage extends PaginatedImagesPage {
     }
 
     _searchUpdated() {
+        global.keyboardLock = false;
         for(let item of this._items) {
             item.isDeleted = true;
             if(item.previewTexture) item.previewTexture.dispose();

@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { createTextInput, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
@@ -35,7 +36,9 @@ class TextInputPage extends MenuPage {
             marginTop: 0.01,
             width: 0.375,
         });
+        this._textInput.onBlur = () => { global.keyboardLock = false; };
         this._textInput.onEnter = () => this._inputConfirmed();
+        this._textInput.onFocus = () => { global.keyboardLock = true; };
         this._button = createWideButton('.');
         this._button.height = 0.04
         this._button.margin = 0.004;

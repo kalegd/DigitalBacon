@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -31,10 +32,12 @@ class JoinPartyPage extends MenuPage {
             marginTop: 0.01,
             width: 0.4,
         });
+        this._textInput.onBlur = () => { global.keyboardLock = false; };
         this._textInput.onEnter = () => {
             this._textInput.blur();
             this._joinParty();
         };
+        this._textInput.onFocus = () => { global.keyboardLock = true };
         let button = createWideButton('Join');
         button.width = 0.2;
         button.onClick = () => this._joinParty();

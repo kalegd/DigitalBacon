@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 import { createTextInput, createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
@@ -28,10 +29,13 @@ class AssetSelectPage extends PaginatedButtonsPage {
             marginTop: 0.01,
             width: 0.29,
         });
-        this._searchInput.onEnter = () => this._searchInput.blur();
-        this._searchInput.onBlur = this._searchInput.onChange = () => {
+        this._searchInput.onBlur = () => {
+            global.keyboardLock = false;
             this._searchUpdated();
         };
+        this._searchInput.onChange = () => this._searchUpdated();
+        this._searchInput.onEnter = () => this._searchInput.blur();
+        this._searchInput.onFocus = () => { global.keyboardLock = true; };
         this.add(this._searchInput);
 
         this._addList();

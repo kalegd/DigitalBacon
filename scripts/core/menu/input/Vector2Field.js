@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
@@ -48,6 +49,7 @@ class Vector2Field extends MenuField {
         input.onBlur = () => this._blur();
         input.onChange = () => this._update();
         input.onEnter = () => input.blur();
+        input.onFocus = () => { global.keyboardLock = true };
         input.value = initialValue;
         row.add(label);
         row.add(input);
@@ -61,6 +63,7 @@ class Vector2Field extends MenuField {
     }
 
     _blur() {
+        global.keyboardLock = false;
         let newValue = [this.getX(), this.getY()];
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
         this._lastValue = newValue;

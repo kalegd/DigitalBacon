@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
@@ -40,6 +41,7 @@ class TextField extends MenuField {
         this._textInput.onBlur = () => this._blur();
         this._textInput.onChange = () => this._update();
         this._textInput.onEnter = () => this._textInput.blur();
+        this._textInput.onFocus = () => { global.keyboardLock = true };
         this.add(this._textInput);
     }
 
@@ -50,6 +52,7 @@ class TextField extends MenuField {
     }
 
     _blur() {
+        global.keyboardLock = false;
         let newValue = this.getValue();
         if(this._onBlur) this._onBlur(this._lastValue, newValue);
         this._lastValue = newValue;
