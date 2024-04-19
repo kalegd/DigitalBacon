@@ -132,7 +132,7 @@ export default class System extends Asset {
         return false;
     }
 
-    addToScene() {
+    onAddToProject() {
         this._addSystemSubscriptions();
         PartyHandler.addInternalMessageHandler(this._id,
             (p, m) => this._onPeerMessage(p, m));
@@ -140,7 +140,7 @@ export default class System extends Asset {
             (p, m) => this._onPeerBufferMessage(p, m));
     }
 
-    removeFromScene() {
+    onRemoveFromProject() {
         this._removeSubscriptions();
     }
 

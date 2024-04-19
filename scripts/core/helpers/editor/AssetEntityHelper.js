@@ -41,6 +41,7 @@ export default class AssetEntityHelper extends EditorHelper {
         this._object = asset.getObject();
         this._attachedPeers = new Set();
         this._eventListeners = [];
+        this._actionsAdded = false;
         this._boundingBox = new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
         this._overwriteAssetFunctions();
@@ -113,18 +114,22 @@ export default class AssetEntityHelper extends EditorHelper {
         }
     }
     _addActions() {
+        if(this._actionsAdded) return;
         for(let details of this._eventListeners) {
             this._asset[details.type + 'Interactable'].addEventListener(
                 details.topic, details.callback, { tool: details.tool });
         }
+        this._actionsAdded = true;
     }
 
     _removeActions() {
+        if(!this._actionsAdded) return;
         for(let details of this._eventListeners) {
             this._asset[details.type + 'Interactable'].removeEventListener(
                 details.topic, details.callback);
         }
         this._attachedPeers = new Set();
+        this._actionsAdded = false;
     }
 
     updateVisualEdit(isVisualEdit) {
@@ -322,17 +327,11 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     _overwriteAssetFunctions() {
-        this._asset._addToScene = this._asset.addToScene;
-        this._asset._removeFromScene = this._asset.removeFromScene;
-        this._asset.addToScene =
-            (scene, pointerInteractable, gripInteractable) => {
-                this._asset._addToScene(scene, pointerInteractable,
-                    gripInteractable);
-                this.addToScene();
-            };
-        this._asset.removeFromScene = () => {
-            this._asset._removeFromScene();
-            this.removeFromScene();
+        this._asset.onAddToProject = () => this.onAddToProject();
+        this._asset._onRemoveFromProject = this._asset.onRemoveFromProject;
+        this._asset.onRemoveFromProject = () => {
+            this._asset._onRemoveFromProject();
+            this.onRemoveFromProject();
         };
         this._asset.setVisualEdit = (visualEdit) => {
             this.updateVisualEdit(visualEdit);
@@ -408,12 +407,12 @@ export default class AssetEntityHelper extends EditorHelper {
         }
     }
 
-    addToScene() {
+    onAddToProject() {
         if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
         this._addActions();
     }
 
-    removeFromScene() {
+    onRemoveFromProject() {
         this._attachedPeers.clear();
         global.scene.remove(this._boundingBoxObj);
         fullDispose(this._boundingBoxObj);

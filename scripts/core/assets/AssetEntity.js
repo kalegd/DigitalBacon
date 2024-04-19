@@ -16,11 +16,14 @@ import { concatenateArrayBuffers, fullDispose } from '/scripts/core/helpers/util
 import { GripInteractable, PointerInteractable } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
+const INTERACTABLE_PARAMS = ['pointerInteractable', 'gripInteractable'];
 export default class AssetEntity extends Asset {
     constructor(params = {}) {
         super(params);
         this._object = params['object'] || new THREE.Object3D();
         this._object.asset = this;
+        this._object.addEventListener('added', () => this._onAdded());
+        this._object.addEventListener('removed', () => this._onRemoved());
         if('parentId' in params) {
             this._parentId = params['parentId'];
         } else {
@@ -38,7 +41,6 @@ export default class AssetEntity extends Asset {
         this._object.scale.fromArray(scale);
         this._gripInteractable = new GripInteractable(this._object);
         this._pointerInteractable = new PointerInteractable(this._object);
-        this._deleteCallbacks = {};
         this._positionBytes = new Float64Array(3);
         this._rotationBytes = new Float64Array(3);
         this._scaleBytes = new Float64Array(3);
@@ -96,14 +98,6 @@ export default class AssetEntity extends Asset {
         this._pointerInteractable.removeAction(id);
     }
 
-    addDeleteCallback(id, handler) {
-        this._deleteCallbacks[id] = handler;
-    }
-
-    removeDeleteCallback(id) {
-        delete this._deleteCallbacks[id];
-    }
-
     getObject() {
         return this._object;
     }
@@ -152,7 +146,7 @@ export default class AssetEntity extends Asset {
         if(this._parentId == parentId) return;
         this.parent = ProjectHandler.getSessionAsset(parentId);
         if(!this.parent) {
-            this.removeFromScene();
+            if(this._object.parent) this._object.parent.remove(this._object);
         } else if(this._parentId != null) {
             this.attachTo(this.parent, true);
         } else {
@@ -223,11 +217,8 @@ export default class AssetEntity extends Asset {
         this.parent = newParent;
         newParent.children.add(this);
         this._parentId = newParent.getId();
-        if(ProjectHandler.getAsset(this._id)) {
-            this.addToScene(newParent.getObject(),
-                newParent.pointerInteractable,
-                newParent.gripInteractable);
-        }
+        if(ProjectHandler.getAsset(this._id))
+            newParent.getObject().add(this._object);
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
                 parentId: newParent.getId(),
@@ -246,11 +237,8 @@ export default class AssetEntity extends Asset {
         this.parent = newParent;
         newParent.children.add(this);
         this._parentId = newParent.getId();
-        if(ProjectHandler.getAsset(this._id)) {
-            this.attachToScene(newParent.getObject(),
-                newParent.pointerInteractable,
-                newParent.gripInteractable);
-        }
+        if(ProjectHandler.getAsset(this._id))
+            newParent.getObject().attach(this._object);
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
                 parentId: newParent.getId(),
@@ -259,36 +247,30 @@ export default class AssetEntity extends Asset {
         }
     }
 
-    addToScene(scene, pointerInteractable, gripInteractable) {
-        if(scene) scene.add(this._object);
-        if(pointerInteractable)
-            pointerInteractable.addChild(this._pointerInteractable);
-        if(gripInteractable)
-            gripInteractable.addChild(this._gripInteractable);
+    _onAdded() {
+        for(let param of INTERACTABLE_PARAMS) {
+            let interactable = this._object[param];
+            if(this._object.parent?.[param]) {
+                this._object.parent?.[param].addChild(interactable);
+            } else if(interactable.parent) {
+                interactable.parent.removeChild(interactable);
+            }
+        }
     }
 
-    attachToScene(scene, pointerInteractable, gripInteractable) {
-        if(scene) scene.attach(this._object);
-        if(pointerInteractable)
-            pointerInteractable.addChild(this._pointerInteractable);
-        if(gripInteractable)
-            gripInteractable.addChild(this._gripInteractable);
+    _onRemoved() {
+        for(let param of INTERACTABLE_PARAMS) {
+            let interactable = this._object[param];
+            if(interactable.parent) {
+                interactable.parent.removeChild(interactable);
+            }
+        }
     }
 
-    removeFromScene() {
-        if(this._gripInteractable.parent) {
-            this._gripInteractable.parent.removeChild(this._gripInteractable);
-        }
-        if(this._pointerInteractable.parent) {
-            this._pointerInteractable.parent.removeChild(
-                this._pointerInteractable);
-        }
+    onRemoveFromProject() {
         if(this._object.parent) {
             this._object.parent.remove(this._object);
             fullDispose(this._object);
-        }
-        for(let id in this._deleteCallbacks) {
-            if(this._deleteCallbacks[id]) this._deleteCallbacks[id]();
         }
     }
 }

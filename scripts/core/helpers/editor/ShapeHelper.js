@@ -56,13 +56,13 @@ export default class ShapeHelper extends AssetEntityHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
     }
 
-    addToScene(scene) {
-        super.addToScene(scene);
+    onAddToProject(scene) {
+        super.onAddToProject();
         this._addSubscriptions();
     }
 
-    removeFromScene() {
-        super.removeFromScene();
+    onRemoveFromProject() {
+        super.onRemoveFromProject();
         this._removeSubscriptions();
     }
 

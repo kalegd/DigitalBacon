@@ -13,8 +13,8 @@ class Scene {
     constructor() {
         this._id = 'dc23454b-9d3c-4c94-b1d2-0448ec28415f';
         this._object = new THREE.Scene();
-        this._gripInteractable = new GripInteractable();
-        this._pointerInteractable = new PointerInteractable();
+        this._gripInteractable = new GripInteractable(this._object);
+        this._pointerInteractable = new PointerInteractable(this._object);
         this.children = new Set();
         global.scene = this._object;
     }

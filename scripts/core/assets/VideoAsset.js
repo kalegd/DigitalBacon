@@ -111,9 +111,9 @@ export default class VideoAsset extends PlayableMediaAsset {
         }
     }
 
-    removeFromScene() {
+    onRemoveFromProject() {
         this.stop(true);
-        super.removeFromScene();
+        super.onRemoveFromProject();
     }
 
     static assetType = AssetTypes.VIDEO;

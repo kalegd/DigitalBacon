@@ -31,7 +31,7 @@ class CopyPasteControlsHandler {
 
     copy(ownerId, asset) {
         if(this._previewAssets[ownerId])
-            this._previewAssets[ownerId].removeFromScene();
+            this._previewAssets[ownerId].onRemoveFromProject();
         this._copiedAssets[ownerId] = asset;
         this._previewAssets[ownerId] = asset.editorHelper.preview();
         let previewObject = this._previewAssets[ownerId].getObject();
@@ -61,7 +61,7 @@ class CopyPasteControlsHandler {
 
     _clear() {
         for(let ownerId in this._previewAssets) {
-            this._previewAssets[ownerId].removeFromScene();
+            this._previewAssets[ownerId].onRemoveFromProject();
         }
         this._copiedAssets = {};
         this._previewAssets = {};

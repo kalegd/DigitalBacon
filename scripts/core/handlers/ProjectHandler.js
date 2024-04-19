@@ -278,26 +278,24 @@ class ProjectHandler {
     deleteAssetFromHandler(asset) {
         let id = asset.getId();
         if(this._assets[id]) {
-            if(asset.removeFromScene) {
-                if(asset.getObject) {
-                    let object = asset.getObject();
-                    for(let i = 0; i < this._objects.length; i++) {
-                        if(object == this._objects[i]) {
-                            this._objects.splice(i,1);
-                            break;
-                        }
-                    }
-                    let type = LibraryHandler.getType(asset.getAssetId());
-                    if(asset.parent && asset.parent != Scene
-                            && type != AssetTypes.INTERNAL) {
-                        let parentAssetId = asset.parent.getAssetId();
-                        let parentType = LibraryHandler.getType(parentAssetId);
-                        if(parentType == AssetTypes.INTERNAL)
-                            this._scene.attach(object);
+            if(asset.getObject) {
+                let object = asset.getObject();
+                for(let i = 0; i < this._objects.length; i++) {
+                    if(object == this._objects[i]) {
+                        this._objects.splice(i,1);
+                        break;
                     }
                 }
-                asset.removeFromScene();
+                let type = LibraryHandler.getType(asset.getAssetId());
+                if(asset.parent && asset.parent != Scene
+                        && type != AssetTypes.INTERNAL) {
+                    let parentAssetId = asset.parent.getAssetId();
+                    let parentType = LibraryHandler.getType(parentAssetId);
+                    if(parentType == AssetTypes.INTERNAL)
+                        this._scene.attach(object);
+                }
             }
+            if(asset.onRemoveFromProject) asset.onRemoveFromProject();
             delete this._assets[id];
         }
     }
@@ -317,15 +315,10 @@ class ProjectHandler {
 
     addAssetFromHandler(asset) {
         let id = asset.getId();
-        if(asset.addToScene) {
-            if(asset.parent) {
-                asset.addToScene(asset.parent.getObject(),
-                    asset.parent.pointerInteractable,
-                    asset.parent.gripInteractable);
-            } else {
-                asset.addToScene();
-            }
-            if(asset.getObject) this._objects.push(asset.getObject());
+        if(asset.onAddToProject) asset.onAddToProject();
+        if(asset.getObject) {
+            if(asset.parent) asset.parent.getObject().add(asset.getObject());
+            this._objects.push(asset.getObject());
         }
         if(this._assets[id]) return; //Prevent multi-user collisions
                                               //caused by undo/redo
