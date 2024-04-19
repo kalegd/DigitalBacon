@@ -65,7 +65,6 @@ export default class MenuController {
         this._pageCalls = [page];
         currentPage = this.getCurrentPage();
         this._object.add(currentPage);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     pushPage(page) {
@@ -73,7 +72,6 @@ export default class MenuController {
         if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls.push(page);
         this._object.add(this._pages[page]);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     popPage() {
@@ -82,7 +80,6 @@ export default class MenuController {
         this._pageCalls.pop();
         currentPage = this.getCurrentPage();
         this._object.add(currentPage);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     popPagesPast(page) {
@@ -92,7 +89,6 @@ export default class MenuController {
             poppedPage = this._pageCalls[this._pageCalls.length-1];
             currentPage.back();
         } while(poppedPage != page);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     popAllPages() {
@@ -100,7 +96,6 @@ export default class MenuController {
             let currentPage = this.getCurrentPage();
             currentPage.back();
         }
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     back() {

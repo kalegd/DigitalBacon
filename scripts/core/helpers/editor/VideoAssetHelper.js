@@ -19,14 +19,17 @@ export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     }
 
     place(intersection) {
-        let object = intersection.object;
+        let { object, point } = intersection;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(intersection.point);
-        this._object.lookAt(normal.add(this._object.position));
+        point.add(normal);
+        this._object.position.copy(point);
+        this._object.parent.worldToLocal(this._object.position);
+        point.add(normal);
+        this._object.lookAt(point);
         this.roundAttributes(true);
     }
 

@@ -312,7 +312,7 @@ export default class AssetEntityHelper extends EditorHelper {
 
     place(intersection) {
         let point = intersection.point;
-        this._object.position.copy(point);
+        this._object.position.copy(this._object.parent.worldToLocal(point));
         this.roundAttributes(true);
     }
 
