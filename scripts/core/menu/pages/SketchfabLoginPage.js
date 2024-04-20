@@ -42,12 +42,16 @@ class SketchfabLoginPage extends MenuPage {
         loginButton.width = 0.25;
         this.add(loginButton);
         loginButton.onClick = () => {
-            DelayedClickHandler.trigger(() => this._handleLogin());
+            if(global.deviceType == 'XR') {
+                SessionHandler.exitXRSession();
+                this._handleLogin();
+            } else {
+                DelayedClickHandler.trigger(() => this._handleLogin());
+            }
         };
     }
 
     _handleLogin() {
-        if(global.deviceType == 'XR') SessionHandler.exitXRSession();
         Sketchfab.signIn(this._staySignedIn,
             () => { this._handleLoginCallback(); });
     }

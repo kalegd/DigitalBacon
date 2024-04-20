@@ -102,7 +102,8 @@ class TransformControlsHandler {
             instanceHelper.roundAttributes(true);
             let preState = this._preTransformStates[instance.getId()];
             let postState = instanceHelper.getObjectTransformation();
-            instanceHelper.setObjectTransformation(preState, postState);
+            instanceHelper.setObjectTransformation(preState, postState, false,
+                false, true);
         });
         this._transformControls.addEventListener('objectChange', () => {
             if(global.renderer.info.render.frame % 3 == 0) {
@@ -281,7 +282,8 @@ class TransformControlsHandler {
                 }
                 assetHelper.roundAttributes(true);
                 let postState = assetHelper.getObjectTransformation();
-                assetHelper.setObjectTransformation(preState, postState);
+                assetHelper.setObjectTransformation(preState, postState, false,
+                    false, true);
             }
         }
     }
@@ -436,7 +438,8 @@ class TransformControlsHandler {
         $("#transform-controls").addClass("hidden");
         PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED,publishMessage);
         if(assetHelper && preState && postState)
-            assetHelper.setObjectTransformation(preState, postState);
+            assetHelper.setObjectTransformation(preState, postState, false,
+                false, true);
     }
 
     detachFromPeer(peer, asset, message) {

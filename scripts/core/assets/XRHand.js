@@ -35,8 +35,8 @@ export default class XRHand extends XRDevice {
     }
 
     _registerOwner(params) {
-        let owner = ProjectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
+        let owner = ProjectHandler.getSessionAsset(params['parentId']);
+        if(owner.registerXRHand) {
             owner.registerXRHand(params['handedness'], this);
         }
     }

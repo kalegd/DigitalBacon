@@ -20,7 +20,6 @@ export default class XRDevice extends InternalAssetEntity {
         if(!params['assetId']) params['assetId'] = XRDevice.assetId;
         super(params);
         this._ttl = TTL;
-        this._ownerId = params['ownerId'];
         this._modelUrl = params['modelUrl'];
         if(this._modelUrl) {
             this._loadModelFromUrl();
@@ -40,8 +39,8 @@ export default class XRDevice extends InternalAssetEntity {
     }
 
     _registerOwner(params) {
-        let owner = ProjectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
+        let owner = ProjectHandler.getSessionAsset(params['parentId']);
+        if(owner.registerXRDevice) {
             owner.registerXRDevice(this);
         }
     }
@@ -99,7 +98,6 @@ export default class XRDevice extends InternalAssetEntity {
 
     exportParams() {
         let params = super.exportParams();
-        params['ownerId'] = this._ownerId;
         params['modelUrl'] = this._modelUrl;
         return params;
     }
@@ -114,10 +112,6 @@ export default class XRDevice extends InternalAssetEntity {
 
     getModelUrl() {
         return this._modelUrl;
-    }
-
-    getOwnerId() {
-        return this._ownerId;
     }
 
     getWorldPosition() {
@@ -141,10 +135,6 @@ export default class XRDevice extends InternalAssetEntity {
         this._modelUrl = modelUrl;
     }
 
-    setOwnerId(ownerId) {
-        this._ownerId = ownerId;
-    }
-
     decrementTTL(timeDelta) {
         this._ttl -= timeDelta;
         if(this._ttl < 0) {
@@ -154,6 +144,15 @@ export default class XRDevice extends InternalAssetEntity {
 
     resetTTL() {
         this._ttl = TTL;
+    }
+
+    onAddToProject() {
+        this._live = true;
+    }
+
+    onRemoveFromProject() {
+        super.onRemoveFromProject();
+        this._live = false;
     }
 
     static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';

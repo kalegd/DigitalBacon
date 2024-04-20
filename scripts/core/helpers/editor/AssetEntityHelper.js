@@ -59,7 +59,7 @@ export default class AssetEntityHelper extends EditorHelper {
                 TransformControlsHandler.attach(this._asset, message.owner.id);
             }, tool: InteractionTools.EDIT, topic: 'down' });
             this._eventListeners.push({ type: 'grip', callback: (message) => {
-                let twoHandScaling = !TransformControlsHandler._twoHandScaling;
+                let twoHandScaling = TransformControlsHandler._twoHandScaling;
                 TransformControlsHandler.detach(message.owner.id);
                 if(!twoHandScaling) {
                     this._enableParam('position');
@@ -268,17 +268,21 @@ export default class AssetEntityHelper extends EditorHelper {
         };
     }
 
-    setObjectTransformation(oldValues, newValues, ignorePublish,ignoreUndoRedo){
+    setObjectTransformation(oldValues, newValues, ignorePublish, ignoreUndoRedo,
+            ignoreDisabledCheck){
         let updated = [];
         for(let param of OBJECT_TRANSFORM_PARAMS) {
-            let oldValue = (oldValues)
-                ? oldValues[param]
-                : this._object[param].toArray();
-            let newValue = newValues[param];
-            if(oldValue.reduce((a,v,i) => a && newValue[i] == v,true)) continue;
-            this._object[param].fromArray(newValue);
-            this.updateMenuField(param);
-            updated.push(param);
+            if(!this._disabledParams.has(param) || ignoreDisabledCheck) {
+                let oldValue = (oldValues)
+                    ? oldValues[param]
+                    : this._object[param].toArray();
+                let newValue = newValues[param];
+                if(oldValue.reduce((a,v,i) => a && newValue[i] == v, true))
+                    continue;
+                this._object[param].fromArray(newValue);
+                this.updateMenuField(param);
+                updated.push(param);
+            }
         }
         if(updated.length == 0) return;
         if(!ignorePublish)

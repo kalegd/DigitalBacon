@@ -29,8 +29,8 @@ export default class XRController extends XRDevice {
     }
 
     _registerOwner(params) {
-        let owner = ProjectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
+        let owner = ProjectHandler.getSessionAsset(params['parentId']);
+        if(owner.registerXRController) {
             owner.registerXRController(params['handedness'], this);
         }
     }

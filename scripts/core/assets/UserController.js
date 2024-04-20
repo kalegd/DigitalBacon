@@ -299,7 +299,7 @@ class UserController extends InternalAssetEntity {
         let controllerModel = InputHandler.getXRControllerModel(type,
             handedness);
         let source = InputHandler.getXRInputSource(type, handedness);
-        if(controller && controller.isInScene()) {
+        if(controller && controller._live) {
             if(source) {
                 controller.resetTTL();
             } else {
@@ -316,12 +316,12 @@ class UserController extends InternalAssetEntity {
                 controller = new assetClass({
                     id: xrController.uuid,
                     handedness: handedness,
-                    ownerId: this._id,
+                    parentId: this._id,
                     controllerModel: controllerModel,
                     object: xrController,
                 });
                 ProjectHandler.addAsset(controller, false, true);
-                controller.attachTo(this);
+                //controller.attachTo(this);
             } else {
                 ProjectHandler.addAsset(controller, false, true);
             }
