@@ -31,6 +31,7 @@ export default class CylinderShape extends Shape {
             this._heightSegments, this._openEnded, 0, thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {

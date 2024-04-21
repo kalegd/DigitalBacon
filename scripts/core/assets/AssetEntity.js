@@ -13,10 +13,11 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
 import { concatenateArrayBuffers, fullDispose } from '/scripts/core/helpers/utils.module.js';
-import { GripInteractable, PointerInteractable } from '/scripts/DigitalBacon-UI.js';
+import { utils, GripInteractable, PointerInteractable, TouchInteractable } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
-const INTERACTABLE_PARAMS = ['pointerInteractable', 'gripInteractable'];
+const INTERACTABLE_PARAMS = ['pointerInteractable', 'gripInteractable', 'touchInteractable'];
+
 export default class AssetEntity extends Asset {
     constructor(params = {}) {
         super(params);
@@ -39,8 +40,9 @@ export default class AssetEntity extends Asset {
         this._object.position.fromArray(position);
         this._object.rotation.fromArray(rotation);
         this._object.scale.fromArray(scale);
-        this._gripInteractable = new GripInteractable(this._object);
-        this._pointerInteractable = new PointerInteractable(this._object);
+        new GripInteractable(this._object);
+        new PointerInteractable(this._object);
+        new TouchInteractable(this._object);
         this._positionBytes = new Float64Array(3);
         this._rotationBytes = new Float64Array(3);
         this._scaleBytes = new Float64Array(3);
@@ -84,19 +86,17 @@ export default class AssetEntity extends Asset {
         return params;
     }
 
-    get gripInteractable() { return this._gripInteractable; }
-    get pointerInteractable() { return this._pointerInteractable; }
+    _updateBVH() {
+        utils.updateBVHForComplexObject(this._object);
+    }
+
+    get gripInteractable() { return this._object.gripInteractable; }
+    get pointerInteractable() { return this._object.pointerInteractable; }
+    get touchInteractable() { return this._object.touchInteractable; }
 
     set gripInteractable(_) {}
     set pointerInteractable(_) {}
-
-    removeGripAction(id) {
-        this._gripInteractable.removeAction(id);
-    }
-
-    removePointerAction(id) {
-        this._pointerInteractable.removeAction(id);
-    }
+    set touchInteractable(_) {}
 
     getObject() {
         return this._object;

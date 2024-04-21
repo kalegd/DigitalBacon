@@ -29,6 +29,7 @@ export default class RingShape extends Shape {
             thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {

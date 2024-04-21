@@ -28,6 +28,7 @@ export default class TorusShape extends Shape {
             this._radialSegments, this._tubularSegments, arc);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {

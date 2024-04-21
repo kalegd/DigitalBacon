@@ -97,8 +97,8 @@ export default class Main {
             Scene.gripInteractable);
         DigitalBaconUI.PointerInteractableHandler.addInteractable(
             Scene.pointerInteractable);
-        //DigitalBaconUI.TouchInteractableHandler.addInteractable(
-        //    Scene.touchInteractable);
+        DigitalBaconUI.TouchInteractableHandler.addInteractable(
+            Scene.touchInteractable);
     }
 
     _createHandlers(onStart) {

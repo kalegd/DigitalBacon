@@ -26,6 +26,7 @@ export default class PlaneShape extends Shape {
             this._widthSegments, this._heightSegments);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {

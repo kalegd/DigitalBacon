@@ -15,7 +15,7 @@ import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { GripInteractableHandler, PointerInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractableHandler, PointerInteractableHandler, TouchInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
 import * as THREE from 'three';
 
 export default class MenuController {
@@ -23,18 +23,15 @@ export default class MenuController {
         this._id = uuidv4();
         this._object = new THREE.Object3D();
         this._object.position.setZ(-100);
-        this._object.pointerInteractable =new PointerInteractable(this._object);
-        this._object.touchInteractable = new TouchInteractable(this._object);
         this._object.addEventListener('added', () => this._onAdded());
         this._object.addEventListener('removed', () => this._onRemoved());
+        this._createInteractables();
         this._pages = {};
         this._pageCalls = [];
-        this._gripInteractable = new MenuGripInteractable();
         this._gripOwners = new Set();
         this._eventAlreadyTriggered = false;
         this._addEventListeners();
         this._setupNotificationHub();
-        this._createInteractables();
     }
 
     _addEventListeners() {
@@ -116,6 +113,8 @@ export default class MenuController {
     }
 
     _createInteractables() {
+        new PointerInteractable(this._object);
+        new TouchInteractable(this._object);
         if(global.deviceType != 'XR') return;
         let border = this._createBorder();
         let interactable = new MenuGripInteractable(this._object, border);
@@ -131,7 +130,6 @@ export default class MenuController {
                 Scene.getObject().attach(this._object);
             this._gripOwners.delete(message.owner.id);
         });
-        this._gripInteractable.addChild(interactable);
     }
 
     getPosition(vector3) {
@@ -225,15 +223,23 @@ export default class MenuController {
     }
 
     _onAdded() {
-        if(global.deviceType == "XR")
-            GripInteractableHandler.addInteractable(this._gripInteractable);
+        if(global.deviceType == "XR") {
+            GripInteractableHandler.addInteractable(
+                this._object.gripInteractable);
+            TouchInteractableHandler.addInteractable(
+                this._object.touchInteractable);
+        }
         PointerInteractableHandler.addInteractable(
             this._object.pointerInteractable);
     }
 
     _onRemoved() {
-        if(global.deviceType == "XR")
-            GripInteractableHandler.removeInteractable(this._gripInteractable);
+        if(global.deviceType == "XR") {
+            GripInteractableHandler.removeInteractable(
+                this._object.gripInteractable);
+            TouchInteractableHandler.removeInteractable(
+                this._object.touchInteractable);
+        }
         PointerInteractableHandler.removeInteractable(
             this._object.pointerInteractable);
     }
