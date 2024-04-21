@@ -144,13 +144,15 @@ export default class AssetEntity extends Asset {
 
     setParentId(parentId) {
         if(this._parentId == parentId) return;
-        this.parent = ProjectHandler.getSessionAsset(parentId);
-        if(!this.parent) {
+        let parentAsset = ProjectHandler.getSessionAsset(parentId);
+        if(!parentAsset) {
             if(this._object.parent) this._object.parent.remove(this._object);
+            if(this.parent) this.parent.children.delete(this);
+            this.parent = null;
         } else if(this._parentId != null) {
-            this.attachTo(this.parent, true);
+            this.attachTo(parentAsset, true);
         } else {
-            this.addTo(this.parent, true);
+            this.addTo(parentAsset, true);
         }
         this._parentId = parentId;
     }

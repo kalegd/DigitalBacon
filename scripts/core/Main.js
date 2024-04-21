@@ -88,6 +88,7 @@ export default class Main {
     }
 
     _setupDigitalBaconUI() {
+        DigitalBaconUI.Keyboard.scale.set(0.4, 0.4, 0.4);
         DigitalBaconUI.InputHandler.enableXRControllerManagement(
             UserController.getObject());
         DigitalBaconUI.init(this._container, this._renderer, this._scene,
