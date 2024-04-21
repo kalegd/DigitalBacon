@@ -42,7 +42,9 @@ export default class AssetEntityHelper extends EditorHelper {
         this._attachedPeers = new Set();
         this._eventListeners = [];
         this._actionsAdded = false;
-        this._boundingBox = new THREE.Box3();
+        this._boundingBox = (global.deviceType == 'XR')
+            ? this._asset.gripInteractable._boundingBox
+            : new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
         this._overwriteAssetFunctions();
         this._addDeleteSubscriptionForPromotions();
@@ -51,6 +53,11 @@ export default class AssetEntityHelper extends EditorHelper {
 
     _createActions() {
         if(global.deviceType == "XR") {
+            this._asset.gripInteractable.addHoveredCallback((hovered) => {
+                (hovered)
+                    ? global.scene.add(this._boundingBoxObj)
+                    : global.scene.remove(this._boundingBoxObj);
+            });
             this._eventListeners.push({ type: 'grip', callback: (message) => {
                 this._disableParam('position');
                 this._disableParam('rotation');
