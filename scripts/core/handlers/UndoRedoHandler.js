@@ -25,8 +25,8 @@ class UndoRedoHandler {
 
         this._undoButton = createSmallButton(Textures.undoIcon, 0.8);
         this._redoButton = createSmallButton(Textures.redoIcon, 0.8);
-        this._undoButton.onClick = () => this._undo();
-        this._redoButton.onClick = () => this._redo();
+        this._undoButton.onClickAndTouch = () => this._undo();
+        this._redoButton.onClickAndTouch = () => this._redo();
     }
 
     addButtons(menu) {
