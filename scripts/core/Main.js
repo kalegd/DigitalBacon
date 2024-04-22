@@ -208,7 +208,7 @@ export default class Main {
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });
-            } else if (global.deviceType == "MOBILE") {
+            } else if (global.deviceType == "TOUCH_SCREEN") {
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });

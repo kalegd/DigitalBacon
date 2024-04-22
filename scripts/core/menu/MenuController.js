@@ -157,7 +157,7 @@ export default class MenuController {
         } else if(global.deviceType == "POINTER") {
             this._updatePointer(timeDelta);
             this.update = this._updatePointer;
-        } else if(global.deviceType == "MOBILE") {
+        } else if(global.deviceType == "TOUCH_SCREEN") {
             this._updateMobile(timeDelta);
             this.update = this._updateMobile;
         }

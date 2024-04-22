@@ -37,7 +37,7 @@ class SessionHandler {
             this._configureForXR();
         } else if(global.deviceType == "POINTER") {
             this._configureForPointer();
-        } else if(global.deviceType == "MOBILE") {
+        } else if(global.deviceType == "TOUCH_SCREEN") {
             this._configureForMobile();
         }
         this._addBakedWithLabel();
@@ -180,6 +180,7 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.resume();
             InputHandler.showExtraControls();
+            InputHandler.createJoystick();
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();

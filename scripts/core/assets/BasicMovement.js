@@ -106,7 +106,7 @@ export default class BasicMovement {
         } else if(global.deviceType == "POINTER") {
             this._updatePosition(timeDelta);
             this.update = this._updatePosition;
-        } else if(global.deviceType == "MOBILE") {
+        } else if(global.deviceType == "TOUCH_SCREEN") {
             this._setupMobileFlyingButtons();
             this._updatePositionMobile(timeDelta);
             this.update = this._updatePositionMobile;
