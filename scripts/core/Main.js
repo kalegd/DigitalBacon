@@ -93,18 +93,20 @@ export default class Main {
             UserController.getObject());
         DigitalBaconUI.init(this._container, this._renderer, this._scene,
             this._camera, global.deviceType, this._cameraFocus);
-        DigitalBaconUI.GripInteractableHandler.addInteractable(
-            Scene.gripInteractable);
-        DigitalBaconUI.PointerInteractableHandler.addInteractable(
-            Scene.pointerInteractable);
-        DigitalBaconUI.TouchInteractableHandler.addInteractable(
-            Scene.touchInteractable);
     }
 
     _createHandlers(onStart) {
         AudioHandler.init();
         if(global.disableImmersion) return;
-        SessionHandler.init(this._container, onStart);
+        SessionHandler.init(this._container, () => {
+            DigitalBaconUI.GripInteractableHandler.addInteractable(
+                Scene.gripInteractable);
+            DigitalBaconUI.PointerInteractableHandler.addInteractable(
+                Scene.pointerInteractable);
+            DigitalBaconUI.TouchInteractableHandler.addInteractable(
+                Scene.touchInteractable);
+            if(onStart) onStart();
+        });
         DigitalBaconUI.InteractionToolHandler.setTool(InteractionTools.EDIT);
         TransformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);
