@@ -48,7 +48,7 @@ class SketchfabLoginPage extends MenuPage {
         this._downloadButtonParent = new Div({ height: 0.035 });
         this._downloadButtonParent.add(this._downloadButton);
         columnBlock.add(this._downloadButtonParent);
-        this._downloadButton.onClick = () => {
+        this._downloadButton.onClickAndTouch = () => {
             if(this._assetId) {
                 this._handleDownloadSuccess(this._assetId);
                 return;
@@ -61,7 +61,7 @@ class SketchfabLoginPage extends MenuPage {
 
         let button = createWideButton('View on Sketchfab');
         columnBlock.add(button);
-        button.onClick = () => {
+        button.onClickAndTouch = () => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._sketchfabAsset.viewerUrl, '_blank');
         };

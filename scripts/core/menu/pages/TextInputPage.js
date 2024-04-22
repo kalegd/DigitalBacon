@@ -43,7 +43,7 @@ class TextInputPage extends MenuPage {
         this._button.height = 0.04
         this._button.margin = 0.004;
         this._button.width = 0.25;
-        this._button.onClick = () => this._inputConfirmed();
+        this._button.onClickAndTouch = () => this._inputConfirmed();
         columnBlock.add(this._textInput);
         columnBlock.add(this._button);
         this.add(columnBlock);

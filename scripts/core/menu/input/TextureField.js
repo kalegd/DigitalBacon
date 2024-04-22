@@ -39,7 +39,7 @@ class TextureField extends MenuField {
         this._buttonsSpan.add(this._textureSelection);
         this._buttonsSpan.add(this._editButton);
         this.add(this._buttonsSpan);
-        this._textureSelection.onClick = () => {
+        this._textureSelection.onClickAndTouch = () => {
             let textures = TexturesHandler.getAssets();
             let filteredTextures = {};
             filteredTextures["null\n"] = { Name: "Blank" };
@@ -60,7 +60,7 @@ class TextureField extends MenuField {
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
         };
-        this._editButton.onClick = () => {
+        this._editButton.onClickAndTouch = () => {
             if(!this._lastValue) return;
             let texture = TexturesHandler.getAsset(this._lastValue);
             let texturePage = global.menuController.getPage(

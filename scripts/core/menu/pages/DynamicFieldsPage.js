@@ -48,11 +48,11 @@ class DynamicFieldsPage extends MenuPage {
     _createPreviousAndNextButtons() {
         this._previousButtonParent = new Div();
         this._previousButton = createSmallButton('<');
-        this._previousButton.onClick = () => this._loadPrevPage();
+        this._previousButton.onClickAndTouch = () => this._loadPrevPage();
         this._previousButtonParent.add(this._previousButton);
         this._nextButtonParent = new Div();
         this._nextButton = createSmallButton('>');
-        this._nextButton.onClick = () => this._loadNextPage();
+        this._nextButton.onClickAndTouch = () => this._loadNextPage();
         this._nextButtonParent.add(this._nextButton);
     }
 

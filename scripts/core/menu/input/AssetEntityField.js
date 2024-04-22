@@ -38,7 +38,7 @@ class AssetEntityField extends MenuField {
         this._assetEntitySelection.width = 0.17;
         this._updateAssetEntity();
         this.add(this._assetEntitySelection);
-        this._assetEntitySelection.onClick = () => {
+        this._assetEntitySelection.onClickAndTouch = () => {
             let assets = ProjectHandler.getAssets();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };

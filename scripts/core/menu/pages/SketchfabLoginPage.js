@@ -41,7 +41,7 @@ class SketchfabLoginPage extends MenuPage {
         loginButton.margin = 0.004;
         loginButton.width = 0.25;
         this.add(loginButton);
-        loginButton.onClick = () => {
+        loginButton.onClickAndTouch = () => {
             if(global.deviceType == 'XR') {
                 SessionHandler.exitXRSession();
                 this._handleLogin();

@@ -53,7 +53,7 @@ class SkyboxPage extends MenuPage {
                 width: 0.06,
             });
             button.pointerInteractable = new PointerInteractable(button);
-            button.onClick = () => {
+            button.onClickAndTouch = () => {
                 let library = LibraryHandler.getLibrary();
                 let filteredAssets = {};
                 filteredAssets["null\n"] = { Name: "Blank" };

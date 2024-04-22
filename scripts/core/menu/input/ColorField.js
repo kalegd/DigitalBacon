@@ -36,7 +36,7 @@ class ColorField extends MenuField {
         this._colorBlock.material.color = this._color;
         configureOrbitDisabling(this._colorBlock);
         this.add(this._colorBlock);
-        this._colorBlock.onClick = () => {
+        this._colorBlock.onClickAndTouch = () => {
             let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);
             colorPage.setContent(this._id, this._color,
                 (color) => {

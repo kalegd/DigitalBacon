@@ -17,14 +17,14 @@ class PaginatedPage extends MenuPage {
     _createPreviousAndNextButtons() {
         this._previousButtonParent = new Div();
         this._previousButton = createSmallButton('<');
-        this._previousButton.onClick = () => {
+        this._previousButton.onClickAndTouch = () => {
             this._page -= 1;
             this._updateItemsGUI();
         };
         this._previousButtonParent.add(this._previousButton);
         this._nextButtonParent = new Div();
         this._nextButton = createSmallButton('>');
-        this._nextButton.onClick = () => {
+        this._nextButton.onClickAndTouch = () => {
             this._page += 1;
             this._updateItemsGUI();
         };

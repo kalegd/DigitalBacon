@@ -46,7 +46,7 @@ class PaginatedListPage extends PaginatedPage {
             row.add(deleteButton);
             this._optionsBlock.add(row);
             this._paginatedListRows.push(row);
-            editButton.onClick = () => {
+            editButton.onClickAndTouch = () => {
                 let index = this._page * OPTIONS + i;
                 if(this._items.length > index) {
                     this._handleEditItemInteraction(this._items[index]);
@@ -55,7 +55,7 @@ class PaginatedListPage extends PaginatedPage {
                         "PaginatedListPage displaying non existant option");
                 }
             };
-            deleteButton.onClick = () => {
+            deleteButton.onClickAndTouch = () => {
                 let index = this._page * OPTIONS + i;
                 if(this._items.length > index) {
                     this._handleDeleteItemInteraction(this._items[index]);

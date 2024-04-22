@@ -45,7 +45,7 @@ class AssetSelectPage extends PaginatedButtonsPage {
         this._addButton = createSmallButton('+');
         this._addButton.bypassContentPositioning = true;
         this._addButton.position.fromArray([0.175, 0.12, 0.001]);
-        this._addButton.onClick = () => {
+        this._addButton.onClickAndTouch = () => {
             if(this._addAction) this._addAction();
         };
         this.add(this._addButton);

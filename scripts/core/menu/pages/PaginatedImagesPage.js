@@ -52,7 +52,7 @@ class PaginatedImagesPage extends MenuPage {
                 button.pointerInteractable = new PointerInteractable(button);
                 row.add(button);
                 this._paginatedListButtons.push(button);
-                button.onClick = () => {
+                button.onClickAndTouch = () => {
                     let index = this._page * ROWS * OPTIONS + OPTIONS * i + j;
                     if(this._items.length > index) {
                         this._handleItemInteraction(this._items[index]);
@@ -75,14 +75,14 @@ class PaginatedImagesPage extends MenuPage {
     _createPreviousAndNextButtons() {
         this._previousButtonParent = new Div();
         this._previousButton = createSmallButton('<');
-        this._previousButton.onClick = () => {
+        this._previousButton.onClickAndTouch = () => {
             this._page -= 1;
             this._updateItemsGUI();
         };
         this._previousButtonParent.add(this._previousButton);
         this._nextButtonParent = new Div();
         this._nextButton = createSmallButton('>');
-        this._nextButton.onClick = () => {
+        this._nextButton.onClickAndTouch = () => {
             this._page += 1;
             if(this._fetchNext) this._fetchNextItems();
             this._updateItemsGUI();

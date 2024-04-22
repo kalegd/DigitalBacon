@@ -41,8 +41,7 @@ class SettingsPage extends MenuPage {
             let button = createWideButton(page.title);
             button.margin = 0.004;
             columnBlock.add(button);
-            button.onClick = () => this._controller.pushPage(page.menuPage);
-            button.onClick = () => {
+            button.onClickAndTouch = () => {
                 if(page.menuPage) {
                     this._controller.pushPage(page.menuPage);
                 } else {

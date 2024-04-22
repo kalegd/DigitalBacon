@@ -44,12 +44,13 @@ class AssetPage extends DynamicFieldsPage {
         this._titleBlock.add(componentsButton);
         this._titleBlock.add(this._titleField);
         this._titleBlock.add(deleteButton);
-        componentsButton.onClick = () => {
+        componentsButton.onClickAndTouch = () => {
             let page = this._controller.getPage(MenuPages.LIST_COMPONENTS);
             page.setContent(this._asset);
             this._controller.pushPage(MenuPages.LIST_COMPONENTS);
         };
-        deleteButton.onClick = () => ProjectHandler.deleteAsset(this._asset);
+        deleteButton.onClickAndTouch =
+            () => ProjectHandler.deleteAsset(this._asset);
     }
 
     setAsset(asset) {

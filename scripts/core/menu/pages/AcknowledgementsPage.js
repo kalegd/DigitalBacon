@@ -56,7 +56,7 @@ class AcknowledgementsPage extends MenuPage {
         let sourceButton = createWideButton('View Source');
         this._sourceButtonParent.add(sourceButton);
         columnBlock.add(this._sourceButtonParent);
-        sourceButton.onClick = () => {
+        sourceButton.onClickAndTouch = () => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._acknowledgements[this._page]['Source URL'],
                 '_blank');
@@ -70,7 +70,7 @@ class AcknowledgementsPage extends MenuPage {
     _createPreviousAndNextButtons() {
         this._previousButtonParent = new Div();
         this._previousButton = createSmallButton('<');
-        this._previousButton.onClick = () => {
+        this._previousButton.onClickAndTouch = () => {
             this._page += this._acknowledgements.length - 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
@@ -78,7 +78,7 @@ class AcknowledgementsPage extends MenuPage {
         this._previousButtonParent.add(this._previousButton);
         this._nextButtonParent = new Div();
         this._nextButton = createSmallButton('>');
-        this._nextButton.onClick = () => {
+        this._nextButton.onClickAndTouch = () => {
             this._page += 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();

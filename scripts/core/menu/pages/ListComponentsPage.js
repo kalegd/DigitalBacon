@@ -35,7 +35,7 @@ class ListComponentsPage extends PaginatedListPage {
         let addButton = createSmallButton('+');
         addButton.bypassContentPositioning = true;
         addButton.position.fromArray([0.175, 0.12, 0.001]);
-        addButton.onClick = () => {
+        addButton.onClickAndTouch = () => {
             let assetComponents = this._asset.getComponents(true);
             let components = ComponentsHandler.getAssets();
             let filteredComponents = {};

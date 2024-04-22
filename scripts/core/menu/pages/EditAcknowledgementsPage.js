@@ -25,7 +25,8 @@ class EditAcknowledgementsPage extends MenuPage {
         this._noAcknowledgements = new Div({ height: 0.035, width: 0.3 });
 
         this._addFirstAcknowledgement = createWideButton('Add Acknowledgement');
-        this._addFirstAcknowledgement.onClick = () =>this._addAcknowledgement();
+        this._addFirstAcknowledgement.onClickAndTouch =
+            () => this._addAcknowledgement();
 
         this._noAcknowledgements.add(this._addFirstAcknowledgement);
 
@@ -67,7 +68,7 @@ class EditAcknowledgementsPage extends MenuPage {
     _createPreviousAndNextButtons() {
         this._previousButtonParent = new Div();
         this._previousButton = createSmallButton('<');
-        this._previousButton.onClick = () => {
+        this._previousButton.onClickAndTouch = () => {
             this._page += this._acknowledgements.length - 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
@@ -75,7 +76,7 @@ class EditAcknowledgementsPage extends MenuPage {
         this._previousButtonParent.add(this._previousButton);
         this._nextButtonParent = new Div();
         this._nextButton = createSmallButton('>');
-        this._nextButton.onClick = () => {
+        this._nextButton.onClickAndTouch = () => {
             this._page += 1;
             this._page %= this._acknowledgements.length;
             this._setAsset();
@@ -96,8 +97,8 @@ class EditAcknowledgementsPage extends MenuPage {
         addDeleteRow.add(deleteButton);
         columnBlock.add(addDeleteRow);
 
-        addButton.onClick = () => this._addAcknowledgement();
-        addButton.onClick = () => this._deleteAcknowledgement();
+        addButton.onClickAndTouch = () => this._addAcknowledgement();
+        addButton.onClickAndTouch = () => this._deleteAcknowledgement();
     }
 
     _addAcknowledgement() {

@@ -33,7 +33,7 @@ class MenuPage extends Body {
         let backButton = createSmallButton('<');
         backButton.bypassContentPositioning = true;
         backButton.position.fromArray([-.225, 0.15, 0.001]);
-        backButton.onClick = () => this.back();
+        backButton.onClickAndTouch = () => this.back();
         this.add(backButton);
         this._createHomeButton();
     }
@@ -42,7 +42,7 @@ class MenuPage extends Body {
         let homeButton = createSmallButton(Textures.homeIcon, 0.9);
         homeButton.bypassContentPositioning = true;
         homeButton.position.fromArray([-.225, 0.1, 0.001]);
-        homeButton.onClick = () => this._controller.popAllPages();
+        homeButton.onClickAndTouch = () => this._controller.popAllPages();
         this.add(homeButton);
     }
 
@@ -50,7 +50,7 @@ class MenuPage extends Body {
         let closeButton = createSmallButton('X');
         closeButton.bypassContentPositioning = true;
         closeButton.position.fromArray([.225, 0.15, 0.001]);
-        closeButton.onClick = () => this._controller.closeMenu();
+        closeButton.onClickAndTouch = () => this._controller.closeMenu();
         this.add(closeButton);
     }
 

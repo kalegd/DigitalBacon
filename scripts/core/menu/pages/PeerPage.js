@@ -36,7 +36,7 @@ class PeerPage extends MenuPage {
         for(let option of options) {
             let button = createWideButton(option.title);
             button.margin = 0.004;
-            button.onClick = () => this[option.handler]();
+            button.onClickAndTouch = () => this[option.handler]();
             columnBlock.add(button);
         }
         this.add(columnBlock);

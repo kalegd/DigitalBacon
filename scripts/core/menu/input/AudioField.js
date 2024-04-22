@@ -34,7 +34,7 @@ class AudioField extends MenuField {
         this._audioSelection.width = 0.17;
         this._updateAudio();
         this.add(this._audioSelection);
-        this._audioSelection.onClick = () => {
+        this._audioSelection.onClickAndTouch = () => {
             let library = LibraryHandler.getLibrary();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };

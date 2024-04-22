@@ -30,7 +30,7 @@ class PaginatedButtonsPage extends PaginatedPage {
             let button = createWideButton();
             button.marginTop = 0.004;
             button.marginBottom = 0.004;
-            button.onClick = () => {
+            button.onClickAndTouch = () => {
                 let index = this._page * OPTIONS + i;
                 if(this._items.length > index) {
                     this._handleItemInteraction(this._items[index]);

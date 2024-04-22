@@ -248,7 +248,7 @@ class ButtonEntity extends MenuField {
         super();
         this.height = 0.043;
         let button = createWideButton(title);
-        button.onClick = action;
+        button.onClickAndTouch = action;
         this.add(button);
         this.textComponent = button.textComponent;
     }
@@ -305,17 +305,17 @@ class PeerEntity extends MenuField {
             this._controller.pushPage(MenuPages.PEER);
         };
         if(PartyHandler.isHost())
-            this._usernameBlock.onClick = this._usernameClickCallback;
-        this._muteMyselfButton.onClick = () => this.toggleMyselfMuted();
-        this._mutePeerButton.onClick = () => this.togglePeerMuted();
+            this._usernameBlock.onClickAndTouch = this._usernameClickCallback;
+        this._muteMyselfButton.onClickAndTouch = () => this.toggleMyselfMuted();
+        this._mutePeerButton.onClickAndTouch = () => this.togglePeerMuted();
     }
 
     toggleHost(isHost) {
         if(isHost) {
-            this._usernameBlock.onClick = this._usernameClickCallback;
+            this._usernameBlock.onClickAndTouch = this._usernameClickCallback;
             this._usernameBlock.backgroundVisible = true;
         } else {
-            this._usernameBlock.onClick = null;
+            this._usernameBlock.onClickAndTouch = null;
             this._usernameBlock.backgroundVisible = false;
         }
     }

@@ -65,7 +65,7 @@ class CubeImageField extends MenuField {
                 width: 0.06,
             });
             button.pointerInteractable = new PointerInteractable(button);
-            button.onClick = () => this._handleInteractable(SIDES[i]);
+            button.onClickAndTouch = () => this._handleInteractable(SIDES[i]);
             if(i == 0) {
                 button.marginRight = 0.068;
                 this.add(button);

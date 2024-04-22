@@ -39,7 +39,7 @@ class AssetsPage extends PaginatedButtonsPage {
         let addButton = createSmallButton('+');
         addButton.bypassContentPositioning = true;
         addButton.position.fromArray([0.175, 0.12, 0.001]);
-        addButton.onClick = () => {
+        addButton.onClickAndTouch = () => {
             let page = this._controller.getPage('NEW_' + this._assetType);
             page.setContent((asset) => {
                 if(asset.constructor.assetType == this._assetType)

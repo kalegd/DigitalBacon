@@ -72,6 +72,7 @@ export default class MenuController {
     }
 
     popPage() {
+        if(this._pageCalls.length <= 1) return;
         let currentPage = this.getCurrentPage();
         if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls.pop();

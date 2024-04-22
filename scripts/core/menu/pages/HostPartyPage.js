@@ -40,7 +40,7 @@ class HostPartyPage extends MenuPage {
         this._textInput.onFocus = () => { global.keyboardLock = true };
         let button = createWideButton('Host');
         button.width = 0.2;
-        button.onClick = () => this._hostParty();
+        button.onClickAndTouch = () => this._hostParty();
         this._contentBlock.add(this._textInput);
         this._contentBlock.add(button);
         this.add(this._contentBlock);

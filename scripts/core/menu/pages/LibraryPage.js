@@ -79,7 +79,7 @@ class LibraryPage extends PaginatedIconsPage {
         let searchButton = createSmallButton(Textures.searchIcon, 0.8);
         searchButton.bypassContentPositioning = true;
         searchButton.position.fromArray([-0.175, 0.12, 0.001]);
-        searchButton.onClick = () => {
+        searchButton.onClickAndTouch = () => {
             this._controller.pushPage(MenuPages.LIBRARY_SEARCH);
         };
         this.add(searchButton);

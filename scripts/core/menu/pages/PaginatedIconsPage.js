@@ -63,7 +63,7 @@ class PaginatedIconsPage extends PaginatedPage {
                 button.add(text);
                 row.add(button);
                 this._paginatedListButtons.push(button);
-                button.onClick = () => {
+                button.onClickAndTouch = () => {
                     let index = this._page * ROWS * OPTIONS + OPTIONS * i + j;
                     if(this._items.length > index) {
                         this._handleItemInteraction(this._items[index]);

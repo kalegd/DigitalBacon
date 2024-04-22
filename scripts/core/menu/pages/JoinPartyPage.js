@@ -40,7 +40,7 @@ class JoinPartyPage extends MenuPage {
         this._textInput.onFocus = () => { global.keyboardLock = true };
         let button = createWideButton('Join');
         button.width = 0.2;
-        button.onClick = () => this._joinParty();
+        button.onClickAndTouch = () => this._joinParty();
         this._contentBlock.add(this._textInput);
         this._contentBlock.add(button);
         this.add(this._contentBlock);

@@ -34,7 +34,7 @@ class ImageField extends MenuField {
         this._imageSelection.width = 0.17;
         this._updateImage();
         this.add(this._imageSelection);
-        this._imageSelection.onClick = () => {
+        this._imageSelection.onClickAndTouch = () => {
             let library = LibraryHandler.getLibrary();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };

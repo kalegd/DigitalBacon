@@ -40,7 +40,7 @@ class MaterialField extends MenuField {
         this._buttonsSpan.add(this._materialSelection);
         this._buttonsSpan.add(this._editButton);
         this.add(this._buttonsSpan);
-        this._materialSelection.onClick = () => {
+        this._materialSelection.onClickAndTouch = () => {
             let materials = MaterialsHandler.getAssets();
             let filteredMaterials = {};
             filteredMaterials["null\n"] = { Name: "Blank" };
@@ -57,7 +57,7 @@ class MaterialField extends MenuField {
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
         };
-        this._editButton.onClick = () => {
+        this._editButton.onClickAndTouch = () => {
             if(!this._lastValue) return;
             let material = MaterialsHandler.getAsset(this._lastValue);
             let materialPage = global.menuController.getPage(
