@@ -43,7 +43,7 @@ class AssetsPage extends PaginatedButtonsPage {
             let page = this._controller.getPage('NEW_' + this._assetType);
             page.setContent((asset) => {
                 if(asset.constructor.assetType == this._assetType)
-                    this._handleItemInteraction(asset.getId());
+                    this._handleItemInteraction(asset.id);
             });
             this._controller.pushPage('NEW_' + this._assetType);
         };
@@ -51,7 +51,7 @@ class AssetsPage extends PaginatedButtonsPage {
     }
 
     _getItemName(item) {
-        let name = this._assets[item].getName();
+        let name = this._assets[item].name;
         if(name.length > FIELD_MAX_LENGTH)
             name = "..." + name.substring(name.length - FIELD_MAX_LENGTH);
         return name;

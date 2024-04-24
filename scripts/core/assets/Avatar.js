@@ -190,20 +190,12 @@ export default class Avatar extends InternalAssetEntity {
         this._createMesh(url);
     }
 
-    getAvatarUrl() {
-        return this._avatarUrl;
-    }
+    get avatarUrl() { return this._avatarUrl; }
+    get verticalOffset() { return this._verticalOffset; }
 
-    getVerticalOffset() {
-        return this._verticalOffset;
-    }
-
-    setAvatarUrl(avatarUrl) {
-        this.updateSourceUrl(avatarUrl);
-    }
-
-    setVerticalOffset(verticalOffset) {
-        this._verticalOffsert = verticalOffset;
+    set avatarUrl(avatarUrl) { this.updateSourceUrl(avatarUrl); }
+    set verticalOffset(verticalOffset) {
+        this._verticalOffset = verticalOffset;
         this._object.position.setY(verticalOffset);
     }
 

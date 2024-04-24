@@ -56,7 +56,7 @@ class TransformControlsHandler {
                 for(let ownerId in this._attachedAssets) {
                     let asset = this._attachedAssets[ownerId];
                     if(!asset) continue;
-                    let parentAsset = asset.getObject().parent.asset;
+                    let parentAsset = asset.object.parent.asset;
                     if(parentAsset.constructor.assetType ==AssetTypes.INTERNAL){
                         this.detach(ownerId);
                     }
@@ -92,7 +92,7 @@ class TransformControlsHandler {
         this._transformControls.addEventListener('mouseDown', () => {
             SessionHandler.disableOrbit();
             let instance = this._attachedAssets[global.deviceType];
-            this._preTransformStates[instance.getId()]
+            this._preTransformStates[instance.id]
                 = instance.editorHelper.getObjectTransformation();
         });
         this._transformControls.addEventListener('mouseUp', () => {
@@ -100,7 +100,7 @@ class TransformControlsHandler {
             let instance = this._attachedAssets[global.deviceType];
             let instanceHelper = instance.editorHelper;
             instanceHelper.roundAttributes(true);
-            let preState = this._preTransformStates[instance.getId()];
+            let preState = this._preTransformStates[instance.id];
             let postState = instanceHelper.getObjectTransformation();
             instanceHelper.setObjectTransformation(preState, postState, false,
                 false, true);
@@ -124,7 +124,7 @@ class TransformControlsHandler {
                 $('#' + this._transformControls.mode + "-button")
                     .addClass("selected");
                 this._transformControls.attach(
-                    this._attachedAssets[global.deviceType].getObject());
+                    this._attachedAssets[global.deviceType].object);
             }
         });
 
@@ -149,7 +149,7 @@ class TransformControlsHandler {
                 this._transformControls.setMode(mode);
                 this._placingObject[global.deviceType] = false;
                 this._transformControls.attach(
-                    this._attachedAssets[global.deviceType].getObject());
+                    this._attachedAssets[global.deviceType].object);
             });
         }
 
@@ -167,8 +167,8 @@ class TransformControlsHandler {
         let ownerId = global.deviceType;
         let attachedAsset = this._attachedAssets[ownerId];
         if(attachedAsset) {
-            let data = 'assetId:' + attachedAsset.getAssetId() + ':instanceId:'
-                + attachedAsset.getId();
+            let data = 'assetId:' + attachedAsset.assetId + ':instanceId:'
+                + attachedAsset.id;
             e.clipboardData.setData('text/digitalbacon', data);
             e.preventDefault();
         }
@@ -230,7 +230,7 @@ class TransformControlsHandler {
     }
 
     _offsetClone(instance) {
-        let object = instance.getObject();
+        let object = instance.object;
         vector3s[0].fromArray([0,1,0]);
         vector3s[1].setFromMatrixColumn(global.camera.matrixWorld, 0);
         vector3s[1].y = 0;
@@ -270,7 +270,7 @@ class TransformControlsHandler {
                     $('#' + this._transformControls.mode + "-button")
                         .addClass("selected");
                     this._transformControls.attach(
-                        attachedAsset.getObject());
+                        attachedAsset.object);
                     this._placingObject[ownerId] = false;
                 }
                 let assetHelper = attachedAsset.editorHelper;
@@ -296,7 +296,7 @@ class TransformControlsHandler {
             asset = this._attachedAssets[ownerId];
             break;
         }
-        asset.getObject().scale.set(
+        asset.object.scale.set(
             factor * this._initialScalingValues.x,
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
@@ -321,7 +321,7 @@ class TransformControlsHandler {
     _intersectRelevantObjects(raycaster, ownerId) {
         let intersects = [];
         let objects = ProjectHandler.getObjects();
-        let attachedObject = this._attachedAssets[ownerId].getObject();
+        let attachedObject = this._attachedAssets[ownerId].object;
         for(let i = 0, l = objects.length; i < l; i++) {
             if(objects[i] != attachedObject) {
                 intersectObject(objects[i], raycaster, intersects, true);
@@ -333,12 +333,12 @@ class TransformControlsHandler {
 
     _otherOption(userController, ownerId) {
         let asset = ProjectHandler.getAsset(ownerId);
-        let handedness = asset.getHandedness();
+        let handedness = asset.handedness;
         let otherHand = Handedness.otherHand(handedness);
         let otherAsset = (asset.constructor.name == 'XRHand')
             ? userController.getHand(otherHand)
             : userController.getController(otherHand);
-        if(otherAsset) return otherAsset.getId();
+        if(otherAsset) return otherAsset.id;
         return null;
     }
 
@@ -359,24 +359,23 @@ class TransformControlsHandler {
                 this._twoHandScaling = true;
                 this._initialScalingDistance =
                     global.userController.getDistanceBetweenHands();
-                this._initialScalingValues = asset.getObject().scale.clone();
+                this._initialScalingValues = asset.object.scale.clone();
             } else {
-                this._preTransformStates[asset.getId()]
+                this._preTransformStates[asset.id]
                     = asset.editorHelper.getObjectTransformation();
                 //We CANNOT use asset.attach because we need to know who the
                 //actual parent is
-                ProjectHandler.getAsset(ownerId).getObject().attach(
-                    asset.getObject());
+                ProjectHandler.getAsset(ownerId).object.attach(asset.object);
                 asset.editorHelper.makeTranslucent();
             }
-            publishMessage.position = asset.getPosition();
-            publishMessage.rotation = asset.getRotation();
+            publishMessage.position = asset.position;
+            publishMessage.rotation = asset.rotation;
             UndoRedoHandler.disable(this._id);
         } else {
             asset.editorHelper._disableParam('position');
             asset.editorHelper._disableParam('rotation');
             asset.editorHelper._disableParam('scale');
-            this._transformControls.attach(asset.getObject());
+            this._transformControls.attach(asset.object);
             $("#transform-controls").removeClass("hidden");
             $("#transform-controls > button").removeClass("selected");
             $('#' + this._transformControls.mode + "-button")
@@ -392,13 +391,13 @@ class TransformControlsHandler {
         };
         if(message.twoHandScaling) {
             asset.attachTo(asset.parent, true);
-            asset.setPosition(message.position);
-            asset.setRotation(message.rotation);
+            asset.position = message.position;
+            asset.rotation = message.rotation;
         } else {
-            ProjectHandler.getAsset(message.ownerId).getObject().attach(
-                asset.getObject());
-            asset.setPosition(message.position);
-            asset.setRotation(message.rotation);
+            ProjectHandler.getAsset(message.ownerId).object.attach(
+                asset.object);
+            asset.position = message.position;
+            asset.rotation = message.rotation;
         }
     }
 
@@ -412,19 +411,19 @@ class TransformControlsHandler {
             asset.attachTo(asset.parent, true);
             let otherOption = this._otherOption(global.userController, ownerId);
             if(this._attachedAssets[otherOption] == asset) {
-                ProjectHandler.getAsset(otherOption).getObject().attach(
-                    asset.getObject());
+                ProjectHandler.getAsset(otherOption).object.attach(
+                    asset.object);
                 publishMessage.twoHandScaling = true;
                 this._twoHandScaling = false;
             } else {
                 asset.editorHelper.returnTransparency();
                 assetHelper = asset.editorHelper;
                 assetHelper.roundAttributes(true);
-                preState = this._preTransformStates[asset.getId()];
+                preState = this._preTransformStates[asset.id];
                 postState = assetHelper.getObjectTransformation();
             }
-            publishMessage.position = asset.getPosition();
-            publishMessage.rotation = asset.getRotation();
+            publishMessage.position = asset.position;
+            publishMessage.rotation = asset.rotation;
             if(Object.keys(this._attachedAssets).length == 1)
                 UndoRedoHandler.enable(this._id);
         } else {
@@ -446,14 +445,13 @@ class TransformControlsHandler {
         delete this._peerAttachedAssets[message.ownerId];
         if(message.twoHandScaling) {
             let otherOption =this._otherOption(peer.controller,message.ownerId);
-            ProjectHandler.getAsset(otherOption).getObject().attach(
-                asset.getObject());
-            asset.setPosition(message.position);
-            asset.setRotation(message.rotation);
+            ProjectHandler.getAsset(otherOption).object.attach(asset.object);
+            asset.position = message.position;
+            asset.rotation = message.rotation;
         } else {
             asset.attachTo(asset.parent, true);
-            if(message.position) asset.setPosition(message.position);
-            if(message.rotation) asset.setRotation(message.rotation);
+            if(message.position) asset.position = message.position;
+            if(message.rotation) asset.rotation = message.rotation;
         }
     }
 
@@ -467,10 +465,10 @@ class TransformControlsHandler {
             } else {
                 asset.attachTo(asset.parent);
                 asset.editorHelper.returnTransparency();
-                let preState = this._preTransformStates[asset.getId()];
+                let preState = this._preTransformStates[asset.id];
                 let assetHelper = asset.editorHelper;
                 for(let param in preState) {
-                    asset.getObject()[param].fromArray(preState[param]);
+                    asset.object[param].fromArray(preState[param]);
                 }
                 assetHelper._publish(['position', 'rotation', 'scale']);
             }
@@ -482,7 +480,7 @@ class TransformControlsHandler {
             let preState = this._preTransformStates[global.deviceType];
             let assetHelper = asset.editorHelper;
             for(let param in preState) {
-                asset.getObject()[param].fromArray(preState[param]);
+                asset.object[param].fromArray(preState[param]);
             }
             assetHelper._publish(['position', 'rotation', 'scale']);
         }
@@ -504,7 +502,7 @@ class TransformControlsHandler {
     _isDragging(instance) {
         if(!instance) return this._transformControls.dragging;
         return this._transformControls.dragging
-            && instance.getObject() == this.getObject();
+            && instance.object == this.getObject();
     }
 
     getObject() {

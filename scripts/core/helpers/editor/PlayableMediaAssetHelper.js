@@ -18,15 +18,17 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
 
     _createPreviewFunctions() {
         this._previewMedia = false;
-        this._asset.getPreviewMedia = () => this._previewMedia;
-        this._asset.setPreviewMedia = (previewMedia) => {
-            this._previewMedia = previewMedia;
-            if(previewMedia) {
-                this._asset.play(null, true);
-            } else {
-                this._asset.stop(true);
-            }
-        };
+        Object.defineProperty(this._asset, 'previewMedia', {
+            get: () => { return this._previewMedia; },
+            set: (previewMedia) => {
+                this._previewMedia = previewMedia;
+                if(previewMedia) {
+                    this._asset.play(null, true);
+                } else {
+                    this._asset.stop(true);
+                }
+            },
+        });
     }
 
     static fields = [

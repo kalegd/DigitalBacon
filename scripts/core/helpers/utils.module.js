@@ -45,9 +45,6 @@ export const stringWithMaxLength = (string, maxLength) =>
         ? string.substring(0, maxLength) + "..."
         : string;
 
-export const capitalizeFirstLetter = (string) =>
-    string.charAt(0).toUpperCase() + string.slice(1);
-
 export const fullDispose = (object3d, textures) => {
     object3d.traverse((node) => {
         if (node instanceof THREE.Mesh || node instanceof THREE.Line) {

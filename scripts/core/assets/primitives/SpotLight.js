@@ -34,7 +34,7 @@ export default class SpotLight extends Light {
         this._light.target.position.fromArray([0, -1, 0]);
         this._light.add(this._light.target);
         this._object.add(this._light);
-        this.setMap(params['map']);
+        this.map = params['map'];
     }
 
     _getDefaultName() {
@@ -43,63 +43,40 @@ export default class SpotLight extends Light {
 
     exportParams() {
         let params = super.exportParams();
-        params['angle'] = this.getDistance();
-        //params['castShadow'] = this.getCastShadow();
-        params['decay'] = this.getDecay();
-        params['distance'] = this.getDistance();
-        params['penumbra'] = this.getPenumbra();
-        params['map'] = this.getMap();
+        params['angle'] = this._angle;
+        //params['castShadow'] = this.castShadow;
+        params['decay'] = this.decay;
+        params['distance'] = this.distance;
+        params['penumbra'] = this.penumbra;
+        params['map'] = this.map;
         return params;
     }
 
-    getAngle() {
-        return this._angle;
-    }
+    get angle() { return this._angle; }
+    //get castShadow() { return this._light.castShadow; }
+    get decay() { return this._light.decay; }
+    get distance() { return this._light.distance; }
+    get map() { return this._map; }
+    get penumbra() { return this._light.penumbra; }
 
-    //getCastShadow() {
-    //    return this._light.castShadow;
-    //}
-
-    getDecay() {
-        return this._light.decay;
-    }
-
-    getDistance() {
-        return this._light.distance;
-    }
-
-    getMap() {
-        return this._map;
-    }
-
-    getPenumbra() {
-        return this._light.penumbra;
-    }
-
-    setAngle(angle) {
+    set angle(angle) {
         this._angle = angle;
         angle *= Math.PI / 360;
         this._light.angle = angle;
     }
 
-    //setCastShadow(castShadow) {
-    //    this._light.castShadow = castShadow;
-    //}
+    //set castShadow(castShadow) { this._light.castShadow = castShadow; }
 
-    setDecay(decay) {
-        this._light.decay = decay;
-    }
+    set decay(decay) { this._light.decay = decay; }
 
-    setDistance(distance) {
-        this._light.distance = distance;
-    }
+    set distance(distance) { this._light.distance = distance; }
 
-    setMap(map) {
+    set map(map) {
         let oldMap = this._map;
         this._map = map;
-        let texture = ProjectHandler.getAsset(map);
-        this._light.map = (texture)
-            ? texture.getTexture()
+        let textureAsset = ProjectHandler.getAsset(map);
+        this._light.map = (textureAsset)
+            ? textureAsset.texture
             : null;
         if(oldMap == map) return;
         if(oldMap) {
@@ -108,13 +85,11 @@ export default class SpotLight extends Light {
         }
         if(map) {
             let topic = PubSubTopics.TEXTURE_RECREATED + ':' + map;
-            PubSub.subscribe(this._id, topic, () => this.setMap(map));
+            PubSub.subscribe(this._id, topic, () => this.map = map);
         }
     }
 
-    setPenumbra(penumbra) {
-        this._light.penumbra = penumbra;
-    }
+    set penumbra(penumbra) { this._light.penumbra = penumbra; }
 
     static assetId = '50d0ddbf-571f-4328-922c-a52cf8d27704';
     static assetName = 'Spot Light';

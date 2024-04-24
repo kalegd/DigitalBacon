@@ -74,100 +74,71 @@ export default class NormalMaterial extends Material {
         return params;
     }
 
-    getBumpMap() {
-        return this._bumpMap;
-    }
+    get bumpMap() { return this._bumpMap; }
+    get bumpScale() { return this._bumpScale; }
+    get displacementBias() { return this._displacementBias; }
+    get displacementMap() { return this._displacementMap; }
+    get displacementScale() { return this._displacementScale; }
+    get flatShading() { return this._flatShading; }
+    get normalMap() { return this._normalMap; }
+    get normalMapType() { return this._normalMapType; }
+    get normalScale() { return this._normalScale; }
+    get wireframe() { return this._wireframe; }
 
-    getBumpScale() {
-        return this._bumpScale;
-    }
-
-    getDisplacementBias() {
-        return this._displacementBias;
-    }
-
-    getDisplacementMap() {
-        return this._displacementMap;
-    }
-
-    getDisplacementScale() {
-        return this._displacementScale;
-    }
-
-    getFlatShading() {
-        return this._flatShading;
-    }
-
-    getNormalMap() {
-        return this._normalMap;
-    }
-
-    getNormalMapType() {
-        return this._normalMapType;
-    }
-
-    getNormalScale() {
-        return this._normalScale;
-    }
-
-    getWireframe() {
-        return this._wireframe;
-    }
-
-    setBumpMap(bumpMap) {
+    set bumpMap(bumpMap) {
         if(this._bumpMap == bumpMap) return;
         this._setTexture('bumpMap', bumpMap);
     }
 
-    setBumpScale(bumpScale) {
+    set bumpScale(bumpScale) {
         if(this._bumpScale == bumpScale) return;
         this._bumpScale = bumpScale;
         this._material.bumpScale = bumpScale;
     }
 
-    setDisplacementBias(displacementBias) {
+    set displacementBias(displacementBias) {
         if(this._displacementBias == displacementBias) return;
         this._displacementBias = displacementBias;
         this._material.displacementBias = displacementBias;
     }
 
-    setDisplacementMap(displacementMap) {
+    set displacementMap(displacementMap) {
         if(this._displacementMap == displacementMap) return;
         this._setTexture('displacementMap', displacementMap);
     }
 
-    setDisplacementScale(displacementScale) {
+    set displacementScale(displacementScale) {
         if(this._displacementScale == displacementScale) return;
         this._displacementScale = displacementScale;
         this._material.displacementScale = displacementScale;
     }
 
-    setFlatShading(flatShading) {
+    set flatShading(flatShading) {
         if(this._flatShading == flatShading) return;
         this._flatShading = flatShading;
         this._material.flatShading = flatShading;
         this._material.needsUpdate = true;
     }
 
-    setNormalMap(normalMap) {
+    set normalMap(normalMap) {
         if(this._normalMap == normalMap) return;
         this._setTexture('normalMap', normalMap);
     }
 
-    setNormalMapType(normalMapType) {
+    set normalMapType(normalMapType) {
         if(this._normalMapType == normalMapType) return;
         this._normalMapType = normalMapType;
         this._material.normalMapType = normalMapType;
         this._material.needsUpdate = true;
     }
 
-    setNormalScale(normalScale) {
+    set normalScale(normalScale) {
         if(this._normalScale == normalScale) return;
         this._normalScale = normalScale;
         this._material.normalScale.fromArray(normalScale);
     }
 
-    setWireframe(wireframe) {
+    set wireframe(wireframe) {
         if(this._wireframe == wireframe) return;
         this._wireframe = wireframe;
         this._material.wireframe = wireframe;

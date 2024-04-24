@@ -45,10 +45,10 @@ class UserController extends InternalAssetEntity {
 
     init() {
         if(global.deviceType == 'XR') {
-            this.setIsXR(true);
+            this.isXR = true;
         }
         let scale = SettingsHandler.getUserScale();
-        this.setScale([scale, scale, scale]);
+        this.scale = [scale, scale, scale];
         this._setup();
     }
 
@@ -59,7 +59,7 @@ class UserController extends InternalAssetEntity {
                 'parentId': this._id,
                 'verticalOffset': global.cameraFocus.position.y,
             });
-            AudioHandler.setListenerParent(this._avatar.getObject());
+            AudioHandler.setListenerParent(this._avatar.object);
         } else {
             this._avatar = new Avatar({
                 'object': global.camera,
@@ -75,42 +75,27 @@ class UserController extends InternalAssetEntity {
         });
     }
 
-    getAvatar() {
-        return this._avatar;
-    }
+    get avatar() { return this._avatar; }
+    get isXR() { return this._isXR; }
+    get username() { return this._username; }
 
-    getIsXR() {
-        return this._isXR;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    setAvatarUrl(url, ignorePublish) {
+    set avatarUrl(url) {
         localStorage.setItem(AVATAR_KEY, url);
         this._avatarUrl = url;
         this._avatar.updateSourceUrl(url);
-        if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
             { asset: this._avatar, fields: ['avatarUrl'] });
     }
 
-    setIsXR(isXR) {
-        this._isXR = isXR;
-    }
-
-    setScale(scale, ignorePublish) {
-        super.setScale(scale);
-        if(ignorePublish) return;
+    set isXR(isXR) { this._isXR = isXR; }
+    set scale(scale) {
+        super.scale = scale;
         PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
             { asset: this, fields: ['scale'] });
     }
-
-    setUsername(username, ignorePublish) {
+    set username(username) {
         localStorage.setItem(USERNAME_KEY, username);
         this._username = username;
-        if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
     }
 
@@ -228,7 +213,7 @@ class UserController extends InternalAssetEntity {
             let data = [];
             this._pushAvatarDataForRTC(data);
             let rotation = data.slice(3, 6);
-            this._avatar.getObject().rotation.fromArray(rotation);
+            this._avatar.object.rotation.fromArray(rotation);
         }
         let updateNumber = SessionHandler.getControlsUpdateNumber();
         if(this._avatarFadeUpdateNumber == updateNumber) return;

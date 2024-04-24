@@ -31,7 +31,7 @@ class RotateHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(heldAsset.preTransformState) {
                             object.quaternion.fromArray(
                                 heldAsset.preTransformState);
@@ -48,7 +48,7 @@ class RotateHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(message.fields.includes('visualEdit')
                                 && heldAsset.preTransformState)
                         {
@@ -90,7 +90,7 @@ class RotateHandler {
                 heldAsset.rotationDifference = rotationDifference;
             } else {
                 let rotation = asset.getWorldQuaternion();
-                heldAsset.preTransformState = asset.getObject().quaternion
+                heldAsset.preTransformState = asset.object.quaternion
                     .toArray();
                 heldAsset.rotationDifference = ProjectHandler.getAsset(ownerId)
                     .getWorldQuaternion().conjugate().multiply(rotation)
@@ -122,7 +122,7 @@ class RotateHandler {
             this._euler2.setFromQuaternion(this._quaternion);
             let preState = this._euler1.toArray();
             let postState = this._euler2.toArray();
-            assetHelper._updateEuler('rotation', postState, false, false,
+            assetHelper._updateParameter('rotation', postState, false, false,
                 preState, true);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
@@ -149,7 +149,7 @@ class RotateHandler {
         this._quaternion.fromArray(heldAsset.rotationDifference);
         let newRotation = handRotation.multiply(this._quaternion);
         if(heldAsset.asset.parent) {
-            let parentObject = heldAsset.asset.parent.getObject();
+            let parentObject = heldAsset.asset.parent.object;
             parentObject.getWorldQuaternion(this._quaternion).conjugate();
             this._quaternion.multiply(newRotation);
         }

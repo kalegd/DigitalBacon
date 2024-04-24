@@ -36,21 +36,16 @@ export default class PointLight extends Light {
         return params;
     }
 
-    getDistance() {
-        return this._distance;
-    }
+    get distance() { return this._distance; }
+    get decay() { return this._decay; }
 
-    getDecay() {
-        return this._decay;
-    }
-
-    setDistance(distance) {
+    set distance(distance) {
         if(this._distance == distance) return;
         this._distance = distance;
         this._light.distance = distance;
     }
 
-    setDecay(decay) {
+    set decay(decay) {
         if(this._decay == decay) return;
         this._decay = decay;
         this._light.decay = decay;

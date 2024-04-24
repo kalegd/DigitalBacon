@@ -38,17 +38,14 @@ class CubeImageField extends MenuField {
         super(params);
         this.height = params['title'] ? 0.244 : 0.196;
         this.contentDirection = 'column';
-        this._lastValues = {};
-        if(params['initialValue']) {
-            for(let key in params['initialValue']) {
-                this._lastValues[key] = params['initialValue'][key];
-            }
-        }
+        this._lastValue = (params['initialValue'])
+            ? [...new Array(6)]
+            : [...params['initialValue']];
         let title = params['title'] || null;
         this._buttons = [];
         this._createInputs(title);
-        for(let side of SIDES) {
-            this._updateImage(side, this._lastValues[side]);
+        for(let i = 0; i < 6; i++) {
+            this._updateImage(i, this._lastValue[i]);
         }
     }
 
@@ -78,7 +75,6 @@ class CubeImageField extends MenuField {
             }
             this._buttons.push(button);
         }
-        this.add(columnBlock);
     }
 
     _handleInteractable(side) {
@@ -108,16 +104,16 @@ class CubeImageField extends MenuField {
 
     _handleAssetSelection(side, assetId) {
         if(assetId == "null\n") assetId = null;
-        if(this._lastValues[side] != assetId) {
-            if(this._onUpdate) this._onUpdate(side, assetId);
+        if(this._lastValue[side] != assetId) {
             this._updateImage(side, assetId);
+            if(this._onUpdate) this._onUpdate([...this._lastValue]);
         }
         global.menuController.back();
     }
 
     _updateImage(side, assetId) {
         let index = SIDES_MAP[side];
-        this._lastValues[side] = assetId;
+        this._lastValue[side] = assetId;
         if(assetId) {
             this._buttons[index].updateTexture(
                 LibraryHandler.getTexture(assetId));
@@ -129,9 +125,9 @@ class CubeImageField extends MenuField {
     updateFromSource() {
         if(!this._getFromSource) return;
         let images = this._getFromSource();
-        for(let side of SIDES) {
-            if(this._lastValues[side] != images[side]) {
-                this._updateImage(side, images[side]);
+        for(let i = 0; i < 6; i++) {
+            if(this._lastValue[i] != images[i]) {
+                this._updateImage(side, images[i]);
             }
         }
     }

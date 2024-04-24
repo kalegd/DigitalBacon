@@ -47,7 +47,7 @@ class PartyHandler {
             if(peer.rtc) peer.rtc.close();
             if(peer.controller) {
                 ProjectHandler.deleteAsset(peer.controller, true, true);
-                let avatar = peer.controller.getAvatar();
+                let avatar = peer.controller.avatar;
                 if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
                 for(let device of peer.controller.getXRDevices()) {
                     ProjectHandler.deleteAsset(device, true, true);
@@ -84,7 +84,7 @@ class PartyHandler {
         rtc.setOnDisconnect(() => {
             if(peer.controller) {
                 ProjectHandler.deleteAsset(peer.controller, true, true);
-                let avatar = peer.controller.getAvatar();
+                let avatar = peer.controller.avatar;
                 if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
                 for(let device of peer.controller.getXRDevices()) {
                     ProjectHandler.deleteAsset(device, true, true);
@@ -117,7 +117,7 @@ class PartyHandler {
                 "isXR": global.deviceType == "XR",
             }
         }));
-        let avatar = global.userController.getAvatar();
+        let avatar = global.userController.avatar;
         rtc.sendData(JSON.stringify({
             id: 'Iinstance_added',
             body: {

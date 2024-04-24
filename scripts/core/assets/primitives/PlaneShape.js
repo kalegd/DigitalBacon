@@ -50,41 +50,30 @@ export default class PlaneShape extends Shape {
         return params;
     }
 
-    getHeight() {
-        return this._height;
-    }
+    get height() { return this._height; }
+    get width() { return this._width; }
+    get heightSegments() { return this._heightSegments; }
+    get widthSegments() { return this._widthSegments; }
 
-    getWidth() {
-        return this._width;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getWidthSegments() {
-        return this._widthSegments;
-    }
-
-    setHeight(height) {
+    set height(height) {
         if(this._height == height) return;
         this._height = height;
         this._updateGeometry();
     }
 
-    setWidth(width) {
+    set width(width) {
         if(this._width == width) return;
         this._width = width;
         this._updateGeometry();
     }
 
-    setHeightSegments(heightSegments) {
+    set heightSegments(heightSegments) {
         if(this._heightSegments == heightSegments) return;
         this._heightSegments = heightSegments;
         this._updateGeometry();
     }
 
-    setWidthSegments(widthSegments) {
+    set widthSegments(widthSegments) {
         if(this._widthSegments == widthSegments) return;
         this._widthSegments = widthSegments;
         this._updateGeometry();

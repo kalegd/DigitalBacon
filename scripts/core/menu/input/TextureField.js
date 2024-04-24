@@ -45,11 +45,11 @@ class TextureField extends MenuField {
             filteredTextures["null\n"] = { Name: "Blank" };
             for(let textureId in textures) {
                 if(this._filter &&
-                        this._filter != textures[textureId].getTextureType()) {
+                        this._filter != textures[textureId].textureType) {
                     continue;
                 }
                 filteredTextures[textureId] =
-                    { Name: textures[textureId].getName() };
+                    { Name: textures[textureId].name };
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
             page.setContent(filteredTextures, (textureId) => {
@@ -77,7 +77,7 @@ class TextureField extends MenuField {
             options = options.filter(o => o.textureType == this._filter);
         if(options.length == 1) {
             let texture = TexturesHandler.addNewAsset(options[0].assetId);
-            this._handleTextureSelection(texture.getId());
+            this._handleTextureSelection(texture.id);
             let texturePage = global.menuController.getPage(
                 MenuPages.TEXTURE);
             texturePage.setAsset(texture);
@@ -86,7 +86,7 @@ class TextureField extends MenuField {
             let newTexturePage = global.menuController.getPage(
                 MenuPages.NEW_TEXTURE);
             newTexturePage.setContent((texture) => {
-                this._handleTextureSelection(texture.getId(), currentPage);
+                this._handleTextureSelection(texture.id, currentPage);
                 if(currentPage != global.menuController.getCurrentPage())return;
                 let texturePage = global.menuController.getPage(
                     MenuPages.TEXTURE);
@@ -111,12 +111,12 @@ class TextureField extends MenuField {
         this._lastValue = textureId;
         let texture = TexturesHandler.getAsset(this._lastValue);
         let textureName = texture
-            ? texture.getName()
+            ? texture.name
             : " ";
         textureName = stringWithMaxLength(textureName, 12);
         this._textureSelection.textComponent.text = textureName;
         if(texture) {
-            this._updateTextureAndColor(texture.getPreviewTexture(),
+            this._updateTextureAndColor(texture.previewTexture,
                 Colors.white);
             this._buttonsSpan.add(this._editButton);
         } else {
@@ -130,7 +130,7 @@ class TextureField extends MenuField {
         if(material.map?.image != texture?.image)
             this._textureSelection.updateTexture(texture);
         if(!material.color.equals(color))
-            material.color.set(color);
+            material.color = color;
     }
 
     updateFromSource() {

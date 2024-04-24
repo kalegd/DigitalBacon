@@ -49,7 +49,7 @@ class LibrarySearchPage extends PaginatedButtonsPage {
     }
 
     _getItemName(item) {
-        let name = this._assets[item].getName();
+        let name = this._assets[item].name;
         if(name.length > FIELD_MAX_LENGTH)
             name = "..." + name.substring(name.length - FIELD_MAX_LENGTH);
         return name;
@@ -57,7 +57,7 @@ class LibrarySearchPage extends PaginatedButtonsPage {
 
     _handleItemInteraction(item) {
         let asset = this._assets[item];
-        let assetType = LibraryHandler.getType(asset.getAssetId());
+        let assetType = LibraryHandler.getType(asset.assetId);
         let assetPage = this._controller.getPage(assetType);
         assetPage.setAsset(asset);
         this._controller.pushPage(assetType);
@@ -75,10 +75,10 @@ class LibrarySearchPage extends PaginatedButtonsPage {
             let asset = this._assets[id];
             if(asset instanceof InternalAssetEntity) {
                 continue;
-            } else if(asset.getName().toLowerCase().includes(content)) {
+            } else if(asset.name.toLowerCase().includes(content)) {
                 items.push(id);
             } else {
-                let assetId = asset.getAssetId();
+                let assetId = asset.assetId;
                 let assetName = LibraryHandler.getAssetName(assetId);
                 if(assetName.toLowerCase().includes(content)) items.push(id);
             }

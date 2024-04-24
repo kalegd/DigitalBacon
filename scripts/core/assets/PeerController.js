@@ -50,13 +50,13 @@ export default class PeerController extends InternalAssetEntity {
         this._usernameBlock.frontTextComponent = usernameFront;
         this._usernameBlock.backTextComponent = usernameBack;
         if(this._displayingUsername && this._avatar) {
-            this._avatar.getObject().add(this._usernameBlock);
+            this._avatar.object.add(this._usernameBlock);
         }
     }
 
     _updateAvatarData(float32Array, index) {
         if(!this._avatar) return;
-        let object = this._avatar.getObject();
+        let object = this._avatar.object;
         if(this._isXR) object.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
         object.rotation.fromArray(rotation);
@@ -64,7 +64,7 @@ export default class PeerController extends InternalAssetEntity {
 
     _updateHandData(float32Array, index, asset) {
         if(!asset) return;
-        let peerHand = asset.getObject();
+        let peerHand = asset.object;
         peerHand.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
         peerHand.rotation.fromArray(rotation);
@@ -74,7 +74,7 @@ export default class PeerController extends InternalAssetEntity {
         this._velocity.fromArray(float32Array, index);
         if(!this._isXR && !this._firstPerson) {
             if(!this._avatar) return;
-            let object = this._avatar.getObject();
+            let object = this._avatar.object;
             vector3s[0].copy(this._velocity).setY(0).multiplyScalar(-1);
             if(vector3s[0].length() < 0.001) return;
             object.getWorldPosition(vector3s[1]).add(vector3s[0]);
@@ -95,27 +95,13 @@ export default class PeerController extends InternalAssetEntity {
         return params;
     }
 
-    getAvatar() {
-        return this._avatar;
-    }
+    get avatar() { return this._avatar; }
+    get isXR() { return this._isXR; }
+    get username() { return this._username; }
 
-    getIsXR() {
-        return this._isXR;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    setAvatar(avatar) {
-        this._avatar = avatar;
-    }
-
-    setIsXR(isXR) {
-        this._isXR = isXR;
-    }
-
-    setUsername(username) {
+    set avatar(avatar) { this._avatar = avatar; }
+    set isXR(isXR) { this._isXR = isXR; }
+    set username(username) {
         if(this._username == username) return;
         this._username = username;
         let shortName = username = stringWithMaxLength(username || '...', 17);
@@ -138,7 +124,7 @@ export default class PeerController extends InternalAssetEntity {
     registerAvatar(avatar) {
         this._avatar = avatar;
         if(this._displayingUsername && this._avatar) {
-            this._avatar.getObject().add(this._usernameBlock);
+            this._avatar.object.add(this._usernameBlock);
         }
     }
 
@@ -161,9 +147,9 @@ export default class PeerController extends InternalAssetEntity {
         this._displayingUsername = displayingUsername;
         if(!this._avatar) return;
         if(this._displayingUsername) {
-            this._avatar.getObject().add(this._usernameBlock);
+            this._avatar.object.add(this._usernameBlock);
         } else {
-            this._avatar.getObject().remove(this._usernameBlock);
+            this._avatar.object.remove(this._usernameBlock);
         }
     }
 

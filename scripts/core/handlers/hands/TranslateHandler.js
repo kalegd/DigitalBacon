@@ -27,7 +27,7 @@ class TranslateHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(heldAsset.preTransformState) {
                             object.position.fromArray(
                                 heldAsset.preTransformState);
@@ -42,7 +42,7 @@ class TranslateHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(message.fields.includes('visualEdit')
                                 && heldAsset.preTransformState)
                         {
@@ -82,7 +82,7 @@ class TranslateHandler {
                 heldAsset.positionDifference = positionDifference;
             } else {
                 let position = asset.getWorldPosition();
-                heldAsset.preTransformState = asset.getPosition();
+                heldAsset.preTransformState = asset.position;
                 heldAsset.positionDifference = position.sub(ProjectHandler
                     .getAsset(ownerId).getWorldPosition()).toArray();
             }
@@ -108,7 +108,7 @@ class TranslateHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = position;
-            assetHelper._updateVector3('position', postState, false, false,
+            assetHelper._updateParameter('position', postState, false, false,
                 preState, true);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
@@ -117,7 +117,7 @@ class TranslateHandler {
                 position: position,
             });
         } else {
-            heldAsset.asset.setPosition(position);
+            heldAsset.asset.position = position;
         }
     }
 
@@ -137,11 +137,11 @@ class TranslateHandler {
             heldAsset.positionDifference[1] + handPosition.y,
             heldAsset.positionDifference[2] + handPosition.z
         ];
-        heldAsset.asset.setPosition(newPosition);
+        heldAsset.asset.position = newPosition;
         if(heldAsset.asset.parent) {
-            let parentObject = heldAsset.asset.parent.getObject();
-            parentObject.worldToLocal(heldAsset.asset.getObject().position);
-            newPosition = heldAsset.asset.getPosition();
+            let parentObject = heldAsset.asset.parent.object;
+            parentObject.worldToLocal(heldAsset.asset.object.position);
+            newPosition = heldAsset.asset.position;
         }
         return newPosition;
     }

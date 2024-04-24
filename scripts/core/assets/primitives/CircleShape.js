@@ -50,31 +50,23 @@ export default class CircleShape extends Shape {
         return params;
     }
 
-    getRadius() {
-        return this._radius;
-    }
+    get radius() { return this._radius; }
+    get segments() { return this._segments; }
+    get thetaLength() { return this._thetaLength; }
 
-    getSegments() {
-        return this._segments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    setRadius(radius) {
+    set radius(radius) {
         if(this._radius == radius) return;
         this._radius = radius;
         this._updateGeometry();
     }
 
-    setSegments(segments) {
+    set segments(segments) {
         if(this._segments == segments) return;
         this._segments = segments;
         this._updateGeometry();
     }
 
-    setThetaLength(thetaLength) {
+    set thetaLength(thetaLength) {
         if(this._thetaLength == thetaLength) return;
         this._thetaLength = thetaLength;
         this._updateGeometry();

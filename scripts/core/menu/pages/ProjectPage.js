@@ -296,7 +296,7 @@ class ProjectPage extends PaginatedButtonsPage {
             return;
         }
         ProjectHandler.reset();
-        UserController.setPosition([0, 0, 0]);
+        UserController.position = [0, 0, 0];
         let ambientLight = new AmbientLight({
             'visualEdit': false,
         });

@@ -38,7 +38,7 @@ const TRS_HANDLERS = [
 export default class AssetEntityHelper extends EditorHelper {
     constructor(asset, updatedTopic) {
         super(asset, updatedTopic);
-        this._object = asset.getObject();
+        this._object = asset.object;
         this._attachedPeers = new Set();
         this._eventListeners = [];
         this._actionsAdded = false;
@@ -140,8 +140,8 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     updateVisualEdit(isVisualEdit) {
-        if(isVisualEdit == this._asset.visualEdit) return;
-        this._asset.visualEdit = isVisualEdit;
+        if(isVisualEdit == this._asset._visualEdit) return;
+        this._asset._visualEdit = isVisualEdit;
         if(isVisualEdit) {
             if(this._object.parent && this._attachedPeers.size == 0) {
                 this._addActions();
@@ -344,14 +344,15 @@ export default class AssetEntityHelper extends EditorHelper {
             this._asset._onRemoveFromProject();
             this.onRemoveFromProject();
         };
-        this._asset.setVisualEdit = (visualEdit) => {
-            this.updateVisualEdit(visualEdit);
-        };
+        Object.defineProperty(this._asset, 'visualEdit', {
+            get: function() { return this._visualEdit; },
+            set: (v) => { this.updateVisualEdit(v); },
+        });
     }
 
     _addDeleteSubscriptionForPromotions() {
         let topic = this._asset.constructor.assetType + '_DELETED:'
-            + this._asset.getAssetId() + ':' + this._id;
+            + this._asset.assetId + ':' + this._id;
         PubSub.subscribe(this._id, topic, (message) => {
             if(message.asset != this._asset) return;
             this._enableParam('position');
@@ -374,7 +375,7 @@ export default class AssetEntityHelper extends EditorHelper {
             action.promotedChildren.add(child);
         }
         for(let child of action.promotedChildren) {
-            child.getObject().applyMatrix4(this._object.matrix);
+            child.object.applyMatrix4(this._object.matrix);
             child.addTo(this._asset.parent);
         }
     }
@@ -384,7 +385,7 @@ export default class AssetEntityHelper extends EditorHelper {
         for(let child of action.promotedChildren) {
             if(child.parent == this._asset.parent) {
                 child.attachTo(this._asset);
-                let childObject = child.getObject();
+                let childObject = child.object;
                 if(!childObject.parent) {
                     childObject.applyMatrix4(invertedMatrix);
                 }

@@ -159,7 +159,7 @@ export default class BasicMovement {
             if(this._perspective != 1 && vector3s[1].length() > 0.001
                     * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
+                    this._avatar.object.position);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
@@ -205,7 +205,7 @@ export default class BasicMovement {
             if(this._perspective != 1 && vector3s[1].length() > 0.001
                     * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
+                    this._avatar.object.position);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {

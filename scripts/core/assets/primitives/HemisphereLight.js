@@ -36,11 +36,9 @@ export default class HemisphereLight extends Light {
         return params;
     }
 
-    getGroundColor() {
-        return this._groundColor;
-    }
+    get groundColor() { return this._groundColor; }
 
-    setGroundColor(groundColor) {
+    set groundColor(groundColor) {
         if(this._groundColor == groundColor) return;
         this._groundColor = groundColor;
         this._light.groundColor.setHex(groundColor);

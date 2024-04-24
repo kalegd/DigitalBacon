@@ -47,29 +47,19 @@ export default class Texture extends Asset {
         }, 20);
     }
 
-    getColorSpace() {
-        return this._colorSpace;
+    getTexture() { return this._texture; }
+
+    get colorSpace() { return this._colorSpace; }
+    get texture() { return this._texture; }
+    get previewTexture() { return this._texture; }
+    get assetIds() {
+        console.error("get Texture.assetIds should be overridden");
+    }
+    get textureType() {
+        console.error("get Texture.textureType should be overridden");
     }
 
-    getTexture() {
-        return this._texture;
-    }
-
-    getPreviewTexture() {
-        return this._texture;
-    }
-
-    getAssetIds() {
-        console.error("Texture.getAssetIds() should be overridden");
-        return;
-    }
-
-    getTextureType() {
-        console.error("Texture.getTextureType() should be overridden");
-        return;
-    }
-
-    setColorSpace(colorSpace) {
+    set colorSpace(colorSpace) {
         this._colorSpace = colorSpace;
         this._texture.colorSpace = colorSpace;
         this._updateTexture();

@@ -42,7 +42,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'maxValue': 1000,
             'initialValue': 1,
             'onBlur': (oldValue, newValue) => {
-                global.userController.setScale([newValue, newValue, newValue]);
+                global.userController.scale = [newValue, newValue, newValue];
                 SettingsHandler.setEditorSetting('User Scale', newValue);
             },
             'getFromSource': () =>

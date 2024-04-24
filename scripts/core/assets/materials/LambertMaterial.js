@@ -75,108 +75,76 @@ export default class LambertMaterial extends Material {
         return params;
     }
 
-    getAlphaMap() {
-        return this._alphaMap;
-    }
+    get alphaMap() { return this._alphaMap; }
+    get color() { return this._color; }
+    get combine() { return this._combine; }
+    get emissive() { return this._emissive; }
+    get emissiveIntensity() { return this._emissiveIntensity; }
+    get emissiveMap() { return this._emissiveMap; }
+    get envMap() { return this._envMap; }
+    get map() { return this._map; }
+    get reflectivity() { return this._reflectivity; }
+    get refractionRatio() { return this._refractionRatio; }
+    get wireframe() { return this._wireframe; }
 
-    getColor() {
-        return this._color;
-    }
-
-    getCombine() {
-        return this._combine;
-    }
-
-    getEmissive() {
-        return this._emissive;
-    }
-
-    getEmissiveIntensity() {
-        return this._emissiveIntensity;
-    }
-
-    getEmissiveMap() {
-        return this._emissiveMap;
-    }
-
-    getEnvMap() {
-        return this._envMap;
-    }
-
-    getMap() {
-        return this._map;
-    }
-
-    getReflectivity() {
-        return this._reflectivity;
-    }
-
-    getRefractionRatio() {
-        return this._refractionRatio;
-    }
-
-    getWireframe() {
-        return this._wireframe;
-    }
-
-    setAlphaMap(alphaMap) {
+    set alphaMap(alphaMap) {
         if(this._alphaMap == alphaMap) return;
         this._setTexture('alphaMap', alphaMap);
     }
 
-    setColor(color) {
+    set color(color) {
         if(this._color == color) return;
         this._color = color;
         this._material.color.setHex(color);
     }
 
-    setCombine(combine) {
+    set combine(combine) {
         if(this._combine == combine) return;
         this._combine = combine;
         this._material.combine = combine;
         this._material.needsUpdate = true;
     }
 
-    setEmissive(emissive) {
+    set emissive(emissive) {
         if(this._emissive == emissive) return;
         this._emissive = emissive;
         this._material.emissive.setHex(emissive);
     }
 
-    setEmissiveIntensity(emissiveIntensity) {
+    set emissiveIntensity(emissiveIntensity) {
         if(this._emissiveIntensity == emissiveIntensity) return;
         this._emissiveIntensity = emissiveIntensity;
         this._material.emissiveIntensity = emissiveIntensity;
     }
 
-    setEmissiveMap(emissiveMap) {
+    set emissiveMap(emissiveMap) {
         if(this._emissiveMap == emissiveMap) return;
         this._setTexture('emissiveMap', emissiveMap);
     }
 
-    setEnvMap(envMap) {
+    set envMap(envMap) {
         if(this._envMap == envMap) return;
         this._setTexture('envMap', envMap);
     }
 
-    setMap(map) {
+    set map(map) {
         if(this._map == map) return;
         this._setTexture('map', map);
     }
 
-    setReflectivity(reflectivity) {
+    set reflectivity(reflectivity) {
         if(this._reflectivity == reflectivity) return;
         this._reflectivity = reflectivity;
         this._material.reflectivity = reflectivity;
     }
 
-    setRefractionRatio(refractionRatio) {
+    set refractionRatio(refractionRatio) {
         if(this._refractionRatio == refractionRatio) return;
         this._refractionRatio = refractionRatio;
         this._material.refractionRatio = refractionRatio;
     }
 
-    setWireframe(wireframe) {
+    set wireframe(wireframe) {
         if(this._wireframe == wireframe) return;
         this._wireframe = wireframe;
         this._material.wireframe = wireframe;

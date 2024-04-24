@@ -19,26 +19,32 @@ export default class ShapeHelper extends AssetEntityHelper {
     }
 
     _overwriteSetMaterial() {
-        this._asset._setMaterial = this._asset.setMaterial;
-        this._asset.setMaterial = (material) => {
-            let mesh = this._asset.getMesh();
-            let wasTranslucent = mesh.material.userData['oldMaterial'];
-            if(wasTranslucent) this.returnTransparency();
-            this._asset._setMaterial(material);
-            if(wasTranslucent) this.makeTranslucent();
-        };
+        Object.defineProperty(this._asset, 'material', {
+            get: function() { return this._material; },
+            set: (newValue) => {
+                let mesh = this._asset.mesh;
+                let wasTranslucent = mesh.material.userData['oldMaterial'];
+                if(wasTranslucent) this.returnTransparency();
+                this._asset._material = newValue;
+                let oldMaterial = this._asset._mesh.material;
+                let material = this._asset._getMaterial();
+                this._asset._mesh.material = material;
+                oldMaterial.dispose();
+                if(wasTranslucent) this.makeTranslucent();
+            },
+        });
     }
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
-            if(this._asset.getMaterial() == e.asset.getId()) {
+            if(this._asset.material == e.asset.id) {
                 this._updateParameter('material', null, false, true);
                 this.updateMenuField('material');
                 if(e.undoRedoAction) {
                     let undo = e.undoRedoAction.undo;
                     e.undoRedoAction.undo = () => {
                         undo();
-                        this._updateParameter('material', e.asset.getId(),
+                        this._updateParameter('material', e.asset.id,
                             false, true);
                         this.updateMenuField('material');
                     };
@@ -46,8 +52,8 @@ export default class ShapeHelper extends AssetEntityHelper {
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (e) => {
-            if(this._asset.getMaterial() == e.getId()) {
-                this._asset.setMaterial(e.getId());
+            if(this._asset.material == e.id) {
+                this._asset.material = e.id;
             }
         });
     }

@@ -32,7 +32,7 @@ export default class Main {
     constructor(callback, containerId, params) {
         this._renderer;
         this._camera;
-        this._scene = Scene.getObject();
+        this._scene = Scene.object;
         this._clock = new THREE.Clock();
         this._container = document.getElementById(containerId);
         this._loadingMessage = document.querySelector('#digital-bacon-loading');
@@ -90,7 +90,7 @@ export default class Main {
     _setupDigitalBaconUI() {
         DigitalBaconUI.Keyboard.scale.set(0.4, 0.4, 0.4);
         DigitalBaconUI.InputHandler.enableXRControllerManagement(
-            UserController.getObject());
+            UserController.object);
         DigitalBaconUI.init(this._container, this._renderer, this._scene,
             this._camera, global.deviceType, this._cameraFocus);
     }
@@ -152,7 +152,7 @@ export default class Main {
 
         ProjectHandler.addAsset(UserController, true, true);
         UserController.init();
-        UserController.getObject().add(this._cameraFocus);
+        UserController.object.add(this._cameraFocus);
     }
 
     _addEventListeners() {

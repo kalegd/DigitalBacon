@@ -58,51 +58,37 @@ export default class SphereShape extends Shape {
         return params;
     }
 
-    getRadius() {
-        return this._radius;
-    }
+    get radius() { return this._radius; }
+    get widthSegments() { return this._widthSegments; }
+    get heightSegments() { return this._heightSegments; }
+    get phiLength() { return this._phiLength; }
+    get thetaLength() { return this._thetaLength; }
 
-    getWidthSegments() {
-        return this._widthSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getPhiLength() {
-        return this._phiLength;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    setRadius(radius) {
+    set radius(radius) {
         if(this._radius == radius) return;
         this._radius = radius;
         this._updateGeometry();
     }
 
-    setWidthSegments(widthSegments) {
+    set widthSegments(widthSegments) {
         if(this._widthSegments == widthSegments) return;
         this._widthSegments = widthSegments;
         this._updateGeometry();
     }
 
-    setHeightSegments(heightSegments) {
+    set heightSegments(heightSegments) {
         if(this._heightSegments == heightSegments) return;
         this._heightSegments = heightSegments;
         this._updateGeometry();
     }
 
-    setPhiLength(phiLength) {
+    set phiLength(phiLength) {
         if(this._phiLength == phiLength) return;
         this._phiLength = phiLength;
         this._updateGeometry();
     }
 
-    setThetaLength(thetaLength) {
+    set thetaLength(thetaLength) {
         if(this._thetaLength == thetaLength) return;
         this._thetaLength = thetaLength;
         this._updateGeometry();

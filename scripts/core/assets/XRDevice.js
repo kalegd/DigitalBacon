@@ -106,12 +106,10 @@ export default class XRDevice extends InternalAssetEntity {
         return this._object.parent != null;
     }
 
+    get modelUrl() { return this._modelUrl; }
+
     getModelObject() {
         return this._modelObject;
-    }
-
-    getModelUrl() {
-        return this._modelUrl;
     }
 
     getWorldPosition() {
@@ -131,9 +129,7 @@ export default class XRDevice extends InternalAssetEntity {
         return this._quaternion;
     }
 
-    setModelUrl(modelUrl) {
-        this._modelUrl = modelUrl;
-    }
+    set modelUrl(modelUrl) { this._modelUrl = modelUrl; }
 
     decrementTTL(timeDelta) {
         this._ttl -= timeDelta;

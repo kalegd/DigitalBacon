@@ -28,7 +28,7 @@ export default class AssetEntity extends Asset {
         if('parentId' in params) {
             this._parentId = params['parentId'];
         } else {
-            this._parentId = Scene.getId();
+            this._parentId = Scene.id;
         }
         this.children = new Set();
         this.parent = ProjectHandler.getSessionAsset(this._parentId);
@@ -36,7 +36,7 @@ export default class AssetEntity extends Asset {
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
-        this.visualEdit = params['visualEdit'] || false;
+        this._visualEdit = params['visualEdit'] || false;
         this._object.position.fromArray(position);
         this._object.rotation.fromArray(rotation);
         this._object.scale.fromArray(scale);
@@ -57,7 +57,7 @@ export default class AssetEntity extends Asset {
         let params = this.exportParams();
         let visualEdit = (visualEditOverride != null)
             ? visualEditOverride
-            : this.visualEdit;
+            : this._visualEdit;
         params['visualEdit'] = visualEdit;
         delete params['id'];
         return params;
@@ -79,10 +79,10 @@ export default class AssetEntity extends Asset {
     exportParams() {
         let params = super.exportParams();
         params['parentId'] = this._parentId;
-        params['position'] = this.getPosition();
-        params['rotation'] = this.getRotation();
-        params['scale'] = this.getScale();
-        params['visualEdit'] = this.getVisualEdit();
+        params['position'] = this.position;
+        params['rotation'] = this.rotation;
+        params['scale'] = this.scale;
+        params['visualEdit'] = this._visualEdit;
         return params;
     }
 
@@ -90,39 +90,21 @@ export default class AssetEntity extends Asset {
         utils.updateBVHForComplexObject(this._object);
     }
 
+    getObject() { return this._object; }
+
     get gripInteractable() { return this._object.gripInteractable; }
+    get object() { return this._object; }
+    get parentId() { return this._parentId; }
     get pointerInteractable() { return this._object.pointerInteractable; }
-    get touchInteractable() { return this._object.touchInteractable; }
-
-    set gripInteractable(_) {}
-    set pointerInteractable(_) {}
-    set touchInteractable(_) {}
-
-    getObject() {
-        return this._object;
-    }
-
-    getParentId() {
-        return this._parentId;
-    }
-
-    getPosition() {
-        return this._object.position.toArray();
-    }
-
-    getRotation() {
+    get position() { return this._object.position.toArray(); }
+    get rotation() {
         let rotation = this._object.rotation.toArray();
         rotation.pop();
         return rotation;
     }
-
-    getScale() {
-        return this._object.scale.toArray();
-    }
-
-    getVisualEdit() {
-        return this.visualEdit;
-    }
+    get scale() { return this._object.scale.toArray(); }
+    get touchInteractable() { return this._object.touchInteractable; }
+    get visualEdit() { return this._visualEdit; }
 
     getWorldPosition(vector3) {
         if(!vector3) vector3 = vector3s[0];
@@ -142,7 +124,7 @@ export default class AssetEntity extends Asset {
         return vector3;
     }
 
-    setParentId(parentId) {
+    set parentId(parentId) {
         if(this._parentId == parentId) return;
         let parentAsset = ProjectHandler.getSessionAsset(parentId);
         if(!parentAsset) {
@@ -156,26 +138,14 @@ export default class AssetEntity extends Asset {
         }
         this._parentId = parentId;
     }
-
-    setPosition(position) {
-        this._object.position.fromArray(position);
-    }
-
-    setRotation(rotation) {
-        this._object.rotation.fromArray(rotation);
-    }
+    set position(position) { this._object.position.fromArray(position); }
+    set rotation(rotation) { this._object.rotation.fromArray(rotation); }
+    set scale(scale) { this._object.scale.fromArray(scale); }
+    set visualEdit(visualEdit) { this._visualEdit = visualEdit; }
 
     setRotationFromQuaternion(quat) {
         quaternion.fromArray(quat);
         this._object.setRotationFromQuaternion(quaternion);
-    }
-
-    setScale(scale) {
-        this._object.scale.fromArray(scale);
-    }
-
-    setVisualEdit(visualEdit) {
-        this.visualEdit = visualEdit;
     }
 
     publishPosition() {
@@ -186,7 +156,7 @@ export default class AssetEntity extends Asset {
     }
 
     publishRotation() {
-        this._rotationBytes.set(this.getRotation());
+        this._rotationBytes.set(this.rotation);
         let message =concatenateArrayBuffers(this._idBytes,this._rotationBytes);
         PartyHandler.publishInternalBufferMessage(
             InternalMessageIds.ENTITY_ROTATION, message);
@@ -201,7 +171,7 @@ export default class AssetEntity extends Asset {
 
     publishTransformation() {
         this._transformationBytes.set(this._object.position.toArray());
-        this._transformationBytes.set(this.getRotation(), 3);
+        this._transformationBytes.set(this.rotation, 3);
         this._transformationBytes.set(this._object.scale.toArray(), 6);
         let message = concatenateArrayBuffers(this._idBytes,
             this._transformationBytes);
@@ -218,12 +188,12 @@ export default class AssetEntity extends Asset {
         if(this.parent) this.parent.children.delete(this);
         this.parent = newParent;
         newParent.children.add(this);
-        this._parentId = newParent.getId();
+        this._parentId = newParent.id;
         if(ProjectHandler.getAsset(this._id))
-            newParent.getObject().add(this._object);
+            newParent.object.add(this._object);
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
-                parentId: newParent.getId(),
+                parentId: newParent.id,
                 childId: this._id,
             }, true);
         }
@@ -238,12 +208,12 @@ export default class AssetEntity extends Asset {
         if(this.parent) this.parent.children.delete(this);
         this.parent = newParent;
         newParent.children.add(this);
-        this._parentId = newParent.getId();
+        this._parentId = newParent.id;
         if(ProjectHandler.getAsset(this._id))
-            newParent.getObject().attach(this._object);
+            newParent.object.attach(this._object);
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
-                parentId: newParent.getId(),
+                parentId: newParent.id,
                 childId: this._id,
             }, true);
         }

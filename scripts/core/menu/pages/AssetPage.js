@@ -55,7 +55,7 @@ class AssetPage extends DynamicFieldsPage {
 
     setAsset(asset) {
         this._asset = asset;
-        let name = asset.getName();
+        let name = asset.name;
         this._titleField.value = name;
         this._setFields(asset.editorHelper.getMenuFields());
     }
@@ -68,7 +68,7 @@ class AssetPage extends DynamicFieldsPage {
         });
         PubSub.subscribe(this._id, this._assetType + '_UPDATED', (message) => {
             if(message.asset == this._asset) {
-                this._titleField.value = message.asset.getName();
+                this._titleField.value = message.asset.name;
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {

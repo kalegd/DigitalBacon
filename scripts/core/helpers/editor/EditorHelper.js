@@ -9,7 +9,6 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import { capitalizeFirstLetter } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import AssetEntityField from '/scripts/core/menu/input/AssetEntityField.js';
 import AudioField from '/scripts/core/menu/input/AudioField.js';
@@ -46,8 +45,8 @@ const INPUT_TYPE_TO_CREATE_FUNCTION = {
 export default class EditorHelper {
     constructor(asset, updatedTopic) {
         this._asset = asset;
-        this._id = asset.getId();
-        this._updatedTopic = updatedTopic + ':' + asset.getAssetId() + ':'
+        this._id = asset.id;
+        this._updatedTopic = updatedTopic + ':' + asset.assetId + ':'
             + this._id;
         this._deletedAttachedComponents = new Set();
         this._disabledParams = new Set();
@@ -59,71 +58,18 @@ export default class EditorHelper {
         PubSub.publish(this._id, this._updatedTopic, message);
     }
 
-    _updateCubeImage(param, side, newValue, ignorePublish, ignoreUndoRedo,
-                     oldValue) {
-        let capitalizedParam = capitalizeFirstLetter(param);
-        let currentValue = this._asset['get' + capitalizedParam]()[side];
-        if(currentValue != newValue) {
-            this._asset['set' + capitalizedParam](newValue, side);
-            if(!ignorePublish)
-                this._publish([param]);
-        }
-        if(!oldValue) oldValue = currentValue;
-        if(!ignoreUndoRedo && oldValue != newValue) {
-            UndoRedoHandler.addAction(() => {
-                this._updateCubeImage(param, side, oldValue,ignorePublish,true);
-                this.updateMenuField(param);
-            }, () => {
-                this._updateCubeImage(param, side, newValue,ignorePublish,true);
-                this.updateMenuField(param);
-            });
-        }
-    }
-
-    _updateEuler(param, newValue, ignorePublish, ignoreUndoRedo, oldValue, ignoreDisabledCheck) {
-        this._updateVector3(param, newValue, ignorePublish, ignoreUndoRedo,
-            oldValue, ignoreDisabledCheck);
-    }
-
-    _updateVector2(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
-        this._updateVector3(param, newValue, ignorePublish, ignoreUndoRedo,
-            oldValue);
-    }
-
-    _updateVector3(param, newValue, ignorePublish, ignoreUndoRedo, oldValue, ignoreDisabledCheck) {
-        let capitalizedParam = capitalizeFirstLetter(param);
-        let currentValue = this._asset['get' + capitalizedParam]();
+    _updateParameter(param, newValue, ignorePublish, ignoreUndoRedo, oldValue,
+                     ignoreDisabledCheck) {
+        let currentValue = this._asset[param];
         if(!this._disabledParams.has(param) || ignoreDisabledCheck) {
-            if(!currentValue.reduce((a, v, i) => a && newValue[i] == v, true)) {
-                this._asset['set' + capitalizedParam](newValue);
+            if(!this._parameterValuesEqual(currentValue, newValue)) {
+                this._asset[param] = newValue;
                 if(!ignorePublish)
                     this._publish([param]);
             }
         }
         if(!oldValue) oldValue = currentValue;
-        if(!ignoreUndoRedo && !oldValue
-                .reduce((a,v,i) => a && newValue[i] == v,true))
-        {
-            UndoRedoHandler.addAction(() => {
-                this._updateVector3(param, oldValue, ignorePublish, true);
-                this.updateMenuField(param);
-            }, () => {
-                this._updateVector3(param, newValue, ignorePublish, true);
-                this.updateMenuField(param);
-            });
-        }
-    }
-
-    _updateParameter(param, newValue, ignorePublish, ignoreUndoRedo, oldValue) {
-        let capitalizedParam = capitalizeFirstLetter(param);
-        let currentValue = this._asset['get' + capitalizedParam]();
-        if(currentValue != newValue) {
-            this._asset['set' + capitalizedParam](newValue);
-            if(!ignorePublish)
-                this._publish([param]);
-        }
-        if(oldValue == null) oldValue = currentValue;
-        if(!ignoreUndoRedo && oldValue != newValue) {
+        if(!ignoreUndoRedo && !this._parameterValuesEqual(oldValue, newValue)) {
             UndoRedoHandler.addAction(() => {
                 this._updateParameter(param, oldValue, ignorePublish, true);
                 this.updateMenuField(param);
@@ -134,6 +80,14 @@ export default class EditorHelper {
         }
     }
 
+    _parameterValuesEqual(value1, value2) {
+        if(Array.isArray(value1) || Array.isArray(value2)) {
+            return value1.reduce((a, v, i) => a && value2[i] == v, true);
+        } else {
+            return value1 == value2;
+        }
+    }
+
     updateMenuField(param) {
         if(!this._menuFields) return;
         let menuField = this._menuFieldsMap[param];
@@ -141,9 +95,9 @@ export default class EditorHelper {
     }
 
     updateName(newName, ignoreUndoRedo) {
-        let oldName = this._asset.getName();
+        let oldName = this._asset.name;
         if(oldName == newName) return;
-        this._asset.setName(newName);
+        this._asset.name = newName;
         this._publish(['name']);
         if(!ignoreUndoRedo) {
             UndoRedoHandler.addAction(() => {
@@ -197,11 +151,11 @@ export default class EditorHelper {
     }
 
     _publishComponentAttachment(topicPrefix, component) {
-        let componentAssetId = component.getAssetId();
+        let componentAssetId = component.assetId;
         let topic = topicPrefix + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,
-            componentId: component.getId(),
+            componentId: component.id,
             componentAssetId: componentAssetId,
         });
     }
@@ -275,14 +229,13 @@ export default class EditorHelper {
     }
 
     _createAssetEntityField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new AssetEntityField({
             'title': field.name,
             'exclude': field.excludeSelf ? this._id : null,
             'filter': typeof field.filter == 'function' ? field.filter : null,
             'includeScene': field.includeScene,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -290,11 +243,10 @@ export default class EditorHelper {
     }
 
     _createAudioField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new AudioField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -302,12 +254,11 @@ export default class EditorHelper {
     }
 
     _createCheckboxField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new CheckboxField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
             'suppressMenuFocusEvent': field.suppressMenuFocusEvent == true,
-            'getFromSource': () => this._asset[getFunction](),
+            'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -315,11 +266,10 @@ export default class EditorHelper {
     }
 
     _createColorField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new ColorField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
                     oldValue);
@@ -331,26 +281,24 @@ export default class EditorHelper {
     }
 
     _createCubeImageField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new CubeImageField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
-            'onUpdate': (side, newValue) => {
-                this._updateCubeImage(field.parameter, side, newValue);
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
+            'onUpdate': (newValue) => {
+                this._updateParameter(field.parameter, newValue);
             },
         });
     }
 
     _createEnumField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new EnumField({
             'title': field.name,
             'initialValue': this._getKeyFromValue(field.map,
-                this._asset[getFunction]()),
+                this._asset[field.parameter]),
             'options': Object.keys(field.map),
             'getFromSource': () => this._getKeyFromValue(field.map,
-                this._asset[getFunction]()),
+                this._asset[field.parameter]),
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, field.map[newValue]);
             },
@@ -358,27 +306,25 @@ export default class EditorHelper {
     }
 
     _createEulerField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new EulerField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onBlur': (oldValue, newValue) => {
-                this._updateEuler(field.parameter, newValue, false, false,
+                this._updateParameter(field.parameter, newValue, false, false,
                     oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateEuler(field.parameter, newValue, false, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
 
     _createImageField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new ImageField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -386,11 +332,10 @@ export default class EditorHelper {
     }
 
     _createMaterialField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new MaterialField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -398,13 +343,12 @@ export default class EditorHelper {
     }
 
     _createNumberField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new NumberField({
             'title': field.name,
             'minValue': field.min,
             'maxValue': field.max,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
                     oldValue);
@@ -416,11 +360,10 @@ export default class EditorHelper {
     }
 
     _createTextField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new TextField({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'singleLine': field.singleLine,
             'onBlur': (oldValue, newValue) => {
                 this._updateParameter(field.parameter, newValue, false, false,
@@ -433,12 +376,11 @@ export default class EditorHelper {
     }
 
     _createTextureField(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new TextureField({
             'title': field.name,
             'filter': field.filter,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
             },
@@ -446,33 +388,31 @@ export default class EditorHelper {
     }
 
     _createVector2Field(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new Vector2Field({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onBlur': (oldValue, newValue) => {
-                this._updateVector2(field.parameter, newValue, false, false,
+                this._updateParameter(field.parameter, newValue, false, false,
                     oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateVector2(field.parameter, newValue, false, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }
 
     _createVector3Field(field) {
-        let getFunction = 'get' + capitalizeFirstLetter(field.parameter);
         return new Vector3Field({
             'title': field.name,
-            'initialValue': this._asset[getFunction](),
-            'getFromSource': () => this._asset[getFunction](),
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
             'onBlur': (oldValue, newValue) => {
-                this._updateVector3(field.parameter, newValue, false, false,
+                this._updateParameter(field.parameter, newValue, false, false,
                     oldValue);
             },
             'onUpdate': (newValue) => {
-                this._updateVector3(field.parameter, newValue, false, true);
+                this._updateParameter(field.parameter, newValue, false, true);
             },
         });
     }

@@ -27,7 +27,7 @@ class ScaleHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(heldAsset.preTransformState) {
                             object.scale.fromArray(heldAsset.preTransformState);
                             assetHelper._publish(['scale']);
@@ -41,7 +41,7 @@ class ScaleHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(message.fields.includes('visualEdit')
                                 && heldAsset.preTransformState)
                         {
@@ -82,7 +82,7 @@ class ScaleHandler {
                 let distance = ProjectHandler.getAsset(ownerId)
                     .getWorldPosition().distanceTo(asset.getWorldPosition());
                 let scale = asset.getWorldScale();
-                heldAsset.preTransformState = asset.getScale();
+                heldAsset.preTransformState = asset.scale;
                 heldAsset.scaleIdentity =scale.divideScalar(distance).toArray();
             }
             this._heldAssets[ownerId] = heldAsset;
@@ -107,7 +107,7 @@ class ScaleHandler {
             let assetHelper = heldAsset.asset.editorHelper;
             let preState = heldAsset.preTransformState;
             let postState = scale;
-            assetHelper._updateVector3('scale', postState, false, false,
+            assetHelper._updateParameter('scale', postState, false, false,
                 preState, true);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
@@ -116,7 +116,7 @@ class ScaleHandler {
                 scale: scale,
             });
         } else {
-            heldAsset.asset.setScale(scale);
+            heldAsset.asset.scale = scale;
         }
     }
 
@@ -136,11 +136,11 @@ class ScaleHandler {
             heldAsset.scaleIdentity[1] * distance,
             heldAsset.scaleIdentity[2] * distance
         ];
-        heldAsset.asset.setScale(newScale);
+        heldAsset.asset.scale = newScale;
         if(heldAsset.asset.parent) {
             let parentScale = heldAsset.asset.parent.getWorldScale();
-            heldAsset.asset.getObject().scale.divide(parentScale);
-            newScale = heldAsset.asset.getScale();
+            heldAsset.asset.object.scale.divide(parentScale);
+            newScale = heldAsset.asset.scale;
         }
         return newScale;
     }

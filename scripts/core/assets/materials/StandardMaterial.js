@@ -105,213 +105,148 @@ export default class StandardMaterial extends Material {
         return params;
     }
 
-    getAlphaMap() {
-        return this._alphaMap;
-    }
+    get alphaMap() { return this._alphaMap; }
+    get bumpMap() { return this._bumpMap; }
+    get bumpScale() { return this._bumpScale; }
+    get color() { return this._color; }
+    get displacementBias() { return this._displacementBias; }
+    get displacementMap() { return this._displacementMap; }
+    get displacementScale() { return this._displacementScale; }
+    get emissive() { return this._emissive; }
+    get emissiveIntensity() { return this._emissiveIntensity; }
+    get emissiveMap() { return this._emissiveMap; }
+    get envMap() { return this._envMap; }
+    get envMapIntensity() { return this._envMapIntensity; }
+    get flatShading() { return this._flatShading; }
+    get map() { return this._map; }
+    get metalness() { return this._metalness; }
+    get metalnessMap() { return this._metalnessMap; }
+    get normalMap() { return this._normalMap; }
+    get normalMapType() { return this._normalMapType; }
+    get normalScale() { return this._normalScale; }
+    get roughness() { return this._roughness; }
+    get roughnessMap() { return this._roughnessMap; }
+    get wireframe() { return this._wireframe; }
 
-    getBumpMap() {
-        return this._bumpMap;
-    }
-
-    getBumpScale() {
-        return this._bumpScale;
-    }
-
-    getColor() {
-        return this._color;
-    }
-
-    getDisplacementBias() {
-        return this._displacementBias;
-    }
-
-    getDisplacementMap() {
-        return this._displacementMap;
-    }
-
-    getDisplacementScale() {
-        return this._displacementScale;
-    }
-
-    getEmissive() {
-        return this._emissive;
-    }
-
-    getEmissiveIntensity() {
-        return this._emissiveIntensity;
-    }
-
-    getEmissiveMap() {
-        return this._emissiveMap;
-    }
-
-    getEnvMap() {
-        return this._envMap;
-    }
-
-    getEnvMapIntensity() {
-        return this._envMapIntensity;
-    }
-
-    getFlatShading() {
-        return this._flatShading;
-    }
-
-    getMap() {
-        return this._map;
-    }
-
-    getMetalness() {
-        return this._metalness;
-    }
-
-    getMetalnessMap() {
-        return this._metalnessMap;
-    }
-
-    getNormalMap() {
-        return this._normalMap;
-    }
-
-    getNormalMapType() {
-        return this._normalMapType;
-    }
-
-    getNormalScale() {
-        return this._normalScale;
-    }
-
-    getRoughness() {
-        return this._roughness;
-    }
-
-    getRoughnessMap() {
-        return this._roughnessMap;
-    }
-
-    getWireframe() {
-        return this._wireframe;
-    }
-
-    setAlphaMap(alphaMap) {
+    set alphaMap(alphaMap) {
         if(this._alphaMap == alphaMap) return;
         this._setTexture('alphaMap', alphaMap);
     }
 
-    setBumpMap(bumpMap) {
+    set bumpMap(bumpMap) {
         if(this._bumpMap == bumpMap) return;
         this._setTexture('bumpMap', bumpMap);
     }
 
-    setBumpScale(bumpScale) {
+    set bumpScale(bumpScale) {
         if(this._bumpScale == bumpScale) return;
         this._bumpScale = bumpScale;
         this._material.bumpScale = bumpScale;
     }
 
-    setColor(color) {
+    set color(color) {
         if(this._color == color) return;
         this._color = color;
         this._material.color.setHex(color);
     }
 
-    setDisplacementBias(displacementBias) {
+    set displacementBias(displacementBias) {
         if(this._displacementBias == displacementBias) return;
         this._displacementBias = displacementBias;
         this._material.displacementBias = displacementBias;
     }
 
-    setDisplacementMap(displacementMap) {
+    set displacementMap(displacementMap) {
         if(this._displacementMap == displacementMap) return;
         this._setTexture('displacementMap', displacementMap);
     }
 
-    setDisplacementScale(displacementScale) {
+    set displacementScale(displacementScale) {
         if(this._displacementScale == displacementScale) return;
         this._displacementScale = displacementScale;
         this._material.displacementScale = displacementScale;
     }
 
-    setEmissive(emissive) {
+    set emissive(emissive) {
         if(this._emissive == emissive) return;
         this._emissive = emissive;
         this._material.emissive.setHex(emissive);
     }
 
-    setEmissiveIntensity(emissiveIntensity) {
+    set emissiveIntensity(emissiveIntensity) {
         if(this._emissiveIntensity == emissiveIntensity) return;
         this._emissiveIntensity = emissiveIntensity;
         this._material.emissiveIntensity = emissiveIntensity;
     }
 
-    setEmissiveMap(emissiveMap) {
+    set emissiveMap(emissiveMap) {
         if(this._emissiveMap == emissiveMap) return;
         this._setTexture('emissiveMap', emissiveMap);
     }
 
-    setEnvMap(envMap) {
+    set envMap(envMap) {
         if(this._envMap == envMap) return;
         this._setTexture('envMap', envMap);
     }
 
-    setEnvMapIntensity(envMapIntensity) {
+    set envMapIntensity(envMapIntensity) {
         if(this._envMapIntensity == envMapIntensity) return;
         this._envMapIntensity = envMapIntensity;
         this._material.envMapIntensity = envMapIntensity;
     }
 
-    setFlatShading(flatShading) {
+    set flatShading(flatShading) {
         if(this._flatShading == flatShading) return;
         this._flatShading = flatShading;
         this._material.flatShading = flatShading;
         this._material.needsUpdate = true;
     }
 
-    setMap(map) {
+    set map(map) {
         if(this._map == map) return;
         this._setTexture('map', map);
     }
 
-    setMetalness(metalness) {
+    set metalness(metalness) {
         if(this._metalness == metalness) return;
         this._metalness = metalness;
         this._material.metalness = metalness;
     }
 
-    setMetalnessMap(metalnessMap) {
+    set metalnessMap(metalnessMap) {
         if(this._metalnessMap == metalnessMap) return;
         this._setTexture('metalnessMap', metalnessMap);
     }
 
-    setNormalMap(normalMap) {
+    set normalMap(normalMap) {
         if(this._normalMap == normalMap) return;
         this._setTexture('normalMap', normalMap);
     }
 
-    setNormalMapType(normalMapType) {
+    set normalMapType(normalMapType) {
         if(this._normalMapType == normalMapType) return;
         this._normalMapType = normalMapType;
         this._material.normalMapType = normalMapType;
         this._material.needsUpdate = true;
     }
 
-    setNormalScale(normalScale) {
+    set normalScale(normalScale) {
         this._normalScale = normalScale;
         this._material.normalScale.fromArray(normalScale);
     }
 
-    setRoughness(roughness) {
+    set roughness(roughness) {
         if(this._roughness == roughness) return;
         this._roughness = roughness;
         this._material.roughness = roughness;
     }
 
-    setRoughnessMap(roughnessMap) {
+    set roughnessMap(roughnessMap) {
         if(this._roughnessMap == roughnessMap) return;
         this._setTexture('roughnessMap', roughnessMap);
     }
 
-    setWireframe(wireframe) {
+    set wireframe(wireframe) {
         if(this._wireframe == wireframe) return;
         this._wireframe = wireframe;
         this._material.wireframe = wireframe;

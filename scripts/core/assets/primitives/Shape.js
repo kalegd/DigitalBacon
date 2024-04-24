@@ -20,9 +20,9 @@ export default class Shape extends AssetEntity {
     }
 
     _getMaterial() {
-        let material = ProjectHandler.getAsset(this._material);
-        if(material) {
-            return material.getMaterial();
+        let materialAsset = ProjectHandler.getAsset(this._material);
+        if(materialAsset) {
+            return materialAsset.material;
         } else {
             return Materials.defaultMeshMaterial;
         }
@@ -34,15 +34,10 @@ export default class Shape extends AssetEntity {
         return params;
     }
 
-    getMaterial() {
-        return this._material;
-    }
+    get material() { return this._material; }
+    get mesh() { return this._mesh; }
 
-    getMesh() {
-        return this._mesh;
-    }
-
-    setMaterial(newValue) {
+    set material(newValue) {
         this._material = newValue;
         let oldMaterial = this._mesh.material;
         let material = this._getMaterial();

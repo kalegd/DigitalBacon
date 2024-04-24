@@ -50,7 +50,7 @@ export default class XRHand extends XRDevice {
     addFromTargetRay(asset, position, rotation) {
         let hand = InputHandler.getXRController(XRInputDeviceTypes.HAND,
             this._handedness, 'targetRay');
-        let assetObject = asset.getObject();
+        let assetObject = asset.object;
         if(!hand) return;
         hand.add(assetObject);
         if(position) assetObject.position.fromArray(position);
@@ -58,9 +58,7 @@ export default class XRHand extends XRDevice {
         asset.attachTo(this);
     }
 
-    getHandedness() {
-        return this._handedness;
-    }
+    get handedness() { return this._handedness; }
 
     getTargetRayDirection() {
         let xrController = InputHandler.getXRController(XRInputDeviceTypes.HAND,

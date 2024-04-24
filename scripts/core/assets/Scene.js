@@ -20,21 +20,13 @@ class Scene {
         global.scene = this._object;
     }
     
-    getId() {
-        return this._id;
-    }
-
-    getObject() {
-        return this._object;
-    }
-
-    getName() {
-        return 'Scene';
-    }
-
     get gripInteractable() { return this._object.gripInteractable; }
+    get id() { return this._id; }
+    get name() { return 'Scene'; }
+    get object() { return this._object; }
     get pointerInteractable() { return this._object.pointerInteractable; }
     get touchInteractable() { return this._object.touchInteractable; }
+
 
     set gripInteractable(_) {}
     set pointerInteractable(_) {}

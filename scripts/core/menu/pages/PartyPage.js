@@ -79,7 +79,7 @@ class PartyPage extends DynamicFieldsPage {
 
     _handleUpdateUsername() {
         let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
-        let username = global.userController.getUsername();
+        let username = global.userController.username;
         inputPage.setContentWithInitialValue("Update Username", username,
             "Update",
             (username) => {
@@ -90,7 +90,7 @@ class PartyPage extends DynamicFieldsPage {
                     });
                     return;
                 }
-                global.userController.setUsername(username);
+                global.userController.username = username;
                 this._controller.back();
             }
         );

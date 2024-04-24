@@ -45,8 +45,7 @@ class UserSettingsPage extends DynamicFieldsPage {
             'initialValue': 1,
             'onBlur': (oldValue, newValue) => {
                 if(!global.isEditor) {
-                    global.userController.setScale(
-                        [newValue, newValue, newValue]);
+                    global.userController.scale = [newValue, newValue,newValue];
                 }
                 SettingsHandler.setUserSetting('User Scale', newValue);
             },

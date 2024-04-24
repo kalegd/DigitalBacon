@@ -60,71 +60,51 @@ export default class CylinderShape extends Shape {
         return params;
     }
 
-    getHeight() {
-        return this._height;
-    }
+    get height() { return this._height; }
+    get radiusTop() { return this._radiusTop; }
+    get radiusBottom() { return this._radiusBottom; }
+    get radialSegments() { return this._radialSegments; }
+    get heightSegments() { return this._heightSegments; }
+    get thetaLength() { return this._thetaLength; }
+    get openEnded() { return this._openEnded; }
 
-    getRadiusTop() {
-        return this._radiusTop;
-    }
-
-    getRadiusBottom() {
-        return this._radiusBottom;
-    }
-
-    getRadialSegments() {
-        return this._radialSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    getOpenEnded() {
-        return this._openEnded;
-    }
-
-    setHeight(height) {
+    set height(height) {
         if(this._height == height) return;
         this._height = height;
         this._updateGeometry();
     }
 
-    setRadiusTop(radiusTop) {
+    set radiusTop(radiusTop) {
         if(this._radiusTop == radiusTop) return;
         this._radiusTop = radiusTop;
         this._updateGeometry();
     }
 
-    setRadiusBottom(radiusBottom) {
+    set radiusBottom(radiusBottom) {
         if(this._radiusBottom == radiusBottom) return;
         this._radiusBottom = radiusBottom;
         this._updateGeometry();
     }
 
-    setRadialSegments(radialSegments) {
+    set radialSegments(radialSegments) {
         if(this._radialSegments == radialSegments) return;
         this._radialSegments = radialSegments;
         this._updateGeometry();
     }
 
-    setHeightSegments(heightSegments) {
+    set heightSegments(heightSegments) {
         if(this._heightSegments == heightSegments) return;
         this._heightSegments = heightSegments;
         this._updateGeometry();
     }
 
-    setThetaLength(thetaLength) {
+    set thetaLength(thetaLength) {
         if(this._thetaLength == thetaLength) return;
         this._thetaLength = thetaLength;
         this._updateGeometry();
     }
 
-    setOpenEnded(openEnded) {
+    set openEnded(openEnded) {
         if(this._openEnded == openEnded) return;
         this._openEnded = openEnded;
         this._updateGeometry();

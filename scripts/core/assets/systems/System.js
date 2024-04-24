@@ -123,8 +123,8 @@ export default class System extends Asset {
             skipQueue);
     }
 
-    getDescription() {
-        console.error("System.getDescription() should be overridden");
+    get description() {
+        console.error("get System.description should be overridden");
         return '';
     }
 

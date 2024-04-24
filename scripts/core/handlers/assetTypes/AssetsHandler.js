@@ -30,9 +30,9 @@ export default class AssetsHandler {
     }
 
     addAsset(asset, ignorePublish, ignoreUndoRedo) {
-        if(this._assets[asset.getId()]) return;
-        this._assets[asset.getId()] = asset;
-        this._sessionAssets[asset.getId()] = asset;
+        if(this._assets[asset.id]) return;
+        this._assets[asset.id] = asset;
+        this._sessionAssets[asset.id] = asset;
         if(global.isEditor) EditorHelperFactory.addEditorHelperTo(asset);
         if(asset.update) global.dynamicAssets.add(asset);
         ProjectHandler.addAssetFromHandler(asset);
@@ -44,12 +44,12 @@ export default class AssetsHandler {
             });
         }
         if(ignorePublish) return;
-        let topic = this._addedTopic + ':' + asset.getAssetId();
+        let topic = this._addedTopic + ':' + asset.assetId;
         PubSub.publish(this._id, topic, asset, true);
     }
 
     deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
-        if(!(asset.getId() in this._assets)) return;
+        if(!(asset.id in this._assets)) return;
         let undoRedoAction;
         if(!ignoreUndoRedo) {
             undoRedoAction = UndoRedoHandler.addAction(() => {
@@ -58,12 +58,12 @@ export default class AssetsHandler {
                 this.deleteAsset(asset, ignorePublish, true);
             });
         }
-        delete this._assets[asset.getId()];
+        delete this._assets[asset.id];
         ProjectHandler.deleteAssetFromHandler(asset);
         if(asset.update) global.dynamicAssets.delete(asset);
         if(ignorePublish) return;
-        let topic = this._deletedTopic + ':' + asset.getAssetId() + ':'
-            + asset.getId();
+        let topic = this._deletedTopic + ':' + asset.assetId + ':'
+            + asset.id;
         PubSub.publish(this._id, topic, {
             asset: asset,
             undoRedoAction: undoRedoAction,
@@ -74,7 +74,7 @@ export default class AssetsHandler {
         let assetsToDelete = [];
         for(let id in this._assets) {
             let asset = this._assets[id];
-            let assetId = asset.getAssetId();
+            let assetId = asset.assetId;
             if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
                 assetsToDelete.push(asset);
         }
@@ -93,35 +93,6 @@ export default class AssetsHandler {
             return this.addNewAsset(params.assetId, params, true, true);
         }
     }
-
-    //load(assets, isDiff) {
-    //    if(!assets) return;
-    //    if(isDiff) {
-    //        let assetsToDelete = [];
-    //        for(let id in this._assets) {
-    //            let asset = this._assets[id];
-    //            let assetId = asset.getAssetId();
-    //            if(!(assetId in assets) || !assets[assetId].some(p=>p.id==id))
-    //                assetsToDelete.push(asset);
-    //        }
-    //        for(let asset of assetsToDelete) {
-    //            this.deleteAsset(asset, true, true);
-    //        }
-    //    }
-    //    for(let assetTypeId in assets) {
-    //        if(!(assetTypeId in this._assetClassMap)) {
-    //            console.error("Unrecognized asset found");
-    //            continue;
-    //        }
-    //        for(let params of assets[assetTypeId]) {
-    //            if(isDiff && this._assets[params.id]) {
-    //                this._assets[params.id].updateFromParams(params);
-    //            } else {
-    //                this.addNewAsset(assetTypeId, params, true, true);
-    //            }
-    //        }
-    //    }
-    //}
 
     registerAsset(assetClass) {
         if(this._assetClassMap[assetClass.assetId]) {
@@ -168,7 +139,7 @@ export default class AssetsHandler {
         let assetsDetails = {};
         for(let id in this._assets) {
             let asset = this._assets[id];
-            let assetId = asset.getAssetId();
+            let assetId = asset.assetId;
             let params = asset.exportParams();
             if(!(assetId in assetsDetails)) assetsDetails[assetId] = [];
             assetsDetails[assetId].push(params);

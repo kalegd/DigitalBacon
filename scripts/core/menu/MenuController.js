@@ -122,28 +122,19 @@ export default class MenuController {
         interactable.addEventListener('down', (message) => {
             interactable.capture(message.owner);
             let asset = ProjectHandler.getAsset(message.owner.id);
-            if(asset) asset.getObject().attach(this._object);
+            if(asset) asset.object.attach(this._object);
             this._gripOwners.add(message.owner.id);
         });
         interactable.addEventListener('click', (message) => {
             let asset = ProjectHandler.getAsset(message.owner.id);
-            if(this._object.parent == asset.getObject())
-                Scene.getObject().attach(this._object);
+            if(this._object.parent == asset.object)
+                Scene.object.attach(this._object);
             this._gripOwners.delete(message.owner.id);
         });
     }
 
     getPosition(vector3) {
         return this._object.getWorldPosition(vector3);
-    }
-
-    getPositionArray() {
-        return this._object.getWorldPosition(vector3s[0]).toArray();
-    }
-
-    getRotationArray() {
-        return euler.setFromQuaternion(this._object.getWorldQuaternion(
-            quaternion).normalize()).toArray();
     }
 
     getDirection(vector3) {
@@ -177,7 +168,7 @@ export default class MenuController {
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
         this._object.scale.set(userScale, userScale, userScale);
-        Scene.getObject().add(this._object);
+        Scene.object.add(this._object);
     }
 
     closeMenu() {

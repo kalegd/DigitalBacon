@@ -43,14 +43,14 @@ class AssetEntityField extends MenuField {
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };
             if(this._includeScene)
-                filteredAssets[Scene.getId()] = { Name: 'Scene' };
+                filteredAssets[Scene.id] = { Name: 'Scene' };
             for(let assetId in assets) {
                 if(this._exclude == assetId) continue;
                 let asset = assets[assetId];
                 if(asset instanceof InternalAssetEntity) continue;
                 if(asset instanceof AssetEntity) {
                     if(this._filter && !this._filter(asset)) continue;
-                    filteredAssets[assetId] = { Name: asset.getName() };
+                    filteredAssets[assetId] = { Name: asset.name };
                 }
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
@@ -77,8 +77,8 @@ class AssetEntityField extends MenuField {
         this._lastValue = assetId;
         let assetEntity = ProjectHandler.getAsset(this._lastValue);
         let assetEntityName = assetEntity
-            ? assetEntity.getName()
-            : Scene.getId() == this._lastValue ? 'Scene' : " ";
+            ? assetEntity.name
+            : Scene.id == this._lastValue ? 'Scene' : " ";
         assetEntityName = stringWithMaxLength(assetEntityName, 16);
         this._assetEntitySelection.textComponent.text = assetEntityName;
     }

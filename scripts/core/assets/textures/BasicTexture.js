@@ -41,15 +41,6 @@ export default class BasicTexture extends Texture {
         this._texture.colorSpace = this._colorSpace;
     }
 
-    getAssetIds() {
-        if(this._image) return [this._image];
-        return [];
-    }
-
-    getTextureType() {
-        return BasicTexture.textureType;
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['image'] = this._image;
@@ -60,50 +51,46 @@ export default class BasicTexture extends Texture {
         return params;
     }
 
-    getImage() {
-        return this._image;
+    get assetIds() {
+        if(this._image) return [this._image];
+        return [];
     }
 
-    getOffset() {
-        return this._offset;
+    get image() { return this._image; }
+    get offset() { return this._offset; }
+    get repeat() { return this._repeat; }
+
+    get textureType() {
+        return BasicTexture.textureType;
     }
 
-    getRepeat() {
-        return this._repeat;
-    }
+    get wrapS() { return this._wrapS; }
+    get wrapT() { return this._wrapT; }
 
-    getWrapS() {
-        return this._wrapS;
-    }
-
-    getWrapT() {
-        return this._wrapT;
-    }
-
-    setImage(image) {
+    set image(image) {
         if(this._image == image) return;
         this._image = image;
         this._updateTexture();
     }
 
-    setOffset(offset) {
+    set offset(offset) {
         this._offset = offset;
         this._texture.offset.fromArray(offset);
     }
 
-    setRepeat(repeat) {
+    set repeat(repeat) {
         this._repeat = repeat;
         this._texture.repeat.fromArray(repeat);
     }
 
-    setWrapS(wrapS) {
+    set wrapS(wrapS) {
         if(this._wrapS == wrapS) return;
         this._wrapS = wrapS;
         this._texture.wrapS = wrapS;
         this._texture.needsUpdate = true;
     }
 
-    setWrapT(wrapT) {
+    set wrapT(wrapT) {
         if(this._wrapT == wrapT) return;
         this._wrapT = wrapT;
         this._texture.wrapT = wrapT;

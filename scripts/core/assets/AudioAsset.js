@@ -61,110 +61,80 @@ export default class AudioAsset extends PlayableMediaAsset {
         return params;
     }
 
-    getAudio() {
-        return this._media;
-    }
-
-    getConeInnerAngle() {
-        return this._coneInnerAngle;
-    }
-
-    getConeOuterAngle() {
-        return this._coneOuterAngle;
-    }
-
-    getConeOuterGain() {
-        return this._coneOuterGain;
-    }
-
-    getDistanceModel() {
-        return this._distanceModel;
-    }
-
-    getMaxDistance() {
-        return this._maxDistance;
-    }
-
-    getRefDistance() {
-        return this._refDistance;
-    }
-
-    getRolloffFactor() {
-        return this._rolloffFactor;
-    }
-
-    getVolume() {
-        return this._volume;
-    }
-
-    setConeInnerAngle(coneInnerAngle) {
-        this._coneInnerAngle = coneInnerAngle;
-        this._media.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
-            this._coneOuterGain);
-    }
-
-    setConeOuterAngle(coneOuterAngle) {
-        this._coneOuterAngle = coneOuterAngle;
-        this._media.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
-            this._coneOuterGain);
-    }
-
-    setConeOuterGain(coneOuterGain) {
-        this._coneOuterGain = coneOuterGain;
-        this._media.setDirectionalCone(this._coneInnerAngle,
-            this._coneOuterAngle, coneOuterGain);
-    }
-
-    setDistanceModel(distanceModel) {
-        this._distanceModel = distanceModel;
-        this._media.setDistanceModel(distanceModel);
-    }
-
-    setLoop(loop) {
-        super.setLoop(loop);
-        this._media.setLoop(loop);
-    }
-
-    setMaxDistance(maxDistance) {
-        this._maxDistance = maxDistance;
-        this._media.setMaxDistance(maxDistance);
-    }
-
-    setRefDistance(refDistance) {
-        this._refDistance = refDistance;
-        this._media.setRefDistance(refDistance);
-    }
-
-    setRolloffFactor(rolloffFactor) {
-        this._rolloffFactor = rolloffFactor;
-        this._media.setRolloffFactor(rolloffFactor);
-    }
-
-    setVolume(volume) {
-        this._volume = volume;
-        this._media.setVolume(volume);
-    }
-
-    _addPartySubscriptions() {
-        super._addPartySubscriptions();
-    }
-
-    isPlaying() {
+    get audio() { return this._media; }
+    get coneInnerAngle() { return this._coneInnerAngle; }
+    get coneOuterAngle() { return this._coneOuterAngle; }
+    get coneOuterGain() { return this._coneOuterGain; }
+    get distanceModel() { return this._distanceModel; }
+    get isPlaying() {
         if(this._media.isPlaying) {
             this._media.pause();//pause() update audio._progress
             this._media.play();
         }
         return this._media.isPlaying;
     }
+    get maxDistance() { return this._maxDistance; }
+    get progress() { return this._media._progress; }
+    get refDistance() { return this._refDistance; }
+    get rolloffFactor() { return this._rolloffFactor; }
+    get volume() { return this._volume; }
 
-    getProgress() {
-        return this._media._progress;
+    set coneInnerAngle(coneInnerAngle) {
+        this._coneInnerAngle = coneInnerAngle;
+        this._media.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
+            this._coneOuterGain);
     }
 
-    setProgress(position) {
+    set coneOuterAngle(coneOuterAngle) {
+        this._coneOuterAngle = coneOuterAngle;
+        this._media.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
+            this._coneOuterGain);
+    }
+
+    set coneOuterGain(coneOuterGain) {
+        this._coneOuterGain = coneOuterGain;
+        this._media.setDirectionalCone(this._coneInnerAngle,
+            this._coneOuterAngle, coneOuterGain);
+    }
+
+    set distanceModel(distanceModel) {
+        this._distanceModel = distanceModel;
+        this._media.setDistanceModel(distanceModel);
+    }
+
+    set loop(loop) {
+        super.loop = loop;
+        this._media.setLoop(loop);
+    }
+
+    set maxDistance(maxDistance) {
+        this._maxDistance = maxDistance;
+        this._media.setMaxDistance(maxDistance);
+    }
+
+    set progress(position) {
         if(position != null) {
             this._media._progress = position || 0;
         }
+    }
+
+    set refDistance(refDistance) {
+        this._refDistance = refDistance;
+        this._media.setRefDistance(refDistance);
+    }
+
+    set rolloffFactor(rolloffFactor) {
+        this._rolloffFactor = rolloffFactor;
+        this._media.setRolloffFactor(rolloffFactor);
+    }
+
+    set volume(volume) {
+        this._volume = volume;
+        this._media.setVolume(volume);
+    }
+
+    _addPartySubscriptions() {
+        super._addPartySubscriptions();
     }
 
     static assetType = AssetTypes.AUDIO;

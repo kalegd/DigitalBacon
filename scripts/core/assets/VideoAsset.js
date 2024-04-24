@@ -63,24 +63,24 @@ export default class VideoAsset extends PlayableMediaAsset {
         return params;
     }
 
-    getSide() {
-        return this._material.side;
+    get isPlaying() {
+        return !this._media.paused && !this._media.ended
+            && this._media.currentTime > 0 && this._media.readyState > 2;
     }
+    get progress() { return this._media.currentTime; }
+    get side() { return this._material.side; }
+    get video() { return this._media; }
 
-    getStopTopic() {
-        return this._stopTopic;
-    }
-
-    getVideo() {
-        return this._media;
-    }
-
-    setLoop(loop) {
-        super.setLoop(loop);
+    set loop(loop) {
+        super.loop = loop;
         this._media.loop = loop;
     }
-
-    setSide(side) {
+    set progress(position) {
+        if(position != null) {
+            this._media.currentTime = position || 0;
+        }
+    }
+    set side(side) {
         if(side == this._side) return;
         this._side = side;
         this._material.side = side;
@@ -95,21 +95,6 @@ export default class VideoAsset extends PlayableMediaAsset {
                 this._alreadyAutoplayed = true;
             }
         });
-    }
-
-    isPlaying() {
-        return !this._media.paused && !this._media.ended
-            && this._media.currentTime > 0 && this._media.readyState > 2;
-    }
-
-    getProgress() {
-        return this._media.currentTime;
-    }
-
-    setProgress(position) {
-        if(position != null) {
-            this._media.currentTime = position || 0;
-        }
     }
 
     onRemoveFromProject() {

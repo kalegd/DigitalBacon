@@ -46,7 +46,7 @@ class MaterialField extends MenuField {
             filteredMaterials["null\n"] = { Name: "Blank" };
             for(let materialId in materials) {
                 filteredMaterials[materialId] =
-                    { Name: materials[materialId].getName() };
+                    { Name: materials[materialId].name };
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
             page.setContent(filteredMaterials, (materialId) => {
@@ -72,7 +72,7 @@ class MaterialField extends MenuField {
         let newMaterialPage = global.menuController.getPage(
             MenuPages.NEW_MATERIAL);
         newMaterialPage.setContent((material) => {
-            this._handleMaterialSelection(material.getId(), currentPage);
+            this._handleMaterialSelection(material.id, currentPage);
             if(currentPage != global.menuController.getCurrentPage()) return;
             let materialPage = global.menuController.getPage(
                 MenuPages.MATERIAL);
@@ -94,15 +94,15 @@ class MaterialField extends MenuField {
 
     _updateMaterial(materialId) {
         this._lastValue = materialId;
-        let material = MaterialsHandler.getAsset(this._lastValue);
-        let materialName = material
-            ? material.getName()
+        let materialAsset = MaterialsHandler.getAsset(this._lastValue);
+        let materialName = materialAsset
+            ? materialAsset.name
             : " ";
         materialName = stringWithMaxLength(materialName, 12);
         this._materialSelection.textComponent.text = materialName;
-        if(material) {
-            let color = material.getMaterial().color || Colors.white;
-            this._updateTextureAndColor(material.getSampleTexture(), color);
+        if(materialAsset) {
+            let color = materialAsset.material.color || Colors.white;
+            this._updateTextureAndColor(materialAsset.getSampleTexture(),color);
             this._buttonsSpan.add(this._editButton);
         } else {
             this._updateTextureAndColor(null, Colors.defaultIdle);
@@ -121,12 +121,12 @@ class MaterialField extends MenuField {
             ? Colors.black
             : Colors.white;
         if(!this._materialSelection.textComponent.color.equals(fontColor))
-            this._materialSelection.textComponent.color.set(fontColor);
+            this._materialSelection.textComponent.color = fontColor;
     }
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_UPDATED, (message) => {
-            if(this._lastValue == message.asset.getId())
+            if(this._lastValue == message.asset.id)
                 this.updateFromSource();
         });
     }

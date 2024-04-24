@@ -17,22 +17,22 @@ class InternalAssetsHandler extends AssetsHandler {
     }
 
     addAsset(asset, ignorePublish) {
-        if(this._assets[asset.getId()]) return;
-        this._assets[asset.getId()] = asset;
-        this._sessionAssets[asset.getId()] = asset;
+        if(this._assets[asset.id]) return;
+        this._assets[asset.id] = asset;
+        this._sessionAssets[asset.id] = asset;
         ProjectHandler.addAssetFromHandler(asset);
         if(ignorePublish) return;
-        let topic = this._addedTopic + ':' + asset.getAssetId();
+        let topic = this._addedTopic + ':' + asset.assetId;
         PubSub.publish(this._id, topic, asset, true);
     }
 
     deleteAsset(asset, ignorePublish) {
-        if(!(asset.getId() in this._assets)) return;
-        delete this._assets[asset.getId()];
+        if(!(asset.id in this._assets)) return;
+        delete this._assets[asset.id];
         ProjectHandler.deleteAssetFromHandler(asset);
         if(ignorePublish) return;
-        let topic = this._deletedTopic + ':' + asset.getAssetId() + ':'
-            + asset.getId();
+        let topic = this._deletedTopic + ':' + asset.assetId + ':'
+            + asset.id;
         PubSub.publish(this._id, topic, { asset: asset }, true);
     }
 
