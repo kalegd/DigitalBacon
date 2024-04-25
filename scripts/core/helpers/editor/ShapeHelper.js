@@ -19,13 +19,13 @@ export default class ShapeHelper extends AssetEntityHelper {
     }
 
     _overwriteSetMaterial() {
-        Object.defineProperty(this._asset, 'material', {
-            get: function() { return this._material; },
+        Object.defineProperty(this._asset, 'materialId', {
+            get: function() { return this._materialId; },
             set: (newValue) => {
                 let mesh = this._asset.mesh;
                 let wasTranslucent = mesh.material.userData['oldMaterial'];
                 if(wasTranslucent) this.returnTransparency();
-                this._asset._material = newValue;
+                this._asset._materialId = newValue;
                 let oldMaterial = this._asset._mesh.material;
                 let material = this._asset._getMaterial();
                 this._asset._mesh.material = material;
@@ -37,23 +37,23 @@ export default class ShapeHelper extends AssetEntityHelper {
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
-            if(this._asset.material == e.asset.id) {
-                this._updateParameter('material', null, false, true);
-                this.updateMenuField('material');
+            if(this._asset.materialId == e.asset.id) {
+                this._updateParameter('materialId', null, false, true);
+                this.updateMenuField('materialId');
                 if(e.undoRedoAction) {
                     let undo = e.undoRedoAction.undo;
                     e.undoRedoAction.undo = () => {
                         undo();
-                        this._updateParameter('material', e.asset.id,
+                        this._updateParameter('materialId', e.asset.id,
                             false, true);
-                        this.updateMenuField('material');
+                        this.updateMenuField('materialId');
                     };
                 }
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (e) => {
-            if(this._asset.material == e.id) {
-                this._asset.material = e.id;
+            if(this._asset.materialId == e.id) {
+                this._asset.materialId = e.id;
             }
         });
     }
@@ -73,7 +73,7 @@ export default class ShapeHelper extends AssetEntityHelper {
     }
 
     static fields = [
-        { 'parameter': 'material', 'name': 'Material', "type": MaterialField }
+        { 'parameter': 'materialId', 'name': 'Material', "type": MaterialField }
     ];
 }
 

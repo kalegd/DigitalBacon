@@ -17,7 +17,7 @@ export default class SphereShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "radius", "name": "Radius", "min": 0,
             "type": NumberField },
         { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,

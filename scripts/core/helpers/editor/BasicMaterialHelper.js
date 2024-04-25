@@ -19,15 +19,15 @@ export default class BasicMaterialHelper extends MaterialHelper {
 
     static fields = [
         { "parameter": "color", "name": "Color", "type": ColorField },
-        { "parameter": "map","name": "Texture Map",
+        { "parameter": "mapId","name": "Texture Map",
             "filter": TextureTypes.BASIC, "type": TextureField },
         "side",
         "transparent",
         "opacity",
-        { "parameter": "alphaMap","name": "Alpha Map",
+        { "parameter": "alphaMapId","name": "Alpha Map",
             "filter": TextureTypes.BASIC, "type": TextureField },
         { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxField},
-        { "parameter": "envMap","name": "Environment Map",
+        { "parameter": "envMapId","name": "Environment Map",
             "filter": TextureTypes.CUBE, "type": TextureField },
         { "parameter": "combine","name": "Color & Environment Blend",
             "map": COMBINE_MAP, "type": EnumField },

@@ -17,18 +17,18 @@ export default class ToonMaterial extends Material {
     constructor(params = {}) {
         params['assetId'] = ToonMaterial.assetId;
         super(params);
-        this._alphaMap = params['alphaMap'];
+        this._alphaMapId = params['alphaMapId'];
         this._color = numberOr(params['color'], 0x3d9970);
-        this._bumpMap = params['bumpMap'];
+        this._bumpMapId = params['bumpMapId'];
         this._bumpScale = numberOr(params['bumpScale'], 1);
-        this._displacementMap = params['displacementMap'];
+        this._displacementMapId = params['displacementMapId'];
         this._displacementScale = numberOr(params['displacementScale'], 1);
         this._displacementBias = numberOr(params['displacementBias'], 0);
         this._emissive = params['emissive'] || 0x000000;
-        this._emissiveMap = params['emissiveMap'];
+        this._emissiveMapId = params['emissiveMapId'];
         this._emissiveIntensity = numberOr(params['emissiveIntensity'], 1);
-        this._map = params['map'];
-        this._normalMap = params['normalMap'];
+        this._mapId = params['mapId'];
+        this._normalMapId = params['normalMapId'];
         this._normalMapType = params['normalMapType']
             || THREE.TangentSpaceNormalMap;
         this._normalScale = params['normalScale'] || [1,1];
@@ -69,48 +69,48 @@ export default class ToonMaterial extends Material {
 
     exportParams() {
         let params = super.exportParams();
-        params['alphaMap'] = this._alphaMap;
-        params['bumpMap'] = this._bumpMap;
+        params['alphaMapId'] = this._alphaMapId;
+        params['bumpMapId'] = this._bumpMapId;
         params['bumpScale'] = this._bumpScale;
         params['color'] = this._material.color.getHex();
-        params['displacementMap'] = this._displacementMap;
+        params['displacementMapId'] = this._displacementMapId;
         params['displacementScale'] = this._displacementScale;
         params['displacementBias'] = this._displacementBias;
         params['emissive'] = this._material.emissive.getHex();
-        params['emissiveMap'] = this._emissiveMap;
+        params['emissiveMapId'] = this._emissiveMapId;
         params['emissiveIntensity'] = this._emissiveIntensity;
-        params['map'] = this._map;
-        params['normalMap'] = this._normalMap;
+        params['mapId'] = this._mapId;
+        params['normalMapId'] = this._normalMapId;
         params['normalMapType'] = this._normalMapType;
         params['normalScale'] = this._normalScale;
         params['wireframe'] = this._wireframe;
         return params;
     }
 
-    get alphaMap() { return this._alphaMap; }
-    get bumpMap() { return this._bumpMap; }
+    get alphaMapId() { return this._alphaMapId; }
+    get bumpMapId() { return this._bumpMapId; }
     get bumpScale() { return this._bumpScale; }
     get color() { return this._color; }
     get displacementBias() { return this._displacementBias; }
-    get displacementMap() { return this._displacementMap; }
+    get displacementMapId() { return this._displacementMapId; }
     get displacementScale() { return this._displacementScale; }
     get emissive() { return this._emissive; }
     get emissiveIntensity() { return this._emissiveIntensity; }
-    get emissiveMap() { return this._emissiveMap; }
-    get map() { return this._map; }
-    get normalMap() { return this._normalMap; }
+    get emissiveMapId() { return this._emissiveMapId; }
+    get mapId() { return this._mapId; }
+    get normalMapId() { return this._normalMapId; }
     get normalMapType() { return this._normalMapType; }
     get normalScale() { return this._normalScale; }
     get wireframe() { return this._wireframe; }
 
-    set alphaMap(alphaMap) {
-        if(this._alphaMap == alphaMap) return;
-        this._setTexture('alphaMap', alphaMap);
+    set alphaMapId(alphaMapId) {
+        if(this._alphaMapId == alphaMapId) return;
+        this._setTexture('alphaMap', alphaMapId);
     }
 
-    set bumpMap(bumpMap) {
-        if(this._bumpMap == bumpMap) return;
-        this._setTexture('bumpMap', bumpMap);
+    set bumpMapId(bumpMapId) {
+        if(this._bumpMapId == bumpMapId) return;
+        this._setTexture('bumpMap', bumpMapId);
     }
 
     set bumpScale(bumpScale) {
@@ -131,9 +131,9 @@ export default class ToonMaterial extends Material {
         this._material.displacementBias = displacementBias;
     }
 
-    set displacementMap(displacementMap) {
-        if(this._displacementMap == displacementMap) return;
-        this._setTexture('displacementMap', displacementMap);
+    set displacementMapId(displacementMapId) {
+        if(this._displacementMapId == displacementMapId) return;
+        this._setTexture('displacementMap', displacementMapId);
     }
 
     set displacementScale(displacementScale) {
@@ -154,19 +154,19 @@ export default class ToonMaterial extends Material {
         this._material.emissiveIntensity = emissiveIntensity;
     }
 
-    set emissiveMap(emissiveMap) {
-        if(this._emissiveMap == emissiveMap) return;
-        this._setTexture('emissiveMap', emissiveMap);
+    set emissiveMapId(emissiveMapId) {
+        if(this._emissiveMapId == emissiveMapId) return;
+        this._setTexture('emissiveMap', emissiveMapId);
     }
 
-    set map(map) {
-        if(this._map == map) return;
-        this._setTexture('map', map);
+    set mapId(mapId) {
+        if(this._mapId == mapId) return;
+        this._setTexture('map', mapId);
     }
 
-    set normalMap(normalMap) {
-        if(this._normalMap == normalMap) return;
-        this._setTexture('normalMap', normalMap);
+    set normalMapId(normalMapId) {
+        if(this._normalMapId == normalMapId) return;
+        this._setTexture('normalMap', normalMapId);
     }
 
     set normalMapType(normalMapType) {

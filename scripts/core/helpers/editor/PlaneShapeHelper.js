@@ -34,7 +34,7 @@ export default class PlaneShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "width", "name": "Width", "min": 0, "type": NumberField},
         { "parameter": "height", "name": "Height", "min": 0,"type":NumberField},
         { "parameter": "widthSegments", "name": "Width Segments", "min": 1,

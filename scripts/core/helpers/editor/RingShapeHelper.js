@@ -34,7 +34,7 @@ export default class RingShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "innerRadius", "name": "Inner Radius", "min": 0,
             "type": NumberField },
         { "parameter": "outerRadius", "name": "Outer Radius", "min": 0,

@@ -34,7 +34,7 @@ export default class CircleShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "radius", "name": "Radius", "min": 0,
             "type": NumberField },
         { "parameter": "segments", "name": "Sides", "min": 3,

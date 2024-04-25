@@ -16,11 +16,11 @@ export default class BasicMaterial extends Material {
     constructor(params = {}) {
         params['assetId'] = BasicMaterial.assetId;
         super(params);
-        this._alphaMap = params['alphaMap'];
+        this._alphaMapId = params['alphaMapId'];
         this._color = numberOr(params['color'], 0x3d9970);
         this._combine = params['combine'] || THREE.MultiplyOperation;
-        this._envMap = params['envMap'];
-        this._map = params['map'];
+        this._envMapId = params['envMapId'];
+        this._mapId = params['mapId'];
         this._reflectivity = numberOr(params['reflectivity'], 1);
         this._refractionRatio = numberOr(params['refractionRatio'],0.98);
         this._wireframe = params['wireframe'] || false;
@@ -56,29 +56,29 @@ export default class BasicMaterial extends Material {
 
     exportParams() {
         let params = super.exportParams();
-        params['alphaMap'] = this._alphaMap;
+        params['alphaMapId'] = this._alphaMapId;
         params['color'] = this._color;
         params['combine'] = this._combine;
-        params['envMap'] = this._envMap;
-        params['map'] = this._map;
+        params['envMapId'] = this._envMapId;
+        params['mapId'] = this._mapId;
         params['reflectivity'] = this._reflectivity;
         params['refractionRatio'] = this._refractionRatio;
         params['wireframe'] = this._wireframe;
         return params;
     }
 
-    get alphaMap() { return this._alphaMap; }
+    get alphaMapId() { return this._alphaMapId; }
     get color() { return this._color; }
     get combine() { return this._combine; }
-    get envMap() { return this._envMap; }
-    get map() { return this._map; }
+    get envMapId() { return this._envMapId; }
+    get mapId() { return this._mapId; }
     get reflectivity() { return this._reflectivity; }
     get refractionRatio() { return this._refractionRatio; }
     get wireframe() { return this._wireframe; }
 
-    set alphaMap(alphaMap) {
-        if(this._alphaMap == alphaMap) return;
-        this._setTexture('alphaMap', alphaMap);
+    set alphaMapId(alphaMapId) {
+        if(this._alphaMapId == alphaMapId) return;
+        this._setTexture('alphaMap', alphaMapId);
     }
 
     set color(color) {
@@ -94,14 +94,14 @@ export default class BasicMaterial extends Material {
         this._material.needsUpdate = true;
     }
 
-    set envMap(envMap) {
-        if(this._envMap == envMap) return;
-        this._setTexture('envMap', envMap);
+    set envMapId(envMapId) {
+        if(this._envMapId == envMapId) return;
+        this._setTexture('envMap', envMapId);
     }
 
-    set map(map) {
-        if(this._map == map) return;
-        this._setTexture('map', map);
+    set mapId(mapId) {
+        if(this._mapId == mapId) return;
+        this._setTexture('map', mapId);
     }
 
     set reflectivity(reflectivity) {

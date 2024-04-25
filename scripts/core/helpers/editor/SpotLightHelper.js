@@ -51,7 +51,7 @@ export default class SpotLightHelper extends LightHelper {
             "type": NumberField },
         { "parameter": "penumbra", "name": "Penumbra", "min": 0, "max": 1,
             "type": NumberField },
-        { "parameter": "map", "name": "Texture", "type": TextureField },
+        { "parameter": "mapId", "name": "Texture", "type": TextureField },
         "parentId",
         "position",
         "rotation",

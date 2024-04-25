@@ -12,7 +12,7 @@ import { Materials } from '/scripts/core/helpers/constants.js';
 export default class Shape extends AssetEntity {
     constructor(params = {}) {
         super(params);
-        this._material = params['material'];
+        this._materialId = params['materialId'];
     }
 
     _updateGeometry() {
@@ -20,7 +20,7 @@ export default class Shape extends AssetEntity {
     }
 
     _getMaterial() {
-        let materialAsset = ProjectHandler.getAsset(this._material);
+        let materialAsset = ProjectHandler.getAsset(this._materialId);
         if(materialAsset) {
             return materialAsset.material;
         } else {
@@ -30,15 +30,15 @@ export default class Shape extends AssetEntity {
 
     exportParams() {
         let params = super.exportParams();
-        params['material'] = this._material;
+        params['materialId'] = this._materialId;
         return params;
     }
 
-    get material() { return this._material; }
+    get materialId() { return this._materialId; }
     get mesh() { return this._mesh; }
 
-    set material(newValue) {
-        this._material = newValue;
+    set materialId(newValue) {
+        this._materialId = newValue;
         let oldMaterial = this._mesh.material;
         let material = this._getMaterial();
         this._mesh.material = material;

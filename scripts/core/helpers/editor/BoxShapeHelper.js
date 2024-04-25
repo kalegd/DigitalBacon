@@ -17,7 +17,7 @@ export default class BoxShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "width", "name": "Width", "min": 0,
             "type": NumberField },
         { "parameter": "height", "name": "Height", "min": 0,

@@ -34,7 +34,7 @@ export default class SpotLight extends Light {
         this._light.target.position.fromArray([0, -1, 0]);
         this._light.add(this._light.target);
         this._object.add(this._light);
-        this.map = params['map'];
+        this.mapId = params['mapId'];
     }
 
     _getDefaultName() {
@@ -48,7 +48,7 @@ export default class SpotLight extends Light {
         params['decay'] = this.decay;
         params['distance'] = this.distance;
         params['penumbra'] = this.penumbra;
-        params['map'] = this.map;
+        params['mapId'] = this._mapId;
         return params;
     }
 
@@ -56,7 +56,7 @@ export default class SpotLight extends Light {
     //get castShadow() { return this._light.castShadow; }
     get decay() { return this._light.decay; }
     get distance() { return this._light.distance; }
-    get map() { return this._map; }
+    get mapId() { return this._mapId; }
     get penumbra() { return this._light.penumbra; }
 
     set angle(angle) {
@@ -71,21 +71,21 @@ export default class SpotLight extends Light {
 
     set distance(distance) { this._light.distance = distance; }
 
-    set map(map) {
-        let oldMap = this._map;
-        this._map = map;
-        let textureAsset = ProjectHandler.getAsset(map);
+    set mapId(mapId) {
+        let oldMapId = this._mapId;
+        this._mapId = mapId;
+        let textureAsset = ProjectHandler.getAsset(mapId);
         this._light.map = (textureAsset)
             ? textureAsset.texture
             : null;
-        if(oldMap == map) return;
-        if(oldMap) {
-            let topic = PubSubTopics.TEXTURE_RECREATED + ':' + oldMap;
+        if(oldMapId == mapId) return;
+        if(oldMapId) {
+            let topic = PubSubTopics.TEXTURE_RECREATED + ':' + oldMapId;
             PubSub.unsubscribe(this._id, topic);
         }
-        if(map) {
-            let topic = PubSubTopics.TEXTURE_RECREATED + ':' + map;
-            PubSub.subscribe(this._id, topic, () => this.map = map);
+        if(mapId) {
+            let topic = PubSubTopics.TEXTURE_RECREATED + ':' + mapId;
+            PubSub.subscribe(this._id, topic, () => this.mapId = mapId);
         }
     }
 

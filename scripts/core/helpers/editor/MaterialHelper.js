@@ -23,9 +23,9 @@ export default class MaterialHelper extends EditorHelper {
         PubSub.subscribe(this._id, PubSubTopics.TEXTURE_DELETED, (e) => {
             let updatedMaps = [];
             for(let map of maps) {
-                if(this._asset[map] == e.asset.id) {
-                    this._updateParameter(map, null, false, true);
-                    this.updateMenuField(map);
+                if(this._asset[map + 'Id'] == e.asset.id) {
+                    this._updateParameter(map + 'Id', null, false, true);
+                    this.updateMenuField(map + 'Id');
                     updatedMaps.push(map);
                 }
             }
@@ -34,8 +34,8 @@ export default class MaterialHelper extends EditorHelper {
                 e.undoRedoAction.undo = () => {
                     undo();
                     for(let map of updatedMaps) {
-                        this._updateParameter(map, e.asset.id, false,true);
-                        this.updateMenuField(map);
+                        this._updateParameter(map + 'Id',e.asset.id,false,true);
+                        this.updateMenuField(map + 'Id');
                     }
                 };
             }
@@ -52,9 +52,9 @@ export default class MaterialHelper extends EditorHelper {
 
     _updateMapIfUsed(textureId, maps) {
         for(let map of maps) {
-            if(this._asset[map] == textureId) {
+            if(this._asset[map + 'Id'] == textureId) {
                 this._asset._setTexture(map, textureId);
-                this.updateMenuField(map);
+                this.updateMenuField(map + 'Id');
             }
         }
     }

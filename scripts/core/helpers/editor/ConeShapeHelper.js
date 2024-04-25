@@ -17,7 +17,7 @@ export default class ConeShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "height", "name": "Height", "min": 0,
             "type": NumberField },
         { "parameter": "radius", "name": "Radius", "min": 0,

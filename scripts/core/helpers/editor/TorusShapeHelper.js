@@ -17,7 +17,7 @@ export default class TorusShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "radius", "name": "Radius", "min": 0,
             "type": NumberField },
         { "parameter": "tube", "name": "Tube Radius", "min": 0,

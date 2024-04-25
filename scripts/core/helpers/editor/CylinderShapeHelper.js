@@ -17,7 +17,7 @@ export default class CylinderShapeHelper extends ShapeHelper {
 
     static fields = [
         "visualEdit",
-        "material",
+        "materialId",
         { "parameter": "height", "name": "Height", "min": 0,
             "type": NumberField },
         { "parameter": "radiusTop", "name": "Top Radius", "min": 0,

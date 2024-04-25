@@ -31,8 +31,8 @@ export default class Material extends Asset {
     }
 
     _setTexture(param, newValue) {
-        let oldValue = this['_' + param];
-        this['_' + param] = newValue;
+        let oldValue = this['_' + param + 'Id'];
+        this['_' + param + 'Id'] = newValue;
         let textureAsset = ProjectHandler.getAsset(newValue);
         this._material[param] = (textureAsset)
             ? textureAsset.texture
@@ -77,11 +77,11 @@ export default class Material extends Asset {
 
     _updateMaterialParamsWithMaps(params, maps) {
         for(let map of maps) {
-            if(this['_' + map]) {
-                let textureAsset = ProjectHandler.getAsset(this['_' + map]);
+            if(this['_' + map + 'Id']) {
+                let textureAsset = ProjectHandler.getAsset(this['_' +map+'Id']);
                 if(textureAsset) {
                     params[map] = textureAsset.texture;
-                    this._subscribeFor(map, this['_' + map]);
+                    this._subscribeFor(map, this['_' + map + 'Id']);
                 }
             }
         }
