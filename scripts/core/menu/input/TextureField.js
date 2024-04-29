@@ -13,7 +13,7 @@ import { Colors, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { createSmallButton, createWideImageButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Span, Style, Text } from '/scripts/DigitalBacon-UI.js';
 
 class TextureField extends MenuField {
     constructor(params) {
@@ -28,7 +28,9 @@ class TextureField extends MenuField {
     _createInputs(title) {
         this._addTitle(title);
         this._buttonsSpan = new Span({ height: 0.03, width: 0.17 });
+        this._textureColorStyle = new Style({ materialColor: 0xffffff });
         this._textureSelection = createWideImageButton('');
+        this._textureSelection.addStyle(this._textureColorStyle);
         this._textureSelection.textComponent.fontSize = 0.017;
         this._textureSelection.height = 0.03;
         this._textureSelection.width = 0.13;
@@ -130,7 +132,7 @@ class TextureField extends MenuField {
         if(material.map?.image != texture?.image)
             this._textureSelection.updateTexture(texture);
         if(!material.color.equals(color))
-            material.color = color;
+            this._textureColorStyle.materialColor = color;
     }
 
     updateFromSource() {

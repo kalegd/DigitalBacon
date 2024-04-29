@@ -31,17 +31,19 @@ class AcknowledgementsPage extends MenuPage {
 
         this._acknowledgementsContainer = new Span({
             height: 0.2,
+            justifyContent: 'spaceEvenly',
             width: 0.45,
         });
 
         let columnBlock = new Div({
             height: 0.2,
-            justifyContent: 'center',
+            justifyContent: 'spaceBetween',
             width: 0.31,
         });
 
         this._textureBlock = new Image(Textures.ellipsisIcon, {
             height: 0.085,
+            textureFit: 'cover',
             width: 0.1,
         });
         columnBlock.add(this._textureBlock);
@@ -53,10 +55,10 @@ class AcknowledgementsPage extends MenuPage {
         columnBlock.add(this._licenseBlock);
 
         this._sourceButtonParent = new Div();
-        let sourceButton = createWideButton('View Source');
-        this._sourceButtonParent.add(sourceButton);
+        this._sourceButton = createWideButton('View Source');
+        this._sourceButtonParent.add(this._sourceButton);
         columnBlock.add(this._sourceButtonParent);
-        sourceButton.onClickAndTouch = () => {
+        this._sourceButton.onClickAndTouch = () => {
             if(global.deviceType == 'XR') SessionHandler.exitXRSession();
             window.open(this._acknowledgements[this._page]['Source URL'],
                 '_blank');
@@ -139,9 +141,9 @@ class AcknowledgementsPage extends MenuPage {
             this._textureBlock.visible = false;
         }
         if(acknowledgement['Source URL']) {
-            this._sourceButtonParent.add(sourceButton);
+            this._sourceButtonParent.add(this._sourceButton);
         } else {
-            this._sourceButtonParent.remove(sourceButton);
+            this._sourceButtonParent.remove(this._sourceButton);
         }
     }
 

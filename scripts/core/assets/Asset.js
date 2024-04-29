@@ -43,8 +43,7 @@ export default class Asset {
 
     updateFromParams(params) {
         for(let key in params) {
-            let setter = 'set' + key.charAt(0).toUpperCase() + key.slice(1);
-            if(this[setter]) this[setter](params[key]);
+            if(this[key] != params[key]) this[key] = params[key];
         }
     }
 
