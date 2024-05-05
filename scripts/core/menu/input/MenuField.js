@@ -10,8 +10,8 @@ import { Span, Style, Text } from '/scripts/DigitalBacon-UI.js';
 
 
 const SPAN_STYLE = new Style({
-    height: 0.05,
     justifyContent: 'spaceBetween',
+    minHeight: 0.05,
     width: 0.31,
 });
 

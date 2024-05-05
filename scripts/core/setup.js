@@ -73,6 +73,10 @@ import Main from '/scripts/core/Main.js';
 import * as THREE from 'three';
 import { DeviceTypes } from '/scripts/DigitalBacon-UI.js';
 
+/* global JSZip */
+let currDate = new Date();
+JSZip.defaults.date = new Date(currDate.getTime() - currDate.getTimezoneOffset()
+        * 60000);
 global.deviceType = DeviceTypes.TOUCH_SCREEN;
 global.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
 

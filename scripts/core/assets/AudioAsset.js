@@ -66,15 +66,16 @@ export default class AudioAsset extends PlayableMediaAsset {
     get coneOuterAngle() { return this._coneOuterAngle; }
     get coneOuterGain() { return this._coneOuterGain; }
     get distanceModel() { return this._distanceModel; }
-    get isPlaying() {
+    get isPlaying() { return this._media.isPlaying; }
+    get loop() { return super.loop; }
+    get maxDistance() { return this._maxDistance; }
+    get progress() {
         if(this._media.isPlaying) {
             this._media.pause();//pause() update audio._progress
             this._media.play();
         }
-        return this._media.isPlaying;
+        return this._media._progress;
     }
-    get maxDistance() { return this._maxDistance; }
-    get progress() { return this._media._progress; }
     get refDistance() { return this._refDistance; }
     get rolloffFactor() { return this._rolloffFactor; }
     get volume() { return this._volume; }
@@ -133,8 +134,9 @@ export default class AudioAsset extends PlayableMediaAsset {
         this._media.setVolume(volume);
     }
 
-    _addPartySubscriptions() {
-        super._addPartySubscriptions();
+    play(position, ignorePublish) {
+        if(this._media.isPlaying) this._media.pause();
+        super.play(position, ignorePublish);
     }
 
     static assetType = AssetTypes.AUDIO;

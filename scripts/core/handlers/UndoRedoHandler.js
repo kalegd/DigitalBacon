@@ -9,10 +9,15 @@ import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js
 import { Div } from '/scripts/DigitalBacon-UI.js';
 
 class UndoRedoHandler {
-    init() {
+    constructor() {
         this._currentAction = {};
         this._disableOwners = new Set();
+        this._disableOwners.add(this);
+    }
+
+    init() {
         this._setupButtons();
+        this._disableOwners.delete(this);
     }
 
     _setupButtons() {

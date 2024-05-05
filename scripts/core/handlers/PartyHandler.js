@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import Party from '/scripts/core/clients/Party.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
@@ -46,16 +47,24 @@ class PartyHandler {
             let peer = this._peers[peerId];
             if(peer.rtc) peer.rtc.close();
             if(peer.controller) {
-                ProjectHandler.deleteAsset(peer.controller, true, true);
+                this._deleteInternal(peer.controller);
                 let avatar = peer.controller.avatar;
-                if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
+                if(avatar) this._deleteInternal(avatar);
                 for(let device of peer.controller.getXRDevices()) {
-                    ProjectHandler.deleteAsset(device, true, true);
+                    this._deleteInternal(device);
                 }
             }
         }
         this._peers = {};
         PartyMessageHelper.handlePartyEnded();
+    }
+
+    _deleteInternal(instance) {
+        PartyMessageHelper._handleInstanceDeleted(null, {
+            id: instance.id,
+            assetId: instance.assetId,
+            assetType: AssetTypes.INTERNAL,
+        });
     }
 
     _registerPeer(rtc) {
@@ -83,11 +92,11 @@ class PartyHandler {
         });
         rtc.setOnDisconnect(() => {
             if(peer.controller) {
-                ProjectHandler.deleteAsset(peer.controller, true, true);
+                this._deleteInternal(peer.controller);
                 let avatar = peer.controller.avatar;
-                if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
+                if(avatar) this._deleteInternal(avatar);
                 for(let device of peer.controller.getXRDevices()) {
-                    ProjectHandler.deleteAsset(device, true, true);
+                    this._deleteInternal(device);
                 }
             }
             if(peer.id in this._peers) {

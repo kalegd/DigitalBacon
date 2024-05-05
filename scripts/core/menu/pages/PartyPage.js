@@ -246,6 +246,7 @@ class PartyPage extends DynamicFieldsPage {
 class ButtonEntity extends MenuField {
     constructor(title, action) {
         super();
+        this.minHeight = 0;
         this.height = 0.043;
         let button = createWideButton(title);
         button.onClickAndTouch = action;
@@ -257,6 +258,7 @@ class ButtonEntity extends MenuField {
 class TextEntity extends MenuField {
     constructor(text) {
         super();
+        this.minHeight = 0;
         this.height = 0.043;
         this.add(new Text(text, Styles.bodyText, {
             height: 0.035,
@@ -268,6 +270,7 @@ class TextEntity extends MenuField {
 class PeerEntity extends MenuField {
     constructor(peer, username, controller, designateHostCallback) {
         super();
+        this.minHeight = 0;
         this.height = 0.043;
         this._peer = peer;
         this._controller = controller;

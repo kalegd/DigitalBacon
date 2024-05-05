@@ -99,11 +99,11 @@ export default class PlayableMediaEntity extends AssetEntity{
         if(position) {
             message = concatenateArrayBuffers(type, position);
         } else {
-            message = concatenateArrayBuffers(type);
+            message = type;
         }
         if(peer) {
             PartyHandler.publishInternalBufferMessage(this._idBytes, message, 
-                peer);
+                false, peer);
         } else {
             PartyHandler.publishInternalBufferMessage(this._idBytes, message);
         }
@@ -133,6 +133,9 @@ export default class PlayableMediaEntity extends AssetEntity{
     }
 
     _addPartySubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            this._onPeerReady(message.peer);
+        });
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(PartyHandler.isHost());
         });
@@ -147,9 +150,6 @@ export default class PlayableMediaEntity extends AssetEntity{
             } else if(type[0] == PlayableMediaActions.STOP) {
                 this.stop(true);
             }
-        });
-        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            this._onPeerReady(message.peer);
         });
     }
 
@@ -166,4 +166,8 @@ export default class PlayableMediaEntity extends AssetEntity{
         this.stop(true);
     }
 
+    onRemoveFromProject() {
+        this.stop(true);
+        super.onRemoveFromProject();
+    }
 }

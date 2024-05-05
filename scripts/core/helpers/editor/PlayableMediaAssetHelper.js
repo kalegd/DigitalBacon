@@ -5,6 +5,7 @@
  */
 
 import PlayableMediaAsset from '/scripts/core/assets/PlayableMediaAsset.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 
@@ -23,7 +24,8 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
             set: (previewMedia) => {
                 this._previewMedia = previewMedia;
                 if(previewMedia) {
-                    this._asset.play(null, true);
+                    if(ProjectHandler.getAsset(this._id))
+                        this._asset.play(null, true);
                 } else {
                     this._asset.stop(true);
                 }

@@ -67,6 +67,7 @@ export default class VideoAsset extends PlayableMediaAsset {
         return !this._media.paused && !this._media.ended
             && this._media.currentTime > 0 && this._media.readyState > 2;
     }
+    get loop() { return super.loop; }
     get progress() { return this._media.currentTime; }
     get side() { return this._material.side; }
     get video() { return this._media; }
@@ -95,11 +96,6 @@ export default class VideoAsset extends PlayableMediaAsset {
                 this._alreadyAutoplayed = true;
             }
         });
-    }
-
-    onRemoveFromProject() {
-        this.stop(true);
-        super.onRemoveFromProject();
     }
 
     static assetType = AssetTypes.VIDEO;

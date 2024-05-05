@@ -59,7 +59,7 @@ export default class System extends Asset {
         this._subscriptionTopics.push(PubSubTopics.PARTY_ENDED);
     }
 
-    _removeSubscriptions() {
+    _removeSystemSubscriptions() {
         for(let subscription of this._subscriptionTopics) {
             PubSub.unsubscribe(this._id, subscription);
         }
@@ -141,7 +141,7 @@ export default class System extends Asset {
     }
 
     onRemoveFromProject() {
-        this._removeSubscriptions();
+        this._removeSystemSubscriptions();
     }
 
     static assetType = AssetTypes.SYSTEM;
