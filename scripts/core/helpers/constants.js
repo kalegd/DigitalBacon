@@ -154,7 +154,6 @@ let smallButtonStyle = new Style({
     height: 0.04,
     justifyContent: 'center',
     materialColor: Colors.defaultIdle,
-    opacity: 0.7,
     width: 0.04,
 });
 let wideButtonStyle = new Style({

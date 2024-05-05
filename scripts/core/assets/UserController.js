@@ -77,6 +77,7 @@ class UserController extends InternalAssetEntity {
 
     get avatar() { return this._avatar; }
     get isXR() { return this._isXR; }
+    get scale() { return super.scale; }
     get username() { return this._username; }
 
     set avatarUrl(url) {
