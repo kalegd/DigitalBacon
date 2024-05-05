@@ -156,7 +156,7 @@ export default class AssetEntityHelper extends EditorHelper {
         this._disableParam('position');
         this._disableParam('rotation');
         this._disableParam('scale');
-        this._subscribeToPeerDisconnected(peer.id);
+        this._subscribeToPeerDisconnected(peer.id, message.ownerId);
         if(message.isXR) {
             if(message.type == 'translate') {
                 TranslateHandler.attach(message.ownerId, this._asset,
@@ -204,8 +204,13 @@ export default class AssetEntityHelper extends EditorHelper {
         this._addActions();
     }
 
-    _subscribeToPeerDisconnected(peerId) {
+    _subscribeToPeerDisconnected(peerId, ownerId) {
+        let lastState = this.getObjectTransformation();
         PubSub.subscribe(this._id, 'PEER_DISCONNECTED:' + peerId, () => {
+            for(let param in lastState) {
+                this._asset[param] = lastState[param];
+            }
+            this._asset.addTo(this._asset.parent);
             this._enableParam('position');
             this._enableParam('rotation');
             this._enableParam('scale');
