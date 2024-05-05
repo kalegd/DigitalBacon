@@ -378,7 +378,7 @@ export default class EditorHelper {
     _createTextureField(field) {
         return new TextureField({
             'title': field.name,
-            'filter': field.filter,
+            'filter': Array.isArray(field.filter) ? field.filter : null,
             'initialValue': this._asset[field.parameter],
             'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {

@@ -47,9 +47,8 @@ class TextureField extends MenuField {
             filteredTextures["null\n"] = { Name: "Blank" };
             for(let textureId in textures) {
                 if(this._filter &&
-                        this._filter != textures[textureId].textureType) {
+                        !this._filter.includes(textures[textureId].textureType))
                     continue;
-                }
                 filteredTextures[textureId] =
                     { Name: textures[textureId].name };
             }
@@ -76,7 +75,7 @@ class TextureField extends MenuField {
         let currentPage = global.menuController.getCurrentPage();
         let options = TexturesHandler.getAssetClasses();
         if(this._filter)
-            options = options.filter(o => o.textureType == this._filter);
+            options = options.filter(o => this._filter.includes(o.textureType));
         if(options.length == 1) {
             let texture = TexturesHandler.addNewAsset(options[0].assetId);
             this._handleTextureSelection(texture.id);
