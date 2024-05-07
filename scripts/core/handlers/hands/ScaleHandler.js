@@ -6,6 +6,7 @@
 
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
@@ -19,6 +20,24 @@ class ScaleHandler {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
                     this.detach(heldAsset.ownerId);
+            }
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, (message) => {
+            if(!PartyHandler.isHost()) this._heldAssets = {};
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PEER_CONNECTED, (message) => {
+            for(let key in this._heldAssets) {
+                let heldAsset = this._heldAssets[key];
+                let asset = heldAsset.asset;
+                if(heldAsset.preTransformState)
+                    PartyHandler.publishInternalMessage('instance_attached', {
+                        id: asset.id,
+                        assetId: asset.assetId,
+                        ownerId: key,
+                        type: 'scale',
+                        scale: heldAsset.scaleIdentity,
+                        isXR: true,
+                    }, false, message.peer);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -78,6 +97,7 @@ class ScaleHandler {
             };
             if(scaleIdentity) {
                 heldAsset.scaleIdentity = scaleIdentity;
+                this._subscribeToDeletionOf(ownerId);
             } else {
                 let distance = ProjectHandler.getAsset(ownerId)
                     .getWorldPosition().distanceTo(asset.getWorldPosition());
@@ -117,6 +137,7 @@ class ScaleHandler {
             });
         } else {
             heldAsset.asset.scale = scale;
+            this._unsubscribeFromDeletionOf(ownerId);
         }
     }
 
@@ -129,8 +150,10 @@ class ScaleHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
+        let ownerAsset = ProjectHandler.getAsset(heldAsset.ownerId);
+        if(!ownerAsset) return;
         let distance = heldAsset.asset.getWorldPosition().distanceTo(
-            ProjectHandler.getAsset(heldAsset.ownerId).getWorldPosition());
+            ownerAsset.getWorldPosition());
         let newScale = [
             heldAsset.scaleIdentity[0] * distance,
             heldAsset.scaleIdentity[1] * distance,
@@ -152,12 +175,26 @@ class ScaleHandler {
         delete this._heldAssets[oldOwner];
         if(scaleIdentity) {
             heldAsset.scaleIdentity = scaleIdentity;
+            this._unsubscribeFromDeletionOf(oldOwner);
+            this._subscribeToDeletionOf(newOwner);
         } else {
             let distance = ProjectHandler.getAsset(newOwner).getWorldPosition()
                 .distanceTo(heldAsset.asset.getWorldPosition());
             let scale = heldAsset.asset.getWorldScale();
             heldAsset.scaleIdentity = scale.divideScalar(distance).toArray();
         }
+    }
+
+    _subscribeToDeletionOf(ownerId) {
+        PubSub.subscribe(this._id, 'INTERNAL_DELETED', (message) => {
+            for(let key in this._heldAssets) {
+                if(message.asset.id == key) delete this._heldAssets[key];
+            }
+        });
+    }
+
+    _unsubscribeFromDeletionOf(ownerId) {
+        PubSub.unsubscribe(this._id, 'INTERNAL_DELETED');
     }
 }
 

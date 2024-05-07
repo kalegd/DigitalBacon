@@ -46,14 +46,7 @@ class PartyHandler {
         for(let peerId in this._peers) {
             let peer = this._peers[peerId];
             if(peer.rtc) peer.rtc.close();
-            if(peer.controller) {
-                this._deleteInternal(peer.controller);
-                let avatar = peer.controller.avatar;
-                if(avatar) this._deleteInternal(avatar);
-                for(let device of peer.controller.getXRDevices()) {
-                    this._deleteInternal(device);
-                }
-            }
+            PartyMessageHelper.handlePeerDisconnected(peer);
         }
         this._peers = {};
         PartyMessageHelper.handlePartyEnded();
@@ -92,12 +85,12 @@ class PartyHandler {
         });
         rtc.setOnDisconnect(() => {
             if(peer.controller) {
-                this._deleteInternal(peer.controller);
-                let avatar = peer.controller.avatar;
-                if(avatar) this._deleteInternal(avatar);
                 for(let device of peer.controller.getXRDevices()) {
                     this._deleteInternal(device);
                 }
+                let avatar = peer.controller.avatar;
+                if(avatar) this._deleteInternal(avatar);
+                this._deleteInternal(peer.controller);
             }
             if(peer.id in this._peers) {
                 delete this._peers[peer.id];

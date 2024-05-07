@@ -156,7 +156,8 @@ export default class AssetEntityHelper extends EditorHelper {
         this._disableParam('position');
         this._disableParam('rotation');
         this._disableParam('scale');
-        this._subscribeToPeerDisconnected(peer.id, message.ownerId);
+        if(!message.twoHandScaling)
+            this._subscribeToPeerDisconnected(peer.id, message.ownerId);
         if(message.isXR) {
             if(message.type == 'translate') {
                 TranslateHandler.attach(message.ownerId, this._asset,

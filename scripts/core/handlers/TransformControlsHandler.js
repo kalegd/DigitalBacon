@@ -9,6 +9,7 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
@@ -42,6 +43,33 @@ class TransformControlsHandler {
             if(handTool == InteractionTools.EDIT) return;
             for(let ownerId in this._attachedAssets) {
                 this.detach(ownerId);
+            }
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
+            if(PartyHandler.isHost()) return;
+            for(let ownerId in this._attachedAssets) {
+                this.detach(ownerId);
+            }
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PEER_CONNECTED, (message) => {
+            for(let key in this._attachedAssets) {
+                let asset = this._attachedAssets[key];
+                let isXR = !(key == 'POINTER' || key == 'TOUCH_SCREEN');
+                let twoHandScaling = false;
+                if(isXR) {
+                    let otherKey = this._otherOption(global.userController,key);
+                    if(asset == this._attachedAssets[otherKey])
+                        twoHandScaling = true;
+                }
+                PartyHandler.publishInternalMessage('instance_attached', {
+                    id: asset.id,
+                    assetId: asset.assetId,
+                    ownerId: key,
+                    position: asset.position,
+                    rotation: asset.rotation,
+                    isXR: isXR,
+                    twoHandScaling: twoHandScaling,
+                }, false, message.peer);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -477,7 +505,7 @@ class TransformControlsHandler {
         } else {
             this._transformControls.detach();
             $("#transform-controls").addClass("hidden");
-            let preState = this._preTransformStates[global.deviceType];
+            let preState = this._preTransformStates[asset.id];
             let assetHelper = asset.editorHelper;
             for(let param in preState) {
                 asset.object[param].fromArray(preState[param]);
