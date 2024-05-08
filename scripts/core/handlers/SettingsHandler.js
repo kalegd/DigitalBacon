@@ -54,15 +54,6 @@ class SettingsHandler {
             this.settings['Acknowledgements'] = [];
         } else {
             this.settings = settings;
-            //Temporary fix for migrating Skybox
-            if(!Array.isArray(this.settings['Skybox'])) {
-                let temp = new Array(6);
-                for(let side in this.settings['Skybox']) {
-                    temp[CubeSides[side]] = this.settings['Skybox'][side];
-                }
-                this.settings['Skybox'] = temp;
-            }
-            //End temporary fix
             if(!this.settings['Acknowledgements']) {
                 this.settings['Acknowledgements'] = [];
             }

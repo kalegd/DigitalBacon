@@ -11,6 +11,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { Euler, Quaternion } from 'three';
+import { InteractionToolHandler } from '/scripts/DigitalBacon-UI.js';
 
 class RotateHandler {
     constructor() {
@@ -19,7 +20,7 @@ class RotateHandler {
         this._quaternion = new Quaternion();
         this._euler1 = new Euler();
         this._euler2 = new Euler();
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
+        InteractionToolHandler.addUpdateListener(() => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)

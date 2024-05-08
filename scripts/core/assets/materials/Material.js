@@ -99,8 +99,6 @@ export default class Material extends Asset {
         return null;
     }
 
-    getMaterial() { return this._material; }
-
     get material() { return this._material; }
     get opacity() { return this._opacity; }
     get side() { return this._side; }

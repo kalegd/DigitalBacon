@@ -18,15 +18,6 @@ export default class CubeTexture extends Texture {
     constructor(params = {}) {
         params['assetId'] = CubeTexture.assetId;
         super(params);
-        //Temporary fix for migrating Skybox
-        if(params['images'] && !Array.isArray(params['images'])) {
-            let temp = new Array(6);
-            for(let side in params['images']) {
-                temp[CubeSides[side]] = params['images'][side];
-            }
-            params['images'] = temp;
-        }
-        //End temporary fix
         this._images = params['images'] || [...new Array(6)];
         this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
         this._createTexture();

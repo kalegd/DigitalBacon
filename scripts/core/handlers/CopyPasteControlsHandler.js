@@ -9,7 +9,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { GripInteractableHandler } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractableHandler, InteractionToolHandler } from '/scripts/DigitalBacon-UI.js';
 
 class CopyPasteControlsHandler {
     constructor() {
@@ -19,7 +19,7 @@ class CopyPasteControlsHandler {
         this._previewAssets = {};
         GripInteractableHandler.registerToolHandler(InteractionTools.COPY_PASTE,
             (controller) => this._toolHandler(controller));
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
+        InteractionToolHandler.addUpdateListener(() => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByGrip = {};
         });

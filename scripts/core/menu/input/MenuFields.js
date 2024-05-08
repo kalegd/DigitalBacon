@@ -29,18 +29,3 @@ export { TextField };
 export { TextureField };
 export { Vector2Field };
 export { Vector3Field };
-
-export { AssetEntityField as AssetEntityInput };
-export { AudioField as AudioInput };
-export { CheckboxField as CheckboxInput };
-export { ColorField as ColorInput };
-export { CubeImageField as CubeImageInput };
-export { EnumField as EnumInput };
-export { EulerField as EulerInput };
-export { ImageField as ImageInput };
-export { MaterialField as MaterialInput };
-export { NumberField as NumberInput };
-export { TextField as TextInput };
-export { TextureField as TextureInput };
-export { Vector2Field as Vector2Input };
-export { Vector3Field as Vector3Input };

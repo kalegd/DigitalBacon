@@ -32,7 +32,7 @@ export default class AssetEntity extends Asset {
         }
         this.children = new Set();
         this.parent = ProjectHandler.getSessionAsset(this._parentId);
-        if(this.parent) this.parent.children.add(this);
+        if(this.parent && !params.isPreview) this.parent.children.add(this);
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
@@ -73,6 +73,7 @@ export default class AssetEntity extends Asset {
         params['visualEdit'] = false;
         params['isPreview'] = true;
         delete params['id'];
+        delete params['parentId'];
         return new this.constructor(params);
     }
 
@@ -89,8 +90,6 @@ export default class AssetEntity extends Asset {
     _updateBVH() {
         utils.updateBVHForComplexObject(this._object);
     }
-
-    getObject() { return this._object; }
 
     get gripInteractable() { return this._object.gripInteractable; }
     get object() { return this._object; }

@@ -10,12 +10,13 @@ import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { InteractionToolHandler } from '/scripts/DigitalBacon-UI.js';
 
 class TranslateHandler {
     constructor() {
         this._id = uuidv4();
         this._heldAssets = {};
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
+        InteractionToolHandler.addUpdateListener(() => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)

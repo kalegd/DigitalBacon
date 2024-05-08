@@ -15,17 +15,6 @@ import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { uuidv4, storeStringValuesInSet } from '/scripts/core/helpers/utils.module.js';
 
 /* global JSZip, JSZipUtils */
-const migrateKeys = new Set();
-migrateKeys.add('material');
-migrateKeys.add('alphaMap');
-migrateKeys.add('bumpMap');
-migrateKeys.add('displacementMap');
-migrateKeys.add('emissiveMap');
-migrateKeys.add('envMap');
-migrateKeys.add('map');
-migrateKeys.add('metalnessMap');
-migrateKeys.add('normalMap');
-migrateKeys.add('roughnessMap');
 
 class ProjectHandler {
     constructor() {
@@ -66,8 +55,6 @@ class ProjectHandler {
                     //this._projectDetails needs to be immutable hence the copy
                     this._projectDetails = JSON.parse(projectDetailsString);
                     projectDetailsCopy = JSON.parse(projectDetailsString);
-                    this._tempForMigration(this._projectDetails);
-                    this._tempForMigration(projectDetailsCopy);
                 } catch(error) {
                     this._handleLoadingError(errorCallback);
                     return;
@@ -98,7 +85,6 @@ class ProjectHandler {
                 let projectDetails;
                 try {
                     projectDetails = JSON.parse(projectDetailsString);
-                    this._tempForMigration(projectDetails);
                 } catch(error) {
                     console.error(error);
                     if(errorCallback) errorCallback();
@@ -123,22 +109,6 @@ class ProjectHandler {
                     if(successCallback) successCallback();
                 }, () => { if(errorCallback) errorCallback(); });
             }, () => { if(errorCallback) errorCallback(); });
-    }
-
-    _tempForMigration(data) {
-        for(let key in data) {
-            if(migrateKeys.has(key) && typeof data[key] == 'string') {
-                data[key + 'Id'] = data[key];
-            } else if(Array.isArray(data[key])) {
-                for(let v of data[key]) {
-                    if(v && typeof v == 'object') {
-                        this._tempForMigration(v);
-                    }
-                }
-            } else if(!Array.isArray(data[key]) && data[key] && typeof data[key] == 'object') {
-                this._tempForMigration(data[key]);
-            }
-        }
     }
 
     _createDependencyGraph(projectDetails) {

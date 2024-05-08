@@ -47,8 +47,6 @@ export default class Texture extends Asset {
         }, 20);
     }
 
-    getTexture() { return this._texture; }
-
     get colorSpace() { return this._colorSpace; }
     get texture() { return this._texture; }
     get previewTexture() { return this._texture; }

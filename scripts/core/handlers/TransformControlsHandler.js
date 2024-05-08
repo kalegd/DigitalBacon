@@ -18,7 +18,7 @@ import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { TransformControls } from '/node_modules/three/examples/jsm/controls/TransformControls.js';
-import { Handedness, InputHandler, PointerInteractableHandler } from '/scripts/DigitalBacon-UI.js';
+import { Handedness, InputHandler, InteractionToolHandler, PointerInteractableHandler } from '/scripts/DigitalBacon-UI.js';
 
 const BUTTON_QUERY = '#digital-bacon-transform-controls > button';
 const MODES = ['translate', 'rotate', 'scale'];
@@ -40,7 +40,7 @@ class TransformControlsHandler {
             scene.add(this._transformControls);
             this._addEventListeners();
         }
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, (handTool) => {
+        InteractionToolHandler.addUpdateListener((handTool) => {
             if(handTool == InteractionTools.EDIT) return;
             for(let ownerId in this._attachedAssets) {
                 this.detach(ownerId);
@@ -325,6 +325,7 @@ class TransformControlsHandler {
 
     _scaleWithTwoHands() {
         let distance = global.userController.getDistanceBetweenHands();
+        if(distance == null) return;
         let factor = distance / this._initialScalingDistance;
         let asset;
         for(let ownerId in this._attachedAssets) {

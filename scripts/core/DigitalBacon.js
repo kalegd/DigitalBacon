@@ -51,7 +51,6 @@ if(window != null) {
         Interactables: Interactables,
         LibraryHandler: LibraryHandler,
         MenuFields: MenuFields,
-        MenuInputs: MenuFields,
         PartyHandler: PartyHandler,
         PartyMessageHelper: PartyMessageHelper,
         ProjectHandler: ProjectHandler,

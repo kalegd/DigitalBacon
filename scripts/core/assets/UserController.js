@@ -138,12 +138,12 @@ class UserController extends InternalAssetEntity {
         if(global.deviceType != 'XR') return;
         let leftController = this._xrControllers[Handedness.LEFT];
         let rightController = this._xrControllers[Handedness.RIGHT];
-        if(!leftController || !rightController) return;
-        if(!leftController.isInScene()) {
+        if(!leftController || !rightController) {
             leftController = this._xrHands[Handedness.LEFT];
             rightController = this._xrHands[Handedness.RIGHT];
             if(!leftController || !rightController) return;
         }
+        if(!leftController.isInScene() || !rightController.isInScene()) return;
 
         let leftPosition = leftController.getWorldPosition();
         let rightPosition = rightController.getWorldPosition();

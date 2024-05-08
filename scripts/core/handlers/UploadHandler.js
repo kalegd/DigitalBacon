@@ -24,12 +24,11 @@ class UploadHandler {
         this._input.type = "file";
         this._locks = new Set();
         this._assetIds = [];
-        this._fileListenerActive = false;
         this._addEventListeners();
     }
 
     _addEventListeners() {
-        this._input.addEventListener("change", () => { this._upload(); });
+        this._input.addEventListener("change", () => this._upload());
         if(global.deviceType != "XR") {
             this._input.addEventListener("click",
                 (e) => { e.stopPropagation(); });
@@ -129,10 +128,7 @@ class UploadHandler {
     }
 
     triggerAssetsUpload(callback, supportMultipleFiles, type) {
-        if(this._fileListenerActive)
-            throw new Error("File listener already in use");
         this._callback = callback;
-        this._fileListenerActive = true;
         this._input.multiple = supportMultipleFiles;
         this._upload = this._uploadAssets;
         if(type == AssetTypes.IMAGE) {
@@ -153,12 +149,10 @@ class UploadHandler {
     }
 
     triggerProjectFileUpload(callback) {
-        if(this._fileListenerActive)
-            throw new Error("File listener already in use");
         this._callback = callback;
-        this._fileListenerActive = true;
         this._input.multiple = false;
         this._input.accept = '.zip';
+        this._input.value = '';
         this._upload = this._uploadProjectFile;
         if(global.deviceType == 'XR') {
             SessionHandler.exitXRSession();
