@@ -27,7 +27,6 @@
   "dependencies": {
     "file-saver": "2.0.5",
     "jest-environment-jsdom": "^29.7.0",
-    "jquery": "^3.6.0",
     "jszip": "3.10.1",
     "jszip-utils": "0.1.0",
     "nipplejs": "0.9.1",

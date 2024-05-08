@@ -20,6 +20,7 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { TransformControls } from '/node_modules/three/examples/jsm/controls/TransformControls.js';
 import { Handedness, InputHandler, PointerInteractableHandler } from '/scripts/DigitalBacon-UI.js';
 
+const BUTTON_QUERY = '#digital-bacon-transform-controls > button';
 const MODES = ['translate', 'rotate', 'scale'];
 
 class TransformControlsHandler {
@@ -144,13 +145,13 @@ class TransformControlsHandler {
         placeButton.addEventListener('click', () => {
             this._placingObject[global.deviceType] =
                 !this._placingObject[global.deviceType];
-            $("#transform-controls > button").removeClass("selected");
+            this._clearSelected();
             if(this._placingObject[global.deviceType]) {
-                $(placeButton).addClass("selected");
+                placeButton.classList.add("selected");
                 this._transformControls.detach();
             } else {
-                $('#' + this._transformControls.mode + "-button")
-                    .addClass("selected");
+                document.getElementById(this._transformControls.mode +"-button")
+                    .classList.add("selected");
                 this._transformControls.attach(
                     this._attachedAssets[global.deviceType].object);
             }
@@ -172,8 +173,8 @@ class TransformControlsHandler {
         for(let mode of MODES) {
             let button = document.getElementById(mode + "-button");
             button.addEventListener('click', () => {
-                $("#transform-controls > button").removeClass("selected");
-                $(button).addClass("selected");
+                this._clearSelected();
+                button.classList.add("selected");
                 this._transformControls.setMode(mode);
                 this._placingObject[global.deviceType] = false;
                 this._transformControls.attach(
@@ -189,6 +190,13 @@ class TransformControlsHandler {
                 this.detach();
             }
         });
+    }
+
+    _clearSelected() {
+        let buttons = document.querySelectorAll(BUTTON_QUERY);
+        for(let button of buttons) {
+            button.classList.remove('selected');
+        }
     }
 
     _copy(e) {
@@ -293,10 +301,9 @@ class TransformControlsHandler {
                 if(global.deviceType == 'XR') {
                     attachedAsset.attachTo(attachedAsset.parent, true);
                 } else {
-                    $("#transform-controls > button")
-                        .removeClass("selected");
-                    $('#' + this._transformControls.mode + "-button")
-                        .addClass("selected");
+                    this._clearSelected();
+                    document.getElementById(this._transformControls.mode
+                        + "-button").classList.add("selected");
                     this._transformControls.attach(
                         attachedAsset.object);
                     this._placingObject[ownerId] = false;
@@ -404,10 +411,11 @@ class TransformControlsHandler {
             asset.editorHelper._disableParam('rotation');
             asset.editorHelper._disableParam('scale');
             this._transformControls.attach(asset.object);
-            $("#transform-controls").removeClass("hidden");
-            $("#transform-controls > button").removeClass("selected");
-            $('#' + this._transformControls.mode + "-button")
-                .addClass("selected");
+            document.getElementById("digital-bacon-transform-controls")
+                .classList.remove("hidden");
+            this._clearSelected();
+            document.getElementById(this._transformControls.mode + "-button")
+                .classList.add("selected");
         }
         PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED,publishMessage);
     }
@@ -462,7 +470,8 @@ class TransformControlsHandler {
         delete this._attachedAssets[ownerId];
         this._placingObject[ownerId] = false;
         this._transformControls.detach();
-        $("#transform-controls").addClass("hidden");
+        document.getElementById("digital-bacon-transform-controls").classList
+            .add("hidden");
         PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED,publishMessage);
         if(assetHelper && preState && postState)
             assetHelper.setObjectTransformation(preState, postState, false,
@@ -504,7 +513,8 @@ class TransformControlsHandler {
                 UndoRedoHandler.enable(this._id);
         } else {
             this._transformControls.detach();
-            $("#transform-controls").addClass("hidden");
+            document.getElementById("digital-bacon-transform-controls")
+                .classList.add("hidden");
             let preState = this._preTransformStates[asset.id];
             let assetHelper = asset.editorHelper;
             for(let param in preState) {

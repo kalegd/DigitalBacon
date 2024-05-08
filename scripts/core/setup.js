@@ -193,12 +193,12 @@ function setupContainer(containerId) {
     opacity: 1;
 }
 
-#transform-controls {
+#digital-bacon-transform-controls {
     position: absolute;
     top: 50px;
 }
 
-#transform-controls > button, #ready-player-me-close-button {
+#digital-bacon-transform-controls > button, #ready-player-me-close-button {
     border-width: 1px;
     border-style: solid;
     border-color: #fff;
@@ -214,13 +214,13 @@ function setupContainer(containerId) {
     text-align: left;
 }
 
-#transform-controls > button:hover, #transform-controls > button.selected {
+#digital-bacon-transform-controls > button:hover, #digital-bacon-transform-controls > button.selected {
     opacity: 1;
     font-weight: bold;
     background-color: black;
 }
 
-#transform-controls > button > i {
+#digital-bacon-transform-controls > button > i {
     font-size: 18px;
     width: 25px;
 }
@@ -255,7 +255,7 @@ function setupContainer(containerId) {
     if(global.deviceType == DeviceTypes.TOUCH_SCREEN)
         style.innerHTML += `
 @media screen and (max-height: 500px) {
-    #transform-controls {
+    #digital-bacon-transform-controls {
         max-height: calc(100% - 169px);
         overflow: scroll;
     }
@@ -276,7 +276,7 @@ function setupContainer(containerId) {
       <div id="digital-bacon-error">
         <h1>Error Loading Default Environment</h1>
       </div>
-      <div id="transform-controls" class="hidden">
+      <div id="digital-bacon-transform-controls" class="hidden">
         <button id="place-button"><i class="las la-map-pin"></i>Place</button>
         <button id="translate-button" class="selected"><i class="las la-arrows-alt"></i>Move</button>
         <button id="rotate-button"><i class="las la-sync"></i>Rotate</button>

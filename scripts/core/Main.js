@@ -123,23 +123,17 @@ export default class Main {
             let lock = uuidv4();
             global.loadingLocks.add(lock);
             ProjectHandler.load(projectFilePath, () => {
-                if(!global.disableImmersion) {
-                    this._setupForImmersion();
-                }
+                if(!global.disableImmersion) this._setupForImmersion();
                 global.loadingLocks.delete(lock);
             }, (error) => {
-                $(this._loadingMessage).removeClass("loading");
-                $(this._errorMessage).addClass("error");
+                this._loadingMessage.classList.remove("loading");
+                this._errorMessage.classList.add("error");
                 if(error) throw error;
             });
         } else {
-            let ambientLight = new AmbientLight({
-                'visualEdit': false,
-            });
+            let ambientLight = new AmbientLight({ 'visualEdit': false });
             ProjectHandler.addAsset(ambientLight, true, true);
-            if(!global.disableImmersion) {
-                this._setupForImmersion();
-            }
+            if(!global.disableImmersion) this._setupForImmersion();
         }
     }
 
@@ -187,10 +181,10 @@ export default class Main {
     _loading() {
         if(global.loadingLocks.size == 0) {
             setTimeout(() => {//Because we should render a frame first
-                $(this._loadingMessage.children[0]).html("&nbsp;");
-                $(this._loadingMessage).addClass("ending");
+                this._loadingMessage.children[0].innerHTML = "&nbsp;";
+                this._loadingMessage.classList.add("ending");
                 setTimeout(() => {
-                    $(this._loadingMessage).removeClass("loading");
+                    this._loadingMessage.classList.remove("loading");
                     if(!global.disableImmersion) SessionHandler.displayButton();
                 }, 1000);
             }, 50);
@@ -232,8 +226,8 @@ export default class Main {
                 global.dynamicAssets.add(DigitalBaconUI.UpdateHandler);
             if(this._callback) this._callback(this);
         } else {
-            $(this._loadingMessage.children[0]).html("Loading "
-                + global.loadingLocks.size + " more asset(s)");
+            this._loadingMessage.children[0].innerHTML = "Loading "
+                + global.loadingLocks.size + " more asset(s)";
         }
     }
 

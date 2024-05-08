@@ -23,7 +23,7 @@ class ReadyPlayerMe {
         this._closeButton = document.createElement('button');
         this._closeButton.innerHTML = "Close Ready Player Me";
         this._closeButton.id = 'ready-player-me-close-button';
-        $(this._closeButton).addClass("hidden");
+        this._closeButton.classList.add("hidden");
         container.append(this._iframe);
         container.append(this._closeButton);
     }
@@ -57,12 +57,12 @@ class ReadyPlayerMe {
     }
 
     _close() {
-        $(this._closeButton).addClass("hidden");
+        this._closeButton.classList.add("hidden");
         this._iframe.hidden = true;
     }
 
     selectAvatar() {
-        $(this._closeButton).removeClass("hidden");
+        this._closeButton.classList.remove("hidden");
         this._iframe.hidden = false;
         if(global.deviceType == "XR") {
             SessionHandler.exitXRSession();
