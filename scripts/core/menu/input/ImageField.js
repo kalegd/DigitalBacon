@@ -15,7 +15,7 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { createWideImageButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Span, Style, Text } from '/scripts/DigitalBacon-UI.js';
 
 class ImageField extends MenuField {
     constructor(params) {
@@ -28,7 +28,9 @@ class ImageField extends MenuField {
 
     _createInputs(title) {
         this._addTitle(title);
+        this._materialColorStyle = new Style({ materialColor: 0xffffff });
         this._imageSelection = createWideImageButton();
+        this._imageSelection.addStyle(this._materialColorStyle);
         this._imageSelection.textComponent.fontSize = 0.017;
         this._imageSelection.height = 0.03;
         this._imageSelection.width = 0.17;
@@ -77,10 +79,10 @@ class ImageField extends MenuField {
         if(assetId) {
             this._imageSelection.updateTexture(LibraryHandler.getTexture(
                 this._lastValue));
-            this._imageSelection.material.color = Colors.white;
+            this._materialColorStyle.materialColor = Colors.white;
         } else {
             this._imageSelection.updateTexture();
-            this._imageSelection.material.color = Colors.defaultIdle;
+            this._materialColorStyle.materialColor = Colors.defaultIdle;
         }
     }
 

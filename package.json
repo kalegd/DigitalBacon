@@ -30,9 +30,7 @@
     "jszip": "3.10.1",
     "jszip-utils": "0.1.0",
     "nipplejs": "0.9.1",
-    "three": "^0.156.1",
-    "three-mesh-bvh": "^0.6.0",
-    "three-mesh-ui": "^6.5.4"
+    "three": "^0.164.1"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "5.0.2",
