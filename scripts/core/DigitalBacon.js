@@ -15,11 +15,8 @@ import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import * as utils from '/scripts/core/helpers/utils.module.js';
 import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
-import * as Interactables from '/scripts/core/interactables/Interactables.js';
-import * as MenuFields from '/scripts/core/menu/input/MenuFields.js';
 import * as DigitalBaconUI from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const version = "0.2.1";
@@ -48,11 +45,8 @@ if(window != null) {
         AudioHandler: AudioHandler,
         DigitalBaconUI: DigitalBaconUI,
         EditorHelpers: EditorHelpers,
-        Interactables: Interactables,
         LibraryHandler: LibraryHandler,
-        MenuFields: MenuFields,
         PartyHandler: PartyHandler,
-        PartyMessageHelper: PartyMessageHelper,
         ProjectHandler: ProjectHandler,
         PubSub: PubSub,
         Scene: Scene,
@@ -73,11 +67,8 @@ export { Assets };
 export { AudioHandler };
 export { DigitalBaconUI };
 export { EditorHelpers };
-export { Interactables };
 export { LibraryHandler };
-export { MenuFields };
 export { PartyHandler };
-export { PartyMessageHelper };
 export { ProjectHandler };
 export { PubSub };
 export { Scene };
