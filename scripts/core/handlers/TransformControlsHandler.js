@@ -18,7 +18,7 @@ import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { TransformControls } from '/node_modules/three/examples/jsm/controls/TransformControls.js';
-import { Handedness, InputHandler, InteractionToolHandler, PointerInteractableHandler } from '/scripts/DigitalBacon-UI.js';
+import { Handedness, InputHandler, InteractionToolHandler, PointerInteractableHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const BUTTON_QUERY = '#digital-bacon-transform-controls > button';
 const MODES = ['translate', 'rotate', 'scale'];

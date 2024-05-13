@@ -6,7 +6,7 @@
 
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Div } from '/scripts/DigitalBacon-UI.js';
+import { Div } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class PaginatedPage extends MenuPage {
     constructor(controller, hasBackButton) {

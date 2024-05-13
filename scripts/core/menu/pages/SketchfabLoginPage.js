@@ -12,7 +12,7 @@ import { Styles } from '/scripts/core/helpers/constants.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { DelayedClickHandler, Text } from '/scripts/DigitalBacon-UI.js';
+import { DelayedClickHandler, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {

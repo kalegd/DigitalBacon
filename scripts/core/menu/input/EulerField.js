@@ -9,7 +9,7 @@ import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { roundWithPrecision } from '/scripts/core/helpers/utils.module.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { NumberInput, Div, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { NumberInput, Div, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import { MathUtils } from 'three';
 
 class EulerField extends MenuField {

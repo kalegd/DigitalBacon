@@ -9,7 +9,7 @@ import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Div, Span } from '/scripts/DigitalBacon-UI.js';
+import { Div, Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class EditAcknowledgementsPage extends MenuPage {
     constructor(controller) {

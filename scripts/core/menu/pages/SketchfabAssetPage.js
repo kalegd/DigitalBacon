@@ -14,7 +14,7 @@ import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { euler, quaternion, vector3s, Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Div, Image, Text } from '/scripts/DigitalBacon-UI.js';
+import { Div, Image, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {

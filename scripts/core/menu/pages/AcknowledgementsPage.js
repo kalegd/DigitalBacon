@@ -10,7 +10,7 @@ import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Div, Image, Text, Span } from '/scripts/DigitalBacon-UI.js';
+import { Div, Image, Text, Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import { TextureLoader } from 'three';
 
 class AcknowledgementsPage extends MenuPage {

@@ -8,7 +8,7 @@ import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPoint
 import { Colors, FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { addHoveredButtonCallback } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import { Div, Image, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Div, Image, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const ROWS = 2;
 const OPTIONS = 3;

@@ -15,7 +15,7 @@ import { Styles } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class AudioField extends MenuField {
     constructor(params) {

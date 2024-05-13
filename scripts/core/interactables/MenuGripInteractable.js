@@ -5,7 +5,7 @@
  */
 
 import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
-import { GripInteractable } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 class MenuGripInteractable extends GripInteractable {

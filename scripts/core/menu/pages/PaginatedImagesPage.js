@@ -8,7 +8,7 @@ import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPoint
 import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Div, Image, Span } from '/scripts/DigitalBacon-UI.js';
+import { Div, Image, Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const ROWS = 2;
 const OPTIONS = 3;

@@ -7,7 +7,7 @@
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Colors, Styles } from '/scripts/core/helpers/constants.js';
-import { Span, Style, Text } from '/scripts/DigitalBacon-UI.js';
+import { Span, Style, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const BACKGROUND_OPACITY = 0.8;
 const FADE_TIME = 1;

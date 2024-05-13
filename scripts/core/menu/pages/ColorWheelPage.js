@@ -7,7 +7,7 @@
 import { Styles } from '/scripts/core/helpers/constants.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { HSLColor, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { HSLColor, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 const RADIUS = 0.1;

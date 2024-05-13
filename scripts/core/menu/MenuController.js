@@ -15,7 +15,7 @@ import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
 import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { GripInteractableHandler, PointerInteractableHandler, TouchInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractableHandler, PointerInteractableHandler, TouchInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 export default class MenuController {

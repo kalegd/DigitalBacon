@@ -7,7 +7,7 @@
 import { Styles } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Div, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Div, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const FIELDS_CONTAINER_HEIGHT = 0.22;
 

@@ -16,7 +16,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { DelayedClickHandler } from '/scripts/DigitalBacon-UI.js';
+import { DelayedClickHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class UploadHandler {
     constructor() {

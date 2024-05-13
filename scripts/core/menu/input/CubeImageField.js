@@ -15,7 +15,7 @@ import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Div, Image, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Div, Image, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const SIDES = [
     CubeSides.TOP,

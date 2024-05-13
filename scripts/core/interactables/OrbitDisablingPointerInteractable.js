@@ -5,7 +5,7 @@
  */
 
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import { PointerInteractable } from '/scripts/DigitalBacon-UI.js';
+import { PointerInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class OrbitDisablingPointerInteractable extends PointerInteractable {
     constructor(object) {

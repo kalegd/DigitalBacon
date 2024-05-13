@@ -5,7 +5,7 @@ import {
     PointerInteractableHandler,
     TouchInteractable,
     TouchInteractableHandler
-} from '/scripts/DigitalBacon-UI.js';
+} from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 export { GripInteractable };
 export { GripInteractableHandler };

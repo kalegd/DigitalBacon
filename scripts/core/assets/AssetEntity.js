@@ -13,7 +13,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
 import { concatenateArrayBuffers, fullDispose } from '/scripts/core/helpers/utils.module.js';
-import { utils, GripInteractable, PointerInteractable, TouchInteractable } from '/scripts/DigitalBacon-UI.js';
+import { utils, GripInteractable, PointerInteractable, TouchInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 const INTERACTABLE_PARAMS = ['pointerInteractable', 'gripInteractable', 'touchInteractable'];

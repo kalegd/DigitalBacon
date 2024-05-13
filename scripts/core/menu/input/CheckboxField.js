@@ -9,7 +9,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Styles } from '/scripts/core/helpers/constants.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Checkbox, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Checkbox, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class CheckboxField extends MenuField {
     constructor(params) {

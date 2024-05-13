@@ -11,7 +11,7 @@ import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import { concatenateArrayBuffers, concatenateArrayBuffersFromList, uuidv4, uuidFromBytes, uuidToBytes, Queue } from '/scripts/core/helpers/utils.module.js';
-import { Handedness } from '/scripts/DigitalBacon-UI.js';
+import { Handedness } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 /* global JSZip */
 const SIXTEEN_KB = 1024 * 16;

@@ -19,7 +19,7 @@ import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import { InteractableStates } from '/scripts/DigitalBacon-UI.js';
+import { InteractableStates } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 const { AssetEntityField, CheckboxField, EulerField, Vector3Field } = EditorHelper.FieldTypes;

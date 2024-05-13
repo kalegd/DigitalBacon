@@ -9,7 +9,7 @@ import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { NumberInput, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { NumberInput, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class NumberField extends MenuField {
     constructor(params) {

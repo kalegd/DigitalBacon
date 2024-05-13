@@ -6,7 +6,7 @@
 
 import { Styles } from '/scripts/core/helpers/constants.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class TextPage extends MenuPage {
     constructor(controller) {

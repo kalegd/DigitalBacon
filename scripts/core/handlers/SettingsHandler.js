@@ -12,7 +12,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
-import { InputHandler } from '/scripts/DigitalBacon-UI.js';
+import { InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class SettingsHandler {
     constructor() {

@@ -1,6 +1,6 @@
 import { Styles } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { Div, Image, Select, Text, TextInput } from '/scripts/DigitalBacon-UI.js';
+import { Div, Image, Select, Text, TextInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 export const addHoveredButtonCallback = (button) => {

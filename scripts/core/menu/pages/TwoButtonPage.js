@@ -7,7 +7,7 @@
 import { Styles } from '/scripts/core/helpers/constants.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import { Div, Text } from '/scripts/DigitalBacon-UI.js';
+import { Div, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class TwoButtonPage extends MenuPage {
     constructor(controller) {

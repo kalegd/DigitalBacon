@@ -20,7 +20,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Styles, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
 import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 const URL_PREFIX_PATTERN = /^https:\/\//i;
 
 const SPECIAL_OPTIONS = {

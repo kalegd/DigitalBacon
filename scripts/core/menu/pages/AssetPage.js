@@ -12,7 +12,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { FontSizes, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton, createTextInput } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
-import { Span } from '/scripts/DigitalBacon-UI.js';
+import { Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class AssetPage extends DynamicFieldsPage {
     constructor(controller, assetType) {

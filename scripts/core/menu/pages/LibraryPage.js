@@ -10,7 +10,7 @@ import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPoint
 import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedIconsPage from '/scripts/core/menu/pages/PaginatedIconsPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const ASSETS = [{
     'text': 'Models',

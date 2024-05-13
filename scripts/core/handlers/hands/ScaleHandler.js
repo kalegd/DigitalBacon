@@ -10,7 +10,7 @@ import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { InteractionToolHandler } from '/scripts/DigitalBacon-UI.js';
+import { InteractionToolHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class ScaleHandler {
     constructor() {

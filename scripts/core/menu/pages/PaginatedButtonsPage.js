@@ -6,7 +6,7 @@
 
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import { Div, Span } from '/scripts/DigitalBacon-UI.js';
+import { Div, Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const OPTIONS = 5;
 

@@ -8,7 +8,7 @@ import global from '/scripts/core/global.js';
 import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { NumberInput, Div, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { NumberInput, Div, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class Vector2Field extends MenuField {
     constructor(params) {

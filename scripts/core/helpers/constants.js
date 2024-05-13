@@ -6,7 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { Style } from '/scripts/DigitalBacon-UI.js';
+import { Style } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 import * as THREE from 'three';
 

@@ -18,7 +18,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
-import { Handedness, InputHandler, XRInputDeviceTypes } from '/scripts/DigitalBacon-UI.js';
+import { Handedness, InputHandler, XRInputDeviceTypes } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
 const USERNAME_KEY = "DigitalBacon:Username";

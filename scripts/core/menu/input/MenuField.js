@@ -6,7 +6,7 @@
 
 import { Styles } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { Span, Style, Text } from '/scripts/DigitalBacon-UI.js';
+import { Span, Style, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 
 const SPAN_STYLE = new Style({

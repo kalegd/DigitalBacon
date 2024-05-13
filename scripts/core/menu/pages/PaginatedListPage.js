@@ -7,7 +7,7 @@
 import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import { Div, Span, Text } from '/scripts/DigitalBacon-UI.js';
+import { Div, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const OPTIONS = 5;
 

@@ -9,7 +9,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
-import { Handedness, InputHandler } from '/scripts/DigitalBacon-UI.js';
+import { Handedness, InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 export default class BasicMovement {

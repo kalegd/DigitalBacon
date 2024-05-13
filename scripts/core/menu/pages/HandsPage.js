@@ -7,7 +7,7 @@
 import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import { Styles } from '/scripts/core/helpers/constants.js';
 import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
-import { InteractionToolHandler, Text } from '/scripts/DigitalBacon-UI.js';
+import { InteractionToolHandler, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const hands = [
     { "title": "Edit", "type": InteractionTools.EDIT },

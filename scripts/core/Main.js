@@ -24,7 +24,7 @@ import ScaleHandler from '/scripts/core/handlers/hands/ScaleHandler.js';
 import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import global from '/scripts/core/global.js';
-import * as DigitalBaconUI from '/scripts/DigitalBacon-UI.js';
+import * as DigitalBaconUI from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import Stats from '/node_modules/three/examples/jsm/libs/stats.module.js';
 import * as THREE from 'three';
 

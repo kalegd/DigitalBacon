@@ -12,7 +12,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { FontSizes, Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createTextInput } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedImagesPage from '/scripts/core/menu/pages/PaginatedImagesPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import { TextureLoader } from 'three';
 
 class SketchfabSearchPage extends PaginatedImagesPage {

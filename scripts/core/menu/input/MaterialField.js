@@ -13,7 +13,7 @@ import { Colors, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { createSmallButton, createWideImageButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Style, Text } from '/scripts/DigitalBacon-UI.js';
+import { Span, Style, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const HSL = {};
 

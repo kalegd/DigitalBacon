@@ -12,7 +12,7 @@ import { Styles } from '/scripts/core/helpers/constants.js';
 import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
 import NumberField from '/scripts/core/menu/input/NumberField.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class UserSettingsPage extends DynamicFieldsPage {
     constructor(controller) {

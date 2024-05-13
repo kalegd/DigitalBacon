@@ -17,8 +17,8 @@ import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Styles } from '/scripts/core/helpers/constants.js';
 import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
-import { DelayedClickHandler } from '/scripts/DigitalBacon-UI.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { DelayedClickHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 /* global saveAs, JSZip */
 

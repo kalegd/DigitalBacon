@@ -15,7 +15,7 @@ import { Colors, Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const pages = [
     { "title": "Host Party", "menuPage": MenuPages.HOST_PARTY },

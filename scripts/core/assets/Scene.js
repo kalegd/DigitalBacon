@@ -6,7 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import { quaternion, vector3s } from '/scripts/core/helpers/constants.js';
-import { GripInteractable, PointerInteractable, TouchInteractable } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractable, PointerInteractable, TouchInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 class Scene {

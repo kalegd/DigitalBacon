@@ -11,7 +11,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Styles } from '/scripts/core/helpers/constants.js';
 import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class LoadFromGDrivePage extends PaginatedButtonsPage {
     constructor(controller) {

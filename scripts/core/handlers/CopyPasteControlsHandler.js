@@ -9,7 +9,7 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
-import { GripInteractableHandler, InteractionToolHandler } from '/scripts/DigitalBacon-UI.js';
+import { GripInteractableHandler, InteractionToolHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class CopyPasteControlsHandler {
     constructor() {

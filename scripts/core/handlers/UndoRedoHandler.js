@@ -6,7 +6,7 @@
 
 import { Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
-import { Div } from '/scripts/DigitalBacon-UI.js';
+import { Div } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class UndoRedoHandler {
     constructor() {

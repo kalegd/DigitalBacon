@@ -11,7 +11,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Styles } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedListPage from '/scripts/core/menu/pages/PaginatedListPage.js';
-import { Text } from '/scripts/DigitalBacon-UI.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const FIELD_MAX_LENGTH = 25;
 
