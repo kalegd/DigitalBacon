@@ -193,7 +193,7 @@ class TransformControlsHandler {
 
         window.addEventListener('copy', (event) => { this._copy(event); });
         this._canvas.addEventListener('keydown', (event) => {
-            if(event.code == "Backspace") {
+            if(event.code == "Backspace" && !global.keyboardLock) {
                 this._delete();
             } else if(event.code == 'Escape') {
                 this.detach();
