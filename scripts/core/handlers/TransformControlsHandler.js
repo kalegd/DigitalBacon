@@ -101,7 +101,16 @@ class TransformControlsHandler {
                     if(this._attachedAssets[ownerId] == e.asset) {
                         if(e.fields.includes('visualEdit')
                                 || e.fields.includes('parentId')) {
-                            this._detachDeleted(ownerId);
+                            if(global.deviceType == 'XR') {
+                                this._detachDeleted(ownerId);
+                            } else {
+                                this.detach(ownerId);
+                            }
+                            if(e.asset.editorHelper) {
+                                e.asset.editorHelper._enableParam('position');
+                                e.asset.editorHelper._enableParam('rotation');
+                                e.asset.editorHelper._enableParam('scale');
+                            }
                         }
                     }
                 }
@@ -281,6 +290,7 @@ class TransformControlsHandler {
         ownerId = ownerId || global.deviceType;
         let asset = this._attachedAssets[ownerId];
         if(asset) {
+            this.detach(ownerId);
             ProjectHandler.deleteAsset(asset);
         }
     }
