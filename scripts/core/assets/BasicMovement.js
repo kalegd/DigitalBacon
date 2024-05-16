@@ -223,6 +223,8 @@ export default class BasicMovement {
         if(this._disabled || global.xrSessionType=='AR' || timeDelta >1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
+        let leftHandController = global.userController.getHand(Handedness.LEFT);
+        let handMenu = leftHandController?._handMenu;
         let movementGamepad;
         let rotationGamepad;
         if(SettingsHandler.areJoysticksSwapped()) {
@@ -242,6 +244,12 @@ export default class BasicMovement {
 
             this._moveRight(this._velocity.x, timeDelta);
             this._moveForward(this._velocity.z, timeDelta);
+        } else if(handMenu?.walkingTool?.owner) {
+            let walkingDirection = handMenu.calculateWalkingDirection();
+            this._worldVelocity.x = walkingDirection.x * movementSpeed;
+            this._worldVelocity.z = walkingDirection.z * movementSpeed;
+            this._userObj.position.x += this._worldVelocity.x * timeDelta;
+            this._userObj.position.z += this._worldVelocity.z * timeDelta;
         }
         if(rotationGamepad) {
             let verticalForce = rotationGamepad.axes[3];
@@ -257,6 +265,23 @@ export default class BasicMovement {
             if(flightEnabled && Math.abs(verticalForce) > 0.2) {
                 this._velocity.y = -1 * movementSpeed * verticalForce;
                 this._moveUp(this._velocity.y, timeDelta);
+            }
+        } else if(handMenu?.open) {
+            let verticalForce = handMenu.flyingUp - handMenu.flyingDown;
+            if(flightEnabled && verticalForce) {
+                this._velocity.y = movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+            if(!this._snapRotationTriggered) {
+                if(handMenu.snapLeft) {
+                    this._snapRotationTriggered = true;
+                    this._snapLeft();
+                } else if(handMenu.snapRight) {
+                    this._snapRotationTriggered = true;
+                    this._snapRight();
+                }
+            } else if(!handMenu.snapLeft && !handMenu.snapRight) {
+                this._snapRotationTriggered = false;
             }
         } else {
             this._snapRotationTriggered = false;

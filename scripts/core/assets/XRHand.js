@@ -4,13 +4,29 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import XRDevice from '/scripts/core/assets/XRDevice.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { vector3s } from '/scripts/core/helpers/constants.js';
+import HandMenu from '/scripts/core/menu/HandMenu.js';
 import { Handedness, InputHandler, XRInputDeviceTypes } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
-import { Raycaster, Vector3 } from 'three';
+import { Plane, Raycaster, Vector3 } from 'three';
 
 const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
+const BONE_ANGLE = 2.6;
+const PALM_ANGLE = 0.7;
+const THUMB_ANGLE = 0.2;
+const BONE_SETS = [
+    [5,6,7],
+    [5,6,9],
+    [10,11,12],
+    [10,11,14],
+    [15,16,17],
+    [15,16,19],
+    [20,21,22],
+    [20,21,24],
+];
 
 export default class XRHand extends XRDevice {
     constructor(params = {}) {
@@ -82,9 +98,8 @@ export default class XRHand extends XRDevice {
 
     getPalmDirection() {
         if(this._isUsers) {
-            let model = InputHandler.getXRControllerModel(
-                XRInputDeviceTypes.HAND, this._handedness);
-            this._palmDirection.copy(model.motionController.palmDirection);
+            this._palmDirection.copy(this._modelObject.motionController
+                .palmDirection);
         } else if(this._handedness == Handedness.LEFT) {
             this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
                 0.1958660688459766);
@@ -100,12 +115,10 @@ export default class XRHand extends XRDevice {
     }
 
     isButtonPressed(index) {
-        let model = InputHandler.getXRControllerModel(XRInputDeviceTypes.HAND,
-            this._handedness);
         if(index == 0) {
-            return model.motionController.isPinching;
+            return this._modelObject.motionController.isPinching;
         } else if(index == 1) {
-            return model.motionController.isGrabbing;
+            return this._modelObject.motionController.isGrabbing;
         }
         return false;
     }
@@ -116,6 +129,60 @@ export default class XRHand extends XRDevice {
         rotation.pop();
         data.push(...position);
         data.push(...rotation);
+    }
+
+    createHandMenu() {
+        if(this._handMenu) return;
+        this._handMenu = new HandMenu();
+    }
+
+    updateHandMenu(timeDelta) {
+        if(!this._handMenu) return;
+        let bones = this._modelObject.motionController.bones;
+        let open = true;
+        for(let boneSet of BONE_SETS) {
+            vector3s[0].subVectors(bones[boneSet[0]].position,
+                bones[boneSet[1]].position);
+            vector3s[1].subVectors(bones[boneSet[2]].position,
+                bones[boneSet[1]].position);
+            if(vector3s[0].angleTo(vector3s[1]) < BONE_ANGLE) {
+                open = false;
+                break;
+            }
+        }
+        if(open) {//Check thumb knuckle position and palm direction
+            if(!this._plane1) {
+                this._plane1 = new Plane();
+                this._plane2 = new Plane();
+            }
+            this._plane1.setFromCoplanarPoints(bones[0].position,
+                bones[6].position, bones[11].position);
+            this._plane2.setFromCoplanarPoints(bones[0].position,
+                bones[2].position, bones[6].position);
+            if(this._plane1.normal.angleTo(this._plane2.normal) > THUMB_ANGLE) {
+                open = false;
+            } else {
+                global.camera.getWorldPosition(vector3s[0])
+                    .sub(this.getWorldPosition());
+                if(this.getPalmDirection().angleTo(vector3s[0]) > PALM_ANGLE)
+                    open = false;
+            }
+        }
+        if(open != this._handMenu.open) {
+            this._handMenu.open = open;
+            this._object[open ? 'add' : 'remove'](this._handMenu);
+        }
+        if(open) {
+            let palmDirection = this.getPalmDirection().add(
+                this.getWorldPosition());
+            this._handMenu.lookAt(palmDirection);
+            this._handMenu.update(timeDelta);
+        }
+    }
+
+    onRemoveFromProject() {
+        super.onRemoveFromProject();
+        if(this._handMenu) this._handMenu.removeWalkingTool();
     }
 
     static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';

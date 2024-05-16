@@ -288,6 +288,8 @@ class UserController extends InternalAssetEntity {
         if(controller && controller._live) {
             if(source) {
                 controller.resetTTL();
+                if(type==XRInputDeviceTypes.HAND && handedness==Handedness.LEFT)
+                    controller.updateHandMenu(timeDelta);
             } else {
                 controller.decrementTTL(timeDelta);
             }
@@ -308,6 +310,8 @@ class UserController extends InternalAssetEntity {
                 });
                 ProjectHandler.addAsset(controller, false, true);
                 //controller.attachTo(this);
+                if(type==XRInputDeviceTypes.HAND && handedness==Handedness.LEFT)
+                    controller.createHandMenu();
             } else {
                 ProjectHandler.addAsset(controller, false, true);
             }
