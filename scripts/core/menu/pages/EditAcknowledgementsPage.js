@@ -98,7 +98,7 @@ class EditAcknowledgementsPage extends MenuPage {
         columnBlock.add(addDeleteRow);
 
         addButton.onClickAndTouch = () => this._addAcknowledgement();
-        addButton.onClickAndTouch = () => this._deleteAcknowledgement();
+        deleteButton.onClickAndTouch = () => this._deleteAcknowledgement();
     }
 
     _addAcknowledgement() {

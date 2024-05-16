@@ -383,7 +383,8 @@ class ProjectHandler {
         }
 
         storeStringValuesInSet(projectDetails, values);
-        assetIds.filter((assetId) => values.has(assetId));
+        if(skipInternals)
+            assetIds = assetIds.filter((assetId) => values.has(assetId));
         projectDetails['library'] = LibraryHandler.getLibraryDetails(
             assetIds);
         return projectDetails;
