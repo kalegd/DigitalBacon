@@ -24,6 +24,33 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "justjo3l",
+      "name": "Joel Jose",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63659576?v=4",
+      "profile": "https://github.com/justjo3l",
+      "contributions": [
+        "test"
+      ]
+    },
+    {
+      "login": "ShaunFrost",
+      "name": "Rasesh Kumar Rout",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7031459?v=4",
+      "profile": "https://github.com/ShaunFrost",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "kaigidwani",
+      "name": "kaigidwani",
+      "avatar_url": "https://avatars.githubusercontent.com/u/112210757?v=4",
+      "profile": "https://github.com/kaigidwani",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

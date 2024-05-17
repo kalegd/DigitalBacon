@@ -30,6 +30,7 @@ export default class ConeShape extends Shape {
             thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {
@@ -57,61 +58,44 @@ export default class ConeShape extends Shape {
         return params;
     }
 
-    getHeight() {
-        return this._height;
-    }
+    get height() { return this._height; }
+    get radius() { return this._radius; }
+    get radialSegments() { return this._radialSegments; }
+    get heightSegments() { return this._heightSegments; }
+    get thetaLength() { return this._thetaLength; }
+    get openEnded() { return this._openEnded; }
 
-    getRadius() {
-        return this._radius;
-    }
-
-    getRadialSegments() {
-        return this._radialSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    getOpenEnded() {
-        return this._openEnded;
-    }
-
-    setHeight(height) {
+    set height(height) {
         if(this._height == height) return;
         this._height = height;
         this._updateGeometry();
     }
 
-    setRadius(radius) {
+    set radius(radius) {
         if(this._radius == radius) return;
         this._radius = radius;
         this._updateGeometry();
     }
 
-    setRadialSegments(radialSegments) {
+    set radialSegments(radialSegments) {
         if(this._radialSegments == radialSegments) return;
         this._radialSegments = radialSegments;
         this._updateGeometry();
     }
 
-    setHeightSegments(heightSegments) {
+    set heightSegments(heightSegments) {
         if(this._heightSegments == heightSegments) return;
         this._heightSegments = heightSegments;
         this._updateGeometry();
     }
 
-    setThetaLength(thetaLength) {
+    set thetaLength(thetaLength) {
         if(this._thetaLength == thetaLength) return;
         this._thetaLength = thetaLength;
         this._updateGeometry();
     }
 
-    setOpenEnded(openEnded) {
+    set openEnded(openEnded) {
         if(this._openEnded == openEnded) return;
         this._openEnded = openEnded;
         this._updateGeometry();

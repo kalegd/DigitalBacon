@@ -7,11 +7,10 @@
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const pages = [
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
@@ -26,20 +25,12 @@ class HomePage extends MenuPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Home',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Home', Styles.title);
+        this.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.2,
+            width: 0.45,
         });
         let supportsParty = global.authUrl && global.socketUrl;
         let acknowledgements = SettingsHandler.getAcknowledgements();
@@ -47,21 +38,13 @@ class HomePage extends MenuPage {
             if(page['menuPage'] == MenuPages.PARTY && !supportsParty) continue;
             if(page['menuPage'] == MenuPages.ACKNOWLEDGEMENTS
                 && acknowledgements.length == 0) continue;
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': page.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
+            let button = createWideButton(page.title);
+            button.margin = 0.004;
             columnBlock.add(button);
-            let interactable = new PointerInteractable(button, true);
-            interactable.addAction(() => {
-                this._controller.pushPage(page.menuPage);
-            });
-            this._containerInteractable.addChild(interactable);
+            button.onClickAndTouch =
+                () => this._controller.pushPage(page.menuPage);
         }
-        this._container.add(columnBlock);
+        this.add(columnBlock);
     }
 }
 

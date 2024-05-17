@@ -6,11 +6,12 @@
 
 import global from '/scripts/core/global.js';
 import Party from '/scripts/core/clients/Party.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import InternalMessageIds from '/scripts/core/enums/InternalMessageIds.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PartyMessageHelper from '/scripts/core/helpers/PartyMessageHelper.js';
 import { concatenateArrayBuffers, concatenateArrayBuffersFromList, uuidv4, uuidFromBytes, uuidToBytes, Queue } from '/scripts/core/helpers/utils.module.js';
+import { Handedness } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 /* global JSZip */
 const SIXTEEN_KB = 1024 * 16;
@@ -45,17 +46,18 @@ class PartyHandler {
         for(let peerId in this._peers) {
             let peer = this._peers[peerId];
             if(peer.rtc) peer.rtc.close();
-            if(peer.controller) {
-                ProjectHandler.deleteAsset(peer.controller, true, true);
-                let avatar = peer.controller.getAvatar();
-                if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
-                for(let device of peer.controller.getXRDevices()) {
-                    ProjectHandler.deleteAsset(device, true, true);
-                }
-            }
+            PartyMessageHelper.handlePeerDisconnected(peer);
         }
         this._peers = {};
         PartyMessageHelper.handlePartyEnded();
+    }
+
+    _deleteInternal(instance) {
+        PartyMessageHelper._handleInstanceDeleted(null, {
+            id: instance.id,
+            assetId: instance.assetId,
+            assetType: AssetTypes.INTERNAL,
+        });
     }
 
     _registerPeer(rtc) {
@@ -83,12 +85,12 @@ class PartyHandler {
         });
         rtc.setOnDisconnect(() => {
             if(peer.controller) {
-                ProjectHandler.deleteAsset(peer.controller, true, true);
-                let avatar = peer.controller.getAvatar();
-                if(avatar) ProjectHandler.deleteAsset(avatar, true, true);
                 for(let device of peer.controller.getXRDevices()) {
-                    ProjectHandler.deleteAsset(device, true, true);
+                    this._deleteInternal(device);
                 }
+                let avatar = peer.controller.avatar;
+                if(avatar) this._deleteInternal(avatar);
+                this._deleteInternal(peer.controller);
             }
             if(peer.id in this._peers) {
                 delete this._peers[peer.id];
@@ -117,7 +119,7 @@ class PartyHandler {
                 "isXR": global.deviceType == "XR",
             }
         }));
-        let avatar = global.userController.getAvatar();
+        let avatar = global.userController.avatar;
         rtc.sendData(JSON.stringify({
             id: 'Iinstance_added',
             body: {

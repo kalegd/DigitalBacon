@@ -59,7 +59,7 @@ export default class System extends Asset {
         this._subscriptionTopics.push(PubSubTopics.PARTY_ENDED);
     }
 
-    _removeSubscriptions() {
+    _removeSystemSubscriptions() {
         for(let subscription of this._subscriptionTopics) {
             PubSub.unsubscribe(this._id, subscription);
         }
@@ -123,8 +123,8 @@ export default class System extends Asset {
             skipQueue);
     }
 
-    getDescription() {
-        console.error("System.getDescription() should be overridden");
+    get description() {
+        console.error("get System.description should be overridden");
         return '';
     }
 
@@ -132,7 +132,7 @@ export default class System extends Asset {
         return false;
     }
 
-    addToScene() {
+    onAddToProject() {
         this._addSystemSubscriptions();
         PartyHandler.addInternalMessageHandler(this._id,
             (p, m) => this._onPeerMessage(p, m));
@@ -140,8 +140,8 @@ export default class System extends Asset {
             (p, m) => this._onPeerBufferMessage(p, m));
     }
 
-    removeFromScene() {
-        this._removeSubscriptions();
+    onRemoveFromProject() {
+        this._removeSystemSubscriptions();
     }
 
     static assetType = AssetTypes.SYSTEM;

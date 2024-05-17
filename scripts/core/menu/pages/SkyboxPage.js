@@ -8,15 +8,14 @@ import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import { FontSizes, Textures } from '/scripts/core/helpers/constants.js';
+import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Image, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const sides = [
     CubeSides.TOP,
@@ -35,38 +34,26 @@ class SkyboxPage extends MenuPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Backdrop',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Backdrop', Styles.title);
+        this.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.196,
+            justifyContent: 'spaceBetween',
+            width: 0.45,
         });
-        let rowBlock = new ThreeMeshUI.Block({
-            'height': 0.064,
-            'width': 0.3,
-            'contentDirection': 'row',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
+        let rowBlock = new Span({
+            height: 0.06,
+            justifyContent: 'spaceBetween',
+            width: 0.264,
         });
         for(let i = 0; i < sides.length; i++) {
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'backgroundTexture': Textures.searchIcon,
-                'height': 0.06,
-                'width': 0.06,
-                'margin': 0.002,
-                'borderRadius': 0.00001,
+            let button = new Image(Textures.searchIcon, {
+                height: 0.06,
+                width: 0.06,
             });
-            let interactable = new PointerInteractable(button, true);
-            interactable.addAction(() => {
+            button.pointerInteractable = new PointerInteractable(button);
+            button.onClickAndTouch = () => {
                 let library = LibraryHandler.getLibrary();
                 let filteredAssets = {};
                 filteredAssets["null\n"] = { Name: "Blank" };
@@ -82,58 +69,36 @@ class SkyboxPage extends MenuPage {
                     this._controller.back();
                 }, () => {
                     this._fileUploadSide = sides[i];
-                    UploadHandler.triggerUpload();
-                }, () => {
-                    UploadHandler.stopListening();
+                    UploadHandler.triggerAssetsUpload((assetIds) => {
+                        if(assetIds.length > 0) {
+                            SettingsHandler.setSkyboxSide(this._fileUploadSide,
+                                assetIds[0]);
+                            this._controller.back();
+                        }
+                    }, false, AssetTypes.IMAGE);
                 });
                 this._controller.pushPage(MenuPages.ASSET_SELECT);
-                UploadHandler.listenForAssets((assetIds) => {
-                    if(assetIds.length > 0) {
-                        SettingsHandler.setSkyboxSide(this._fileUploadSide,
-                            assetIds[0]);
-                        this._controller.back();
-                    }
-                }, false, AssetTypes.IMAGE);
-            });
-            this._containerInteractable.addChild(interactable);
+            };
             if(i == 0) {
-                let topRowBlock = new ThreeMeshUI.Block({
-                    'height': 0.064,
-                    'width': 0.128,
-                    'contentDirection': 'row',
-                    'justifyContent': 'start',
-                    'backgroundOpacity': 0,
-                });
-                topRowBlock.add(button);
-                columnBlock.add(topRowBlock);
+                button.marginRight = 0.068;
+                columnBlock.add(button);
+                columnBlock.add(rowBlock);
             } else if(i < 5) {
                 rowBlock.add(button);
             } else {
-                columnBlock.add(rowBlock);
-
-                let bottomRowBlock = new ThreeMeshUI.Block({
-                    'height': 0.064,
-                    'width': 0.128,
-                    'contentDirection': 'row',
-                    'justifyContent': 'start',
-                    'backgroundOpacity': 0,
-                });
-                bottomRowBlock.add(button);
-                columnBlock.add(bottomRowBlock);
+                button.marginRight = 0.068;
+                columnBlock.add(button);
             }
             this._buttons.push(button);
         }
-        this._container.add(columnBlock);
+        this.add(columnBlock);
     }
 
     _setTextures() {
         let textures = SettingsHandler.getSkyboxTextures();
         for(let i = 0; i < sides.length; i++) {
-            if(this._buttons[i].children[1].backgroundTexture
-                != textures[sides[i]])
-            {
-                this._buttons[i].children[1].set({
-                    backgroundTexture: textures[sides[i]] });
+            if(this._buttons[i].material.map != textures[sides[i]]) {
+                this._buttons[i].updateTexture(textures[sides[i]]);
             }
         }
     }
@@ -148,14 +113,14 @@ class SkyboxPage extends MenuPage {
         PubSub.unsubscribe(this._id, PubSubTopics.SETTINGS_UPDATED);
     }
 
-    addToScene(scene, parentInteractable) {
-        super.addToScene(scene, parentInteractable);
+    _onAdded() {
+        super._onAdded();
         this._setTextures();
         this._addSubscriptions();
     }
 
-    removeFromScene() {
-        super.removeFromScene();
+    _onRemoved() {
+        super._onRemoved();
         this._removeSubscriptions();
     }
 

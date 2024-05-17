@@ -5,18 +5,17 @@
  */
 
 import global from '/scripts/core/global.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import Party from '/scripts/core/clients/Party.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Colors, Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
+import { createSmallButton, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import { Colors, Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import MenuField from '/scripts/core/menu/input/MenuField.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const pages = [
     { "title": "Host Party", "menuPage": MenuPages.HOST_PARTY },
@@ -39,19 +38,9 @@ class PartyPage extends DynamicFieldsPage {
         this._displayingUsernames = false;
         this._mutedMyself = false;
         this._mutedPeers = false;
-        this._fieldsContainer.set({ justifyContent: 'start' });
+        this._fieldsContainer.justifyContent = 'start';
         this._peerFields = {};
         this._addFields();
-    }
-
-    _createTitleBlock() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Party',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.4,
-            'offset': 0,
-        });
     }
 
     _addFields() {
@@ -79,18 +68,18 @@ class PartyPage extends DynamicFieldsPage {
 
     _handleDisplayUsernames() {
         this._displayingUsernames = !this._displayingUsernames;
-        let block = this._connectedFields[0].getObject();
+        let field = this._connectedFields[0];
         if(this._displayingUsernames) {
-            block.children[1].set({ content: 'Hide Usernames' });
+            field.textComponent.text = 'Hide Usernames';
         } else {
-            block.children[1].set({ content: 'Display Usernames' });
+            field.textComponent.text = 'Display Usernames';
         }
         PartyHandler.setDisplayingUsernames(this._displayingUsernames);
     }
 
     _handleUpdateUsername() {
         let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
-        let username = global.userController.getUsername();
+        let username = global.userController.username;
         inputPage.setContentWithInitialValue("Update Username", username,
             "Update",
             (username) => {
@@ -101,7 +90,7 @@ class PartyPage extends DynamicFieldsPage {
                     });
                     return;
                 }
-                global.userController.setUsername(username);
+                global.userController.username = username;
                 this._controller.back();
             }
         );
@@ -115,11 +104,11 @@ class PartyPage extends DynamicFieldsPage {
 
     _handleMuteMyself() {
         this._mutedMyself = !this._mutedMyself;
-        let block = this._connectedFields[2].getObject();
+        let field = this._connectedFields[2];
         if(this._mutedMyself) {
-            block.children[1].set({ content: 'Unmute Myself' });
+            field.textComponent.text = 'Unmute Myself';
         } else {
-            block.children[1].set({ content: 'Mute Myself' });
+            field.textComponent.text = 'Mute Myself';
         }
         for(let peerId in this._peerFields) {
             this._peerFields[peerId].toggleMyselfMuted(this._mutedMyself);
@@ -128,11 +117,11 @@ class PartyPage extends DynamicFieldsPage {
 
     _handleMuteFriends() {
         this._mutedPeers = !this._mutedPeers;
-        let block = this._connectedFields[3].getObject();
+        let field = this._connectedFields[3];
         if(this._mutedPeers) {
-            block.children[1].set({ content: 'Unmute Friends' });
+            field.textComponent.text = 'Unmute Friends';
         } else {
-            block.children[1].set({ content: 'Mute Friends' });
+            field.textComponent.text = 'Mute Friends';
         }
         for(let peerId in this._peerFields) {
             this._peerFields[peerId].togglePeerMuted(this._mutedPeers);
@@ -171,7 +160,7 @@ class PartyPage extends DynamicFieldsPage {
         }
         for(let peerId in this._peerFields) {
             if(!(peerId in peers)) {
-                this._peerFields[peerId].removeFromScene();
+                this._fieldsContainer.remove(this._peerFields[peerId]);
                 delete this._peerFields[peerId];
                 different = true;
             } else {
@@ -242,156 +231,95 @@ class PartyPage extends DynamicFieldsPage {
         PubSub.unsubscribe(this._id, PubSubTopics.PEER_USERNAME_UPDATED);
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         this._updateFields();
         this._addSubscriptions();
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
 
-    removeFromScene() {
+    _onRemoved() {
         this._removeSubscriptions();
-        super.removeFromScene();
+        super._onRemoved();
     }
 }
 
-class MenuEntity extends PointerInteractableEntity {
-    constructor() {
-        super();
-    }
-
-    getHeight() {
-        return 0.039;
-    }
-
-    updateFromSource() {
-        //Do nothing
-    }
-
-    deactivate() {
-        //Do nothing
-    }
-}
-
-class ButtonEntity extends MenuEntity {
+class ButtonEntity extends MenuField {
     constructor(title, action) {
         super();
-        this._object = ThreeMeshUIHelper.createButtonBlock({
-            'text': title,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'margin': 0.002,
-        });
-        this._pointerInteractable = new PointerInteractable(this._object, true);
-        this._pointerInteractable.addAction(action);
+        this.minHeight = 0;
+        this.height = 0.043;
+        let button = createWideButton(title);
+        button.onClickAndTouch = action;
+        this.add(button);
+        this.textComponent = button.textComponent;
     }
 }
 
-class TextEntity extends MenuEntity {
+class TextEntity extends MenuField {
     constructor(text) {
         super();
-        this._object = ThreeMeshUIHelper.createTextBlock({
-            'text': text,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-            'offset': 0,
-            'margin': 0.002,
-        });
-    }
-
-    getHeight() {
-        return 0.045;
+        this.minHeight = 0;
+        this.height = 0.043;
+        this.add(new Text(text, Styles.bodyText, {
+            height: 0.035,
+            width: 0.3,
+        }));
     }
 }
 
-class PeerEntity extends MenuEntity {
+class PeerEntity extends MenuField {
     constructor(peer, username, controller, designateHostCallback) {
         super();
+        this.minHeight = 0;
+        this.height = 0.043;
         this._peer = peer;
         this._controller = controller;
         this._designateHostCallback = designateHostCallback;
         this._mutedMyself = false;
         this._mutedPeer = false;
-        this._object = new ThreeMeshUI.Block({
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'height': 0.035,
-            'width': 0.31,
-            'contentDirection': 'row',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
-            'margin': 0.002,
-        });
         this._addContent(username);
     }
 
     _addContent(username) {
-        this._usernameBlock = ThreeMeshUIHelper.createButtonBlock({
-            'text': username || '...',
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.228,
-            'offset': 0,
-            'margin': 0.002,
-        });
-        let muteParams = {
-            'backgroundTexture': Textures.microphoneIcon,
-            'backgroundTextureScale': 0.85,
-            'height': 0.035,
-            'width': 0.035,
-            'margin': 0.002,
-        };
-        this._muteMyselfButton =ThreeMeshUIHelper.createButtonBlock(muteParams);
-        muteParams['backgroundTexture'] = Textures.headphonesIcon;
-        this._mutePeerButton = ThreeMeshUIHelper.createButtonBlock(muteParams);
-        this._muteMyselfButton.children[1].set({backgroundColor: Colors.green});
-        this._mutePeerButton.children[1].set({ backgroundColor: Colors.green });
-        if(!PartyHandler.isHost()) {
-            this._usernameBlock.set({ backgroundOpacity: 0 });
-        }
+        username = stringWithMaxLength(username || '...', 12);
+        this._usernameBlock = createWideButton(username || '...');
+        this._usernameBlock.width = 0.228;
+        this._muteMyselfButton =createSmallButton(Textures.microphoneIcon,0.75);
+        this._muteMyselfButton.height = 0.035;
+        this._muteMyselfButton.width = 0.035;
+        this._mutePeerButton = createSmallButton(Textures.headphonesIcon, 0.75);
+        this._mutePeerButton.height = 0.035;
+        this._mutePeerButton.width = 0.035;
+        this._muteMyselfButton.material.color.set(Colors.green);
+        this._mutePeerButton.material.color.set(Colors.green);
+        if(!PartyHandler.isHost())
+            this._usernameBlock.backgroundVisible = false;
 
-        this._object.add(this._usernameBlock);
-        this._object.add(this._muteMyselfButton);
-        this._object.add(this._mutePeerButton);
-        this._addInteractables();
+        this.add(this._usernameBlock);
+        this.add(this._muteMyselfButton);
+        this.add(this._mutePeerButton);
+        this._addInteractableEventListeners();
     }
 
-    _addInteractables() {
-        this._usernameInteractable = new PointerInteractable(
-            this._usernameBlock, true);
-        this._usernameInteractable.addAction(() => {
+    _addInteractableEventListeners() {
+        this._usernameClickCallback = () => {
             let peerPage = this._controller.getPage(MenuPages.PEER);
             peerPage.setContent(this._peer, this._designateHostCallback);
             this._controller.pushPage(MenuPages.PEER);
-        });
-        this._muteMyselfInteractable = new PointerInteractable(
-            this._muteMyselfButton, true);
-        this._muteMyselfInteractable.addAction(() => this.toggleMyselfMuted());
-        this._mutePeerInteractable = new PointerInteractable(
-            this._mutePeerButton, true);
-        this._mutePeerInteractable.addAction(() => this.togglePeerMuted());
-        if(PartyHandler.isHost()) {
-            this._pointerInteractable.addChild(this._usernameInteractable);
-        }
-        this._pointerInteractable.addChild(this._muteMyselfInteractable);
-        this._pointerInteractable.addChild(this._mutePeerInteractable);
+        };
+        if(PartyHandler.isHost())
+            this._usernameBlock.onClickAndTouch = this._usernameClickCallback;
+        this._muteMyselfButton.onClickAndTouch = () => this.toggleMyselfMuted();
+        this._mutePeerButton.onClickAndTouch = () => this.togglePeerMuted();
     }
 
     toggleHost(isHost) {
         if(isHost) {
-            this._pointerInteractable.addChild(this._usernameInteractable);
-            this._usernameBlock.set({ backgroundOpacity: 0.7 });
+            this._usernameBlock.onClickAndTouch = this._usernameClickCallback;
+            this._usernameBlock.backgroundVisible = true;
         } else {
-            this._pointerInteractable.removeChild(this._usernameInteractable);
-            this._usernameBlock.set({ backgroundOpacity: 0 });
+            this._usernameBlock.onClickAndTouch = null;
+            this._usernameBlock.backgroundVisible = false;
         }
     }
 
@@ -405,7 +333,7 @@ class PeerEntity extends MenuEntity {
             color = Colors.green;
         }
         this._peer.rtc.toggleMyselfMuted(this._mutedMyself);
-        this._muteMyselfButton.children[1].set({ backgroundColor: color });
+        this._muteMyselfButton.material.color.set(color);
     }
 
     togglePeerMuted(muted) {
@@ -418,19 +346,18 @@ class PeerEntity extends MenuEntity {
             color = Colors.green;
         }
         this._peer.rtc.togglePeerMuted(this._mutedPeer);
-        this._mutePeerButton.children[1].set({ backgroundColor: color });
+        this._mutePeerButton.material.color.set(color);
     }
 
     setUsername(username) {
         username = stringWithMaxLength(username || '...', 12);
-        if(this._usernameBlock.children[1].content != username) {
-            this._usernameBlock.children[1].set({ content: username });
-        }
+        if(this._usernameBlock.textComponent.text != username)
+            this._usernameBlock.textComponent.text = username;
     }
 
-    addToScene(scene, interactableParent) {
+    _onAdded() {
         this.setUsername(this._peer.username);
-        super.addToScene(scene, interactableParent);
+        super._onAdded();
     }
 }
 

@@ -28,6 +28,7 @@ export default class TorusShape extends Shape {
             this._radialSegments, this._tubularSegments, arc);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {
@@ -53,51 +54,37 @@ export default class TorusShape extends Shape {
         return params;
     }
 
-    getRadius() {
-        return this._radius;
-    }
+    get radius() { return this._radius; }
+    get tube() { return this._tube; }
+    get radialSegments() { return this._radialSegments; }
+    get tubularSegments() { return this._tubularSegments; }
+    get arc() { return this._arc; }
 
-    getTube() {
-        return this._tube;
-    }
-
-    getRadialSegments() {
-        return this._radialSegments;
-    }
-
-    getTubularSegments() {
-        return this._tubularSegments;
-    }
-
-    getArc() {
-        return this._arc;
-    }
-
-    setRadius(radius) {
+    set radius(radius) {
         if(this._radius == radius) return;
         this._radius = radius;
         this._updateGeometry();
     }
 
-    setTube(tube) {
+    set tube(tube) {
         if(this._tube == tube) return;
         this._tube = tube;
         this._updateGeometry();
     }
 
-    setRadialSegments(radialSegments) {
+    set radialSegments(radialSegments) {
         if(this._radialSegments == radialSegments) return;
         this._radialSegments = radialSegments;
         this._updateGeometry();
     }
 
-    setTubularSegments(tubularSegments) {
+    set tubularSegments(tubularSegments) {
         if(this._tubularSegments == tubularSegments) return;
         this._tubularSegments = tubularSegments;
         this._updateGeometry();
     }
 
-    setArc(arc) {
+    set arc(arc) {
         if(this._arc == arc) return;
         this._arc = arc;
         this._updateGeometry();

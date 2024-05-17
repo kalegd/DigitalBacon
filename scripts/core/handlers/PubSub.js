@@ -25,16 +25,11 @@ class PubSub {
     }
 
     publish(owner, topic, message, urgent) {
-        let topics = this._splitTopic(topic);
-        for(let topic of topics) {
-            if(!(topic in this._topics)) {
-                continue;
-            } else if(urgent) {
-                this._publish(owner, topic, message);
-            } else {
-                this._toPublish.push(
-                    () => { this._publish(owner, topic, message);});
-            }
+        if(urgent) {
+            this._publish(owner, topic, message);
+        } else {
+            this._toPublish.push(
+                () => { this._publish(owner, topic, message);});
         }
     }
 
@@ -50,10 +45,14 @@ class PubSub {
     }
 
     _publish(owner, topic, message) {
-        let topicSubscribers = this._topics[topic];
-        for(let subscriber in topicSubscribers) {
-            if(subscriber == owner) continue;
-            topicSubscribers[subscriber](message);
+        let topics = this._splitTopic(topic);
+        for(let topic of topics) {
+            if(!(topic in this._topics)) continue;
+            let topicSubscribers = this._topics[topic];
+            for(let subscriber in topicSubscribers) {
+                if(subscriber == owner) continue;
+                topicSubscribers[subscriber](message);
+            }
         }
     }
 

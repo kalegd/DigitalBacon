@@ -27,5 +27,6 @@ export default class LiveMenuController extends MenuController {
         this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         this._pageCalls.push(MenuPages.HOME);
+        this._object.add(this.getCurrentPage());
     }
 }

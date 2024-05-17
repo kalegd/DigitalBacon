@@ -12,13 +12,13 @@ export default class InternalAssetEntity extends AssetEntity {
         super(params);
     }
 
-    removeFromScene() {
+    onRemoveFromProject() {
         let inheritor = this.parent;
         while(inheritor.constructor.assetType == AssetTypes.INTERNAL) {
             inheritor = inheritor.parent;
         }
         this.promoteExternalAssets(inheritor, this.children);
-        super.removeFromScene();
+        super.onRemoveFromProject();
     }
 
     promoteExternalAssets(inheritor, children) {

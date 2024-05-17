@@ -5,44 +5,46 @@
  */
 
 import global from '/scripts/core/global.js';
-import PointerInteractableEntity from '/scripts/core/assets/PointerInteractableEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import NotificationHub from '/scripts/core/menu/NotificationHub.js';
-import Keyboard from '/scripts/core/menu/input/Keyboard.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
-import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
+import { vector2, vector3s } from '/scripts/core/helpers/constants.js';
+import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { GripInteractableHandler, PointerInteractableHandler, TouchInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
-export default class MenuController extends PointerInteractableEntity {
+export default class MenuController {
     constructor() {
-        super();
+        this._id = uuidv4();
+        this._object = new THREE.Object3D();
         this._object.position.setZ(-100);
+        this._object.addEventListener('added', () => this._onAdded());
+        this._object.addEventListener('removed', () => this._onRemoved());
+        this._createInteractables();
         this._pages = {};
         this._pageCalls = [];
-        this._gripInteractable = MenuGripInteractable.emptyGroup();
         this._gripOwners = new Set();
         this._eventAlreadyTriggered = false;
         this._addEventListeners();
         this._setupNotificationHub();
-        this._createInteractables();
     }
 
     _addEventListeners() {
         let menuToggle = document.getElementById("mobile-menu-open-button");
         menuToggle.addEventListener('click', () => { this._openMenu(); });
+        PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            if(global.deviceType != 'XR') menuToggle.classList.remove("hidden");
+        });
     }
 
     _setupNotificationHub() {
         this._notificationHub = new NotificationHub();
-        this._notificationHub.addToScene(this._object);
+        this._object.add(this._notificationHub);
         this._notificationHub.setNotificationHeight(0.18);
     }
 
@@ -56,28 +58,26 @@ export default class MenuController extends PointerInteractableEntity {
 
     setPage(page) {
         let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
+        if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls = [page];
         currentPage = this.getCurrentPage();
-        currentPage.addToScene(this._object, this._pointerInteractable);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
+        this._object.add(currentPage);
     }
 
     pushPage(page) {
         let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
+        if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls.push(page);
-        this._pages[page].addToScene(this._object, this._pointerInteractable);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
+        this._object.add(this._pages[page]);
     }
 
     popPage() {
+        if(this._pageCalls.length <= 1) return;
         let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
+        if(currentPage.parent) currentPage.parent.remove(currentPage);
         this._pageCalls.pop();
         currentPage = this.getCurrentPage();
-        currentPage.addToScene(this._object, this._pointerInteractable);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
+        this._object.add(currentPage);
     }
 
     popPagesPast(page) {
@@ -87,7 +87,6 @@ export default class MenuController extends PointerInteractableEntity {
             poppedPage = this._pageCalls[this._pageCalls.length-1];
             currentPage.back();
         } while(poppedPage != page);
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     popAllPages() {
@@ -95,7 +94,6 @@ export default class MenuController extends PointerInteractableEntity {
             let currentPage = this.getCurrentPage();
             currentPage.back();
         }
-        PubSub.publish(this._id, PubSubTopics.MENU_PAGE_CHANGED);
     }
 
     back() {
@@ -116,34 +114,27 @@ export default class MenuController extends PointerInteractableEntity {
     }
 
     _createInteractables() {
+        new PointerInteractable(this._object);
+        new TouchInteractable(this._object);
         if(global.deviceType != 'XR') return;
         let border = this._createBorder();
         let interactable = new MenuGripInteractable(this._object, border);
-        interactable.addAction((ownerId) => {
-            let asset = ProjectHandler.getAsset(ownerId);
-            if(asset) asset.getObject().attach(this._object);
-            this._gripOwners.add(ownerId);
-        }, (ownerId) => {
-            let asset = ProjectHandler.getAsset(ownerId);
-            if(this._object.parent == asset.getObject())
-                Scene.getObject().attach(this._object);
-            this._gripOwners.delete(ownerId);
+        interactable.addEventListener('down', (message) => {
+            interactable.capture(message.owner);
+            let asset = ProjectHandler.getAsset(message.owner.id);
+            if(asset) asset.object.attach(this._object);
+            this._gripOwners.add(message.owner.id);
         });
-        this._gripInteractable.addChild(interactable);
-        Keyboard.init(this._object);
+        interactable.addEventListener('click', (message) => {
+            let asset = ProjectHandler.getAsset(message.owner.id);
+            if(this._object.parent == asset.object)
+                Scene.object.attach(this._object);
+            this._gripOwners.delete(message.owner.id);
+        });
     }
 
     getPosition(vector3) {
         return this._object.getWorldPosition(vector3);
-    }
-
-    getPositionArray() {
-        return this._object.getWorldPosition(vector3s[0]).toArray();
-    }
-
-    getRotationArray() {
-        return euler.setFromQuaternion(this._object.getWorldQuaternion(
-            quaternion).normalize()).toArray();
     }
 
     getDirection(vector3) {
@@ -157,7 +148,7 @@ export default class MenuController extends PointerInteractableEntity {
         } else if(global.deviceType == "POINTER") {
             this._updatePointer(timeDelta);
             this.update = this._updatePointer;
-        } else if(global.deviceType == "MOBILE") {
+        } else if(global.deviceType == "TOUCH_SCREEN") {
             this._updateMobile(timeDelta);
             this.update = this._updateMobile;
         }
@@ -177,12 +168,11 @@ export default class MenuController extends PointerInteractableEntity {
         this._object.position.addVectors(vector3s[0], vector3s[1]);
         this._object.lookAt(vector3s[0]);
         this._object.scale.set(userScale, userScale, userScale);
-        this.addToScene(this._scene);
+        Scene.object.add(this._object);
     }
 
     closeMenu() {
-        //this._object.remove(this._object);
-        this.removeFromScene();
+        if(this._object.parent) this._object.parent.remove(this._object);
     }
 
     _updateVR(timeDelta) {
@@ -224,24 +214,25 @@ export default class MenuController extends PointerInteractableEntity {
         this._notificationHub.update(timeDelta);
     }
 
-    addToScene(scene) {
-        if(this._object.parent == scene) return;
-        super.addToScene(scene);
-        this._scene = scene;
-        this.getCurrentPage().addToScene(this._object,
-            this._pointerInteractable);
-        if(global.deviceType == "XR")
-            GripInteractableHandler.addInteractable(this._gripInteractable);
-        PointerInteractableHandler.addInteractable(this._pointerInteractable);
+    _onAdded() {
+        if(global.deviceType == "XR") {
+            GripInteractableHandler.addInteractable(
+                this._object.gripInteractable);
+            TouchInteractableHandler.addInteractable(
+                this._object.touchInteractable);
+        }
+        PointerInteractableHandler.addInteractable(
+            this._object.pointerInteractable);
     }
 
-    removeFromScene() {
-        super.removeFromScene();
-        let currentPage = this.getCurrentPage();
-        currentPage.removeFromScene();
-        if(global.deviceType == "XR")
-            GripInteractableHandler.removeInteractable(this._gripInteractable);
+    _onRemoved() {
+        if(global.deviceType == "XR") {
+            GripInteractableHandler.removeInteractable(
+                this._object.gripInteractable);
+            TouchInteractableHandler.removeInteractable(
+                this._object.touchInteractable);
+        }
         PointerInteractableHandler.removeInteractable(
-            this._pointerInteractable);
+            this._object.pointerInteractable);
     }
 }

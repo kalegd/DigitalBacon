@@ -5,13 +5,12 @@
  */
 
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { vector3s, Fonts } from '/scripts/core/helpers/constants.js';
+import { vector3s, Colors } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Handedness, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 const ERROR_FIX_FRAMES = 30;
@@ -35,30 +34,29 @@ export default class PeerController extends InternalAssetEntity {
 
     _setup() {
         let usernameParams = {
-            'text': this._username, 
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-            'fontSize': 0.06,
-            'height': 0.04,
-            'width': 0.5,
-            'offset': 0,
-            'margin': 0,
+            color: Colors.white,
+            fontSize: 0.06,
+            maxWidth: 0.5,
         };
         this._usernameBlock = new THREE.Object3D();
-        let usernameFront = ThreeMeshUIHelper.createTextBlock(usernameParams);
-        let usernameBack = ThreeMeshUIHelper.createTextBlock(usernameParams);
+        let usernameFront = new Text(this._username, usernameParams);
+        let usernameBack = new Text(this._username, usernameParams);
         usernameFront.rotateY(Math.PI);
+        usernameFront.troikaText.material.side = THREE.FrontSide;
+        usernameBack.troikaText.material.side = THREE.FrontSide;
         this._usernameBlock.position.setY(0.15);
         this._usernameBlock.add(usernameFront);
         this._usernameBlock.add(usernameBack);
+        this._usernameBlock.frontTextComponent = usernameFront;
+        this._usernameBlock.backTextComponent = usernameBack;
         if(this._displayingUsername && this._avatar) {
-            this._avatar.getObject().add(this._usernameBlock);
+            this._avatar.object.add(this._usernameBlock);
         }
     }
 
     _updateAvatarData(float32Array, index) {
         if(!this._avatar) return;
-        let object = this._avatar.getObject();
+        let object = this._avatar.object;
         if(this._isXR) object.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
         object.rotation.fromArray(rotation);
@@ -66,7 +64,7 @@ export default class PeerController extends InternalAssetEntity {
 
     _updateHandData(float32Array, index, asset) {
         if(!asset) return;
-        let peerHand = asset.getObject();
+        let peerHand = asset.object;
         peerHand.position.fromArray(float32Array, index);
         let rotation = float32Array.slice(index + 3, index + 6);
         peerHand.rotation.fromArray(rotation);
@@ -76,7 +74,7 @@ export default class PeerController extends InternalAssetEntity {
         this._velocity.fromArray(float32Array, index);
         if(!this._isXR && !this._firstPerson) {
             if(!this._avatar) return;
-            let object = this._avatar.getObject();
+            let object = this._avatar.object;
             vector3s[0].copy(this._velocity).setY(0).multiplyScalar(-1);
             if(vector3s[0].length() < 0.001) return;
             object.getWorldPosition(vector3s[1]).add(vector3s[0]);
@@ -97,33 +95,18 @@ export default class PeerController extends InternalAssetEntity {
         return params;
     }
 
-    getAvatar() {
-        return this._avatar;
-    }
+    get avatar() { return this._avatar; }
+    get isXR() { return this._isXR; }
+    get username() { return this._username; }
 
-    getIsXR() {
-        return this._isXR;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    setAvatar(avatar) {
-        this._avatar = avatar;
-    }
-
-    setIsXR(isXR) {
-        this._isXR = isXR;
-    }
-
-    setUsername(username) {
+    set avatar(avatar) { this._avatar = avatar; }
+    set isXR(isXR) { this._isXR = isXR; }
+    set username(username) {
         if(this._username == username) return;
         this._username = username;
         let shortName = username = stringWithMaxLength(username || '...', 17);
-        this._usernameBlock.children.forEach((block) => {
-            block.children[1].set({ content: shortName });
-        });
+        this._usernameBlock.frontTextComponent.text = shortName;
+        this._usernameBlock.backTextComponent.text = shortName;
     }
 
     getController(hand) {
@@ -141,7 +124,7 @@ export default class PeerController extends InternalAssetEntity {
     registerAvatar(avatar) {
         this._avatar = avatar;
         if(this._displayingUsername && this._avatar) {
-            this._avatar.getObject().add(this._usernameBlock);
+            this._avatar.object.add(this._usernameBlock);
         }
     }
 
@@ -164,9 +147,9 @@ export default class PeerController extends InternalAssetEntity {
         this._displayingUsername = displayingUsername;
         if(!this._avatar) return;
         if(this._displayingUsername) {
-            this._avatar.getObject().add(this._usernameBlock);
+            this._avatar.object.add(this._usernameBlock);
         } else {
-            this._avatar.getObject().remove(this._usernameBlock);
+            this._avatar.object.remove(this._usernameBlock);
         }
     }
 

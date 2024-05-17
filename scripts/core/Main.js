@@ -11,16 +11,12 @@ import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
-import PointerInteractableHandler from '/scripts/core/handlers/PointerInteractableHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
@@ -28,15 +24,15 @@ import ScaleHandler from '/scripts/core/handlers/hands/ScaleHandler.js';
 import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import global from '/scripts/core/global.js';
+import * as DigitalBaconUI from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import Stats from '/node_modules/three/examples/jsm/libs/stats.module.js';
-import ThreeMeshUI from 'three-mesh-ui';
 import * as THREE from 'three';
 
 export default class Main {
     constructor(callback, containerId, params) {
         this._renderer;
         this._camera;
-        this._scene = Scene.getObject();
+        this._scene = Scene.object;
         this._clock = new THREE.Clock();
         this._container = document.getElementById(containerId);
         this._loadingMessage = document.querySelector('#digital-bacon-loading');
@@ -46,6 +42,7 @@ export default class Main {
         this._createRenderer();
         this._createCamera();
         this._createUser();
+        this._setupDigitalBaconUI();
         this._createHandlers(params.onStart);
         this._createClients();
         this._createAssets(params.projectFilePath);
@@ -90,18 +87,27 @@ export default class Main {
         global.userController = UserController;
     }
 
+    _setupDigitalBaconUI() {
+        DigitalBaconUI.Keyboard.scale.set(0.4, 0.4, 0.4);
+        DigitalBaconUI.InputHandler.enableXRControllerManagement(
+            UserController.object);
+        DigitalBaconUI.init(this._container, this._renderer, this._scene,
+            this._camera, global.deviceType, this._cameraFocus);
+    }
+
     _createHandlers(onStart) {
         AudioHandler.init();
         if(global.disableImmersion) return;
-        SessionHandler.init(this._container, onStart);
-        InputHandler.init(this._container, this._renderer,
-            UserController.getObject());
-        PointerInteractableHandler.init();
-        UndoRedoHandler.init();
-        if(global.deviceType == "XR") {
-            GripInteractableHandler.init();
-            ToolHandler.setTool(HandTools.EDIT);
-        }
+        SessionHandler.init(this._container, () => {
+            DigitalBaconUI.GripInteractableHandler.addInteractable(
+                Scene.gripInteractable);
+            DigitalBaconUI.PointerInteractableHandler.addInteractable(
+                Scene.pointerInteractable);
+            DigitalBaconUI.TouchInteractableHandler.addInteractable(
+                Scene.touchInteractable);
+            if(onStart) onStart();
+        });
+        DigitalBaconUI.InteractionToolHandler.setTool(InteractionTools.EDIT);
         TransformControlsHandler.init(this._renderer.domElement, this._camera,
             this._scene);
     }
@@ -117,36 +123,30 @@ export default class Main {
             let lock = uuidv4();
             global.loadingLocks.add(lock);
             ProjectHandler.load(projectFilePath, () => {
-                if(!global.disableImmersion) {
-                    this._setupForImmersion();
-                }
+                if(!global.disableImmersion) this._setupForImmersion();
                 global.loadingLocks.delete(lock);
             }, (error) => {
-                $(this._loadingMessage).removeClass("loading");
-                $(this._errorMessage).addClass("error");
+                this._loadingMessage.classList.remove("loading");
+                this._errorMessage.classList.add("error");
                 if(error) throw error;
             });
         } else {
-            let ambientLight = new AmbientLight({
-                'visualEdit': false,
-            });
+            let ambientLight = new AmbientLight({ 'visualEdit': false });
             ProjectHandler.addAsset(ambientLight, true, true);
-            if(!global.disableImmersion) {
-                this._setupForImmersion();
-            }
+            if(!global.disableImmersion) this._setupForImmersion();
         }
     }
 
     _setupForImmersion() {
+        UndoRedoHandler.init();
         this._menuController = global.isEditor
             ? new EditorMenuController()
             : new LiveMenuController();
-        this._menuController.addToScene(this._scene);
         global.menuController = this._menuController;
 
         ProjectHandler.addAsset(UserController, true, true);
         UserController.init();
-        UserController.getObject().add(this._cameraFocus);
+        UserController.object.add(this._cameraFocus);
     }
 
     _addEventListeners() {
@@ -181,10 +181,10 @@ export default class Main {
     _loading() {
         if(global.loadingLocks.size == 0) {
             setTimeout(() => {//Because we should render a frame first
-                $(this._loadingMessage.children[0]).html("&nbsp;");
-                $(this._loadingMessage).addClass("ending");
+                this._loadingMessage.children[0].innerHTML = "&nbsp;";
+                this._loadingMessage.classList.add("ending");
                 setTimeout(() => {
-                    $(this._loadingMessage).removeClass("loading");
+                    this._loadingMessage.classList.remove("loading");
                     if(!global.disableImmersion) SessionHandler.displayButton();
                 }, 1000);
             }, 50);
@@ -197,14 +197,14 @@ export default class Main {
             } else if(global.deviceType == "XR") {
                 this._renderer.setAnimationLoop((time, frame) => {
                     global.frame = frame;
-                    InputHandler.update(frame);
+                    DigitalBaconUI.InputHandler.update(frame);
                     this._update();
                 });
             } else if (global.deviceType == "POINTER") {
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });
-            } else if (global.deviceType == "MOBILE") {
+            } else if (global.deviceType == "TOUCH_SCREEN") {
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });
@@ -217,13 +217,18 @@ export default class Main {
                 global.dynamicAssets.add(RotateHandler);
                 global.dynamicAssets.add(ScaleHandler);
             }
-            global.dynamicAssets.add(PointerInteractableHandler);
-            if(global.deviceType == "XR")
-                global.dynamicAssets.add(GripInteractableHandler);
+            global.dynamicAssets.add(DigitalBaconUI.PointerInteractableHandler);
+            if(global.deviceType == "XR") {
+                global.dynamicAssets.add(
+                    DigitalBaconUI.GripInteractableHandler);
+                global.dynamicAssets.add(
+                    DigitalBaconUI.TouchInteractableHandler);
+            }
+            global.dynamicAssets.add(DigitalBaconUI.UpdateHandler);
             if(this._callback) this._callback(this);
         } else {
-            $(this._loadingMessage.children[0]).html("Loading "
-                + global.loadingLocks.size + " more asset(s)");
+            this._loadingMessage.children[0].innerHTML = "Loading "
+                + global.loadingLocks.size + " more asset(s)";
         }
     }
 
@@ -234,7 +239,6 @@ export default class Main {
             asset.update(timeDelta);
         }
         PubSub.update(timeDelta);
-        ThreeMeshUI.update(timeDelta);
         this._renderer.render(this._scene, this._camera);
         this._stats.end();
     }

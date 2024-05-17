@@ -28,6 +28,14 @@ As per the npm standard, ‘start’ is the place to begin the package.
 
 This script will start a local server similar to [digitalbacon.io](https://digitalbacon.io/), but instead will be hosted on your local machine. Browse to https://localhost:8000/ to check it out
 
+To verify that you are using a consistent coding style with the rest of the project, run:
+
+      npm run lint
+
+To run a test of the project to prevent regressions, run:
+
+      npm test
+
 If you’d like to make a build of the source files (`build/DigitalBacon.js` and `build/DigitalBacon.min.js`) run:
 
     npm run build

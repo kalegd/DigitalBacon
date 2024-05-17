@@ -6,6 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { Style } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 import * as THREE from 'three';
 
@@ -127,12 +128,8 @@ export const Colors = {
     "white": new THREE.Color(0xffffff),
     "yellow": new THREE.Color(0xffff00),
     "defaultIdle": new THREE.Color(0x969696),
-    "defaultHovered": new THREE.Color(0x63666b),
+    "hoveredButton": new THREE.Color(0x63666b),
     "defaultMenuBackground": new THREE.Color(0x000000),
-    "keyboard": new THREE.Color(0x858585),
-    "keyboardButtonIdle": new THREE.Color(0x363636),
-    "keyboardButtonHovered": new THREE.Color(0x1c1c1c),
-    "keyboardButtonSelected": new THREE.Color(0x109c5d),
 };
 
 export const Fonts = {
@@ -143,6 +140,46 @@ export const Fonts = {
 export const FontSizes = {
     "header": 0.03,
     "body": 0.02,
+};
+
+let titleStyle = new Style({
+    color: Colors.white,
+    fontSize: FontSizes.header,
+    height: 0.05,
+});
+let hoveredButtonStyle = new Style({ materialColor: Colors.hoveredButton });
+let smallButtonStyle = new Style({
+    backgroundVisible: true,
+    borderRadius: 0.01,
+    height: 0.04,
+    justifyContent: 'center',
+    materialColor: Colors.defaultIdle,
+    width: 0.04,
+});
+let wideButtonStyle = new Style({
+    backgroundVisible: true,
+    borderRadius: 0.01,
+    height: 0.035,
+    justifyContent: 'center',
+    materialColor: Colors.defaultIdle,
+    width: 0.3,
+});
+let wideImageButtonStyle = new Style({
+    borderRadius: 0.01,
+    height: 0.035,
+    justifyContent: 'center',
+    textureFit: 'cover',
+    width: 0.3,
+});
+
+export const Styles = {
+    bodyText: new Style({ color: Colors.white, fontSize: FontSizes.body }),
+    headerText: new Style({ color: Colors.white, fontSize: FontSizes.header }),
+    title: titleStyle,
+    hoveredButton: hoveredButtonStyle,
+    smallButton: smallButtonStyle,
+    wideButton: wideButtonStyle,
+    wideImageButton: wideImageButtonStyle,
 };
 
 export const defaultImageSize = 1;
@@ -172,13 +209,6 @@ export const BoundingBox = {
     "geometry": geometry,
     "material": material,
 };
-
-//For keys our 2D UI Supports
-const validKeysString = " 1234567890`~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
-export const ValidKeys = new Set();
-for(let character of validKeysString) {
-    ValidKeys.add(character);
-}
 
 export const COLOR_SPACE_MAP = {
     "None": THREE.NoColorSpace,

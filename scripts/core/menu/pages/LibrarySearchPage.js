@@ -4,16 +4,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import { createTextInput } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 
 const FIELD_MAX_LENGTH = 25;
 
-class LibrarySearchPage extends PaginatedPage {
+class LibrarySearchPage extends PaginatedButtonsPage {
     constructor(controller) {
         super(controller, true);
         this._assets = ProjectHandler.getAssets();
@@ -22,14 +23,22 @@ class LibrarySearchPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        this._textField = new TextField({
-            'height': 0.04,
-            'width': 0.4,
-            'fontSize': FontSizes.header,
-            'onBlur': () => { this._searchUpdated(); },
-            'onUpdate': () => { this._searchUpdated(); },
+        this._searchInput = createTextInput({
+            borderRadius: 0.02,
+            fontSize: FontSizes.body,
+            height: 0.04,
+            marginBottom: 0.004,
+            marginTop: 0.01,
+            width: 0.375,
         });
-        this._textField.addToScene(this._container,this._containerInteractable);
+        this._searchInput.onBlur = () => {
+            global.keyboardLock = false;
+            this._searchUpdated();
+        };
+        this._searchInput.onChange = () => this._searchUpdated();
+        this._searchInput.onEnter = () => this._searchInput.blur();
+        this._searchInput.onFocus = () => { global.keyboardLock = true; };
+        this.add(this._searchInput);
 
         this._addList();
     }
@@ -40,7 +49,7 @@ class LibrarySearchPage extends PaginatedPage {
     }
 
     _getItemName(item) {
-        let name = this._assets[item].getName();
+        let name = this._assets[item].name;
         if(name.length > FIELD_MAX_LENGTH)
             name = "..." + name.substring(name.length - FIELD_MAX_LENGTH);
         return name;
@@ -48,7 +57,7 @@ class LibrarySearchPage extends PaginatedPage {
 
     _handleItemInteraction(item) {
         let asset = this._assets[item];
-        let assetType = LibraryHandler.getType(asset.getAssetId());
+        let assetType = LibraryHandler.getType(asset.assetId);
         let assetPage = this._controller.getPage(assetType);
         assetPage.setAsset(asset);
         this._controller.pushPage(assetType);
@@ -61,15 +70,15 @@ class LibrarySearchPage extends PaginatedPage {
 
     _getFilteredItems() {
         let items = [];
-        let content = this._textField.content.toLowerCase();
+        let content = this._searchInput.value.toLowerCase();
         for(let id in this._assets) {
             let asset = this._assets[id];
             if(asset instanceof InternalAssetEntity) {
                 continue;
-            } else if(asset.getName().toLowerCase().includes(content)) {
+            } else if(asset.name.toLowerCase().includes(content)) {
                 items.push(id);
             } else {
-                let assetId = asset.getAssetId();
+                let assetId = asset.assetId;
                 let assetName = LibraryHandler.getAssetName(assetId);
                 if(assetName.toLowerCase().includes(content)) items.push(id);
             }
@@ -78,7 +87,7 @@ class LibrarySearchPage extends PaginatedPage {
     }
 
     back() {
-        this._textField.deactivate();
+        this._searchInput.blur();
         super.back();
     }
 

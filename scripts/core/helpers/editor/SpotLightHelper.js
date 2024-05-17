@@ -9,10 +9,9 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-//import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
-import TextureInput from '/scripts/core/menu/input/TextureInput.js';
 import * as THREE from 'three';
+
+const { NumberField, TextureField } = LightHelper.FieldTypes;
 
 export default class SpotLightHelper extends LightHelper {
     constructor(asset) {
@@ -39,24 +38,24 @@ export default class SpotLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "color" },
-        { "parameter": "intensity" },
+        "visualEdit",
+        "color",
+        "intensity",
         { "parameter": "angle", "name": "Angle", "min": 0, "max": 180,
-            "type": NumberInput },
+            "type": NumberField },
         //{ "parameter": "castShadow", "name": "Cast Shadow",
-        //    "type": CheckboxInput },
+        //    "type": CheckboxField },
         { "parameter": "distance", "name": "Distance", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "decay", "name": "Decay", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "penumbra", "name": "Penumbra", "min": 0, "max": 1,
-            "type": NumberInput },
-        { "parameter": "map", "name": "Texture", "type": TextureInput },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "type": NumberField },
+        { "parameter": "mapId", "name": "Texture", "type": TextureField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

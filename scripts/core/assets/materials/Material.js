@@ -31,11 +31,11 @@ export default class Material extends Asset {
     }
 
     _setTexture(param, newValue) {
-        let oldValue = this['_' + param];
-        this['_' + param] = newValue;
-        let texture = ProjectHandler.getAsset(newValue);
-        this._material[param] = (texture)
-            ? texture.getTexture()
+        let oldValue = this['_' + param + 'Id'];
+        this['_' + param + 'Id'] = newValue;
+        let textureAsset = ProjectHandler.getAsset(newValue);
+        this._material[param] = (textureAsset)
+            ? textureAsset.texture
             : null;
         this._material.needsUpdate = true;
         if(oldValue == newValue) return;
@@ -77,11 +77,11 @@ export default class Material extends Asset {
 
     _updateMaterialParamsWithMaps(params, maps) {
         for(let map of maps) {
-            if(this['_' + map]) {
-                let texture = ProjectHandler.getAsset(this['_' + map]);
-                if(texture) {
-                    params[map] = texture.getTexture();
-                    this._subscribeFor(map, this['_' + map]);
+            if(this['_' + map + 'Id']) {
+                let textureAsset = ProjectHandler.getAsset(this['_' +map+'Id']);
+                if(textureAsset) {
+                    params[map] = textureAsset.texture;
+                    this._subscribeFor(map, this['_' + map + 'Id']);
                 }
             }
         }
@@ -95,40 +95,29 @@ export default class Material extends Asset {
         return [];
     }
 
-    getMaterial() {
-        return this._material;
-    }
-
     getSampleTexture() {
         return null;
     }
 
-    getOpacity() {
-        return this._opacity;
-    }
+    get material() { return this._material; }
+    get opacity() { return this._opacity; }
+    get side() { return this._side; }
+    get transparent() { return this._transparent; }
 
-    getSide() {
-        return this._side;
-    }
-
-    getTransparent() {
-        return this._transparent;
-    }
-
-    setOpacity(opacity) {
+    set opacity(opacity) {
         if(this._opacity == opacity) return;
         this._opacity = opacity;
         this._material.opacity = opacity;
     }
 
-    setSide(side) {
+    set side(side) {
         if(this._side == side) return;
         this._side = side;
         this._material.side = side;
         this._material.needsUpdate = true;
     }
 
-    setTransparent(transparent) {
+    set transparent(transparent) {
         if(this._transparent == transparent) return;
         this._transparent = transparent;
         this._material.transparent = transparent;

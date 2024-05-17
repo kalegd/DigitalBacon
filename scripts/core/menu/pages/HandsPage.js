@@ -4,22 +4,21 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import HandTools from '/scripts/core/enums/HandTools.js';
-import ToolHandler from '/scripts/core/handlers/ToolHandler.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
+import { InteractionToolHandler, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const hands = [
-    { "title": "Edit", "type": HandTools.EDIT },
-    { "title": "Copy / Paste", "type": HandTools.COPY_PASTE },
-    { "title": "Delete", "type": HandTools.DELETE },
-    { "title": "Translate", "type": HandTools.TRANSLATE },
-    { "title": "Rotate", "type": HandTools.ROTATE },
-    { "title": "Scale", "type": HandTools.SCALE },
+    { "title": "Edit", "type": InteractionTools.EDIT },
+    { "title": "Copy / Paste", "type": InteractionTools.COPY_PASTE },
+    { "title": "Delete", "type": InteractionTools.DELETE },
+    { "title": "Translate", "type": InteractionTools.TRANSLATE },
+    { "title": "Rotate", "type": InteractionTools.ROTATE },
+    { "title": "Scale", "type": InteractionTools.SCALE },
 ];
 
-class HandsPage extends PaginatedPage {
+class HandsPage extends PaginatedButtonsPage {
     constructor(controller) {
         super(controller, true);
         this._items = hands;
@@ -27,13 +26,8 @@ class HandsPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Hand Tools',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Hand Tools', Styles.title);
+        this.add(titleBlock);
 
         this._addList();
     }
@@ -43,9 +37,8 @@ class HandsPage extends PaginatedPage {
     }
 
     _handleItemInteraction(item) {
-        if(HandTools.ACTIVE == item.type) return;
-        HandTools.ACTIVE = item.type;
-        ToolHandler.setTool(item.type);
+        if(InteractionToolHandler.getTool() == item.type) return;
+        InteractionToolHandler.setTool(item.type);
     }
 
     _refreshItems() {

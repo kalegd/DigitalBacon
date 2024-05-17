@@ -10,7 +10,8 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
+
+const { EnumField } = AssetEntityHelper.FieldTypes;
 
 export default class ImageAssetHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -18,25 +19,28 @@ export default class ImageAssetHelper extends AssetEntityHelper {
     }
 
     place(intersection) {
-        let object = intersection.object;
+        let { object, point } = intersection;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(intersection.point);
-        this._object.lookAt(normal.add(this._object.position));
+        point.add(normal);
+        this._object.position.copy(point);
+        this._object.parent.worldToLocal(this._object.position);
+        point.add(normal);
+        this._object.lookAt(point);
         this.roundAttributes(true);
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
+        "visualEdit",
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
-            "type": EnumInput },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "type": EnumField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

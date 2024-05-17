@@ -9,16 +9,16 @@ import Scene from '/scripts/core/assets/Scene.js';
 import Skybox from '/scripts/core/assets/Skybox.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
+import { InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class SettingsHandler {
     constructor() {
         this.settings = {
             "Acknowledgements": [],
-            "Skybox": {},
+            "Skybox": [...new Array(6)],
             "User Settings": {
                 "Movement Speed": 3,
                 "User Scale": 1,
@@ -38,7 +38,7 @@ class SettingsHandler {
         this.settings['Skybox'][CubeSides.RIGHT] = null;
         this.settings['Skybox'][CubeSides.TOP] = null;
         this.settings['Skybox'][CubeSides.BOTTOM] = null;
-        this._scene = Scene.getObject();
+        this._scene = Scene.object;
         Skybox.init(this._scene);
     }
 
@@ -173,7 +173,8 @@ class SettingsHandler {
     }
 
     _updateFlyingButtons() {
-        if(global.deviceType != 'MOBILE' || global.disableImmersion) return;
+        if(global.deviceType != 'TOUCH_SCREEN' || global.disableImmersion)
+            return;
         if(this.isFlyingEnabled()) {
             InputHandler.showExtraControlsButton('mobile-flying-up-button');
             InputHandler.showExtraControlsButton('mobile-flying-down-button');

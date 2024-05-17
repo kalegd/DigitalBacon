@@ -4,12 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import GripInteractableHandler from '/scripts/core/handlers/GripInteractableHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { GripInteractableHandler, InteractionToolHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class CopyPasteControlsHandler {
     constructor() {
@@ -17,9 +17,9 @@ class CopyPasteControlsHandler {
         this._assetAlreadyPastedByGrip = {};
         this._copiedAssets = {};
         this._previewAssets = {};
-        GripInteractableHandler.registerToolHandler(HandTools.COPY_PASTE,
+        GripInteractableHandler.registerToolHandler(InteractionTools.COPY_PASTE,
             (controller) => this._toolHandler(controller));
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
+        InteractionToolHandler.addUpdateListener(() => {
             if(Object.keys(this._copiedAssets).length > 0) this._clear();
             this._assetAlreadyPastedByGrip = {};
         });
@@ -31,25 +31,25 @@ class CopyPasteControlsHandler {
 
     copy(ownerId, asset) {
         if(this._previewAssets[ownerId])
-            this._previewAssets[ownerId].removeFromScene();
+            this._previewAssets[ownerId].onRemoveFromProject();
         this._copiedAssets[ownerId] = asset;
         this._previewAssets[ownerId] = asset.editorHelper.preview();
-        let previewObject = this._previewAssets[ownerId].getObject();
-        asset.parent.getObject().add(previewObject);
-        ProjectHandler.getAsset(ownerId).getObject().attach(previewObject);
+        let previewObject = this._previewAssets[ownerId].object;
+        asset.parent.object.add(previewObject);
+        ProjectHandler.getAsset(ownerId).object.attach(previewObject);
     }
 
     _paste(ownerId) {
         let previewAsset = this._previewAssets[ownerId];
-        let previewObject = previewAsset.getObject();
-        previewAsset.parent.getObject().attach(previewObject);
+        let previewObject = previewAsset.object;
+        previewAsset.parent.object.attach(previewObject);
         previewAsset.clone(this._copiedAssets[ownerId].visualEdit);
-        ProjectHandler.getAsset(ownerId).getObject().attach(previewObject);
+        ProjectHandler.getAsset(ownerId).object.attach(previewObject);
         this._assetAlreadyPastedByGrip[ownerId] = true;
     }
 
     _toolHandler(controller) {
-        let ownerId = controller.option;
+        let ownerId = controller.owner.id;
         if(!this._copiedAssets[ownerId]) return false;
         let alreadyPasted = Boolean(this._assetAlreadyPastedByGrip[ownerId]);
         if(controller.isPressed != alreadyPasted) {
@@ -61,7 +61,7 @@ class CopyPasteControlsHandler {
 
     _clear() {
         for(let ownerId in this._previewAssets) {
-            this._previewAssets[ownerId].removeFromScene();
+            this._previewAssets[ownerId].onRemoveFromProject();
         }
         this._copiedAssets = {};
         this._previewAssets = {};

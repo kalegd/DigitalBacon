@@ -12,7 +12,7 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { uuidFromBytes, uuidToBytes, capitalizeFirstLetter, concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
+import { uuidFromBytes, uuidToBytes, concatenateArrayBuffers, Queue } from '/scripts/core/helpers/utils.module.js';
 
 const SIXTEEN_KB = 1024 * 16;
 const HANDLERS = {
@@ -110,7 +110,7 @@ class PartyMessageHelper {
     _handleUserController(peer, message) {
         if(!peer.controller) {
             let params = message.controllerParams;
-            peer.username = params.username;
+            this._handleUsername(peer, params.username);
             let controller = ProjectHandler.getSessionAsset(params.id);
             if(controller) {
                 ProjectHandler.addAsset(controller);
@@ -240,7 +240,7 @@ class PartyMessageHelper {
             } else {
                 childAsset.addTo(parentAsset, true);
             }
-            let object = childAsset.getObject();
+            let object = childAsset.object;
             object.position.fromArray(message.position);
             object.rotation.fromArray(message.rotation);
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, message);
@@ -265,7 +265,7 @@ class PartyMessageHelper {
             } else {
                 childAsset.attachTo(parentAsset, true);
             }
-            let object = childAsset.getObject();
+            let object = childAsset.object;
             object.position.fromArray(message.position);
             object.rotation.fromArray(message.rotation);
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, message);
@@ -279,7 +279,7 @@ class PartyMessageHelper {
         let position = Array.from(new Float64Array(message, 16, 3));
         let asset = ProjectHandler.getSessionAsset(id);
         if(asset) {
-            asset.setPosition(position);
+            asset.position = position;
         } else {
             console.error("Missing asset in message for _handleEntityPosition()");
         }
@@ -290,7 +290,7 @@ class PartyMessageHelper {
         let rotation = Array.from(new Float64Array(message, 16, 3));
         let asset = ProjectHandler.getSessionAsset(id);
         if(asset) {
-            asset.setRotation(rotation);
+            asset.rotation = rotation;
         } else {
             console.error("Missing asset in message for _handleEntityRotation()");
         }
@@ -301,7 +301,7 @@ class PartyMessageHelper {
         let scale = Array.from(new Float64Array(message, 16, 3));
         let asset = ProjectHandler.getSessionAsset(id);
         if(asset) {
-            asset.setScale(scale);
+            asset.scale = scale;
         } else {
             console.error("Missing asset in message for _handleEntityScale()");
         }
@@ -314,9 +314,9 @@ class PartyMessageHelper {
         let scale = Array.from(new Float64Array(message, 64, 3));
         let asset = ProjectHandler.getSessionAsset(id);
         if(asset) {
-            asset.setPosition(position);
-            asset.setRotation(rotation);
-            asset.setScale(scale);
+            asset.position = position;
+            asset.rotation = rotation;
+            asset.scale = scale;
         } else {
             console.error("Missing asset in message for _handleEntityTransformation()");
         }
@@ -329,8 +329,8 @@ class PartyMessageHelper {
         } else {
             asset = ProjectHandler.addNewAsset(message.asset.assetId,
                 message.asset, true, true);
-            if(asset.getParentId) {
-                let parentId = asset.getParentId();
+            let parentId = asset.parentId;
+            if(parentId) {
                 let parentAsset = ProjectHandler.getSessionAsset(parentId);
                 if(parentAsset) asset.addTo(parentAsset, true);
             }
@@ -342,7 +342,8 @@ class PartyMessageHelper {
         let asset = ProjectHandler.getAsset(message.id);
         if(asset) {
             ProjectHandler.deleteAsset(asset, true, true);
-            let topic = message.assetType + '_DELETED:' + message.id;
+            let topic = message.assetType + '_DELETED:' + message.assetId + ':'
+                + message.id;
             PubSub.publish(this._id, topic, { asset: asset });
         } else {
             console.error("Asset to delete does not exist");
@@ -406,9 +407,7 @@ class PartyMessageHelper {
         for(let param in params) {
             if(param == 'id') continue;
             updatedParams.push(param);
-            let capitalizedParam = capitalizeFirstLetter(param);
-            if(('set' + capitalizedParam) in asset)
-                asset['set' + capitalizedParam](params[param]);
+            if(param in asset) asset[param] = params[param];
             if(asset.editorHelper) asset.editorHelper.updateMenuField(param);
         }
         let message = {
@@ -421,7 +420,7 @@ class PartyMessageHelper {
     _handleUsername(peer, username) {
         if(peer.username == username) return;
         peer.username = username;
-        if(peer.controller) peer.controller.setUsername(username);
+        if(peer.controller) peer.controller.username = username;
         PubSub.publish(this._id, PubSubTopics.PEER_USERNAME_UPDATED, {
             peer: peer,
         });
@@ -445,7 +444,8 @@ class PartyMessageHelper {
     }
 
     handlePeerDisconnected(peer) {
-        PubSub.publish(this._id, PubSubTopics.PEER_DISCONNECTED,{ peer: peer });
+        let topic = PubSubTopics.PEER_DISCONNECTED + ':' + peer.id;
+        PubSub.publish(this._id, topic, { peer: peer });
     }
 
     handleDiffLoaded() {
@@ -517,8 +517,8 @@ class PartyMessageHelper {
         let peerMessage = concatenateArrayBuffers(
             uuidToBytes(message.parentId),
             uuidToBytes(message.childId),
-            new Float64Array(childAsset.getPosition()),
-            new Float64Array(childAsset.getRotation()),
+            new Float64Array(childAsset.position),
+            new Float64Array(childAsset.rotation),
         );
         this._partyHandler.publishInternalBufferMessage(
             InternalMessageIds.ENTITY_ADDED, peerMessage);
@@ -529,8 +529,8 @@ class PartyMessageHelper {
         let peerMessage = concatenateArrayBuffers(
             uuidToBytes(message.parentId),
             uuidToBytes(message.childId),
-            new Float64Array(childAsset.getPosition()),
-            new Float64Array(childAsset.getRotation()),
+            new Float64Array(childAsset.position),
+            new Float64Array(childAsset.rotation),
         );
         this._partyHandler.publishInternalBufferMessage(
             InternalMessageIds.ENTITY_ATTACHED, peerMessage);
@@ -546,8 +546,8 @@ class PartyMessageHelper {
 
     _publishInstanceDeleted(asset, assetType) {
         let message = {
-            id: asset.getId(),
-            assetId: asset.getAssetId(),
+            id: asset.id,
+            assetId: asset.assetId,
             assetType: assetType,
         };
         this._partyHandler.publishInternalMessage('instance_deleted', message);
@@ -555,10 +555,9 @@ class PartyMessageHelper {
 
     _publishInstanceUpdated(updateMessage, assetType) {
         let asset = {};
-        asset['id'] = updateMessage.asset.getId();
+        asset['id'] = updateMessage.asset.id;
         for(let param of updateMessage.fields) {
-            let capitalizedParam = capitalizeFirstLetter(param);
-            asset[param] = updateMessage.asset['get' + capitalizedParam]();
+            asset[param] = updateMessage.asset[param];
             if(asset[param] === undefined) asset[param] = null;
         }
         let peerMessage = {
@@ -571,9 +570,9 @@ class PartyMessageHelper {
 
     _publishInstanceAttached(data) {
         let message = {
-            id: data.instance.getId(),
-            assetId: data.instance.getAssetId(),
-            option: data.option,
+            id: data.instance.id,
+            assetId: data.instance.assetId,
+            ownerId: data.ownerId,
             type: data.type,
         };
         if(global.deviceType == 'XR') {
@@ -588,9 +587,9 @@ class PartyMessageHelper {
 
     _publishInstanceDetached(data) {
         let message = {
-            id: data.instance.getId(),
-            assetId: data.instance.getAssetId(),
-            option: data.option,
+            id: data.instance.id,
+            assetId: data.instance.assetId,
+            ownerId: data.ownerId,
             type: data.type,
         };
         if(global.deviceType == 'XR') {

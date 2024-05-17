@@ -26,21 +26,16 @@ export default class Light extends AssetEntity {
         return params;
     }
 
-    getColor() {
-        return this._color;
-    }
+    get color() { return this._color; }
+    get intensity() { return this._intensity; }
 
-    getIntensity() {
-        return this._intensity;
-    }
-
-    setColor(color) {
+    set color(color) {
         if(this._color == color) return;
         this._color = color;
         this._light.color.setHex(color);
     }
 
-    setIntensity(intensity) {
+    set intensity(intensity) {
         if(this._intensity == intensity) return;
         this._intensity = intensity;
         this._light.intensity = intensity;

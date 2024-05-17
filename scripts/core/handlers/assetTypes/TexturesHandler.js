@@ -20,14 +20,14 @@ class TexturesHandler extends AssetsHandler {
     }
 
     getTextureType(id) {
-        return this._assets[id].getTextureType();
+        return this._assets[id].textureType;
     }
 
     getTexturesAssetIds() {
         let assetIds = new Set();
         for(let id in this._assets) {
             let texture = this._assets[id];
-            let textureAssetIds = texture.getAssetIds();
+            let textureAssetIds = texture.assetIds;
             for(let assetId of textureAssetIds) {
                 assetIds.add(assetId);
             }

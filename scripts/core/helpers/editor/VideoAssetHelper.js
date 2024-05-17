@@ -8,60 +8,46 @@ import global from '/scripts/core/global.js';
 import VideoAsset from '/scripts/core/assets/VideoAsset.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
-import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
+import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMediaAssetHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import TextInput from '/scripts/core/menu/input/TextInput.js';
 
-export default class VideoAssetHelper extends AssetEntityHelper {
+const { CheckboxField, EnumField } = PlayableMediaAssetHelper.FieldTypes;
+
+export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {
         super(asset, PubSubTopics.VIDEO_UPDATED);
-        this._createPreviewFunctions();
-    }
-
-    _createPreviewFunctions() {
-        this._previewVideo = false;
-        this._asset.getPreviewVideo = () => this._previewVideo;
-        this._asset.setPreviewVideo = (previewVideo) => {
-            this._previewVideo = previewVideo;
-            if(previewVideo) {
-                this._asset.play(null, true);
-            } else {
-                this._asset.stop(true);
-            }
-        };
     }
 
     place(intersection) {
-        let object = intersection.object;
+        let { object, point } = intersection;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(intersection.point);
-        this._object.lookAt(normal.add(this._object.position));
+        point.add(normal);
+        this._object.position.copy(point);
+        this._object.parent.worldToLocal(this._object.position);
+        point.add(normal);
+        this._object.lookAt(point);
         this.roundAttributes(true);
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "previewVideo", "name": "Preview Video",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput},
+        "visualEdit",
+        { "parameter": "previewMedia", "name": "Preview Video",
+            "suppressMenuFocusEvent": true, "type": CheckboxField},
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
-            "type": EnumInput },
-        { "parameter": "autoplay", "name": "Auto Play",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput },
-        { "parameter": "loop", "name": "Loop",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput },
-        { "parameter": "playTopic", "name": "Play Event", "type": TextInput },
-        { "parameter": "pauseTopic", "name": "Pause Event", "type": TextInput },
-        { "parameter": "stopTopic", "name": "Stop Event", "type": TextInput },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "type": EnumField },
+        "autoplay",
+        "loop",
+        "playTopic",
+        "pauseTopic",
+        "stopTopic",
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

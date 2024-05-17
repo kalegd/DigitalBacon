@@ -9,8 +9,9 @@ import { Colors } from '/scripts/core/helpers/constants.js';
 import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
 import * as THREE from 'three';
+
+const { NumberField } = LightHelper.FieldTypes;
 
 export default class PointLightHelper extends LightHelper {
     constructor(asset) {
@@ -36,17 +37,17 @@ export default class PointLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "color" },
-        { "parameter": "intensity" },
+        "visualEdit",
+        "color",
+        "intensity",
         { "parameter": "distance", "name": "Distance", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "decay", "name": "Decay", "min": 0,
-            "type": NumberInput },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "type": NumberField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

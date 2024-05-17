@@ -15,13 +15,14 @@ export default class ImageAsset extends AssetEntity {
         super(params);
         this._createMesh(params['assetId']);
         let side = numberOr(params['side'], THREE.DoubleSide);
-        if(side != THREE.DoubleSide) this.setSide(side);
+        if(side != THREE.DoubleSide) this.side = side;
         this._side = side;
     }
 
     _createMesh(assetId) {
         this._mesh = LibraryHandler.cloneMesh(assetId);
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {
@@ -34,11 +35,9 @@ export default class ImageAsset extends AssetEntity {
         return params;
     }
 
-    getSide() {
-        return this._mesh.material.side;
-    }
+    get side() { return this._mesh.material.side; }
 
-    setSide(side) {
+    set side(side) {
         if(side == this._side) return;
         if(!this._materialAlreadyCloned) {
             this._mesh.material = this._mesh.material.clone();

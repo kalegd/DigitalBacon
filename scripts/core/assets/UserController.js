@@ -10,17 +10,15 @@ import BasicMovement from '/scripts/core/assets/BasicMovement.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import XRController from '/scripts/core/assets/XRController.js';
 import XRHand from '/scripts/core/assets/XRHand.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
-import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
+import { Handedness, InputHandler, XRInputDeviceTypes } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const AVATAR_KEY = "DigitalBacon:Avatar";
 const USERNAME_KEY = "DigitalBacon:Username";
@@ -47,10 +45,10 @@ class UserController extends InternalAssetEntity {
 
     init() {
         if(global.deviceType == 'XR') {
-            this.setIsXR(true);
+            this.isXR = true;
         }
         let scale = SettingsHandler.getUserScale();
-        this.setScale([scale, scale, scale]);
+        this.scale = [scale, scale, scale];
         this._setup();
     }
 
@@ -61,7 +59,7 @@ class UserController extends InternalAssetEntity {
                 'parentId': this._id,
                 'verticalOffset': global.cameraFocus.position.y,
             });
-            AudioHandler.setListenerParent(this._avatar.getObject());
+            AudioHandler.setListenerParent(this._avatar.object);
         } else {
             this._avatar = new Avatar({
                 'object': global.camera,
@@ -77,41 +75,28 @@ class UserController extends InternalAssetEntity {
         });
     }
 
-    getAvatar() {
-        return this._avatar;
-    }
+    get avatar() { return this._avatar; }
+    get isXR() { return this._isXR; }
+    get scale() { return super.scale; }
+    get username() { return this._username; }
 
-    getIsXR() {
-        return this._isXR;
-    }
-
-    getUsername() {
-        return this._username;
-    }
-
-    setAvatarUrl(url, ignorePublish) {
+    set avatarUrl(url) {
         localStorage.setItem(AVATAR_KEY, url);
         this._avatarUrl = url;
         this._avatar.updateSourceUrl(url);
-        if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
             { asset: this._avatar, fields: ['avatarUrl'] });
     }
 
-    setIsXR(isXR) {
-        this._isXR = isXR;
-    }
-
-    setScale(scale, ignorePublish) {
-        super.setScale(scale);
-        if(ignorePublish) return;
+    set isXR(isXR) { this._isXR = isXR; }
+    set scale(scale) {
+        super.scale = scale;
         PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
             { asset: this, fields: ['scale'] });
     }
-    setUsername(username, ignorePublish) {
+    set username(username) {
         localStorage.setItem(USERNAME_KEY, username);
         this._username = username;
-        if(ignorePublish) return;
         PubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
     }
 
@@ -153,12 +138,12 @@ class UserController extends InternalAssetEntity {
         if(global.deviceType != 'XR') return;
         let leftController = this._xrControllers[Handedness.LEFT];
         let rightController = this._xrControllers[Handedness.RIGHT];
-        if(!leftController || !rightController) return;
-        if(!leftController.isInScene()) {
+        if(!leftController || !rightController) {
             leftController = this._xrHands[Handedness.LEFT];
             rightController = this._xrHands[Handedness.RIGHT];
             if(!leftController || !rightController) return;
         }
+        if(!leftController.isInScene() || !rightController.isInScene()) return;
 
         let leftPosition = leftController.getWorldPosition();
         let rightPosition = rightController.getWorldPosition();
@@ -229,7 +214,7 @@ class UserController extends InternalAssetEntity {
             let data = [];
             this._pushAvatarDataForRTC(data);
             let rotation = data.slice(3, 6);
-            this._avatar.getObject().rotation.fromArray(rotation);
+            this._avatar.object.rotation.fromArray(rotation);
         }
         let updateNumber = SessionHandler.getControlsUpdateNumber();
         if(this._avatarFadeUpdateNumber == updateNumber) return;
@@ -300,9 +285,11 @@ class UserController extends InternalAssetEntity {
         let controllerModel = InputHandler.getXRControllerModel(type,
             handedness);
         let source = InputHandler.getXRInputSource(type, handedness);
-        if(controller && controller.isInScene()) {
+        if(controller && controller._live) {
             if(source) {
                 controller.resetTTL();
+                if(type==XRInputDeviceTypes.HAND && handedness==Handedness.LEFT)
+                    controller.updateHandMenu(timeDelta);
             } else {
                 controller.decrementTTL(timeDelta);
             }
@@ -312,15 +299,19 @@ class UserController extends InternalAssetEntity {
                 let assetClass = (type == XRInputDeviceTypes.HAND)
                     ? XRHand
                     : XRController;
+                let xrController = InputHandler.getXRController(type,
+                    handedness, 'grip');
                 controller = new assetClass({
+                    id: xrController.uuid,
                     handedness: handedness,
-                    ownerId: this._id,
+                    parentId: this._id,
                     controllerModel: controllerModel,
-                    object: InputHandler.getXRController(type, handedness,
-                        'grip'),
+                    object: xrController,
                 });
                 ProjectHandler.addAsset(controller, false, true);
-                controller.attachTo(this);
+                //controller.attachTo(this);
+                if(type==XRInputDeviceTypes.HAND && handedness==Handedness.LEFT)
+                    controller.createHandMenu();
             } else {
                 ProjectHandler.addAsset(controller, false, true);
             }

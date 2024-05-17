@@ -18,7 +18,7 @@ export default class CubeTexture extends Texture {
     constructor(params = {}) {
         params['assetId'] = CubeTexture.assetId;
         super(params);
-        this._images = params['images'] || {};
+        this._images = params['images'] || [...new Array(6)];
         this._mapping = params['mapping'] || THREE.CubeReflectionMapping;
         this._createTexture();
     }
@@ -28,14 +28,10 @@ export default class CubeTexture extends Texture {
     }
 
     _createTexture() {
-        let images = [
-            this._getImageFromSide(CubeSides.RIGHT),
-            this._getImageFromSide(CubeSides.LEFT),
-            this._getImageFromSide(CubeSides.TOP),
-            this._getImageFromSide(CubeSides.BOTTOM),
-            this._getImageFromSide(CubeSides.FRONT),
-            this._getImageFromSide(CubeSides.BACK),
-        ];
+        let images = this._images.map((imageId) => (imageId)
+            ? LibraryHandler.getImage(imageId)
+            : Textures.blackPixel.image
+        );
         //textures must be square, same size, and power of 2, otherwise
         //use no images
         if(!this._validateImageList(images))
@@ -43,13 +39,6 @@ export default class CubeTexture extends Texture {
         this._texture = new THREE.CubeTexture(images, this._mapping);
         this._texture.needsUpdate = true;
         this._texture.colorSpace = this._colorSpace;
-    }
-
-    _getImageFromSide(side) {
-        if(this._images[side]) {
-            return LibraryHandler.getImage(this._images[side]);
-        }
-        return Textures.blackPixel.image;
     }
 
     _validateImageList(images) {
@@ -83,24 +72,6 @@ export default class CubeTexture extends Texture {
         return isValid;
     }
 
-    getPreviewTexture() {
-        let imageId = this._images[CubeSides.FRONT];
-        if(imageId) return LibraryHandler.getTexture(imageId);
-        return Textures.blackPixel;
-    }
-
-    getAssetIds() {
-        let assetIds = [];
-        for(let side in CubeSides) {
-            if(this._images[side]) assetIds.push(this._images[side]);
-        }
-        return assetIds;
-    }
-
-    getTextureType() {
-        return CubeTexture.textureType;
-    }
-
     exportParams() {
         let params = super.exportParams();
         params['images'] = this._images;
@@ -108,32 +79,40 @@ export default class CubeTexture extends Texture {
         return params;
     }
 
-    getImages() {
-        return this._images;
-    }
-
-    getMapping() {
-        return this._mapping;
-    }
-
-    setImages(images, side) {
-        if(side) {
-            if(this._images[side] == images) return;
-            this._images[side] = images;
-            this._updateTexture();
-        } else {
-            let hasDiff = false;
-            for(let s in this._images) {
-                if(this._images[s] != images[s]) {
-                    this._images[s] = images[s];
-                    hasDiff = true;
-                }
-            }
-            if(hasDiff) this._updateTexture();
+    get assetIds() {
+        let assetIds = [];
+        for(let imageId of this._images) {
+            if(imageId) assetIds.push(imageId);
         }
+        return assetIds;
     }
 
-    setMapping(mapping) {
+    get images() { return [...this._images]; }
+    get mapping() { return this._mapping; }
+
+    get previewTexture() {
+        let imageId = this._images[CubeSides.FRONT];
+        if(imageId) return LibraryHandler.getTexture(imageId);
+        return Textures.blackPixel;
+    }
+
+    get textureType() {
+        return CubeTexture.textureType;
+    }
+
+
+    set images(images) {
+        let hasDiff = false;
+        for(let s in this._images) {
+            if(this._images[s] != images[s]) {
+                this._images[s] = images[s];
+                hasDiff = true;
+            }
+        }
+        if(hasDiff) this._updateTexture();
+    }
+
+    set mapping(mapping) {
         if(this._mapping == mapping) return;
         this._mapping = mapping;
         this._updateTexture();

@@ -6,8 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
-import States from '/scripts/core/enums/InteractableStates.js';
-import HandTools from '/scripts/core/enums/HandTools.js';
+import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
@@ -20,75 +19,94 @@ import Box3Helper from '/scripts/core/helpers/Box3Helper.js';
 import { disposeMaterial, fullDispose } from '/scripts/core/helpers/utils.module.js';
 import EditorHelper from '/scripts/core/helpers/editor/EditorHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import AssetEntityInput from '/scripts/core/menu/input/AssetEntityInput.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EulerInput from '/scripts/core/menu/input/EulerInput.js';
-import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
+import { InteractableStates } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
+const { AssetEntityField, CheckboxField, EulerField, Vector3Field } = EditorHelper.FieldTypes;
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const TRANSFORM_PUBLISH_FUNCTIONS = {
     position: 'publishPosition',
     rotation: 'publishRotation',
     scale: 'publishScale',
 };
-const TRS_HANDLERS = [{ handler: TranslateHandler, tool: HandTools.TRANSLATE },
-                      { handler: RotateHandler, tool: HandTools.ROTATE },
-                      { handler: ScaleHandler, tool: HandTools.SCALE },
+const TRS_HANDLERS = [
+    { handler: TranslateHandler, tool: InteractionTools.TRANSLATE },
+    { handler: RotateHandler, tool: InteractionTools.ROTATE },
+    { handler: ScaleHandler, tool: InteractionTools.SCALE },
 ];
 
 export default class AssetEntityHelper extends EditorHelper {
     constructor(asset, updatedTopic) {
         super(asset, updatedTopic);
-        this._object = asset.getObject();
+        this._object = asset.object;
         this._attachedPeers = new Set();
-        this._gripActions = [];
-        this._pointerActions = [];
-        this._boundingBox = new THREE.Box3();
+        this._eventListeners = [];
+        this._actionsAdded = false;
+        this._boundingBox = (global.deviceType == 'XR')
+            ? this._asset.gripInteractable._boundingBox
+            : new THREE.Box3();
         this._boundingBoxObj = new Box3Helper(this._boundingBox);
         this._overwriteAssetFunctions();
         this._addDeleteSubscriptionForPromotions();
+        this._createActions();
     }
 
-    _addActions() {
-        if(this._pointerActions.length > 0) return;
+    _createActions() {
         if(global.deviceType == "XR") {
-            this._gripActions.push(
-                this._asset.addGripAction((ownerId) => {
-                    TransformControlsHandler.attach(this._asset, ownerId);
-                }, (ownerId) => {
-                    TransformControlsHandler.detach(ownerId);
-                }, HandTools.EDIT));
-            this._gripActions.push(
-                this._asset.addGripAction(() => {
-                    ProjectHandler.deleteAsset(this._asset);
-                }, null, HandTools.DELETE));
-            this._pointerActions.push(
-                this._asset.addPointerAction(() => {
-                    ProjectHandler.deleteAsset(this._asset);
-                }, null, null, HandTools.DELETE));
-            this._pointerActions.push(
-                this._asset.addPointerAction((ownerId) => {
-                    CopyPasteControlsHandler.copy(ownerId, this._asset);
-                }, null, null, HandTools.COPY_PASTE));
+            this._asset.gripInteractable.addHoveredCallback((hovered) => {
+                (hovered)
+                    ? global.scene.add(this._boundingBoxObj)
+                    : global.scene.remove(this._boundingBoxObj);
+            });
+            this._eventListeners.push({ type: 'grip', callback: (message) => {
+                this._disableParam('position');
+                this._disableParam('rotation');
+                this._disableParam('scale');
+                this._asset.gripInteractable.capture(message.owner);
+                TransformControlsHandler.attach(this._asset, message.owner.id);
+            }, tool: InteractionTools.EDIT, topic: 'down' });
+            this._eventListeners.push({ type: 'grip', callback: (message) => {
+                let twoHandScaling = TransformControlsHandler._twoHandScaling;
+                TransformControlsHandler.detach(message.owner.id);
+                if(!twoHandScaling) {
+                    this._enableParam('position');
+                    this._enableParam('rotation');
+                    this._enableParam('scale');
+                }
+            }, tool: InteractionTools.EDIT, topic: 'click' });
+            this._eventListeners.push({ type: 'grip', callback: (_) => {
+                ProjectHandler.deleteAsset(this._asset);
+            }, tool: InteractionTools.DELETE, topic: 'down' });
+            this._eventListeners.push({ type: 'pointer', callback: (_) => {
+                ProjectHandler.deleteAsset(this._asset);
+            }, tool: InteractionTools.DELETE, topic: 'down' });
+            this._eventListeners.push({ type: 'pointer', callback: (message) =>{
+                CopyPasteControlsHandler.copy(message.owner.id, this._asset);
+            }, tool: InteractionTools.COPY_PASTE, topic: 'click' });
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;
-                this._gripActions.push(
-                    this._asset.addGripAction((ownerId) => {
-                        handler.attach(ownerId, this._asset);
-                    }, (ownerId) => {
-                        handler.detach(ownerId);
-                    }, tool));
+                this._eventListeners.push({ type: 'grip', callback: (message)=>{
+                    this._disableParam('position');
+                    this._disableParam('rotation');
+                    this._disableParam('scale');
+                    this._asset.gripInteractable.capture(message.owner);
+                    handler.attach(message.owner.id, this._asset);
+                }, tool: tool, topic: 'down' });
+                this._eventListeners.push({ type: 'grip', callback: (message)=>{
+                    handler.detach(message.owner.id);
+                    this._enableParam('position');
+                    this._enableParam('rotation');
+                    this._enableParam('scale');
+                }, tool: tool, topic: 'click' });
             }
         } else {
-            this._object.states = States;
-            this._object.setState = (state) => {
-                if(state == States.HOVERED) {
+            this._asset.pointerInteractable.addStateCallback((state) => {
+                if(state == InteractableStates.HOVERED) {
                     this._boundingBox.setFromObject(this._object);
                     global.scene.add(this._boundingBoxObj);
                 } else {
-                    if(state == States.SELECTED
+                    if(state == InteractableStates.SELECTED
                         && this._object == TransformControlsHandler.getObject()
                         && !TransformControlsHandler._isDragging())
                     {
@@ -96,29 +114,34 @@ export default class AssetEntityHelper extends EditorHelper {
                     }
                     global.scene.remove(this._boundingBoxObj);
                 }
-            };
-            this._pointerActions.push(
-                this._asset.addPointerAction(() => {
-                    TransformControlsHandler.attach(this._asset);
-                }));
+            });
+            this._eventListeners.push({ type: 'pointer', callback: (_) => {
+                TransformControlsHandler.attach(this._asset);
+            }, tool: InteractionTools.EDIT, topic: 'click' });
         }
+    }
+    _addActions() {
+        if(this._actionsAdded) return;
+        for(let details of this._eventListeners) {
+            this._asset[details.type + 'Interactable'].addEventListener(
+                details.topic, details.callback, { tool: details.tool });
+        }
+        this._actionsAdded = true;
     }
 
     _removeActions() {
-        for(let action of this._gripActions) {
-            this._asset.removeGripAction(action.id);
+        if(!this._actionsAdded) return;
+        for(let details of this._eventListeners) {
+            this._asset[details.type + 'Interactable'].removeEventListener(
+                details.topic, details.callback);
         }
-        this._gripActions = [];
-        for(let action of this._pointerActions) {
-            this._asset.removePointerAction(action.id);
-        }
-        this._pointerActions = [];
         this._attachedPeers = new Set();
+        this._actionsAdded = false;
     }
 
     updateVisualEdit(isVisualEdit) {
-        if(isVisualEdit == this._asset.visualEdit) return;
-        this._asset.visualEdit = isVisualEdit;
+        if(isVisualEdit == this._asset._visualEdit) return;
+        this._asset._visualEdit = isVisualEdit;
         if(isVisualEdit) {
             if(this._object.parent && this._attachedPeers.size == 0) {
                 this._addActions();
@@ -129,16 +152,21 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     attachToPeer(peer, message) {
-        this._attachedPeers.add(message.option);
+        this._attachedPeers.add(message.ownerId);
+        this._disableParam('position');
+        this._disableParam('rotation');
+        this._disableParam('scale');
+        if(!message.twoHandScaling)
+            this._subscribeToPeerDisconnected(peer.id);
         if(message.isXR) {
             if(message.type == 'translate') {
-                TranslateHandler.attach(message.option, this._asset,
+                TranslateHandler.attach(message.ownerId, this._asset,
                     message.position);
             } else if(message.type == 'rotate') {
-                RotateHandler.attach(message.option, this._asset,
+                RotateHandler.attach(message.ownerId, this._asset,
                     message.rotation);
             } else if(message.type == 'scale') {
-                ScaleHandler.attach(message.option, this._asset,
+                ScaleHandler.attach(message.ownerId, this._asset,
                     message.scale);
             } else {
                 TransformControlsHandler.attachToPeer(peer, this._asset,
@@ -151,16 +179,16 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     detachFromPeer(peer, message) {
-        this._attachedPeers.delete(message.option);
+        this._attachedPeers.delete(message.ownerId);
         if(message.isXR) {
             if(message.type == 'translate') {
-                TranslateHandler.detach(message.option,
+                TranslateHandler.detach(message.ownerId,
                     message.position);
             } else if(message.type == 'rotate') {
-                RotateHandler.detach(message.option,
+                RotateHandler.detach(message.ownerId,
                     message.rotation);
             } else if(message.type == 'scale') {
-                ScaleHandler.detach(message.option,
+                ScaleHandler.detach(message.ownerId,
                     message.scale);
             } else {
                 TransformControlsHandler.detachFromPeer(peer, this._asset,
@@ -168,9 +196,32 @@ export default class AssetEntityHelper extends EditorHelper {
                 if(message.twoHandScaling) return;
             }
         }
+        this._enableParam('position');
+        this._enableParam('rotation');
+        this._enableParam('scale');
+        this._unsubscribeFromPeerDisconnected(peer.id);
         if(!this._asset.visualEdit) return;
 
         this._addActions();
+    }
+
+    _subscribeToPeerDisconnected(peerId) {
+        let lastState = this.getObjectTransformation();
+        PubSub.subscribe(this._id, 'PEER_DISCONNECTED:' + peerId, () => {
+            for(let param in lastState) {
+                this._asset[param] = lastState[param];
+            }
+            this._asset.addTo(this._asset.parent);
+            this._enableParam('position');
+            this._enableParam('rotation');
+            this._enableParam('scale');
+            if(this._asset.visualEdit) this._addActions();
+            this._unsubscribeFromPeerDisconnected(peerId);
+        });
+    }
+
+    _unsubscribeFromPeerDisconnected(peerId) {
+        PubSub.unsubscribe(this._id, 'PEER_DISCONNECTED:' + peerId);
     }
 
     makeTranslucent() {
@@ -230,17 +281,21 @@ export default class AssetEntityHelper extends EditorHelper {
         };
     }
 
-    setObjectTransformation(oldValues, newValues, ignorePublish,ignoreUndoRedo){
+    setObjectTransformation(oldValues, newValues, ignorePublish, ignoreUndoRedo,
+                            ignoreDisabledCheck){
         let updated = [];
         for(let param of OBJECT_TRANSFORM_PARAMS) {
-            let oldValue = (oldValues)
-                ? oldValues[param]
-                : this._object[param].toArray();
-            let newValue = newValues[param];
-            if(oldValue.reduce((a,v,i) => a && newValue[i] == v,true)) continue;
-            this._object[param].fromArray(newValue);
-            this.updateMenuField(param);
-            updated.push(param);
+            if(!this._disabledParams.has(param) || ignoreDisabledCheck) {
+                let oldValue = (oldValues)
+                    ? oldValues[param]
+                    : this._object[param].toArray();
+                let newValue = newValues[param];
+                if(oldValue.reduce((a,v,i) => a && newValue[i] == v, true))
+                    continue;
+                this._object[param].fromArray(newValue);
+                this.updateMenuField(param);
+                updated.push(param);
+            }
         }
         if(updated.length == 0) return;
         if(!ignorePublish)
@@ -274,7 +329,7 @@ export default class AssetEntityHelper extends EditorHelper {
 
     place(intersection) {
         let point = intersection.point;
-        this._object.position.copy(point);
+        this._object.position.copy(this._object.parent.worldToLocal(point));
         this.roundAttributes(true);
     }
 
@@ -289,28 +344,26 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     _overwriteAssetFunctions() {
-        this._asset._addToScene = this._asset.addToScene;
-        this._asset._removeFromScene = this._asset.removeFromScene;
-        this._asset.addToScene =
-            (scene, pointerInteractable, gripInteractable) => {
-                this._asset._addToScene(scene, pointerInteractable,
-                    gripInteractable);
-                this.addToScene();
-            };
-        this._asset.removeFromScene = () => {
-            this._asset._removeFromScene();
-            this.removeFromScene();
+        this._asset.onAddToProject = () => this.onAddToProject();
+        this._asset._onRemoveFromProject = this._asset.onRemoveFromProject;
+        this._asset.onRemoveFromProject = () => {
+            this._asset._onRemoveFromProject();
+            this.onRemoveFromProject();
         };
-        this._asset.setVisualEdit = (visualEdit) => {
-            this.updateVisualEdit(visualEdit);
-        };
+        Object.defineProperty(this._asset, 'visualEdit', {
+            get: function() { return this._visualEdit; },
+            set: (v) => { this.updateVisualEdit(v); },
+        });
     }
 
     _addDeleteSubscriptionForPromotions() {
         let topic = this._asset.constructor.assetType + '_DELETED:'
-            + this._asset.getAssetId();
+            + this._asset.assetId + ':' + this._id;
         PubSub.subscribe(this._id, topic, (message) => {
             if(message.asset != this._asset) return;
+            this._enableParam('position');
+            this._enableParam('rotation');
+            this._enableParam('scale');
             let action = message.undoRedoAction;
             if(!action || action.promotionUpdateAdded) return;
             this._promoteChildren(action);
@@ -328,7 +381,7 @@ export default class AssetEntityHelper extends EditorHelper {
             action.promotedChildren.add(child);
         }
         for(let child of action.promotedChildren) {
-            child.getObject().applyMatrix4(this._object.matrix);
+            child.object.applyMatrix4(this._object.matrix);
             child.addTo(this._asset.parent);
         }
     }
@@ -338,7 +391,7 @@ export default class AssetEntityHelper extends EditorHelper {
         for(let child of action.promotedChildren) {
             if(child.parent == this._asset.parent) {
                 child.attachTo(this._asset);
-                let childObject = child.getObject();
+                let childObject = child.object;
                 if(!childObject.parent) {
                     childObject.applyMatrix4(invertedMatrix);
                 }
@@ -372,12 +425,12 @@ export default class AssetEntityHelper extends EditorHelper {
         }
     }
 
-    addToScene() {
+    onAddToProject() {
         if(!this._asset.visualEdit || this._attachedPeers.size > 0) return;
         this._addActions();
     }
 
-    removeFromScene() {
+    onRemoveFromProject() {
         this._attachedPeers.clear();
         global.scene.remove(this._boundingBoxObj);
         fullDispose(this._boundingBoxObj);
@@ -386,12 +439,12 @@ export default class AssetEntityHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "parentId", "name": "Parent", "includeScene": true,
-            "excludeSelf": true, "type": AssetEntityInput },
-        { "parameter": "position", "name": "Position", "type": Vector3Input },
-        { "parameter": "rotation", "name": "Rotation", "type": EulerInput },
-        { "parameter": "scale", "name": "Scale", "type": Vector3Input },
+            "excludeSelf": true, "type": AssetEntityField },
+        { "parameter": "position", "name": "Position", "type": Vector3Field },
+        { "parameter": "rotation", "name": "Rotation", "type": EulerField },
+        { "parameter": "scale", "name": "Scale", "type": Vector3Field },
         { "parameter": "visualEdit", "name": "Visually Edit",
-            "type": CheckboxInput },
+            "type": CheckboxField },
     ];
 }
 

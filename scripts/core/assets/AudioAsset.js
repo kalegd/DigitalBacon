@@ -5,294 +5,138 @@
  */
 
 import global from '/scripts/core/global.js';
-import AssetEntity from '/scripts/core/assets/AssetEntity.js';
+import PlayableMediaAsset from '/scripts/core/assets/PlayableMediaAsset.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import { concatenateArrayBuffers, numberOr } from '/scripts/core/helpers/utils.module.js';
+import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
 
-const PLAY = 0;
-const PAUSE = 1;
-const STOP = 2;
-
-export default class AudioAsset extends AssetEntity {
+export default class AudioAsset extends PlayableMediaAsset {
     constructor(params = {}) {
         super(params);
-        this._autoplay = params['autoplay'] || false;
         this._coneInnerAngle = numberOr(params['coneInner'], 360);
         this._coneOuterAngle = params['coneOuterAngle'] || 0;
         this._coneOuterGain = params['coneOuterGain'] || 0;
         this._distanceModel = params['distanceModel'] || 'inverse';
-        this._loop = params['loop'] || false;
         this._maxDistance = numberOr(params['maxDistance'], 100);
         this._refDistance = numberOr(params['refDistance'], 1);
         this._rolloffFactor = numberOr(params['rolloffFactor'], 1);
         this._volume = numberOr(params['volume'], 1);
         this._createMesh(params['assetId']);
-        this.setPlayTopic(params['playTopic'] || '');
-        this.setPauseTopic(params['pauseTopic'] || '');
-        this.setStopTopic(params['stopTopic'] || '');
         if(!global.isEditor) this._addPartySubscriptions();
     }
 
     _createMesh(assetId) {
         let audioBuffer = LibraryHandler.getBuffer(assetId);
-        this._audio = new THREE.PositionalAudio(AudioHandler.getListener());
-        if(!global.isEditor) this._audio.autoplay = this._autoplay;
-        this._audio.autoplay = this._autoplay;
-        this._audio.setDirectionalCone(this._coneInnerAngle,
+        this._media = new THREE.PositionalAudio(AudioHandler.getListener());
+        if(!global.isEditor) this._media.autoplay = this._autoplay;
+        this._media.autoplay = this._autoplay;
+        this._media.setDirectionalCone(this._coneInnerAngle,
             this._coneOuterAngle, this._coneOuterGain);
-        this._audio.setDistanceModel(this._distanceModel);
-        this._audio.setLoop(this._loop);
-        this._audio.setMaxDistance(this._maxDistance);
-        this._audio.setRefDistance(this._refDistance);
-        this._audio.setRolloffFactor(this._rolloffFactor);
-        this._audio.setVolume(this._volume);
-        this._audio.setBuffer(audioBuffer);
-        this._object.add(this._audio);
+        this._media.setDistanceModel(this._distanceModel);
+        this._media.setLoop(this._loop);
+        this._media.setMaxDistance(this._maxDistance);
+        this._media.setRefDistance(this._refDistance);
+        this._media.setRolloffFactor(this._rolloffFactor);
+        this._media.setVolume(this._volume);
+        this._media.setBuffer(audioBuffer);
+        this._object.add(this._media);
     }
 
     _getDefaultName() {
-        return LibraryHandler.getAssetName(this._assetId) || 'Audio';
+        return super._getDefaultName() || 'Audio';
     }
 
     exportParams() {
         let params = super.exportParams();
-        params['autoplay'] = this._autoplay;
         params['coneInnerAngle'] = this._coneInnerAngle;
         params['coneOuterAngle'] = this._coneOuterAngle;
         params['coneOuterGain'] = this._coneOuterGain;
         params['distanceModel'] = this._distanceModel;
-        params['loop'] = this._loop;
         params['maxDistance'] = this._maxDistance;
-        params['pauseTopic'] = this._pauseTopic;
-        params['playTopic'] = this._playTopic;
         params['refDistance'] = this._refDistance;
         params['rolloffFactor'] = this._rolloffFactor;
-        params['stopTopic'] = this._stopTopic;
         params['volume'] = this._volume;
         return params;
     }
 
-    getAudio() {
-        return this._audio;
+    get audio() { return this._media; }
+    get coneInnerAngle() { return this._coneInnerAngle; }
+    get coneOuterAngle() { return this._coneOuterAngle; }
+    get coneOuterGain() { return this._coneOuterGain; }
+    get distanceModel() { return this._distanceModel; }
+    get isPlaying() { return this._media.isPlaying; }
+    get loop() { return super.loop; }
+    get maxDistance() { return this._maxDistance; }
+    get progress() {
+        if(this._media.isPlaying) {
+            this._media.pause();//pause() update audio._progress
+            this._media.play();
+        }
+        return this._media._progress;
     }
+    get refDistance() { return this._refDistance; }
+    get rolloffFactor() { return this._rolloffFactor; }
+    get volume() { return this._volume; }
 
-    getAutoplay() {
-        return this._autoplay;
-    }
-
-    getConeInnerAngle() {
-        return this._coneInnerAngle;
-    }
-
-    getConeOuterAngle() {
-        return this._coneOuterAngle;
-    }
-
-    getConeOuterGain() {
-        return this._coneOuterGain;
-    }
-
-    getDistanceModel() {
-        return this._distanceModel;
-    }
-
-    getLoop() {
-        return this._loop;
-    }
-
-    getMaxDistance() {
-        return this._maxDistance;
-    }
-
-    getPlayTopic() {
-        return this._playTopic;
-    }
-
-    getPauseTopic() {
-        return this._pauseTopic;
-    }
-
-    getRefDistance() {
-        return this._refDistance;
-    }
-
-    getRolloffFactor() {
-        return this._rolloffFactor;
-    }
-
-    getStopTopic() {
-        return this._stopTopic;
-    }
-
-    getVolume() {
-        return this._volume;
-    }
-
-    setAutoplay(autoplay) {
-        this._autoplay = autoplay;
-        if(!global.isEditor) this._audio.autoplay = autoplay;
-    }
-
-    setConeInnerAngle(coneInnerAngle) {
+    set coneInnerAngle(coneInnerAngle) {
         this._coneInnerAngle = coneInnerAngle;
-        this._audio.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
+        this._media.setDirectionalCone(coneInnerAngle, this._coneOuterAngle,
             this._coneOuterGain);
     }
 
-    setConeOuterAngle(coneOuterAngle) {
+    set coneOuterAngle(coneOuterAngle) {
         this._coneOuterAngle = coneOuterAngle;
-        this._audio.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
+        this._media.setDirectionalCone(this._coneInnerAngle, coneOuterAngle,
             this._coneOuterGain);
     }
 
-    setConeOuterGain(coneOuterGain) {
+    set coneOuterGain(coneOuterGain) {
         this._coneOuterGain = coneOuterGain;
-        this._audio.setDirectionalCone(this._coneInnerAngle,
+        this._media.setDirectionalCone(this._coneInnerAngle,
             this._coneOuterAngle, coneOuterGain);
     }
 
-    setDistanceModel(distanceModel) {
+    set distanceModel(distanceModel) {
         this._distanceModel = distanceModel;
-        this._audio.setDistanceModel(distanceModel);
+        this._media.setDistanceModel(distanceModel);
     }
 
-    setLoop(loop) {
-        this._loop = loop;
-        this._audio.setLoop(loop);
+    set loop(loop) {
+        super.loop = loop;
+        this._media.setLoop(loop);
     }
 
-    setMaxDistance(maxDistance) {
+    set maxDistance(maxDistance) {
         this._maxDistance = maxDistance;
-        this._audio.setMaxDistance(maxDistance);
+        this._media.setMaxDistance(maxDistance);
     }
 
-    setPlayTopic(playTopic) {
-        if(this._playTopic) {
-            PubSub.unsubscribe(this._id, this._playTopic);
-        }
-        this._playTopic = playTopic;
-        if(this._playTopic) {
-            PubSub.subscribe(this._id, this._playTopic, () => {
-                if(!global.isEditor) this.play(null, true);
-            });
+    set progress(position) {
+        if(position != null) {
+            this._media._progress = position || 0;
         }
     }
 
-    setPauseTopic(pauseTopic) {
-        if(this._pauseTopic) {
-            PubSub.unsubscribe(this._id, this._pauseTopic);
-        }
-        this._pauseTopic = pauseTopic;
-        if(this._pauseTopic) {
-            PubSub.subscribe(this._id, this._pauseTopic, () => {
-                if(!global.isEditor) this.pause(null, true);
-            });
-        }
-    }
-
-    setRefDistance(refDistance) {
+    set refDistance(refDistance) {
         this._refDistance = refDistance;
-        this._audio.setRefDistance(refDistance);
+        this._media.setRefDistance(refDistance);
     }
 
-    setRolloffFactor(rolloffFactor) {
+    set rolloffFactor(rolloffFactor) {
         this._rolloffFactor = rolloffFactor;
-        this._audio.setRolloffFactor(rolloffFactor);
+        this._media.setRolloffFactor(rolloffFactor);
     }
 
-    setStopTopic(stopTopic) {
-        if(this._stopTopic) {
-            PubSub.unsubscribe(this._id, this._stopTopic);
-        }
-        this._stopTopic = stopTopic;
-        if(this._stopTopic) {
-            PubSub.subscribe(this._id, this._stopTopic, () => {
-                if(!global.isEditor) this.stop(true);
-            });
-        }
-    }
-
-    setVolume(volume) {
+    set volume(volume) {
         this._volume = volume;
-        this._audio.setVolume(volume);
+        this._media.setVolume(volume);
     }
 
     play(position, ignorePublish) {
-        this._audio.pause();//pause() update audio._progress
-        if(position != null) {
-            this._audio._progress = position || 0;
-        }
-        this._audio.play();
-        if(ignorePublish) return;
-        let type = new Uint8Array([PLAY]);
-        position = new Float64Array([this._audio._progress]);
-        let message = concatenateArrayBuffers(type, position);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
-    }
-
-    pause(position, ignorePublish) {
-        this._audio.pause();
-        if(position != null) {
-            this._audio._progress = position || 0;
-        }
-        if(ignorePublish) return;
-        let type = new Uint8Array([PAUSE]);
-        position = new Float64Array([this._audio._progress]);
-        let message = concatenateArrayBuffers(type, position);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
-    }
-
-    stop(ignorePublish) {
-        this._audio.stop();
-        if(ignorePublish) return;
-        let message = new Uint8Array([STOP]);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message);
-    }
-
-    _addPartySubscriptions() {
-        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            this._onPeerReady(message.peer);
-        });
-        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
-            this._onPartyStarted(PartyHandler.isHost());
-        });
-        PartyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
-            let type = new Uint8Array(m, 0, 1);
-            if(type[0] == PLAY) {
-                let message = new Float64Array(m.slice(1));
-                this.play(message[0], true);
-            } else if(type[0] == PAUSE) {
-                let message = new Float64Array(m.slice(1));
-                this.pause(message[0], true);
-            } else if(type[0] == STOP) {
-                this.stop(true);
-            }
-        });
-    }
-
-    _onPeerReady(peer) {
-        if(!PartyHandler.isHost()) return;
-        let topic = PAUSE;
-        if(this._audio.isPlaying) {
-            this._audio.pause();//pause() update audio._progress
-            this._audio.play();
-            topic = PLAY;
-        }
-        let type = new Uint8Array([topic]);
-        let position = new Float64Array([this._audio._progress]);
-        let message = concatenateArrayBuffers(type, position);
-        PartyHandler.publishInternalBufferMessage(this._idBytes, message, peer);
-    }
-
-    _onPartyStarted(isHost) {
-        if(isHost) return;
-        this.stop(true);
+        if(this._media.isPlaying) this._media.pause();
+        super.play(position, ignorePublish);
     }
 
     static assetType = AssetTypes.AUDIO;

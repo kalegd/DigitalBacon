@@ -28,6 +28,7 @@
     "arrow-body-style": ["error", "as-needed"],
     "no-unused-vars": ["error", {
         "vars": "all",
+        "varsIgnorePattern": "^_$",
         "args": "after-used",
         "argsIgnorePattern": "^_",
         "ignoreRestSiblings": false

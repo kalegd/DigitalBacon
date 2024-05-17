@@ -4,16 +4,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import { Colors, Fonts } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import global from '/scripts/core/global.js';
+import { FontSizes } from '/scripts/core/helpers/constants.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
+import { createTextInput, createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 
 const FIELD_MAX_LENGTH = 25;
 
-class AssetSelectPage extends PaginatedPage {
+class AssetSelectPage extends PaginatedButtonsPage {
     constructor(controller) {
         super(controller, true);
         this._assets = {};
@@ -23,42 +21,34 @@ class AssetSelectPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        this._textField = new TextField({
-            'height': 0.04,
-            'width': 0.3,
-            'onBlur': () => { this._searchUpdated(); },
-            'onUpdate': () => { this._searchUpdated(); },
+        this._searchInput = createTextInput({
+            borderRadius: 0.02,
+            fontSize: FontSizes.body,
+            height: 0.04,
+            marginBottom: 0.004,
+            marginTop: 0.01,
+            width: 0.29,
         });
-        this._textField.addToScene(this._container,this._containerInteractable);
+        this._searchInput.onBlur = () => {
+            global.keyboardLock = false;
+            this._searchUpdated();
+        };
+        this._searchInput.onChange = () => this._searchUpdated();
+        this._searchInput.onEnter = () => this._searchInput.blur();
+        this._searchInput.onFocus = () => { global.keyboardLock = true; };
+        this.add(this._searchInput);
 
         this._addList();
     }
 
     _createAddButton() {
-        let addButtonParent = new ThreeMeshUI.Block({
-            height: 0.06,
-            width: 0.06,
-            backgroundColor: Colors.defaultMenuBackground,
-            backgroundOpacity: 0,
-        });
-        this._addButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "+",
-            'fontSize': 0.04,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        addButtonParent.set({
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture,
-        });
-        addButtonParent.position.fromArray([.175, 0.12, -0.001]);
-        addButtonParent.add(this._addButton);
-        this._addInteractable = new PointerInteractable(this._addButton, true);
-        this._addInteractable.addAction(() => {
+        this._addButton = createSmallButton('+');
+        this._addButton.bypassContentPositioning = true;
+        this._addButton.position.fromArray([0.175, 0.12, 0.001]);
+        this._addButton.onClickAndTouch = () => {
             if(this._addAction) this._addAction();
-        });
-        this._containerInteractable.addChild(this._addInteractable);
-        this._object.add(addButtonParent);
+        };
+        this.add(this._addButton);
     }
 
     _searchUpdated() {
@@ -83,7 +73,7 @@ class AssetSelectPage extends PaginatedPage {
 
     _getFilteredItems() {
         let items = [];
-        let content = this._textField.content.toLowerCase();
+        let content = this._searchInput.value.toLowerCase();
         for(let assetId in this._assets) {
             if(this._assets[assetId]['Name'].toLowerCase().includes(content)) {
                 items.push(assetId);
@@ -98,17 +88,17 @@ class AssetSelectPage extends PaginatedPage {
         this._addAction = addAction;
         this._backAction = backAction;
         if(this._addAction) {
-            this._addButton.visible = true;
-            this._containerInteractable.addChild(this._addInteractable);
-        } else {
-            this._addButton.visible = false;
-            this._containerInteractable.removeChild(this._addInteractable);
+            if(!this._addButton.parent) {
+                this.add(this._addButton);
+            }
+        } else if(this._addButton.parentComponent) {
+            this.remove(this._addButton);
         }
     }
 
     back() {
         this._action = null;
-        this._textField.deactivate();
+        this._searchInput.blur();
         if(this._backAction) this._backAction();
         super.back();
     }

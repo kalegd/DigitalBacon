@@ -12,19 +12,19 @@ import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
-import { uuidv4, capitalizeFirstLetter, storeStringValuesInSet } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, storeStringValuesInSet } from '/scripts/core/helpers/utils.module.js';
 
 /* global JSZip, JSZipUtils */
 
 class ProjectHandler {
     constructor() {
         this._id = uuidv4();
-        this._scene = Scene.getObject();
+        this._scene = Scene.object;
         this._objects = [];
         this._assets = {};
         this._assetHandlers = {};
         this._sessionAssets = {};
-        this._sessionAssets[Scene.getId()] = Scene;
+        this._sessionAssets[Scene.id] = Scene;
     }
 
     load(projectFilePath, successCallback, errorCallback) {
@@ -203,7 +203,7 @@ class ProjectHandler {
                     value = assetsPendingUpdates[id].params[key].concat(value);
                 if(key == 'parentId')
                     asset.addTo(this._sessionAssets[value], true);
-                asset['set' + capitalizeFirstLetter(key)](value);
+                asset[key] = value;
             }
         }
     }
@@ -270,34 +270,32 @@ class ProjectHandler {
     }
 
     deleteAsset(asset, ignorePublish, ignoreUndoRedo) {
-        let assetType = LibraryHandler.getType(asset.getAssetId());
+        let assetType = LibraryHandler.getType(asset.assetId);
         let handler = this._assetHandlers[assetType];
         handler.deleteAsset(asset, ignorePublish, ignoreUndoRedo);
     }
 
     deleteAssetFromHandler(asset) {
-        let id = asset.getId();
+        let id = asset.id;
         if(this._assets[id]) {
-            if(asset.removeFromScene) {
-                if(asset.getObject) {
-                    let object = asset.getObject();
-                    for(let i = 0; i < this._objects.length; i++) {
-                        if(object == this._objects[i]) {
-                            this._objects.splice(i,1);
-                            break;
-                        }
-                    }
-                    let type = LibraryHandler.getType(asset.getAssetId());
-                    if(asset.parent && asset.parent != Scene
-                            && type != AssetTypes.INTERNAL) {
-                        let parentAssetId = asset.parent.getAssetId();
-                        let parentType = LibraryHandler.getType(parentAssetId);
-                        if(parentType == AssetTypes.INTERNAL)
-                            this._scene.attach(object);
+            if('object' in asset) {
+                let object = asset.object;
+                for(let i = 0; i < this._objects.length; i++) {
+                    if(object == this._objects[i]) {
+                        this._objects.splice(i,1);
+                        break;
                     }
                 }
-                asset.removeFromScene();
+                let type = LibraryHandler.getType(asset.assetId);
+                if(asset.parent && asset.parent != Scene
+                        && type != AssetTypes.INTERNAL) {
+                    let parentAssetId = asset.parent.assetId;
+                    let parentType = LibraryHandler.getType(parentAssetId);
+                    if(parentType == AssetTypes.INTERNAL)
+                        this._scene.attach(object);
+                }
             }
+            if(asset.onRemoveFromProject) asset.onRemoveFromProject();
             delete this._assets[id];
         }
     }
@@ -310,22 +308,17 @@ class ProjectHandler {
     }
 
     addAsset(asset, ignorePublish, ignoreUndoRedo) {
-        let assetType = LibraryHandler.getType(asset.getAssetId());
+        let assetType = LibraryHandler.getType(asset.assetId);
         let handler = this._assetHandlers[assetType];
         handler.addAsset(asset, ignorePublish, ignoreUndoRedo);
     }
 
     addAssetFromHandler(asset) {
-        let id = asset.getId();
-        if(asset.addToScene) {
-            if(asset.parent) {
-                asset.addToScene(asset.parent.getObject(),
-                    asset.parent.getPointerInteractable(),
-                    asset.parent.getGripInteractable());
-            } else {
-                asset.addToScene();
-            }
-            if(asset.getObject) this._objects.push(asset.getObject());
+        let id = asset.id;
+        if(asset.onAddToProject) asset.onAddToProject();
+        if('object' in asset) {
+            if(asset.parent) asset.parent.object.add(asset.object);
+            this._objects.push(asset.object);
         }
         if(this._assets[id]) return; //Prevent multi-user collisions
                                               //caused by undo/redo
@@ -335,7 +328,7 @@ class ProjectHandler {
 
     reset() {
         this._sessionAssets = {};
-        this._sessionAssets[Scene.getId()] = Scene;
+        this._sessionAssets[Scene.id] = Scene;
         if(!global.disableImmersion) UndoRedoHandler.reset();
         for(let type in this._assetHandlers) {
             this._assetHandlers[type].reset();
@@ -390,7 +383,8 @@ class ProjectHandler {
         }
 
         storeStringValuesInSet(projectDetails, values);
-        assetIds.filter((assetId) => values.has(assetId));
+        if(skipInternals)
+            assetIds = assetIds.filter((assetId) => values.has(assetId));
         projectDetails['library'] = LibraryHandler.getLibraryDetails(
             assetIds);
         return projectDetails;

@@ -9,7 +9,8 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import MaterialInput from '/scripts/core/menu/input/MaterialInput.js';
+
+const { MaterialField } = AssetEntityHelper.FieldTypes;
 
 export default class ShapeHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -18,35 +19,41 @@ export default class ShapeHelper extends AssetEntityHelper {
     }
 
     _overwriteSetMaterial() {
-        this._asset._setMaterial = this._asset.setMaterial;
-        this._asset.setMaterial = (material) => {
-            let mesh = this._asset.getMesh();
-            let wasTranslucent = mesh.material.userData['oldMaterial'];
-            if(wasTranslucent) this.returnTransparency();
-            this._asset._setMaterial(material);
-            if(wasTranslucent) this.makeTranslucent();
-        };
+        Object.defineProperty(this._asset, 'materialId', {
+            get: function() { return this._materialId; },
+            set: (newValue) => {
+                let mesh = this._asset.mesh;
+                let wasTranslucent = mesh.material.userData['oldMaterial'];
+                if(wasTranslucent) this.returnTransparency();
+                this._asset._materialId = newValue;
+                let oldMaterial = this._asset._mesh.material;
+                let material = this._asset._getMaterial();
+                this._asset._mesh.material = material;
+                oldMaterial.dispose();
+                if(wasTranslucent) this.makeTranslucent();
+            },
+        });
     }
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_DELETED, (e) => {
-            if(this._asset.getMaterial() == e.asset.getId()) {
-                this._updateParameter('material', null, false, true);
-                this.updateMenuField('material');
+            if(this._asset.materialId == e.asset.id) {
+                this._updateParameter('materialId', null, false, true);
+                this.updateMenuField('materialId');
                 if(e.undoRedoAction) {
                     let undo = e.undoRedoAction.undo;
                     e.undoRedoAction.undo = () => {
                         undo();
-                        this._updateParameter('material', e.asset.getId(),
+                        this._updateParameter('materialId', e.asset.id,
                             false, true);
-                        this.updateMenuField('material');
+                        this.updateMenuField('materialId');
                     };
                 }
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.MATERIAL_ADDED, (e) => {
-            if(this._asset.getMaterial() == e.getId()) {
-                this._asset.setMaterial(e.getId());
+            if(this._asset.materialId == e.id) {
+                this._asset.materialId = e.id;
             }
         });
     }
@@ -55,18 +62,18 @@ export default class ShapeHelper extends AssetEntityHelper {
         PubSub.unsubscribe(this._id, PubSubTopics.MATERIAL_DELETED);
     }
 
-    addToScene(scene) {
-        super.addToScene(scene);
+    onAddToProject() {
+        super.onAddToProject();
         this._addSubscriptions();
     }
 
-    removeFromScene() {
-        super.removeFromScene();
+    onRemoveFromProject() {
+        super.onRemoveFromProject();
         this._removeSubscriptions();
     }
 
     static fields = [
-        { 'parameter': 'material', 'name': 'Material', "type": MaterialInput }
+        { 'parameter': 'materialId', 'name': 'Material', "type": MaterialField }
     ];
 }
 

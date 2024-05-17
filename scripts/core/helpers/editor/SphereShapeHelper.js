@@ -7,7 +7,8 @@
 import SphereShape from '/scripts/core/assets/primitives/SphereShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+
+const { NumberField } = ShapeHelper.FieldTypes;
 
 export default class SphereShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -15,22 +16,22 @@ export default class SphereShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "materialId",
         { "parameter": "radius", "name": "Radius", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "widthSegments", "name": "Horizontal Sides", "min": 3,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "heightSegments", "name": "Vertical Sides", "min": 2,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "phiLength", "name": "Horizontal Degrees", "min": 0,
-            "max": 360, "type": NumberInput },
+            "max": 360, "type": NumberField },
         { "parameter": "thetaLength", "name": "Vertical Degrees", "min": 0,
-            "max": 180, "type": NumberInput },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "max": 180, "type": NumberField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

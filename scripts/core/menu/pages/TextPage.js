@@ -4,9 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class TextPage extends MenuPage {
     constructor(controller) {
@@ -15,26 +15,16 @@ class TextPage extends MenuPage {
     }
 
     _addPageContent() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': ' ',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.4,
-        });
-        this._container.add(this._titleBlock);
+        this._titleBlock = new Text('', Styles.title);
+        this.add(this._titleBlock);
 
-        this._textBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Loading...',
-            'fontSize': 0.025,
-            'height': 0.04,
-            'width': 0.4,
-        });
-        this._container.add(this._textBlock);
+        this._textBlock = new Text('', Styles.bodyText, { maxWidth: 0.4 });
+        this.add(this._textBlock);
     }
 
     setContent(title, text) {
-        this._titleBlock.children[1].set({ content: title });
-        this._textBlock.children[1].set({ content: text });
+        this._titleBlock.textComponent.text = title;
+        this._textBlock.textComponent.text = text;
     }
 }
 

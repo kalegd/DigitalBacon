@@ -4,12 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
+import global from '/scripts/core/global.js';
+import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
+import { createTextInput, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class TextInputPage extends MenuPage {
     constructor(controller) {
@@ -18,63 +17,61 @@ class TextInputPage extends MenuPage {
     }
 
     _addPageContent() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': ' ',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.4,
+        this._titleBlock = new Text(' ', Styles.bodyText, {
+            marginTop: 0.01,
+            maxWidth: 0.375,
         });
-        this._container.add(this._titleBlock);
+        this.add(this._titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.2,
+            justifyContent: 'center',
+            width: 0.45,
         });
-        this._textField = new TextField({
-            'height': 0.04,
-            'width': 0.4,
-            'onEnter': () => { this._inputConfirmed(); },
+        this._textInput = createTextInput({
+            borderRadius: 0.02,
+            fontSize: FontSizes.body,
+            height: 0.04,
+            marginBottom: 0.004,
+            marginTop: 0.01,
+            width: 0.375,
         });
-        this._button = ThreeMeshUIHelper.createButtonBlock({
-            'text': ' ',
-            'fontSize': FontSizes.body,
-            'height': 0.04,
-            'width': 0.25,
-            'margin': 0.002,
-        });
-        let buttonInteractable = new PointerInteractable(this._button, true);
-        buttonInteractable.addAction(() => this._inputConfirmed());
-        this._textField.addToScene(columnBlock, this._containerInteractable);
+        this._textInput.onBlur = () => { global.keyboardLock = false; };
+        this._textInput.onEnter = () => this._inputConfirmed();
+        this._textInput.onFocus = () => { global.keyboardLock = true; };
+        this._button = createWideButton('.');
+        this._button.height = 0.04;
+        this._button.margin = 0.004;
+        this._button.width = 0.25;
+        this._button.onClickAndTouch = () => this._inputConfirmed();
+        columnBlock.add(this._textInput);
         columnBlock.add(this._button);
-        this._container.add(columnBlock);
-        this._containerInteractable.addChild(buttonInteractable);
+        this.add(columnBlock);
     }
 
     _inputConfirmed() {
-        this._textField.deactivate();
-        if(this._action) this._action(this._textField.content);
+        this._textInput.blur();
+        if(this._action) this._action(this._textInput.value);
     }
 
     setContent(title, defaultText, buttonText, action) {
-        this._titleBlock.children[1].set({ content: title });
-        this._button.children[1].set({ content: buttonText });
+        this._titleBlock.text = title;
+        this._button.textComponent.text = buttonText;
         this._action = action;
-        this._textField.setDefaultContent(defaultText);
-        this._textField.reset();
+        this._textInput.placeholder = defaultText;
+        this._textInput.value = '';
     }
 
     setContentWithInitialValue(title, content, buttonText, action) {
-        this._titleBlock.children[1].set({ content: title });
-        this._button.children[1].set({ content: buttonText });
+        this._titleBlock.text = title;
+        this._button.textComponent.text = buttonText;
         this._action = action;
-        this._textField.setContent(content);
+        this._textInput.placeholder = '';
+        this._textInput.value = content;
     }
 
     back() {
-        this._textField.deactivate();
+        this._textInput.blur();
         super.back();
     }
 
