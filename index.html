@@ -145,16 +145,6 @@
 
       let camera, cameraFocus, scene;
 
-      function onResize() {
-          let container = document.getElementById("container");
-          let aspectRatio = container.clientWidth / container.clientHeight;
-          if(aspectRatio < 1.08) {
-              camera.position.set(0, 8 * 1.08 / aspectRatio, 23 * 1.08 / aspectRatio);
-          } else {
-            camera.position.set(0, 8, 23);
-          }
-      }
-
       disableImmersion();
       setup("container", { projectFilePath: "/projects/default-project.zip" })
           .then((App) => {
@@ -163,13 +153,8 @@
               scene = App.getScene();
               scene.add(cameraFocus);
               cameraFocus.add(camera);
-              camera.position.set(0, 8, 23);
-              camera.rotation.set(-Math.PI / 10, 0, 0);
-              setInterval(() => {
-                  cameraFocus.rotateY(Math.PI / 5000);
-              }, 10);
-              window.addEventListener('resize', onResize);
-              onResize();
+              camera.position.set(0, 1.7, -2);
+              camera.rotation.set(Math.PI / 30, Math.PI, 0);
       });
     </script>
   </body>
