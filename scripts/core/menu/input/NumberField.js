@@ -5,11 +5,11 @@
  */
 
 import global from '/scripts/core/global.js';
-import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
+import { FontSizes } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { NumberInput, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { NumberInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class NumberField extends MenuField {
     constructor(params) {
@@ -34,7 +34,7 @@ class NumberField extends MenuField {
         this._numberInput.onBlur = () => this._blur();
         this._numberInput.onChange = () => this._update();
         this._numberInput.onEnter = () => this._numberInput.blur();
-        this._numberInput.onFocus = () => { global.keyboardLock = true };
+        this._numberInput.onFocus = () => { global.keyboardLock = true; };
         this._numberInput.minValue = this._minValue;
         this._numberInput.maxValue = this._maxValue;
         this._numberInput.value = this._lastValue;

@@ -29,7 +29,7 @@ class TwoButtonPage extends MenuPage {
         });
         this._button1 = createWideButton('.');
         this._button2 = createWideButton(' ');
-        this._button1.height = this._button2.height = 0.04
+        this._button1.height = this._button2.height = 0.04;
         this._button1.margin = this._button2.margin = 0.004;
         this._button1.width = this._button2.width = 0.25;
         this._button1.onClickAndTouch =

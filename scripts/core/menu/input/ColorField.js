@@ -6,13 +6,10 @@
 
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Styles } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 class ColorField extends MenuField {

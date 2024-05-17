@@ -5,7 +5,7 @@
  */
 
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import { Div, Image, Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
@@ -140,8 +140,7 @@ class PaginatedImagesPage extends MenuPage {
 
     //Needs to be overridden
     _handleItemInteraction() {
-        console.error(
-            "PaginatedImagesPage._handleItemInteraction() should be overridden");
+        console.error("PaginatedImagesPage._handleItemInteraction() should be overridden");
         return;
     }
 

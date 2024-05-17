@@ -7,15 +7,13 @@
 import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Colors } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { createWideImageButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Style, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Style } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class ImageField extends MenuField {
     constructor(params) {

@@ -20,7 +20,7 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
     _createPreviewFunctions() {
         this._previewMedia = false;
         Object.defineProperty(this._asset, 'previewMedia', {
-            get: () => { return this._previewMedia; },
+            get: () => this._previewMedia,
             set: (previewMedia) => {
                 this._previewMedia = previewMedia;
                 if(previewMedia) {
@@ -54,4 +54,5 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(PlayableMediaAssetHelper, PlayableMediaAsset);
+EditorHelperFactory.registerEditorHelper(PlayableMediaAssetHelper,
+    PlayableMediaAsset);

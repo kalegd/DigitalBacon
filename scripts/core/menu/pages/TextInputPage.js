@@ -40,7 +40,7 @@ class TextInputPage extends MenuPage {
         this._textInput.onEnter = () => this._inputConfirmed();
         this._textInput.onFocus = () => { global.keyboardLock = true; };
         this._button = createWideButton('.');
-        this._button.height = 0.04
+        this._button.height = 0.04;
         this._button.margin = 0.004;
         this._button.width = 0.25;
         this._button.onClickAndTouch = () => this._inputConfirmed();

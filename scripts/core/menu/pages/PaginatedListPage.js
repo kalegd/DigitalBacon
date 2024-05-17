@@ -75,7 +75,6 @@ class PaginatedListPage extends PaginatedPage {
         let firstIndex = this._page * OPTIONS;
         for(let i = 0; i < OPTIONS; i++) {
             let row = this._paginatedListRows[i];
-            let title = row.children[1];
             if(firstIndex + i < this._items.length) {
                 let item = this._items[firstIndex + i];
                 row.title.text = this._getItemName(item);
@@ -84,7 +83,7 @@ class PaginatedListPage extends PaginatedPage {
                 if(row.parentComponent) row.parentComponent.remove(row);
             }
         }
-        this._updatePreviousAndNextButtons(firstIndex + OPTIONS)
+        this._updatePreviousAndNextButtons(firstIndex + OPTIONS);
     }
 
     //Needs to be overridden
@@ -95,15 +94,13 @@ class PaginatedListPage extends PaginatedPage {
 
     //Needs to be overridden
     _handleEditItemInteraction() {
-        console.error(
-            "PaginatedListPage._handleEditItemInteraction() should be overridden");
+        console.error("PaginatedListPage._handleEditItemInteraction() should be overridden");
         return;
     }
 
     //Needs to be overridden
     _handleDeleteItemInteraction() {
-        console.error(
-            "PaginatedListPage._handleDeleteItemInteraction() should be overridden"
+        console.error("PaginatedListPage._handleDeleteItemInteraction() should be overridden"
         );
         return;
     }

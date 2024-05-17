@@ -52,9 +52,11 @@ export default class Texture extends Asset {
     get previewTexture() { return this._texture; }
     get assetIds() {
         console.error("get Texture.assetIds should be overridden");
+        return [];
     }
     get textureType() {
         console.error("get Texture.textureType should be overridden");
+        return null;
     }
 
     set colorSpace(colorSpace) {

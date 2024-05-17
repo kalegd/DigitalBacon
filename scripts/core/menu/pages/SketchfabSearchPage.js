@@ -33,7 +33,7 @@ class SketchfabSearchPage extends PaginatedImagesPage {
         });
         this._searchInput.onBlur = () => this._searchUpdated();
         this._searchInput.onEnter = () => this._searchInput.blur();
-        this._searchInput.onFocus = () => { global.keyboardLock = true };
+        this._searchInput.onFocus = () => { global.keyboardLock = true; };
         this.add(this._searchInput);
         this._loadingBlock = new Text('Loading...', Styles.bodyText,
             { height: 0.2 });

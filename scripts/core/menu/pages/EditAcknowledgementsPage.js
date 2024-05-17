@@ -5,7 +5,7 @@
  */
 
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
-import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import TextField from '/scripts/core/menu/input/TextField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';

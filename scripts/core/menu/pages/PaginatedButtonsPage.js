@@ -71,8 +71,7 @@ class PaginatedButtonsPage extends PaginatedPage {
 
     //Needs to be overridden
     _handleItemInteraction() {
-        console.error(
-            "PaginatedButtonsPage._handleItemInteraction() should be overridden");
+        console.error("PaginatedButtonsPage._handleItemInteraction() should be overridden");
         return;
     }
 

@@ -8,7 +8,7 @@ import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import UserMessageCodes from '/scripts/core/enums/UserMessageCodes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import { vector3s, Colors, Fonts } from '/scripts/core/helpers/constants.js';
+import { vector3s, Colors } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { Handedness, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';

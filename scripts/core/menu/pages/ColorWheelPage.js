@@ -29,9 +29,6 @@ class ColorWheelPage extends MenuPage {
             width: RADIUS * 3,
         });
         this._hslColor = new HSLColor(RADIUS);
-        this._hslColor.onChange = (color) => {
-            body.materialColor = color;
-        };
         configureOrbitDisabling(this._hslColor.hueSaturationWheel);
         configureOrbitDisabling(this._hslColor.lightnessBar);
         rowBlock.add(this._hslColor.hueSaturationWheel);

@@ -12,7 +12,7 @@ import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMedia
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import * as THREE from 'three';
 
-const { CheckboxField, EnumField, NumberField } = PlayableMediaAssetHelper.FieldTypes;
+const { EnumField, NumberField } = PlayableMediaAssetHelper.FieldTypes;
 
 export default class AudioAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {

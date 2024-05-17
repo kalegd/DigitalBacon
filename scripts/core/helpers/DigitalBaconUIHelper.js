@@ -11,7 +11,7 @@ export const addHoveredButtonCallback = (button) => {
             button.removeStyle(Styles.hoveredButton);
         }
     });
-}
+};
 
 export const createSmallButton = (label, textureScale = 1) => {
     let button = new Div(Styles.smallButton);

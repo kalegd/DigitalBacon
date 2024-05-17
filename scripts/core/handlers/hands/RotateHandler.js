@@ -27,7 +27,7 @@ class RotateHandler {
                     this.detach(heldAsset.ownerId);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, (message) => {
+        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             if(!PartyHandler.isHost()) this._heldAssets = {};
         });
         PubSub.subscribe(this._id, PubSubTopics.PEER_CONNECTED, (message) => {
@@ -197,7 +197,9 @@ class RotateHandler {
     }
 
     _subscribeToDeletionOf(ownerId) {
-        PubSub.subscribe(this._id, 'INTERNAL_DELETED', (message) => {
+        let ownerAsset = ProjectHandler.getSessionAsset(ownerId);
+        let topic = 'INTERNAL_DELETED:' + ownerAsset.assetId +':'+ownerAsset.id;
+        PubSub.subscribe(this._id, topic, (message) => {
             for(let key in this._heldAssets) {
                 if(message.asset.id == key) delete this._heldAssets[key];
             }
@@ -205,7 +207,9 @@ class RotateHandler {
     }
 
     _unsubscribeFromDeletionOf(ownerId) {
-        PubSub.unsubscribe(this._id, 'INTERNAL_DELETED');
+        let ownerAsset = ProjectHandler.getSessionAsset(ownerId);
+        let topic = 'INTERNAL_DELETED:' + ownerAsset.assetId +':'+ownerAsset.id;
+        PubSub.unsubscribe(this._id, topic);
     }
 }
 

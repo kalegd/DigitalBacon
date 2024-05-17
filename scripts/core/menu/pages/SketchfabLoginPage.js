@@ -37,7 +37,7 @@ class SketchfabLoginPage extends MenuPage {
         });
         this.add(staySignedInCheckbox);
         let loginButton = createWideButton('Login');
-        loginButton.height = 0.04
+        loginButton.height = 0.04;
         loginButton.margin = 0.004;
         loginButton.width = 0.25;
         this.add(loginButton);

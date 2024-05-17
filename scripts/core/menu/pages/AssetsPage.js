@@ -5,7 +5,6 @@
  */
 
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Styles } from '/scripts/core/helpers/constants.js';

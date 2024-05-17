@@ -8,7 +8,7 @@ import global from '/scripts/core/global.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import { Colors, vector3s } from '/scripts/core/helpers/constants.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
-import { Body, Div, Span, Style, Text, GripInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Body, Span, Style, Text, GripInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 const BODY_STYLE = new Style({
@@ -40,7 +40,8 @@ ctx.fillStyle = '#ffffff';
 ctx.fillRect(0, 0, resolution, resolution);
 ctx.fillStyle = '#19b932';
 function drawArrow(ctx) {
-    ctx.fillRect(resolution / 2 - 0.75 * unit, resolution / 2 - 3.5 * unit, 1.5 * unit, 1.5 * unit);
+    ctx.fillRect(resolution / 2 - 0.75 * unit, resolution / 2 - 3.5 * unit,
+        1.5 * unit, 1.5 * unit);
     ctx.beginPath();
     ctx.moveTo(unit * 8, unit * 2.75);
     ctx.lineTo(unit * 9.75, unit * 4.75);

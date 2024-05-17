@@ -8,14 +8,12 @@ import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import CubeSides from '/scripts/core/enums/CubeSides.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { Textures } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Div, Image, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Image, Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const SIDES = [
     CubeSides.TOP,
@@ -127,7 +125,7 @@ class CubeImageField extends MenuField {
         let images = this._getFromSource();
         for(let i = 0; i < 6; i++) {
             if(this._lastValue[i] != images[i]) {
-                this._updateImage(side, images[i]);
+                this._updateImage(i, images[i]);
             }
         }
     }

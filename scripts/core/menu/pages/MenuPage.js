@@ -8,7 +8,7 @@ import global from '/scripts/core/global.js';
 import { Colors, Textures } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
-import { Body, Div, Style, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Body, Style } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const BODY_STYLE = new Style({
     borderRadius: 0.01,

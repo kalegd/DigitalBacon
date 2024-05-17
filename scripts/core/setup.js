@@ -69,7 +69,6 @@ import '/node_modules/file-saver/src/FileSaver.js';
 import '/node_modules/jszip/dist/jszip.js';
 import '/node_modules/jszip-utils/dist/jszip-utils.js';
 import Main from '/scripts/core/Main.js';
-import * as THREE from 'three';
 import { DeviceTypes } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 /* global JSZip */

@@ -6,14 +6,12 @@
 
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
 import TexturesHandler from '/scripts/core/handlers/assetTypes/TexturesHandler.js';
 import { Colors, Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { createSmallButton, createWideImageButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Style, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Span, Style } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class TextureField extends MenuField {
     constructor(params) {

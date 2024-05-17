@@ -5,10 +5,10 @@
  */
 
 import global from '/scripts/core/global.js';
-import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
+import { FontSizes } from '/scripts/core/helpers/constants.js';
 import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Text, TextArea, TextInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { TextArea, TextInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class TextField extends MenuField {
     constructor(params) {
@@ -41,7 +41,7 @@ class TextField extends MenuField {
         this._textInput.onBlur = () => this._blur();
         this._textInput.onChange = () => this._update();
         this._textInput.onEnter = () => this._textInput.blur();
-        this._textInput.onFocus = () => { global.keyboardLock = true };
+        this._textInput.onFocus = () => { global.keyboardLock = true; };
         this.add(this._textInput);
     }
 

@@ -218,12 +218,13 @@ export default class Main {
                 global.dynamicAssets.add(ScaleHandler);
             }
             global.dynamicAssets.add(DigitalBaconUI.PointerInteractableHandler);
-            if(global.deviceType == "XR")
+            if(global.deviceType == "XR") {
                 global.dynamicAssets.add(
                     DigitalBaconUI.GripInteractableHandler);
                 global.dynamicAssets.add(
                     DigitalBaconUI.TouchInteractableHandler);
-                global.dynamicAssets.add(DigitalBaconUI.UpdateHandler);
+            }
+            global.dynamicAssets.add(DigitalBaconUI.UpdateHandler);
             if(this._callback) this._callback(this);
         } else {
             this._loadingMessage.children[0].innerHTML = "Loading "

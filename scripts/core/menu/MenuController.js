@@ -13,7 +13,7 @@ import NotificationHub from '/scripts/core/menu/NotificationHub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import MenuGripInteractable from '/scripts/core/interactables/MenuGripInteractable.js';
-import { vector2, vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
+import { vector2, vector3s } from '/scripts/core/helpers/constants.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { GripInteractableHandler, PointerInteractableHandler, TouchInteractableHandler, TouchInteractable, Handedness, InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';

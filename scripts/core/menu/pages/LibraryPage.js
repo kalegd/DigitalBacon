@@ -6,7 +6,6 @@
 
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { Styles, Textures } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedIconsPage from '/scripts/core/menu/pages/PaginatedIconsPage.js';

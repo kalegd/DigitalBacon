@@ -9,14 +9,10 @@ import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
-import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Styles } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
-import { Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class AssetEntityField extends MenuField {
     constructor(params) {

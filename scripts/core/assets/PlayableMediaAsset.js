@@ -45,9 +45,11 @@ export default class PlayableMediaEntity extends AssetEntity{
     get stopTopic() { return this._stopTopic; }
     get isPlaying() {
         console.error("get PlayableMediaAsset.isPlaying should be overridden");
+        return false;
     }
     get progress() {
         console.error("get PlayableMediaAsset.progress should be overridden");
+        return 0;
     }
 
     set autoplay(autoplay) {

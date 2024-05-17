@@ -28,11 +28,10 @@ export default class CubeTexture extends Texture {
     }
 
     _createTexture() {
-        let images = this._images.map((imageId) => {
-            return (imageId)
-                ? LibraryHandler.getImage(imageId)
-                : Textures.blackPixel.image;
-        });
+        let images = this._images.map((imageId) => (imageId)
+            ? LibraryHandler.getImage(imageId)
+            : Textures.blackPixel.image
+        );
         //textures must be square, same size, and power of 2, otherwise
         //use no images
         if(!this._validateImageList(images))
@@ -88,7 +87,7 @@ export default class CubeTexture extends Texture {
         return assetIds;
     }
 
-    get images() { return this._images; }
+    get images() { return [...this._images]; }
     get mapping() { return this._mapping; }
 
     get previewTexture() {
