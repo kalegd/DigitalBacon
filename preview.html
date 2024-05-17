@@ -9,23 +9,16 @@
     <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="./css/app.css">
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/montserrat">
-    <!-- SHIM FOR IMPORT MAP CAUSE SAFARI IS OLD MAN -->
-    <script async src="https://unpkg.com/es-module-shims@1.5.4/dist/es-module-shims.js"></script>
     <!-- SHIM FOR WEBRTC CAUSE FIREFOX IS OLD MAN -->
     <script async src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.0/adapter.min.js"></script>
     <script type="importmap">
       {
         "imports": {
           "DigitalBacon": "/scripts/core/DigitalBacon.js",
-          "three": "/node_modules/three/build/three.module.js",
-          "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js",
-          "three-mesh-bvh": "/node_modules/three-mesh-bvh/build/index.module.js"
+          "three": "/node_modules/three/build/three.module.js"
         }
       }
     </script>
-    <script src="/node_modules/jquery/dist/jquery.slim.min.js" crossorigin="anonymous" defer></script>
-    <script src="https://apis.google.com/js/api.js" defer></script>
-    <script src="https://accounts.google.com/gsi/client" defer></script>
   </head>
   <body>
     <div id="container">

@@ -5,40 +5,32 @@
  */
 
 import global from '/scripts/core/global.js';
-import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
 import { quaternion, vector3s } from '/scripts/core/helpers/constants.js';
+import { GripInteractable, PointerInteractable, TouchInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 class Scene {
     constructor() {
         this._id = 'dc23454b-9d3c-4c94-b1d2-0448ec28415f';
         this._object = new THREE.Scene();
-        this._gripInteractable = new GripInteractable();
-        this._pointerInteractable = new PointerInteractable();
+        new GripInteractable(this._object);
+        new PointerInteractable(this._object);
+        new TouchInteractable(this._object);
         this.children = new Set();
         global.scene = this._object;
     }
     
-    getId() {
-        return this._id;
-    }
+    get gripInteractable() { return this._object.gripInteractable; }
+    get id() { return this._id; }
+    get name() { return 'Scene'; }
+    get object() { return this._object; }
+    get pointerInteractable() { return this._object.pointerInteractable; }
+    get touchInteractable() { return this._object.touchInteractable; }
 
-    getObject() {
-        return this._object;
-    }
 
-    getName() {
-        return 'Scene';
-    }
-
-    getGripInteractable() {
-        return this._gripInteractable;
-    }
-
-    getPointerInteractable() {
-        return this._pointerInteractable;
-    }
+    set gripInteractable(_) {}
+    set pointerInteractable(_) {}
+    set touchInteractable(_) {}
 
     getWorldPosition(vector3) {
         if(!vector3) vector3 = vector3s[0];

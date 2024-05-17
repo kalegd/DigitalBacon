@@ -37,7 +37,6 @@ const MenuPages = {
     TEXT_INPUT: "TEXT_INPUT",
     TEXT: "TEXT",
     TWO_BUTTON: "TWO_BUTTON",
-    UPLOAD: "UPLOAD",
     USER_SETTINGS: "USER_SETTINGS",
 };
 

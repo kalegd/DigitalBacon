@@ -7,7 +7,8 @@
 import DirectionalLight from '/scripts/core/assets/primitives/DirectionalLight.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
-import Vector3Input from '/scripts/core/menu/input/Vector3Input.js';
+
+const { Vector3Field } = LightHelper.FieldTypes;
 
 export default class DirectionalLightHelper extends LightHelper {
     constructor(asset) {
@@ -15,9 +16,9 @@ export default class DirectionalLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "intensity" },
-        { "parameter": "color" },
-        { "parameter": "direction", "name": "Direction", "type": Vector3Input },
+        "intensity",
+        "color",
+        { "parameter": "direction", "name": "Direction", "type": Vector3Field },
     ];
 }
 

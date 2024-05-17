@@ -8,9 +8,8 @@ import BasicTexture from '/scripts/core/assets/textures/BasicTexture.js';
 import { WRAP_MAP } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
-import ImageInput from '/scripts/core/menu/input/ImageInput.js';
-import Vector2Input from '/scripts/core/menu/input/Vector2Input.js';
+
+const { EnumField, ImageField, Vector2Field } = TextureHelper.FieldTypes;
 
 export default class BasicTextureHelper extends TextureHelper {
     constructor(asset) {
@@ -18,14 +17,14 @@ export default class BasicTextureHelper extends TextureHelper {
     }
 
     static fields = [
-        { "parameter": "image", "name": "Image", "type": ImageInput },
+        { "parameter": "image", "name": "Image", "type": ImageField },
         { "parameter": "wrapS", "name": "Horizontal Wrapping", "map": WRAP_MAP,
-            "type": EnumInput },
+            "type": EnumField },
         { "parameter": "wrapT", "name": "Vertical Wrapping", "map": WRAP_MAP,
-            "type": EnumInput },
-        { "parameter": "repeat", "name": "Repeat", "type": Vector2Input },
-        { "parameter": "offset", "name": "Offset", "type": Vector2Input },
-        { "parameter": "colorSpace" },
+            "type": EnumField },
+        { "parameter": "repeat", "name": "Repeat", "type": Vector2Field },
+        { "parameter": "offset", "name": "Offset", "type": Vector2Field },
+        "colorSpace",
     ];
 }
 

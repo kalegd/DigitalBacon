@@ -18,9 +18,9 @@ export default class PlayableMediaEntity extends AssetEntity{
         super(params);
         this._autoplay = params['autoplay'] || false;
         this._loop = params['loop'] || false;
-        this.setPlayTopic(params['playTopic'] || '');
-        this.setPauseTopic(params['pauseTopic'] || '');
-        this.setStopTopic(params['stopTopic'] || '');
+        this.playTopic = params['playTopic'] || '';
+        this.pauseTopic = params['pauseTopic'] || '';
+        this.stopTopic = params['stopTopic'] || '';
     }
 
     _getDefaultName() {
@@ -37,40 +37,28 @@ export default class PlayableMediaEntity extends AssetEntity{
         return params;
     }
 
-    getPlayableMediaAsset() {
-        return this._media;
+    get media() { return this._media; }
+    get autoplay() { return this._autoplay; }
+    get loop() { return this._loop; }
+    get playTopic() { return this._playTopic; }
+    get pauseTopic() { return this._pauseTopic; }
+    get stopTopic() { return this._stopTopic; }
+    get isPlaying() {
+        console.error("get PlayableMediaAsset.isPlaying should be overridden");
+        return false;
+    }
+    get progress() {
+        console.error("get PlayableMediaAsset.progress should be overridden");
+        return 0;
     }
 
-    getAutoplay() {
-        return this._autoplay;
-    }
-
-    getLoop() {
-        return this._loop;
-    }
-
-    getPlayTopic() {
-        return this._playTopic;
-    }
-
-    getPauseTopic() {
-        return this._pauseTopic;
-    }
-
-    getStopTopic() {
-        return this._stopTopic;
-    }
-
-    setAutoplay(autoplay) {
+    set autoplay(autoplay) {
         this._autoplay = autoplay;
         if(!global.isEditor) this._media.autoplay = autoplay;
     }
 
-    setLoop(loop) {
-        this._loop = loop;
-    }
-
-    setPlayTopic(playTopic) {
+    set loop(loop) { this._loop = loop; }
+    set playTopic(playTopic) {
         if(this._playTopic) {
             PubSub.unsubscribe(this._id, this._playTopic);
         }
@@ -81,8 +69,7 @@ export default class PlayableMediaEntity extends AssetEntity{
             });
         }
     }
-
-    setPauseTopic(pauseTopic) {
+    set pauseTopic(pauseTopic) {
         if(this._pauseTopic) {
             PubSub.unsubscribe(this._id, this._pauseTopic);
         }
@@ -93,8 +80,10 @@ export default class PlayableMediaEntity extends AssetEntity{
             });
         }
     }
-
-    setStopTopic(stopTopic) {
+    set progress(progress) {
+        console.error("set PlayableMediaAsset.progress should be overridden");
+    }
+    set stopTopic(stopTopic) {
         if(this._stopTopic) {
             PubSub.unsubscribe(this._id, this._stopTopic);
         }
@@ -112,52 +101,43 @@ export default class PlayableMediaEntity extends AssetEntity{
         if(position) {
             message = concatenateArrayBuffers(type, position);
         } else {
-            message = concatenateArrayBuffers(type);
+            message = type;
         }
         if(peer) {
             PartyHandler.publishInternalBufferMessage(this._idBytes, message, 
-                peer);
+                false, peer);
         } else {
             PartyHandler.publishInternalBufferMessage(this._idBytes, message);
         }
     }
 
     play(position, ignorePublish) {
-        this.setProgress(position);
+        this.progress = position;
         this._media.play();
         if(ignorePublish) return;
-        position = new Float64Array([this.getProgress()]);
+        position = new Float64Array([this.progress]);
         this.publishPartyMessage(PlayableMediaActions.PLAY, position);
     }
 
     pause(position, ignorePublish) {
         this._media.pause();
-        this.setProgress(position);
+        this.progress = position;
         if(ignorePublish) return;
-        position = new Float64Array([this.getProgress()]);
+        position = new Float64Array([this.progress]);
         this.publishPartyMessage(PlayableMediaActions.PAUSE, position);
     }
 
     stop(ignorePublish) {
         this._media.pause();
-        this.setProgress(0);
+        this.progress = 0;
         if(ignorePublish) return;
         this.publishPartyMessage(PlayableMediaActions.STOP);
     }
 
-    isPlaying() {
-        console.error("PlayableMediaAsset.isPlaying() should be overridden");
-    }
-
-    getProgress() {
-        console.error("PlayableMediaAsset.getProgress() should be overridden");
-    }
-
-    setProgress(progress) {
-        console.error("PlayableMediaAsset.setProgress() should be overridden", progress);
-    }
-
     _addPartySubscriptions() {
+        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            this._onPeerReady(message.peer);
+        });
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(PartyHandler.isHost());
         });
@@ -173,16 +153,13 @@ export default class PlayableMediaEntity extends AssetEntity{
                 this.stop(true);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            this._onPeerReady(message.peer);
-        });
     }
 
     _onPeerReady(peer) {
         if(!PartyHandler.isHost()) return;
-        let topic = (this.isPlaying()) ? PlayableMediaActions.PLAY
+        let topic = (this.isPlaying) ? PlayableMediaActions.PLAY
             : PlayableMediaActions.PAUSE;
-        let position = new Float64Array([this.getProgress()]);
+        let position = new Float64Array([this.progress]);
         this.publishPartyMessage(topic, position, peer);
     }
 
@@ -191,4 +168,8 @@ export default class PlayableMediaEntity extends AssetEntity{
         this.stop(true);
     }
 
+    onRemoveFromProject() {
+        this.stop(true);
+        super.onRemoveFromProject();
+    }
 }

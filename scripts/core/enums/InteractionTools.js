@@ -1,5 +1,4 @@
-const HandTools = {
-    ACTIVE: "EDIT",
+const InteractionTools = {
     COPY_PASTE: "COPY_PASTE",
     DELETE: "DELETE",
     EDIT: "EDIT",
@@ -8,4 +7,4 @@ const HandTools = {
     TRANSLATE: "TRANSLATE",
 };
 
-export default HandTools;
+export default InteractionTools;

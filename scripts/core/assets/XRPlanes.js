@@ -5,14 +5,13 @@
  */
 
 import global from '/scripts/core/global.js';
-import Entity from '/scripts/core/assets/Entity.js';
 import { matrix4 } from '/scripts/core/helpers/constants.js';
-import { DoubleSide, Mesh, MeshBasicMaterial, BoxGeometry } from 'three';
+import { BoxGeometry, DoubleSide, Mesh, MeshBasicMaterial, Object3D } from 'three';
 
-class XRPlanes extends Entity {
+class XRPlanes extends Object3D {
     constructor() {
         super();
-        this._object.renderOrder = -Infinity;
+        this.renderOrder = -Infinity;
         this._planes = new Map();
         this._material = new MeshBasicMaterial({
             color: 0xffffff,
@@ -67,7 +66,7 @@ class XRPlanes extends Entity {
         mesh.renderOrder = -Infinity;
         mesh.position.setFromMatrixPosition(matrix4);
         mesh.quaternion.setFromRotationMatrix(matrix4);
-        this._object.add(mesh);
+        this.add(mesh);
 
         let details = { lastChangedTime: plane.lastChangedTime, mesh: mesh };
         this._planes.set(plane, details);
@@ -76,7 +75,7 @@ class XRPlanes extends Entity {
     _deletePlane(plane, mesh) {
         mesh.geometry.dispose();
         mesh.material.dispose();
-        this._object.remove(mesh);
+        this.remove(mesh);
         this._planes.delete(plane);
     }
 }

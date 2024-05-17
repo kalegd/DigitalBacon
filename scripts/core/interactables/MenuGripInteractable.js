@@ -5,13 +5,13 @@
  */
 
 import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
-import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
+import { GripInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 class MenuGripInteractable extends GripInteractable {
-    constructor(threeObj, border) {
-        super(threeObj);
-        if(threeObj) threeObj.gripInteractable = this;
+    constructor(object, border) {
+        super(object);
+        if(object) object.gripInteractable = this;
         this._border = border;
     }
 
@@ -20,8 +20,8 @@ class MenuGripInteractable extends GripInteractable {
     }
 
     _getBoundingObject() {
-        this._threeObj.getWorldPosition(vector3s[0]);
-        this._threeObj.getWorldQuaternion(quaternion);
+        this._object.getWorldPosition(vector3s[0]);
+        this._object.getWorldQuaternion(quaternion);
         vector3s[1].set(0,0,1).applyQuaternion(quaternion);
         this._boundingPlane.setFromNormalAndCoplanarPoint(vector3s[1],
             vector3s[0]);
@@ -29,18 +29,18 @@ class MenuGripInteractable extends GripInteractable {
     }
 
     _displayBoundingObject() {
-        this._threeObj.add(this._border);
+        this._object.add(this._border);
     }
 
     _hideBoundingObject() {
-        this._threeObj.remove(this._border);
+        this._object.remove(this._border);
     }
 
     intersectsSphere(sphere) {
         let boundingPlane = this._getBoundingObject();
         let intersects;
         if(boundingPlane) {
-            //We already have threeObj's world position in vector3s[0]
+            //We already have object's world position in vector3s[0]
             intersects = sphere.intersectsPlane(boundingPlane)
                 && sphere.distanceToPoint(vector3s[0]) < 0.45;
         } else {
@@ -53,10 +53,6 @@ class MenuGripInteractable extends GripInteractable {
     // bounding plane by calling _getBoundingObject()
     distanceToSphere(sphere) {
         return this._boundingPlane.distanceToPoint(sphere.center);
-    }
-
-    static emptyGroup() {
-        return new MenuGripInteractable();
     }
 }
 

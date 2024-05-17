@@ -13,15 +13,15 @@ import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { CubeTexture, SRGBColorSpace } from 'three';
 
 const RESOLUTION = 1024;
-const SIDES = {};
-for(let side in CubeSides) {
+const SIDES = [];
+for(let _ in CubeSides) {
     let canvas = document.createElement('canvas');
     canvas.width = RESOLUTION;
     canvas.height = RESOLUTION;
-    SIDES[side] = {
+    SIDES.push({
         canvas: canvas,
         context: canvas.getContext("2d"),
-    };
+    });
 }
 
 class Skybox {

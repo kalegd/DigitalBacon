@@ -14,8 +14,8 @@ export default class AmbientLightHelper extends LightHelper {
     }
 
     static fields = [
-        { "parameter": "intensity" },
-        { "parameter": "color" },
+        "intensity",
+        "color",
     ];
 }
 

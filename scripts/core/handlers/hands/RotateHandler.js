@@ -6,10 +6,12 @@
 
 import AssetEntityTypes from '/scripts/core/enums/AssetEntityTypes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import { Euler, Quaternion } from 'three';
+import { InteractionToolHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class RotateHandler {
     constructor() {
@@ -18,19 +20,29 @@ class RotateHandler {
         this._quaternion = new Quaternion();
         this._euler1 = new Euler();
         this._euler2 = new Euler();
-        PubSub.subscribe(this._id, PubSubTopics.TOOL_UPDATED, () => {
+        InteractionToolHandler.addUpdateListener(() => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
                 if(heldAsset.preTransformState)
                     this.detach(heldAsset.ownerId);
             }
         });
-        PubSub.subscribe(this._id, PubSubTopics.MENU_FIELD_FOCUSED, (message)=>{
-            if(message['targetOnlyMenu']) return;
+        PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
+            if(!PartyHandler.isHost()) this._heldAssets = {};
+        });
+        PubSub.subscribe(this._id, PubSubTopics.PEER_CONNECTED, (message) => {
             for(let key in this._heldAssets) {
                 let heldAsset = this._heldAssets[key];
+                let asset = heldAsset.asset;
                 if(heldAsset.preTransformState)
-                    this.detach(heldAsset.ownerId);
+                    PartyHandler.publishInternalMessage('instance_attached', {
+                        id: asset.id,
+                        assetId: asset.assetId,
+                        ownerId: key,
+                        type: 'rotate',
+                        rotation: heldAsset.rotationDifference,
+                        isXR: true,
+                    }, false, message.peer);
             }
         });
         for(let assetType in AssetEntityTypes) {
@@ -39,7 +51,7 @@ class RotateHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(heldAsset.preTransformState) {
                             object.quaternion.fromArray(
                                 heldAsset.preTransformState);
@@ -56,7 +68,7 @@ class RotateHandler {
                     let heldAsset = this._heldAssets[key];
                     if(heldAsset.asset == message.asset) {
                         let assetHelper = heldAsset.asset.editorHelper;
-                        let object = heldAsset.asset.getObject();
+                        let object = heldAsset.asset.object;
                         if(message.fields.includes('visualEdit')
                                 && heldAsset.preTransformState)
                         {
@@ -85,42 +97,43 @@ class RotateHandler {
         }
     }
 
-    attach(owner, asset, rotationDifference) {
-        let otherOwner = this._otherOwner(owner, asset);
+    attach(ownerId, asset, rotationDifference) {
+        let otherOwner = this._otherOwner(ownerId, asset);
         if(otherOwner) {
-            this._swapToOwner(owner, otherOwner, rotationDifference);
+            this._swapToOwner(ownerId, otherOwner, rotationDifference);
         } else {
             let heldAsset = {
                 asset: asset,
-                ownerId: owner,
+                ownerId: ownerId,
             };
             if(rotationDifference) {
                 heldAsset.rotationDifference = rotationDifference;
+                this._subscribeToDeletionOf(ownerId);
             } else {
                 let rotation = asset.getWorldQuaternion();
-                heldAsset.preTransformState = asset.getObject().quaternion
+                heldAsset.preTransformState = asset.object.quaternion
                     .toArray();
-                heldAsset.rotationDifference = ProjectHandler.getAsset(owner)
+                heldAsset.rotationDifference = ProjectHandler.getAsset(ownerId)
                     .getWorldQuaternion().conjugate().multiply(rotation)
                     .toArray();
             }
-            this._heldAssets[owner] = heldAsset;
+            this._heldAssets[ownerId] = heldAsset;
         }
         if(!rotationDifference) {
-            let heldAsset = this._heldAssets[owner];
+            let heldAsset = this._heldAssets[ownerId];
             PubSub.publish(this._id, PubSubTopics.INSTANCE_ATTACHED, {
                 instance: asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'rotate',
                 rotation: heldAsset.rotationDifference,
             });
         }
     }
 
-    detach(owner, rotation) {
-        let heldAsset = this._heldAssets[owner];
+    detach(ownerId, rotation) {
+        let heldAsset = this._heldAssets[ownerId];
         if(!heldAsset) return;
-        delete this._heldAssets[owner];
+        delete this._heldAssets[ownerId];
         if(!rotation) {
             rotation = this._update(heldAsset);
             let assetHelper = heldAsset.asset.editorHelper;
@@ -130,16 +143,17 @@ class RotateHandler {
             this._euler2.setFromQuaternion(this._quaternion);
             let preState = this._euler1.toArray();
             let postState = this._euler2.toArray();
-            assetHelper._updateEuler('rotation', postState, false, false,
-                preState);
+            assetHelper._updateParameter('rotation', postState, false, false,
+                preState, true);
             PubSub.publish(this._id, PubSubTopics.INSTANCE_DETACHED, {
                 instance: heldAsset.asset,
-                option: owner,
+                ownerId: ownerId,
                 type: 'rotate',
                 rotation: rotation,
             });
         } else {
             heldAsset.asset.setRotationFromQuaternion(rotation);
+            this._unsubscribeFromDeletionOf(ownerId);
         }
     }
 
@@ -152,12 +166,13 @@ class RotateHandler {
 
     _update(heldAsset) {
         if(!heldAsset) return;
-        let handRotation = ProjectHandler.getAsset(heldAsset.ownerId)
-            .getWorldQuaternion();
+        let ownerAsset = ProjectHandler.getAsset(heldAsset.ownerId);
+        if(!ownerAsset) return;
+        let handRotation = ownerAsset.getWorldQuaternion();
         this._quaternion.fromArray(heldAsset.rotationDifference);
         let newRotation = handRotation.multiply(this._quaternion);
         if(heldAsset.asset.parent) {
-            let parentObject = heldAsset.asset.parent.getObject();
+            let parentObject = heldAsset.asset.parent.object;
             parentObject.getWorldQuaternion(this._quaternion).conjugate();
             this._quaternion.multiply(newRotation);
         }
@@ -172,11 +187,29 @@ class RotateHandler {
         delete this._heldAssets[oldOwner];
         if(rotationDifference) {
             heldAsset.rotationDifference = rotationDifference;
+            this._unsubscribeFromDeletionOf(oldOwner);
+            this._subscribeToDeletionOf(newOwner);
         } else {
             let rotation = heldAsset.asset.getWorldQuaternion();
             heldAsset.rotationDifference = ProjectHandler.getAsset(newOwner)
                 .getWorldQuaternion().conjugate().multiply(rotation).toArray();
         }
+    }
+
+    _subscribeToDeletionOf(ownerId) {
+        let ownerAsset = ProjectHandler.getSessionAsset(ownerId);
+        let topic = 'INTERNAL_DELETED:' + ownerAsset.assetId +':'+ownerAsset.id;
+        PubSub.subscribe(this._id, topic, (message) => {
+            for(let key in this._heldAssets) {
+                if(message.asset.id == key) delete this._heldAssets[key];
+            }
+        });
+    }
+
+    _unsubscribeFromDeletionOf(ownerId) {
+        let ownerAsset = ProjectHandler.getSessionAsset(ownerId);
+        let topic = 'INTERNAL_DELETED:' + ownerAsset.assetId +':'+ownerAsset.id;
+        PubSub.unsubscribe(this._id, topic);
     }
 }
 

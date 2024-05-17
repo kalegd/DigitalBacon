@@ -5,11 +5,9 @@
  */
 
 import XRDevice from '/scripts/core/assets/XRDevice.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
-import XRInputDeviceTypes from '/scripts/core/enums/XRInputDeviceTypes.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { Handedness, InputHandler, XRInputDeviceTypes } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import { Raycaster, Vector3 } from 'three';
 
 export default class XRController extends XRDevice {
@@ -31,8 +29,8 @@ export default class XRController extends XRDevice {
     }
 
     _registerOwner(params) {
-        let owner = ProjectHandler.getSessionAsset(params['ownerId']);
-        if(owner) {
+        let owner = ProjectHandler.getSessionAsset(params['parentId']);
+        if(owner.registerXRController) {
             owner.registerXRController(params['handedness'], this);
         }
     }
@@ -46,7 +44,7 @@ export default class XRController extends XRDevice {
     addFromTargetRay(asset, position, rotation) {
         let controller = InputHandler.getXRController(
             XRInputDeviceTypes.CONTROLLER, this._handedness, 'targetRay');
-        let assetObject = asset.getObject();
+        let assetObject = asset.object;
         if(!controller) return;
         controller.add(assetObject);
         if(position) assetObject.position.fromArray(position);
@@ -54,9 +52,7 @@ export default class XRController extends XRDevice {
         asset.attachTo(this);
     }
 
-    getHandedness() {
-        return this._handedness;
-    }
+    get handedness() { return this._handedness; }
 
     getTargetRayDirection() {
         let xrController = InputHandler.getXRController(

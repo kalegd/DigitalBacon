@@ -4,57 +4,39 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { Colors, Fonts, Textures } from '/scripts/core/helpers/constants.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-
-import ThreeMeshUI from 'three-mesh-ui';
+import { Textures } from '/scripts/core/helpers/constants.js';
+import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import { Div } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class UndoRedoHandler {
-    init() {
+    constructor() {
         this._currentAction = {};
         this._disableOwners = new Set();
+        this._disableOwners.add(this);
+    }
+
+    init() {
         this._setupButtons();
+        this._disableOwners.delete(this);
     }
 
     _setupButtons() {
-        this._undoRedoParent = new ThreeMeshUI.Block({
-            height: 0.12,
-            width: 0.04,
-            backgroundColor: Colors.defaultMenuBackground,
-            backgroundOpacity: 0,
-        });
-        this._undoButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.undoIcon,
-            'backgroundTextureScale': 0.8,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        this._redoButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.redoIcon,
-            'backgroundTextureScale': 0.8,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        this._undoButton.visible = false;
-        this._redoButton.visible = false;
-        this._undoRedoParent.set({
-            fontFamily: Fonts.defaultFamily,
-            fontTexture: Fonts.defaultTexture
-        });
-        this._undoRedoParent.position.fromArray([0.245, 0, -0.001]);
-        this._undoRedoParent.add(this._undoButton);
-        this._undoRedoParent.add(this._redoButton);
-        this._containerInteractable = new PointerInteractable();
-        this._undoInteractable = new PointerInteractable(this._undoButton);
-        this._undoInteractable.addAction(() => { this._undo(); });
-        this._redoInteractable = new PointerInteractable(this._redoButton);
-        this._redoInteractable.addAction(() => { this._redo(); });
+        this._undoParent = new Div({ height: 0.04, width: 0.04 });
+        this._redoParent = new Div({ height: 0.04, width: 0.04 });
+        this._undoParent.bypassContentPositioning = true;
+        this._redoParent.bypassContentPositioning = true;
+        this._undoParent.position.fromArray([0.249, 0.026, 0]);
+        this._redoParent.position.fromArray([0.249, -0.026, 0]);
+
+        this._undoButton = createSmallButton(Textures.undoIcon, 0.8);
+        this._redoButton = createSmallButton(Textures.redoIcon, 0.8);
+        this._undoButton.onClickAndTouch = () => this._undo();
+        this._redoButton.onClickAndTouch = () => this._redo();
     }
 
-    addButtons(menu, interactable) {
-        interactable.addChild(this._containerInteractable);
-        menu.add(this._undoRedoParent);
+    addButtons(menu) {
+        menu.add(this._undoParent);
+        menu.add(this._redoParent);
     }
 
     reset() {
@@ -108,23 +90,19 @@ class UndoRedoHandler {
     }
 
     _enableUndo() {
-        this._undoButton.visible = true;
-        this._containerInteractable.addChild(this._undoInteractable);
+        this._undoParent.add(this._undoButton);
     }
 
     _disableUndo() {
-        this._undoButton.visible = false;
-        this._containerInteractable.removeChild(this._undoInteractable);
+        if(this._undoParent) this._undoParent.remove(this._undoButton);
     }
 
     _enableRedo() {
-        this._redoButton.visible = true;
-        this._containerInteractable.addChild(this._redoInteractable);
+        this._redoParent.add(this._redoButton);
     }
 
     _disableRedo() {
-        this._redoButton.visible = false;
-        this._containerInteractable.removeChild(this._redoInteractable);
+        if(this._redoParent) this._redoParent.remove(this._redoButton);
     }
 
     enable(owner) {

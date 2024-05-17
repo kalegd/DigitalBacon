@@ -7,7 +7,8 @@
 import BoxShape from '/scripts/core/assets/primitives/BoxShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+
+const { NumberField } = ShapeHelper.FieldTypes;
 
 export default class BoxShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -15,24 +16,24 @@ export default class BoxShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "materialId",
         { "parameter": "width", "name": "Width", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "height", "name": "Height", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "depth", "name": "Depth", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "widthSegments", "name": "Width Segments", "min": 1,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "depthSegments", "name": "Depth Segments", "min": 1,
-            "type": NumberInput },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "type": NumberField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

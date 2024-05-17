@@ -31,7 +31,7 @@ export default class Asset {
     exportParams() {
         let componentIds = [];
         for(let component of this._components) {
-            componentIds.push(component.getId());
+            componentIds.push(component.id);
         }
         return {
             "id": this._id,
@@ -43,35 +43,24 @@ export default class Asset {
 
     updateFromParams(params) {
         for(let key in params) {
-            let setter = 'set' + key.charAt(0).toUpperCase() + key.slice(1);
-            if(this[setter]) this[setter](params[key]);
+            if(this[key] != params[key]) this[key] = params[key];
         }
     }
 
-    getAssetId() {
-        return this._assetId;
-    }
-
-    getComponents(getActualComponents) {
-        if(getActualComponents) return this._components;
+    get assetId() { return this._assetId; }
+    get components() {
         let componentIds = [];
         for(let component of this._components) {
-            componentIds.push(component.getId());
+            componentIds.push(component.id);
         }
         return componentIds;
     }
+    get id() { return this._id; }
+    get name() { return this._name; }
 
-    getId() {
-        return this._id;
-    }
-
-    getName() {
-        return this._name;
-    }
-
-    setComponents(componentIds) {
+    set components(componentIds) {
         for(let component of this._components) {
-            let componentId = component.getId();
+            let componentId = component.id;
             if(!componentIds.includes(componentId))
                 this.removeComponent(componentId, true);
         }
@@ -82,7 +71,7 @@ export default class Asset {
         }
     }
 
-    setName(name) {
+    set name(name) {
         if(name == null || this._name == name) return;
         this._name = name;
     }
@@ -93,7 +82,7 @@ export default class Asset {
 
         this._components.add(component);
         if(ignorePublish) return component;
-        let componentAssetId = component.getAssetId();
+        let componentAssetId = component.assetId;
         let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
         PubSub.publish(this._id, topic, {
             id: this._id,

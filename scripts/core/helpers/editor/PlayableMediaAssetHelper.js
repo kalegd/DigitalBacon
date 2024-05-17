@@ -4,45 +4,55 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import PlayableMediaAsset from '/scripts/core/assets/PlayableMediaAsset.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import TextInput from '/scripts/core/menu/input/TextInput.js';
+import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
+
+const { CheckboxField, TextField } = AssetEntityHelper.FieldTypes;
 
 export default class PlayableMediaAssetHelper extends AssetEntityHelper {
-    constructor(asset, updatedTopics) {
-        super(asset, updatedTopics);
+    constructor(asset, updatedTopic) {
+        super(asset, updatedTopic);
         this._createPreviewFunctions();
     }
 
     _createPreviewFunctions() {
         this._previewMedia = false;
-        this._asset.getPreviewMedia = () => this._previewMedia;
-        this._asset.setPreviewMedia = (previewMedia) => {
-            this._previewMedia = previewMedia;
-            if(previewMedia) {
-                this._asset.play(null, true);
-            } else {
-                this._asset.stop(true);
-            }
-        };
+        Object.defineProperty(this._asset, 'previewMedia', {
+            get: () => this._previewMedia,
+            set: (previewMedia) => {
+                this._previewMedia = previewMedia;
+                if(previewMedia) {
+                    if(ProjectHandler.getAsset(this._id))
+                        this._asset.play(null, true);
+                } else {
+                    this._asset.stop(true);
+                }
+            },
+        });
     }
 
-    static commonFields = {
-        visualEdit: { "parameter": "visualEdit" },
-        autoplay: { "parameter": "autoplay", "name": "Auto Play",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput },
-        loop: { "parameter": "loop", "name": "Loop",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput },
-        playTopic: { "parameter": "playTopic", "name": "Play Event",
-            "type": TextInput },
-        pauseTopic: { "parameter": "pauseTopic", "name": "Pause Event",
-            "type": TextInput },
-        stopTopic: { "parameter": "stopTopic", "name": "Stop Event",
-            "type": TextInput },
-        parentId: { "parameter": "parentId" },
-        position: { "parameter": "position" },
-        rotation: { "parameter": "rotation" },
-        scale: { "parameter": "scale" },
-    };
-    
+    static fields = [
+        "visualEdit",
+        { "parameter": "previewMedia", "name": "Preview Audio",
+            "suppressMenuFocusEvent": true, "type": CheckboxField },
+        { "parameter": "autoplay", "name": "Auto Play",
+            "suppressMenuFocusEvent": true, "type": CheckboxField },
+        { "parameter": "loop", "name": "Loop",
+            "suppressMenuFocusEvent": true, "type": CheckboxField },
+        { "parameter": "playTopic", "name": "Play Event", "singleLine": true,
+            "type": TextField },
+        { "parameter": "pauseTopic", "name": "Pause Event", "singleLine": true,
+            "type": TextField },
+        { "parameter": "stopTopic", "name": "Stop Event", "singleLine": true,
+            "type": TextField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
+    ];
 }
+
+EditorHelperFactory.registerEditorHelper(PlayableMediaAssetHelper,
+    PlayableMediaAsset);

@@ -7,8 +7,8 @@
 import ConeShape from '/scripts/core/assets/primitives/ConeShape.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+
+const { CheckboxField, NumberField } = ShapeHelper.FieldTypes;
 
 export default class ConeShapeHelper extends ShapeHelper {
     constructor(asset) {
@@ -16,23 +16,23 @@ export default class ConeShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
-        { "parameter": "material" },
+        "visualEdit",
+        "materialId",
         { "parameter": "height", "name": "Height", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "radius", "name": "Radius", "min": 0,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "radialSegments", "name": "Sides", "min": 3,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "heightSegments", "name": "Height Segments", "min": 1,
-            "type": NumberInput },
+            "type": NumberField },
         { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-            "type": NumberInput },
-        { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxInput},
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "type": NumberField },
+        { "parameter": "openEnded", "name": "Open Ended", "type":CheckboxField},
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

@@ -13,33 +13,36 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { vector3s, quaternion } from '/scripts/core/helpers/constants.js';
 import { concatenateArrayBuffers, fullDispose } from '/scripts/core/helpers/utils.module.js';
-import GripInteractable from '/scripts/core/interactables/GripInteractable.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import { utils, GripInteractable, PointerInteractable, TouchInteractable } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
+
+const INTERACTABLE_PARAMS = ['pointerInteractable', 'gripInteractable', 'touchInteractable'];
 
 export default class AssetEntity extends Asset {
     constructor(params = {}) {
         super(params);
         this._object = params['object'] || new THREE.Object3D();
         this._object.asset = this;
+        this._object.addEventListener('added', () => this._onAdded());
+        this._object.addEventListener('removed', () => this._onRemoved());
         if('parentId' in params) {
             this._parentId = params['parentId'];
         } else {
-            this._parentId = Scene.getId();
+            this._parentId = Scene.id;
         }
         this.children = new Set();
         this.parent = ProjectHandler.getSessionAsset(this._parentId);
-        if(this.parent) this.parent.children.add(this);
+        if(this.parent && !params.isPreview) this.parent.children.add(this);
         let position = (params['position']) ? params['position'] : [0,0,0];
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
-        this.visualEdit = params['visualEdit'] || false;
+        this._visualEdit = params['visualEdit'] || false;
         this._object.position.fromArray(position);
         this._object.rotation.fromArray(rotation);
         this._object.scale.fromArray(scale);
-        this._gripInteractable = new GripInteractable(this._object);
-        this._pointerInteractable = new PointerInteractable(this._object);
-        this._deleteCallbacks = {};
+        new GripInteractable(this._object);
+        new PointerInteractable(this._object);
+        new TouchInteractable(this._object);
         this._positionBytes = new Float64Array(3);
         this._rotationBytes = new Float64Array(3);
         this._scaleBytes = new Float64Array(3);
@@ -54,7 +57,7 @@ export default class AssetEntity extends Asset {
         let params = this.exportParams();
         let visualEdit = (visualEditOverride != null)
             ? visualEditOverride
-            : this.visualEdit;
+            : this._visualEdit;
         params['visualEdit'] = visualEdit;
         delete params['id'];
         return params;
@@ -70,80 +73,37 @@ export default class AssetEntity extends Asset {
         params['visualEdit'] = false;
         params['isPreview'] = true;
         delete params['id'];
+        delete params['parentId'];
         return new this.constructor(params);
     }
 
     exportParams() {
         let params = super.exportParams();
         params['parentId'] = this._parentId;
-        params['position'] = this.getPosition();
-        params['rotation'] = this.getRotation();
-        params['scale'] = this.getScale();
-        params['visualEdit'] = this.getVisualEdit();
+        params['position'] = this.position;
+        params['rotation'] = this.rotation;
+        params['scale'] = this.scale;
+        params['visualEdit'] = this._visualEdit;
         return params;
     }
 
-    addGripAction(selectedFunc, releasedFunc, tool, option){
-        let action = this._gripInteractable.addAction(selectedFunc,
-            releasedFunc, tool, option);
-        return action;
+    _updateBVH() {
+        utils.updateBVHForComplexObject(this._object);
     }
 
-    addPointerAction(actionFunc, draggableActionFunc, maxDistance, tool,option){
-        let action = this._pointerInteractable.addAction(actionFunc,
-            draggableActionFunc, maxDistance, tool, option);
-        return action;
-    }
-
-    getGripInteractable() {
-        return this._gripInteractable;
-    }
-
-    getPointerInteractable() {
-        return this._pointerInteractable;
-    }
-
-    removeGripAction(id) {
-        this._gripInteractable.removeAction(id);
-    }
-
-    removePointerAction(id) {
-        this._pointerInteractable.removeAction(id);
-    }
-
-    addDeleteCallback(id, handler) {
-        this._deleteCallbacks[id] = handler;
-    }
-
-    removeDeleteCallback(id) {
-        delete this._deleteCallbacks[id];
-    }
-
-    getObject() {
-        return this._object;
-    }
-
-    getParentId() {
-        return this._parentId;
-    }
-
-    getPosition() {
-        return this._object.position.toArray();
-    }
-
-    getRotation() {
+    get gripInteractable() { return this._object.gripInteractable; }
+    get object() { return this._object; }
+    get parentId() { return this._parentId; }
+    get pointerInteractable() { return this._object.pointerInteractable; }
+    get position() { return this._object.position.toArray(); }
+    get rotation() {
         let rotation = this._object.rotation.toArray();
         rotation.pop();
         return rotation;
     }
-
-    getScale() {
-        return this._object.scale.toArray();
-    }
-
-    getVisualEdit() {
-        return this.visualEdit;
-    }
+    get scale() { return this._object.scale.toArray(); }
+    get touchInteractable() { return this._object.touchInteractable; }
+    get visualEdit() { return this._visualEdit; }
 
     getWorldPosition(vector3) {
         if(!vector3) vector3 = vector3s[0];
@@ -163,38 +123,28 @@ export default class AssetEntity extends Asset {
         return vector3;
     }
 
-    setParentId(parentId) {
+    set parentId(parentId) {
         if(this._parentId == parentId) return;
-        this.parent = ProjectHandler.getSessionAsset(parentId);
-        if(!this.parent) {
-            this.removeFromScene();
+        let parentAsset = ProjectHandler.getSessionAsset(parentId);
+        if(!parentAsset) {
+            if(this._object.parent) this._object.parent.remove(this._object);
+            if(this.parent) this.parent.children.delete(this);
+            this.parent = null;
         } else if(this._parentId != null) {
-            this.attachTo(this.parent, true);
+            this.attachTo(parentAsset, true);
         } else {
-            this.addTo(this.parent, true);
+            this.addTo(parentAsset, true);
         }
         this._parentId = parentId;
     }
-
-    setPosition(position) {
-        this._object.position.fromArray(position);
-    }
-
-    setRotation(rotation) {
-        this._object.rotation.fromArray(rotation);
-    }
+    set position(position) { this._object.position.fromArray(position); }
+    set rotation(rotation) { this._object.rotation.fromArray(rotation); }
+    set scale(scale) { this._object.scale.fromArray(scale); }
+    set visualEdit(visualEdit) { this._visualEdit = visualEdit; }
 
     setRotationFromQuaternion(quat) {
         quaternion.fromArray(quat);
         this._object.setRotationFromQuaternion(quaternion);
-    }
-
-    setScale(scale) {
-        this._object.scale.fromArray(scale);
-    }
-
-    setVisualEdit(visualEdit) {
-        this.visualEdit = visualEdit;
     }
 
     publishPosition() {
@@ -205,7 +155,7 @@ export default class AssetEntity extends Asset {
     }
 
     publishRotation() {
-        this._rotationBytes.set(this.getRotation());
+        this._rotationBytes.set(this.rotation);
         let message =concatenateArrayBuffers(this._idBytes,this._rotationBytes);
         PartyHandler.publishInternalBufferMessage(
             InternalMessageIds.ENTITY_ROTATION, message);
@@ -220,7 +170,7 @@ export default class AssetEntity extends Asset {
 
     publishTransformation() {
         this._transformationBytes.set(this._object.position.toArray());
-        this._transformationBytes.set(this.getRotation(), 3);
+        this._transformationBytes.set(this.rotation, 3);
         this._transformationBytes.set(this._object.scale.toArray(), 6);
         let message = concatenateArrayBuffers(this._idBytes,
             this._transformationBytes);
@@ -237,15 +187,12 @@ export default class AssetEntity extends Asset {
         if(this.parent) this.parent.children.delete(this);
         this.parent = newParent;
         newParent.children.add(this);
-        this._parentId = newParent.getId();
-        if(ProjectHandler.getAsset(this._id)) {
-            this.addToScene(newParent.getObject(),
-                newParent.getPointerInteractable(),
-                newParent.getGripInteractable());
-        }
+        this._parentId = newParent.id;
+        if(ProjectHandler.getAsset(this._id))
+            newParent.object.add(this._object);
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ADDED, {
-                parentId: newParent.getId(),
+                parentId: newParent.id,
                 childId: this._id,
             }, true);
         }
@@ -260,50 +207,41 @@ export default class AssetEntity extends Asset {
         if(this.parent) this.parent.children.delete(this);
         this.parent = newParent;
         newParent.children.add(this);
-        this._parentId = newParent.getId();
-        if(ProjectHandler.getAsset(this._id)) {
-            this.attachToScene(newParent.getObject(),
-                newParent.getPointerInteractable(),
-                newParent.getGripInteractable());
-        }
+        this._parentId = newParent.id;
+        if(ProjectHandler.getAsset(this._id))
+            newParent.object.attach(this._object);
         if(!ignorePublish) {
             PubSub.publish(this._id, PubSubTopics.ENTITY_ATTACHED, {
-                parentId: newParent.getId(),
+                parentId: newParent.id,
                 childId: this._id,
             }, true);
         }
     }
 
-    addToScene(scene, pointerInteractable, gripInteractable) {
-        if(scene) scene.add(this._object);
-        if(pointerInteractable)
-            pointerInteractable.addChild(this._pointerInteractable);
-        if(gripInteractable)
-            gripInteractable.addChild(this._gripInteractable);
+    _onAdded() {
+        for(let param of INTERACTABLE_PARAMS) {
+            let interactable = this._object[param];
+            if(this._object.parent?.[param]) {
+                this._object.parent?.[param].addChild(interactable);
+            } else if(interactable.parent) {
+                interactable.parent.removeChild(interactable);
+            }
+        }
     }
 
-    attachToScene(scene, pointerInteractable, gripInteractable) {
-        if(scene) scene.attach(this._object);
-        if(pointerInteractable)
-            pointerInteractable.addChild(this._pointerInteractable);
-        if(gripInteractable)
-            gripInteractable.addChild(this._gripInteractable);
+    _onRemoved() {
+        for(let param of INTERACTABLE_PARAMS) {
+            let interactable = this._object[param];
+            if(interactable.parent) {
+                interactable.parent.removeChild(interactable);
+            }
+        }
     }
 
-    removeFromScene() {
-        if(this._gripInteractable.parent) {
-            this._gripInteractable.parent.removeChild(this._gripInteractable);
-        }
-        if(this._pointerInteractable.parent) {
-            this._pointerInteractable.parent.removeChild(
-                this._pointerInteractable);
-        }
+    onRemoveFromProject() {
         if(this._object.parent) {
             this._object.parent.remove(this._object);
             fullDispose(this._object);
-        }
-        for(let id in this._deleteCallbacks) {
-            if(this._deleteCallbacks[id]) this._deleteCallbacks[id]();
         }
     }
 }

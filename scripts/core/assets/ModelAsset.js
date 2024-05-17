@@ -17,6 +17,7 @@ export default class ModelAsset extends AssetEntity {
     _createMesh(assetId) {
         this._mesh = LibraryHandler.cloneMesh(assetId);
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {

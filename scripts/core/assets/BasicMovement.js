@@ -5,12 +5,11 @@
  */
 
 import global from '/scripts/core/global.js';
-import Handedness from '/scripts/core/enums/Handedness.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import SettingsHandler from '/scripts/core/handlers/SettingsHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
+import { Handedness, InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
 export default class BasicMovement {
@@ -107,7 +106,7 @@ export default class BasicMovement {
         } else if(global.deviceType == "POINTER") {
             this._updatePosition(timeDelta);
             this.update = this._updatePosition;
-        } else if(global.deviceType == "MOBILE") {
+        } else if(global.deviceType == "TOUCH_SCREEN") {
             this._setupMobileFlyingButtons();
             this._updatePositionMobile(timeDelta);
             this.update = this._updatePositionMobile;
@@ -160,7 +159,7 @@ export default class BasicMovement {
             if(this._perspective != 1 && vector3s[1].length() > 0.001
                     * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
+                    this._avatar.object.position);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
@@ -206,7 +205,7 @@ export default class BasicMovement {
             if(this._perspective != 1 && vector3s[1].length() > 0.001
                     * SettingsHandler.getUserScale()) {
                 vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.getObject().position);
+                    this._avatar.object.position);
                 this._avatar.lookAtLocal(vector3s[1]);
             }
             if(flightEnabled) {
@@ -224,6 +223,8 @@ export default class BasicMovement {
         if(this._disabled || global.xrSessionType=='AR' || timeDelta >1) return;
         let movementSpeed = SettingsHandler.getMovementSpeed();
         let flightEnabled = SettingsHandler.isFlyingEnabled();
+        let leftHandController = global.userController.getHand(Handedness.LEFT);
+        let handMenu = leftHandController?._handMenu;
         let movementGamepad;
         let rotationGamepad;
         if(SettingsHandler.areJoysticksSwapped()) {
@@ -243,6 +244,12 @@ export default class BasicMovement {
 
             this._moveRight(this._velocity.x, timeDelta);
             this._moveForward(this._velocity.z, timeDelta);
+        } else if(handMenu?.walkingTool?.owner) {
+            let walkingDirection = handMenu.calculateWalkingDirection();
+            this._worldVelocity.x = walkingDirection.x * movementSpeed;
+            this._worldVelocity.z = walkingDirection.z * movementSpeed;
+            this._userObj.position.x += this._worldVelocity.x * timeDelta;
+            this._userObj.position.z += this._worldVelocity.z * timeDelta;
         }
         if(rotationGamepad) {
             let verticalForce = rotationGamepad.axes[3];
@@ -258,6 +265,23 @@ export default class BasicMovement {
             if(flightEnabled && Math.abs(verticalForce) > 0.2) {
                 this._velocity.y = -1 * movementSpeed * verticalForce;
                 this._moveUp(this._velocity.y, timeDelta);
+            }
+        } else if(handMenu?.open) {
+            let verticalForce = handMenu.flyingUp - handMenu.flyingDown;
+            if(flightEnabled && verticalForce) {
+                this._velocity.y = movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+            if(!this._snapRotationTriggered) {
+                if(handMenu.snapLeft) {
+                    this._snapRotationTriggered = true;
+                    this._snapLeft();
+                } else if(handMenu.snapRight) {
+                    this._snapRotationTriggered = true;
+                    this._snapRight();
+                }
+            } else if(!handMenu.snapLeft && !handMenu.snapRight) {
+                this._snapRotationTriggered = false;
             }
         } else {
             this._snapRotationTriggered = false;

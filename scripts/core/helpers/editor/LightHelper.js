@@ -8,8 +8,8 @@ import Light from '/scripts/core/assets/primitives/Light.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import ColorInput from '/scripts/core/menu/input/ColorInput.js';
-import NumberInput from '/scripts/core/menu/input/NumberInput.js';
+
+const { ColorField, NumberField } = AssetEntityHelper.FieldTypes;
 
 export default class LightHelper extends AssetEntityHelper {
     constructor(asset) {
@@ -17,14 +17,14 @@ export default class LightHelper extends AssetEntityHelper {
     }
 
     static fields = [
-        { "parameter": "visualEdit" },
+        "visualEdit",
         { "parameter": "intensity", "name": "Intensity", "min": 0,
-            "type": NumberInput },
-        { "parameter": "color", "name": "Color", "type": ColorInput },
-        { "parameter": "parentId" },
-        { "parameter": "position" },
-        { "parameter": "rotation" },
-        { "parameter": "scale" },
+            "type": NumberField },
+        { "parameter": "color", "name": "Color", "type": ColorField },
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

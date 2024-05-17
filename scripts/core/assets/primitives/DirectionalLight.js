@@ -16,7 +16,7 @@ export default class DirectionalLight extends Light {
         super(params);
         let direction = params['direction'] || [0, -1, 0];
         this._createLight();
-        this.setDirection(direction);
+        this.direction = direction;
     }
 
     _createLight() {
@@ -31,17 +31,13 @@ export default class DirectionalLight extends Light {
 
     exportParams() {
         let params = super.exportParams();
-        params['direction'] = this.getDirection();
+        params['direction'] = this.direction;
         return params;
     }
 
-    getDirection() {
-        return this._light.target.position.toArray();
-    }
+    get direction() { return this._light.target.position.toArray(); }
 
-    setDirection(direction) {
-        this._light.target.position.fromArray(direction);
-    }
+    set direction(direction) {this._light.target.position.fromArray(direction);}
 
     static assetId = '495a9c3f-fa4f-4c55-9a38-74f4f34450cc';
     static assetName = 'Directional Light';

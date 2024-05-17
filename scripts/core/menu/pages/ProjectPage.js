@@ -10,15 +10,15 @@ import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
-import DelayedClickEventHandler from '/scripts/core/handlers/DelayedClickEventHandler.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
-import { Fonts, FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
+import { DelayedClickHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 /* global saveAs, JSZip */
 
@@ -34,7 +34,7 @@ const OPTIONS = {
     'Preview Live': '_previewLive',
 };
 
-class ProjectPage extends PaginatedPage {
+class ProjectPage extends PaginatedButtonsPage {
     constructor(controller) {
         super(controller, true);
         this._items = Object.keys(OPTIONS).slice(0, -1);
@@ -43,22 +43,11 @@ class ProjectPage extends PaginatedPage {
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Project File',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.2,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Project File', Styles.title);
+        this.add(titleBlock);
 
-        this._loadingSavingBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Project Loading...',
-            'fontSize': 0.025,
-            'height': 0.04,
-            'width': 0.4,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
+        this._loadingSavingBlock = new Text('Project Loading...',
+            Styles.bodyText, { height: 0.2 });
 
         this._addList();
     }
@@ -122,7 +111,9 @@ class ProjectPage extends PaginatedPage {
             });
             return;
         }
-        UploadHandler.triggerUpload();
+        UploadHandler.triggerProjectFileUpload((file) => {
+            this._handleLocalFile(file);
+        });
     }
 
     _googleDriveSave() {
@@ -165,6 +156,12 @@ class ProjectPage extends PaginatedPage {
         let inputPage = this._controller.getPage(MenuPages.TEXT_INPUT);
         inputPage.setContent("Save Project As", "Filename", "Save",
             (projectName) => {
+                if(!projectName || projectName.length == 0) {
+                    PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Please add a filename',
+                    });
+                    return;
+                }
                 this._updateSaving(false);
                 PubSub.publish(this._id, PubSubTopics.PROJECT_SAVING,false);
                 GoogleDrive.saveAs(
@@ -201,7 +198,18 @@ class ProjectPage extends PaginatedPage {
             GoogleDrive.handleAuthButton(
                 () => { this._handleGoogleAuthResponse(); });
         } else {
-            DelayedClickEventHandler.triggerEvent();
+            DelayedClickHandler.trigger(() => {
+                try {
+                    GoogleDrive.handleAuthButton(
+                        () => { this._handleGoogleAuthResponse(); });
+                } catch(error) {
+                    PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
+                        text: 'Google could not be reached. Please check your '
+                            + 'internet connection and then try refreshing the '
+                            + 'page',
+                    });
+                }
+            });
         }
     }
 
@@ -288,7 +296,7 @@ class ProjectPage extends PaginatedPage {
             return;
         }
         ProjectHandler.reset();
-        UserController.setPosition([0, 0, 0]);
+        UserController.position = [0, 0, 0];
         let ambientLight = new AmbientLight({
             'visualEdit': false,
         });
@@ -344,56 +352,24 @@ class ProjectPage extends PaginatedPage {
     }
 
     _updateLoading(finished) {
-        this._loadingSavingBlock.children[1].set({
-            content: "Project Loading..."
-        });
+        this._loadingSavingBlock.text = 'Project Loading...';
         this._updateLoadingSaving(finished);
     }
 
     _updateSaving(finished) {
-        this._loadingSavingBlock.children[1].set({
-            content: "Project Saving..."
-        });
+        this._loadingSavingBlock.text = 'Project Saving...';
         this._updateLoadingSaving(finished);
     }
 
     _updateLoadingSaving(finished) {
         if(finished) {
-            this._container.remove(this._loadingSavingBlock);
-            this._container.add(this._optionsContainer);
-            this._container.update(false, false, true);
-            this._containerInteractable.addChild(this._optionsInteractable);
+            this.remove(this._loadingSavingBlock);
+            this.add(this._optionsContainer);
         } else {
-            this._container.remove(this._optionsContainer);
-            this._container.add(this._loadingSavingBlock);
-            this._containerInteractable.removeChild(this._optionsInteractable);
+            this.remove(this._optionsContainer);
+            this.add(this._loadingSavingBlock);
         }
     }
-
-    addToScene(scene, parentInteractable) {
-        DelayedClickEventHandler.listenForClick(() => {
-            try {
-                GoogleDrive.handleAuthButton(
-                    () => { this._handleGoogleAuthResponse(); });
-            } catch(error) {
-                PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
-                    text: 'Google could not be reached. Please check your '
-                        +'internet connection and then try refreshing the page',
-                });
-            }
-        });
-        UploadHandler.listenForProjectFile((file) => {
-            this._handleLocalFile(file);
-        });
-        super.addToScene(scene, parentInteractable);
-    }
-
-    removeFromScene() {
-        DelayedClickEventHandler.stopListening();
-        UploadHandler.stopListening();
-        super.removeFromScene();
-    }
-
 }
 
 export default ProjectPage;

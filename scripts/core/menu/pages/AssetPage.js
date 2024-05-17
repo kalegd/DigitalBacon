@@ -4,16 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { FontSizes, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
+import { createSmallButton, createTextInput } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import DynamicFieldsPage from '/scripts/core/menu/pages/DynamicFieldsPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class AssetPage extends DynamicFieldsPage {
     constructor(controller, assetType) {
@@ -22,59 +21,42 @@ class AssetPage extends DynamicFieldsPage {
     }
 
     _createTitleBlock() {
-        this._titleBlock = new ThreeMeshUI.Block({
-            'height': 0.04,
-            'width': 0.43,
-            'contentDirection': 'row',
-            'justifyContent': 'end',
-            'backgroundOpacity': 0,
-            'margin': 0.01,
-            'offset': 0,
+        this._titleBlock = new Span({
+            height: 0.04,
+            justifyContent: 'spaceBetween',
+            margin: 0.01,
+            width: 0.39,
         });
-        this._titleField = new TextField({
-            'height': 0.04,
-            'width': 0.30,
-            'fontSize': FontSizes.header,
-            'margin': 0,
-            'maxLength': 14,
-            'onBlur': () => {
-                this._asset.editorHelper.updateName(
-                    this._titleField.content);
-            },
+        this._titleField = createTextInput({
+            borderRadius: 0.02,
+            fontSize: FontSizes.body,
+            height: 0.04,
+            width: 0.29,
         });
-        let componentsButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.componentIcon,
-            'backgroundTextureScale': 0.7,
-            'height': 0.04,
-            'width': 0.04,
-        });
-        let deleteButton = ThreeMeshUIHelper.createButtonBlock({
-            'backgroundTexture': Textures.trashIcon,
-            'backgroundTextureScale': 0.7,
-            'height': 0.04,
-            'width': 0.04,
-        });
+        this._titleField.onBlur = () => {
+            global.keyboardLock = false;
+            this._asset.editorHelper.updateName(this._titleField.value);
+        };
+        this._titleField.onEnter = () => this._titleField.blur();
+        this._titleField.onFocus = () => { global.keyboardLock = true; };
+        let componentsButton = createSmallButton(Textures.componentIcon, 0.7);
+        let deleteButton = createSmallButton(Textures.trashIcon, 0.7);
         this._titleBlock.add(componentsButton);
-        this._titleBlock.add(this._titleField.getObject());
+        this._titleBlock.add(this._titleField);
         this._titleBlock.add(deleteButton);
-        this._titleField.setPointerInteractableParent(
-            this._containerInteractable);
-        let interactable = new PointerInteractable(componentsButton, true);
-        interactable.addAction(() => {
+        componentsButton.onClickAndTouch = () => {
             let page = this._controller.getPage(MenuPages.LIST_COMPONENTS);
             page.setContent(this._asset);
             this._controller.pushPage(MenuPages.LIST_COMPONENTS);
-        });
-        this._containerInteractable.addChild(interactable);
-        interactable = new PointerInteractable(deleteButton, true);
-        interactable.addAction(() => ProjectHandler.deleteAsset(this._asset));
-        this._containerInteractable.addChild(interactable);
+        };
+        deleteButton.onClickAndTouch =
+            () => ProjectHandler.deleteAsset(this._asset);
     }
 
     setAsset(asset) {
         this._asset = asset;
-        let name = asset.getName();
-        this._titleField.setContent(name);
+        let name = asset.name;
+        this._titleField.value = name;
         this._setFields(asset.editorHelper.getMenuFields());
     }
 
@@ -86,14 +68,12 @@ class AssetPage extends DynamicFieldsPage {
         });
         PubSub.subscribe(this._id, this._assetType + '_UPDATED', (message) => {
             if(message.asset == this._asset) {
-                this._titleField.setContent(message.asset.getName());
+                this._titleField.value = message.asset.name;
             }
         });
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             if(!done) return;
             this._removeSubscriptions();
-            this._containerInteractable.removeChild(this._previousInteractable);
-            this._containerInteractable.removeChild(this._nextInteractable);
             this._controller.setPage(MenuPages.NAVIGATION);
         });
     }
@@ -106,21 +86,14 @@ class AssetPage extends DynamicFieldsPage {
 
     back() {
         this._removeCurrentFields();
-        this._containerInteractable.removeChild(this._previousInteractable);
-        this._containerInteractable.removeChild(this._nextInteractable);
         this._removeSubscriptions();
         super.back();
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         this._addSubscriptions();
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
-
-    removeFromScene() {
-        super.removeFromScene();
-    }
-
 }
 
 export default AssetPage;

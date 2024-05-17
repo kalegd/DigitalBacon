@@ -8,12 +8,11 @@ import Party from '/scripts/core/clients/Party.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PartyHandler from '/scripts/core/handlers/PartyHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Div, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const options = [
     { "title": "Make Host", "handler": "_handleMakeHost" },
@@ -27,35 +26,20 @@ class PeerPage extends MenuPage {
     }
 
     _addPageContent() {
-        this._titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': ' ',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.4,
-        });
-        this._container.add(this._titleBlock);
+        this._titleBlock = new Text('', Styles.title);
+        this.add(this._titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
+        let columnBlock = new Div({
+            height: 0.2,
+            width: 0.45,
         });
         for(let option of options) {
-            let button = ThreeMeshUIHelper.createButtonBlock({
-                'text': option.title,
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-            });
-            let buttonInteractable = new PointerInteractable(button, true);
-            buttonInteractable.addAction(() => this[option.handler]());
+            let button = createWideButton(option.title);
+            button.margin = 0.004;
+            button.onClickAndTouch = () => this[option.handler]();
             columnBlock.add(button);
-            this._containerInteractable.addChild(buttonInteractable);
         }
-        this._container.add(columnBlock);
+        this.add(columnBlock);
     }
 
     _handleMakeHost() {
@@ -73,7 +57,7 @@ class PeerPage extends MenuPage {
 
     setContent(peer, designateHostCallback) {
         let username = stringWithMaxLength(peer.username || '...', 12);
-        this._titleBlock.children[1].set({ content: username });
+        this._titleBlock.text = username;
         this._peer = peer;
         this._designateHostCallback = designateHostCallback;
     }
@@ -103,9 +87,9 @@ class PeerPage extends MenuPage {
         super.back();
     }
 
-    addToScene(scene, parentInteractable) {
+    _onAdded() {
         this._addSubscriptions();
-        super.addToScene(scene, parentInteractable);
+        super._onAdded();
     }
 }
 

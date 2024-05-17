@@ -8,41 +8,24 @@ import global from '/scripts/core/global.js';
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
-import ClickAction from '/scripts/core/helpers/ClickAction.js';
-import { FontSizes } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
+import { Styles } from '/scripts/core/helpers/constants.js';
+import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { DelayedClickHandler, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class SketchfabLoginPage extends MenuPage {
     constructor(controller) {
         super(controller, true);
         this._staySignedIn = false;
-        this._clickAction = new ClickAction(() => { this._handleLogin(); });
         this._addPageContent();
     }
 
     _addPageContent() {
-        let titleBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Login to Sketchfab',
-            'fontSize': FontSizes.header,
-            'height': 0.04,
-            'width': 0.3,
-        });
-        this._container.add(titleBlock);
+        let titleBlock = new Text('Login to Sketchfab', Styles.title);
+        this.add(titleBlock);
 
-        let columnBlock = new ThreeMeshUI.Block({
-            'height': 0.2,
-            'width': 0.45,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'margin': 0.03,
-        });
-
-        let staySignedInCheckbox = new CheckboxInput({
+        let staySignedInCheckbox = new CheckboxField({
             'title': 'Stay signed in on this device',
             'titleWidth': 0.27,
             'initialValue': false,
@@ -52,23 +35,23 @@ class SketchfabLoginPage extends MenuPage {
             },
             'getFromSource': () => this._staySignedIn,
         });
-        staySignedInCheckbox.addToScene(columnBlock,
-            this._containerInteractable);
-        let loginButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': "Login",
-            'fontSize': FontSizes.body,
-            'height': 0.035,
-            'width': 0.3,
-        });
-        columnBlock.add(loginButton);
-        let interactable = new PointerInteractable(loginButton, true);
-        interactable.addAction(() => this._clickAction.triggerAction());
-        this._containerInteractable.addChild(interactable);
-        this._container.add(columnBlock);
+        this.add(staySignedInCheckbox);
+        let loginButton = createWideButton('Login');
+        loginButton.height = 0.04;
+        loginButton.margin = 0.004;
+        loginButton.width = 0.25;
+        this.add(loginButton);
+        loginButton.onClickAndTouch = () => {
+            if(global.deviceType == 'XR') {
+                SessionHandler.exitXRSession();
+                this._handleLogin();
+            } else {
+                DelayedClickHandler.trigger(() => this._handleLogin());
+            }
+        };
     }
 
     _handleLogin() {
-        if(global.deviceType == 'XR') SessionHandler.exitXRSession();
         Sketchfab.signIn(this._staySignedIn,
             () => { this._handleLoginCallback(); });
     }
@@ -76,15 +59,6 @@ class SketchfabLoginPage extends MenuPage {
     _handleLoginCallback() {
         this._controller.popPage();
         this._controller.pushPage(MenuPages.SKETCHFAB_SEARCH);
-    }
-
-    back() {
-        this._clickAction.stopListening();
-    }
-
-    addToScene(scene, parentInteractable) {
-        this._clickAction.listen();
-        super.addToScene(scene, parentInteractable);
     }
 }
 

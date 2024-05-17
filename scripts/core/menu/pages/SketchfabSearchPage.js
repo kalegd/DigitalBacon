@@ -4,14 +4,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import Sketchfab from '/scripts/core/clients/Sketchfab.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
-import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import TextField from '/scripts/core/menu/input/TextField.js';
+import { FontSizes, Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { createTextInput } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import PaginatedImagesPage from '/scripts/core/menu/pages/PaginatedImagesPage.js';
+import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import { TextureLoader } from 'three';
 
 class SketchfabSearchPage extends PaginatedImagesPage {
@@ -22,27 +23,26 @@ class SketchfabSearchPage extends PaginatedImagesPage {
     }
 
     _addPageContent() {
-        this._textField = new TextField({
-            'height': 0.04,
-            'width': 0.4,
-            'text': 'Search',
-            'fontSize': FontSizes.header,
-            'onBlur': () => { this._searchUpdated(); },
+        this._searchInput = createTextInput({
+            borderRadius: 0.02,
+            fontSize: FontSizes.body,
+            height: 0.04,
+            marginBottom: 0.004,
+            marginTop: 0.01,
+            width: 0.375,
         });
-        this._textField.addToScene(this._container,this._containerInteractable);
-        this._loadingBlock = ThreeMeshUIHelper.createTextBlock({
-            'text': 'Loading...',
-            'fontSize': 0.025,
-            'height': 0.04,
-            'width': 0.4,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
+        this._searchInput.onBlur = () => this._searchUpdated();
+        this._searchInput.onEnter = () => this._searchInput.blur();
+        this._searchInput.onFocus = () => { global.keyboardLock = true; };
+        this.add(this._searchInput);
+        this._loadingBlock = new Text('Loading...', Styles.bodyText,
+            { height: 0.2 });
 
         this._addList();
     }
 
     _searchUpdated() {
+        global.keyboardLock = false;
         for(let item of this._items) {
             item.isDeleted = true;
             if(item.previewTexture) item.previewTexture.dispose();
@@ -50,23 +50,20 @@ class SketchfabSearchPage extends PaginatedImagesPage {
         this._page = 0;
         this._items = [];
         this._updateItemsGUI();
-        if(this._textField.content.length == 0) {
-            this._textField.reset();
-            return;
-        }
-        this._container.remove(this._optionsContainer);
-        this._container.add(this._loadingBlock);
+        if(this._searchInput.value.length == 0) return;
+        this.remove(this._optionsContainer);
+        this.add(this._loadingBlock);
         let number = Math.random();
         this._idempotentKey = number;
-        Sketchfab.search(this._textField.content,
+        Sketchfab.search(this._searchInput.value,
             (response) => { this._handleSearchResponse(response, number); },
             () => { this._handleSearchError(); });
     }
 
     _handleSearchResponse(response, number) {
         if(this._idempotentKey != number) return;
-        this._container.remove(this._loadingBlock);
-        this._container.add(this._optionsContainer);
+        this.remove(this._loadingBlock);
+        this.add(this._optionsContainer);
         for(let result of response.results) {
             this._items.push(result);
         }
@@ -75,7 +72,7 @@ class SketchfabSearchPage extends PaginatedImagesPage {
     }
 
     _handleSearchError() {
-        this._container.remove(this._loadingBlock);
+        this.remove(this._loadingBlock);
         PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
             text: 'An unexpected error occurred, please try again later',
         });
@@ -90,8 +87,8 @@ class SketchfabSearchPage extends PaginatedImagesPage {
     }
 
     _fetchNextItems() {
-        this._container.remove(this._optionsContainer);
-        this._container.add(this._loadingBlock);
+        this.remove(this._optionsContainer);
+        this.add(this._loadingBlock);
         let number = Math.random();
         this._idempotentKey = number;
         Sketchfab.fetch(this._canFetchMore,

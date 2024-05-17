@@ -29,6 +29,7 @@ export default class BoxShape extends Shape {
             this._depthSegments);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {
@@ -55,61 +56,44 @@ export default class BoxShape extends Shape {
         return params;
     }
 
-    getDepth() {
-        return this._depth;
-    }
+    get depth() { return this._depth; }
+    get height() { return this._height; }
+    get width() { return this._width; }
+    get depthSegments() { return this._depthSegments; }
+    get heightSegments() { return this._heightSegments; }
+    get widthSegments() { return this._widthSegments; }
 
-    getHeight() {
-        return this._height;
-    }
-
-    getWidth() {
-        return this._width;
-    }
-
-    getDepthSegments() {
-        return this._depthSegments;
-    }
-
-    getHeightSegments() {
-        return this._heightSegments;
-    }
-
-    getWidthSegments() {
-        return this._widthSegments;
-    }
-
-    setDepth(depth) {
+    set depth(depth) {
         if(this._depth == depth) return;
         this._depth = depth;
         this._updateGeometry();
     }
 
-    setHeight(height) {
+    set height(height) {
         if(this._height == height) return;
         this._height = height;
         this._updateGeometry();
     }
 
-    setWidth(width) {
+    set width(width) {
         if(this._width == width) return;
         this._width = width;
         this._updateGeometry();
     }
 
-    setDepthSegments(depthSegments) {
+    set depthSegments(depthSegments) {
         if(this._depthSegments == depthSegments) return;
         this._depthSegments = depthSegments;
         this._updateGeometry();
     }
 
-    setHeightSegments(heightSegments) {
+    set heightSegments(heightSegments) {
         if(this._heightSegments == heightSegments) return;
         this._heightSegments = heightSegments;
         this._updateGeometry();
     }
 
-    setWidthSegments(widthSegments) {
+    set widthSegments(widthSegments) {
         if(this._widthSegments == widthSegments) return;
         this._widthSegments = widthSegments;
         this._updateGeometry();

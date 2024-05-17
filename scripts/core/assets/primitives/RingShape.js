@@ -29,6 +29,7 @@ export default class RingShape extends Shape {
             thetaLength);
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
+        this._updateBVH();
     }
 
     _getDefaultName() {
@@ -55,51 +56,37 @@ export default class RingShape extends Shape {
         return params;
     }
 
-    getInnerRadius() {
-        return this._innerRadius;
-    }
+    get innerRadius() { return this._innerRadius; }
+    get outerRadius() { return this._outerRadius; }
+    get thetaSegments() { return this._thetaSegments; }
+    get phiSegments() { return this._phiSegments; }
+    get thetaLength() { return this._thetaLength; }
 
-    getOuterRadius() {
-        return this._outerRadius;
-    }
-
-    getThetaSegments() {
-        return this._thetaSegments;
-    }
-
-    getPhiSegments() {
-        return this._phiSegments;
-    }
-
-    getThetaLength() {
-        return this._thetaLength;
-    }
-
-    setInnerRadius(innerRadius) {
+    set innerRadius(innerRadius) {
         if(this._innerRadius == innerRadius) return;
         this._innerRadius = innerRadius;
         this._updateGeometry();
     }
 
-    setOuterRadius(outerRadius) {
+    set outerRadius(outerRadius) {
         if(this._outerRadius == outerRadius) return;
         this._outerRadius = outerRadius;
         this._updateGeometry();
     }
 
-    setThetaSegments(thetaSegments) {
+    set thetaSegments(thetaSegments) {
         if(this._thetaSegments == thetaSegments) return;
         this._thetaSegments = thetaSegments;
         this._updateGeometry();
     }
 
-    setPhiSegments(phiSegments) {
+    set phiSegments(phiSegments) {
         if(this._phiSegments == phiSegments) return;
         this._phiSegments = phiSegments;
         this._updateGeometry();
     }
 
-    setThetaLength(thetaLength) {
+    set thetaLength(thetaLength) {
         if(this._thetaLength == thetaLength) return;
         this._thetaLength = thetaLength;
         this._updateGeometry();

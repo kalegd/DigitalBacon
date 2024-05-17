@@ -10,8 +10,8 @@ import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMediaAssetHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import CheckboxInput from '/scripts/core/menu/input/CheckboxInput.js';
-import EnumInput from '/scripts/core/menu/input/EnumInput.js';
+
+const { CheckboxField, EnumField } = PlayableMediaAssetHelper.FieldTypes;
 
 export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {
@@ -19,32 +19,35 @@ export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     }
 
     place(intersection) {
-        let object = intersection.object;
+        let { object, point } = intersection;
         object.updateMatrixWorld();
         let normal = intersection.face.normal.clone()
             .transformDirection(object.matrixWorld).clampLength(0, 0.001);
         if(global.camera.getWorldDirection(vector3s[0]).dot(normal) > 0)
             normal.negate();
-        this._object.position.copy(normal).add(intersection.point);
-        this._object.lookAt(normal.add(this._object.position));
+        point.add(normal);
+        this._object.position.copy(point);
+        this._object.parent.worldToLocal(this._object.position);
+        point.add(normal);
+        this._object.lookAt(point);
         this.roundAttributes(true);
     }
 
     static fields = [
-        this.commonFields.visualEdit,
+        "visualEdit",
         { "parameter": "previewMedia", "name": "Preview Video",
-            "suppressMenuFocusEvent": true, "type": CheckboxInput},
+            "suppressMenuFocusEvent": true, "type": CheckboxField},
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
-            "type": EnumInput },
-        this.commonFields.autoplay,
-        this.commonFields.loop,
-        this.commonFields.playTopic,
-        this.commonFields.pauseTopic,
-        this.commonFields.stopTopic,
-        this.commonFields.parentId,
-        this.commonFields.position,
-        this.commonFields.rotation,
-        this.commonFields.scale,
+            "type": EnumField },
+        "autoplay",
+        "loop",
+        "playTopic",
+        "pauseTopic",
+        "stopTopic",
+        "parentId",
+        "position",
+        "rotation",
+        "scale",
     ];
 }
 

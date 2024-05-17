@@ -4,211 +4,119 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import PointerInteractable from '/scripts/core/interactables/PointerInteractable.js';
-import { Fonts, FontSizes, Textures } from '/scripts/core/helpers/constants.js';
-import ThreeMeshUIHelper from '/scripts/core/helpers/ThreeMeshUIHelper.js';
-import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
-import ThreeMeshUI from 'three-mesh-ui';
+import { Styles, Textures } from '/scripts/core/helpers/constants.js';
+import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import PaginatedPage from '/scripts/core/menu/pages/PaginatedPage.js';
+import { Div, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 const OPTIONS = 5;
 
-class PaginatedPage extends MenuPage {
+class PaginatedListPage extends PaginatedPage {
     constructor(controller, hasBackButton) {
         super(controller, hasBackButton);
         this._paginatedListRows = [];
-        this._paginatedListInteractables = [];
-        this._page = 0;
-        this._optionsInteractable = PointerInteractable.emptyGroup();
     }
 
     _addList() {
         this._createPreviousAndNextButtons();
-        this._optionsContainer = new ThreeMeshUI.Block({
-            'height': 0.17,
-            'width': 0.45,
-            'contentDirection': 'row',
-            'justifyContent': 'center',
-            'backgroundOpacity': 0,
-            'offset': 0,
+        this._optionsContainer = new Span({
+            height: 0.215,
+            justifyContent: 'spaceEvenly',
+            width: 0.45,
         });
-        this._optionsBlock = new ThreeMeshUI.Block({
-            'height': 0.17,
-            'width': 0.31,
-            'contentDirection': 'column',
-            'justifyContent': 'start',
-            'backgroundOpacity': 0,
-            'offset': 0,
+        this._optionsBlock = new Div({
+            height: 0.215,
         });
         for(let i = 0; i < OPTIONS; i++) {
-            let row = new ThreeMeshUI.Block({
-                'height': 0.035,
-                'width': 0.3,
-                'margin': 0.002,
-                'contentDirection': 'row',
-                'justifyContent': 'start',
-                'backgroundOpacity': 0,
+            let row = new Span({
+                height: 0.035,
+                justifyContent: 'spaceBetween',
+                margin: 0.004,
+                width: 0.3
             });
-            let textBlock = ThreeMeshUIHelper.createTextBlock({
-                'text': ' ',
-                'fontSize': FontSizes.body,
-                'height': 0.035,
-                'width': 0.21,
-                'margin': 0.002,
-                'fontFamily': Fonts.defaultFamily,
-                'fontTexture': Fonts.defaultTexture,
+            let textBlock = new Text('', Styles.bodyText, {
+                height: 0.035,
+                width: 0.21,
             });
-            let editButton = ThreeMeshUIHelper.createButtonBlock({
-                'backgroundTexture': Textures.pencilIcon,
-                'backgroundTextureScale': 0.7,
-                'height': 0.04,
-                'width': 0.04,
-                'margin': 0.002,
-            });
-            let deleteButton = ThreeMeshUIHelper.createButtonBlock({
-                'text': 'X',
-                'fontSize': 0.03,
-                'height': 0.04,
-                'width': 0.04,
-                'margin': 0.002,
-                'fontFamily': Fonts.defaultFamily,
-                'fontTexture': Fonts.defaultTexture,
-            });
+            let editButton = createSmallButton(Textures.pencilIcon, 0.7);
+            let deleteButton = createSmallButton('X');
+            row.title = textBlock;
             row.add(textBlock);
             row.add(editButton);
             row.add(deleteButton);
             this._optionsBlock.add(row);
             this._paginatedListRows.push(row);
-            let interactableParent = PointerInteractable.emptyGroup();
-            let interactable = new PointerInteractable(editButton, true);
-            interactable.addAction(() => {
+            editButton.onClickAndTouch = () => {
                 let index = this._page * OPTIONS + i;
                 if(this._items.length > index) {
                     this._handleEditItemInteraction(this._items[index]);
                 } else {
                     console.error(
-                        "PaginatedPage displaying non existant option");
+                        "PaginatedListPage displaying non existant option");
                 }
-            });
-            interactableParent.addChild(interactable);
-            interactable = new PointerInteractable(deleteButton, true);
-            interactable.addAction(() => {
+            };
+            deleteButton.onClickAndTouch = () => {
                 let index = this._page * OPTIONS + i;
                 if(this._items.length > index) {
                     this._handleDeleteItemInteraction(this._items[index]);
                 } else {
                     console.error(
-                        "PaginatedPage displaying non existant option");
+                        "PaginatedListPage displaying non existant option");
                 }
-            });
-            interactableParent.addChild(interactable);
-            this._optionsInteractable.addChild(interactableParent);
-            this._paginatedListInteractables.push(interactableParent);
+            };
         }
-        this._optionsContainer.add(this._previousButton);
+        this._optionsContainer.add(this._previousButtonParent);
         this._optionsContainer.add(this._optionsBlock);
-        this._optionsContainer.add(this._nextButton);
-        this._container.add(this._optionsContainer);
-        this._containerInteractable.addChild(this._optionsInteractable);
-    }
-
-    _createPreviousAndNextButtons() {
-        this._previousButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '<',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._nextButton = ThreeMeshUIHelper.createButtonBlock({
-            'text': '>',
-            'fontSize': 0.03,
-            'height': 0.04,
-            'width': 0.04,
-            'fontFamily': Fonts.defaultFamily,
-            'fontTexture': Fonts.defaultTexture,
-        });
-        this._previousInteractable = new PointerInteractable(
-            this._previousButton, true);
-        this._previousInteractable.addAction(() => {
-            this._page -= 1;
-            this._updateItemsGUI();
-        });
-        this._nextInteractable = new PointerInteractable(this._nextButton,true);
-        this._nextInteractable.addAction(() => {
-            this._page += 1;
-            this._updateItemsGUI();
-        });
+        this._optionsContainer.add(this._nextButtonParent);
+        this.add(this._optionsContainer);
     }
 
     _updateItemsGUI() {
         let firstIndex = this._page * OPTIONS;
         for(let i = 0; i < OPTIONS; i++) {
-            let interactable = this._paginatedListInteractables[i];
             let row = this._paginatedListRows[i];
-            let title = row.children[1];
             if(firstIndex + i < this._items.length) {
                 let item = this._items[firstIndex + i];
-                title.children[1].set({ content: this._getItemName(item) });
-                row.visible = true;
-                this._optionsInteractable.addChild(interactable);
+                row.title.text = this._getItemName(item);
+                if(!row.parentComponent) this._optionsBlock.add(row);
             } else {
-                row.visible = false;
-                this._optionsInteractable.removeChild(interactable);
+                if(row.parentComponent) row.parentComponent.remove(row);
             }
         }
-        if(this._page == 0) {
-            this._previousButton.visible = false;
-            this._optionsInteractable.removeChild(this._previousInteractable);
-        } else {
-            this._previousButton.visible = true;
-            this._optionsInteractable.addChild(this._previousInteractable);
-        }
-        if(this._items.length > firstIndex + OPTIONS) {
-            this._nextButton.visible = true;
-            this._optionsInteractable.addChild(this._nextInteractable);
-        } else {
-            this._nextButton.visible = false;
-            this._optionsInteractable.removeChild(this._nextInteractable);
-        }
-        //this._container.update(false, true, false);
+        this._updatePreviousAndNextButtons(firstIndex + OPTIONS);
     }
 
     //Needs to be overridden
     _getItemName() {
-        console.error("PaginatedPage._getItemName() should be overridden");
+        console.error("PaginatedListPage._getItemName() should be overridden");
         return "";
     }
 
     //Needs to be overridden
     _handleEditItemInteraction() {
-        console.error(
-            "PaginatedPage._handleEditItemInteraction() should be overridden");
+        console.error("PaginatedListPage._handleEditItemInteraction() should be overridden");
         return;
     }
 
     //Needs to be overridden
     _handleDeleteItemInteraction() {
-        console.error(
-            "PaginatedPage._handleDeleteItemInteraction() should be overridden"
+        console.error("PaginatedListPage._handleDeleteItemInteraction() should be overridden"
         );
         return;
     }
 
     //Needs to be overridden
     _refreshItems() {
-        console.error("PaginatedPage._refreshItems() should be overridden");
+        console.error("PaginatedListPage._refreshItems() should be overridden");
         return;
     }
 
-    addToScene(scene, interactableParent) {
-        super.addToScene(scene, interactableParent);
-        if(scene) {
-            this._refreshItems();
-            this._updateItemsGUI();
-        }
+    _onAdded() {
+        super._onAdded();
+        this._refreshItems();
+        this._updateItemsGUI();
     }
 
 }
 
-export default PaginatedPage;
+export default PaginatedListPage;

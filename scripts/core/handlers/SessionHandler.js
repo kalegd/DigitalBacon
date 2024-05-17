@@ -8,9 +8,9 @@ import global from '/scripts/core/global.js';
 import XRPlanes from '/scripts/core/assets/XRPlanes.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
-import InputHandler from '/scripts/core/handlers/InputHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { OrbitControls } from '/scripts/three/examples/jsm/controls/OrbitControls.js';
+import { InputHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import { Vector3 } from 'three';
 
 const MOBILE_OVERRIDE = 'DigitalBacon:MobileOverride';
@@ -31,12 +31,13 @@ class SessionHandler {
         this._container = container;
         this._orbitControlsTarget = new Vector3(0,0,0);
         this._onStart = onStart;
+        InputHandler.hideExtraControls();
         global.sessionActive = false;
         if(global.deviceType == "XR") {
             this._configureForXR();
         } else if(global.deviceType == "POINTER") {
             this._configureForPointer();
-        } else if(global.deviceType == "MOBILE") {
+        } else if(global.deviceType == "TOUCH_SCREEN") {
             this._configureForMobile();
         }
         this._addBakedWithLabel();
@@ -65,7 +66,7 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.resume();
             global.renderer.xr.setFoveation(0);
-            if(global.xrSessionType == 'AR') XRPlanes.addToScene(global.scene);
+            if(global.xrSessionType == 'AR') global.scene.add(XRPlanes);
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
@@ -73,7 +74,7 @@ class SessionHandler {
             }
         });
         global.renderer.xr.addEventListener("sessionend", () => {
-            XRPlanes.removeFromScene();
+            global.scene.remove(XRPlanes);
             PubSub.publish(null, PubSubTopics.SESSION_ENDED);
             global.sessionActive = false;
             AudioHandler.suspend();
@@ -141,7 +142,7 @@ class SessionHandler {
             this._controls.enabled = true;
             global.sessionActive = true;
             AudioHandler.resume();
-            InputHandler.createPointerControls();
+            InputHandler.showExtraControls();
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
@@ -178,7 +179,8 @@ class SessionHandler {
             this._controls.enabled = true;
             global.sessionActive = true;
             AudioHandler.resume();
-            InputHandler.createMobileControls();
+            InputHandler.showExtraControls();
+            InputHandler.createJoystick();
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
