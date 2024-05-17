@@ -9,23 +9,16 @@
     <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="./css/app.css">
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/montserrat">
-    <!-- SHIM FOR IMPORT MAP CAUSE SAFARI IS OLD MAN -->
-    <script async src="https://unpkg.com/es-module-shims@1.5.4/dist/es-module-shims.js"></script>
     <!-- SHIM FOR WEBRTC CAUSE FIREFOX IS OLD MAN -->
     <script async src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.0/adapter.min.js"></script>
     <script type="importmap">
       {
         "imports": {
           "DigitalBacon": "/build/DigitalBacon.min.js",
-          "three": "https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.module.js",
-          "three-mesh-ui": "https://cdn.jsdelivr.net/npm/three-mesh-ui@6.5.4/build/three-mesh-ui.module.js",
-          "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.6.1/src/index.min.js"
+          "three": "https://cdn.jsdelivr.net/npm/three@0.64.1/build/three.module.js"
         }
       }
     </script>
-    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous" defer></script>
-    <script src="https://apis.google.com/js/api.js" defer></script>
-    <script src="https://accounts.google.com/gsi/client" defer></script>
     <script src="/scripts/stats.js" type="module"></script>
   </head>
   <body>

@@ -68,6 +68,13 @@
               </a>
             </li>
             <li>
+              <a href="#section/DigitalBaconUI">
+                <label type="section" role="menuitem">
+                  <span title="DigitalBaconUI">DigitalBaconUI</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/EditorHelpers">
                 <label type="section" role="menuitem">
                   <span title="EditorHelpers">EditorHelpers</span>
@@ -75,16 +82,9 @@
               </a>
             </li>
             <li>
-              <a href="#section/InputHandler">
+              <a href="#section/FieldTypes">
                 <label type="section" role="menuitem">
-                  <span title="InputHandler">InputHandler</span>
-                </label>
-              </a>
-            </li>
-            <li>
-              <a href="#section/Interactables">
-                <label type="section" role="menuitem">
-                  <span title="Interactables">Interactables</span>
+                  <span title="FieldTypes">FieldTypes</span>
                 </label>
               </a>
             </li>
@@ -92,13 +92,6 @@
               <a href="#section/LibraryHandler">
                 <label type="section" role="menuitem">
                   <span title="LibraryHandler">LibraryHandler</span>
-                </label>
-              </a>
-            </li>
-            <li>
-              <a href="#section/MenuInputs">
-                <label type="section" role="menuitem">
-                  <span title="MenuInputs">MenuInputs</span>
                 </label>
               </a>
             </li>
@@ -144,20 +137,18 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.2.1)</h1>
+        <h1>DigitalBacon (0.3.0)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
         <p>DigitalBacon is a library to create and deploy three.js scenes that support PC, Mobile, and VR sessions without all the boilerplate required to do it yourself. Additionally this library hopes to enable developers to create more complex scenes faster by exposing the renderer, scene, camera, helper functions, and more</p>
         <h1 id="section/HowToUse">How to Use</h1>
-        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a> or using a package manager like npm. When importing it into your project, Digital Bacon requires three.js, three-mesh-ui, and three-mesh-bvh to be included in the import map. Please see below for an example that has the dependencies installed locally via npm</p>
+        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a> or using a package manager like npm. When importing it into your project, Digital Bacon requires three.js to be included in the import map. Please see below for an example that has the dependencies installed locally via npm</p>
         <pre class="codeblock"><code>&lt;script type="importmap"&gt;
   {
     "imports": {
       "DigitalBacon": "/node_modules/digitalbacon/build/DigitalBacon.js",
-      "three": "/node_modules/three/build/three.module.js",
-      "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js",
-      "three-mesh-bvh": "/node_modules/three-mesh-bvh/build/index.module.js"
+      "three": "/node_modules/three/build/three.module.js"
     }
   }
 &lt;/script&gt;</code></pre>
@@ -200,6 +191,16 @@
             <tr>
               <td>
                 <span></span>
+                <span class="property-name">DigitalBaconUI</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/DigitalBaconUI">DigitalBaconUI</a> for more info</p>     
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
                 <span class="property-name">EditorHelpers</span>
               </td>
               <td class="details">
@@ -210,41 +211,11 @@
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">InputHandler</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Object</p>
-                <p>See <a href="#section/InputHandler">InputHandler</a> for more info</p>     
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">Interactables</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Object</p>
-                <p>See <a href="#section/Interactables">Interactables</a> for more info</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
                 <span class="property-name">LibraryHandler</span>
               </td>
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/LibraryHandler">LibraryHandler</a> for more info</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">MenuInputs</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Object</p>
-                <p>See <a href="#section/MenuInputs">MenuInputs</a> for more info</p>
               </td>
             </tr>
             <tr>
@@ -275,6 +246,16 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/PubSub">PubSub</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Scene</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/assets/Scene.js">Scene</a> for more info</p>
               </td>
             </tr>
             <tr>
@@ -476,6 +457,8 @@
             </tr>
           </tbody>
         </table>
+        <h1 id="section/DigitalBaconUI">DigitalBaconUI</h1>
+        <p>See DigitalBaconUI documentation <a href="https://github.com/kalegd/DigitalBacon-UI/blob/main/docs/DigitalBacon-UI.md">here</a></p>
         <h1 id="section/EditorHelpers">EditorHelpers</h1>
         <p>Inherit from the provided EditorHelpers when creating your own assets to enable configuring your custom assets in the editor</p>
         <h5>Attributes</h5>
@@ -492,20 +475,20 @@
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/SystemHelper.js">SystemHelper</a></li>
           <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/helpers/editor/TextureHelper.js">TextureHelper</a></li>
         </ul>
-        <h1 id="section/InputHandler">InputHandler</h1>
-        <p class="bold">addExtraControlsButton(id, name)</p>
-        <p>Adds html button to the bottom right of the screen</p>
-        <p class="return-data">Returns an html button with the provided id and name</p>
+        <h1 id="section/FieldTypes">FieldTypes</h1>
+        <p>A static parameter accessible by EditorHelpers.EditorHelper.FieldTypes, this object contains various Field Types useful for when defining new EditorHelpers for custom assets. The tables below list the parameters you can provide for each type when defined for an EditorHelper. To see the actual parameters these Classes accept, please see the <a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/menu/input">source code here</a></p>
+        <h5>Attributes for use with EditorHelper</h5>
+        <p class="bold">Required for all FieldTypes</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">id</span>
+                <span class="property-name">parameter</span>
               </td>
               <td class="details">
                 <p class="datatype">String</p>
-                <p>The id of the button you're creating</p>
+                <p>parameter name of the asset that this Checkbox affects</p>
               </td>
             </tr>
             <tr>
@@ -515,105 +498,140 @@
               </td>
               <td class="details">
                 <p class="datatype">String</p>
-                <p>The text on the button that will be seen by the user</p>
+                <p>User friendly name for this parameter. Optional when listing an inherited parameter</p>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="bold">getExtraControlsButton(id)</p>
-        <p class="return-data">Returns the html button with the provided id</p>
+        <p class="bold">AssetEntityField</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">id</span>
+                <span class="property-name">excludeSelf</span>
               </td>
               <td class="details">
-                <p class="datatype">String</p>
-                <p>The id of the button you've already created</p>
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Whether this asset should be included in the list of options. Defaults to false</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">filter</span>
+              </td>
+              <td class="details">
+                <p class="datatype">function(AssetEntity)</p>
+                <p class="optional">Optional</p>
+                <p>If provided, this function will be used to determine if the asset should be included in the list or not</p>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="bold">hideExtraControlsButton(id)</p>
-        <p>Sets the css display property of the html button to none</p>
+        <p class="bold">AudioField</p>
+        <p>No additional fields</p>
+        <p class="bold">CheckboxField</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">id</span>
+                <span class="property-name">suppressMenuFocusEvent</span>
               </td>
               <td class="details">
-                <p class="datatype">String</p>
-                <p>The id of the button you've already created</p>
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Suppresses the Menu Focus Event from being published</p>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="bold">showExtraControlsButton(id)</p>
-        <p>Sets the css display property of the html button to inline-block</p>
+        <p class="bold">ColorField</p>
+        <p class="bold">CubeImageField</p>
+        <p>No additional fields</p>
+        <p class="bold">EnumField</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">id</span>
+                <span class="property-name">map</span>
               </td>
               <td class="details">
-                <p class="datatype">String</p>
-                <p>The id of the button you've already created</p>
+                <p class="datatype">Object&lt;String, Any&gt;</p>
+                <p>Map of user friendly names to their corresponding value to be used when setting the Asset's parameter</p>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="bold">getXRGamepad(handedness)</p>
-        <p class="return-data">Returns the <a href="https://www.w3.org/TR/webxr-gamepads-module-1/">XR Gamepad</a> associated with the controller with the provided handedness if it exists</p>
+        <p class="bold">EulerField</p>
+        <p class="bold">ImageField</p>
+        <p class="bold">MaterialField</p>
+        <p>No additional fields</p>
+        <p class="bold">NumberField</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">handedness</span>
+                <span class="property-name">min</span>
               </td>
               <td class="details">
-                <p class="datatype">String (LEFT or RIGHT)</p>
-                <p>The handedness associated with the controller you want the XR Gamepad for</p>
+                <p class="datatype">Number</p>
+                <p class="optional">Optional</p>
+                <p>Maximum value this field can be set to</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">max</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Number</p>
+                <p class="optional">Optional</p>
+                <p>Minimum value this field can be set to</p>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="bold">isPointerPressed()</p>
-        <p class="return-data">Returns a boolean that signifies if the mouse is currently being pressed down</p>
-        <p class="bold">isScreenTouched()</p>
-        <p class="return-data">Returns a boolean that signifies if the touch screen is currently being touched</p>
-        <p class="bold">isKeyCodePressed(code)</p>
-        <p class="return-data">Returns whether the key associated with the provided <a href="https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code">code</a> is currently pressed on the keyboard</p>
+        <p class="bold">TextField</p>
         <table class="attributes">
           <tbody>
             <tr>
               <td>
                 <span></span>
-                <span class="property-name">code</span>
+                <span class="property-name">singleLine</span>
               </td>
               <td class="details">
-                <p class="datatype">String</p>
-                <p>The code that represents a physical key on the keyboard. <a href="https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code">Please see here</a> for more information</p>
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>Determines if the input should only allow one line of text. Defaults to false</p>
               </td>
             </tr>
           </tbody>
         </table>
-        <h1 id="section/Interactables">Interactables</h1>
-        <p>Make assets interactive by creating Interactables for them and adding them to their corresponding InteractableHandler</p>
-        <h5>Attributes</h5>
-        <ul>
-          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/interactables/Interactable.js">Interactable</a></li>
-          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/interactables/GripInteractable.js">GripInteractable</a></li>
-          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/interactables/PointerInteractable.js">PointerInteractable</a></li>
-          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/handlers/GripInteractableHandler.js">GripInteractableHandler</a></li>
-          <li><a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/handlers/PointerInteractableHandler.js">PointerInteractableHandler</a></li>
-        </ul>
+        <p class="bold">TextureField</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">filter</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Array&lt;TextureType&gt;</p>
+                <p class="optional">Optional</p>
+                <p>Only allow user to select from textures of the types provided</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">Vector2Field</p>
+        <p class="bold">Vector3Field</p>
+        <p>No additional fields</p>
         <h1 id="section/LibraryHandler">LibraryHandler</h1>
         <p class="bold">loadAsset(filepath, callback)</p>
         <p>Adds image/model to library</p>
@@ -659,121 +677,6 @@
             </tr>
           </tbody>
         </table>
-        <h1 id="section/MenuInputs">MenuInputs</h1>
-        <p>Object containing different Input Types. Particularly useful when defining new EditorHelpers for your custom assets. The tables below list the parameters you can provide for each type when defined for an EditorHelper. To see the actual parameters these Classes accept, please see the <a href="https://github.com/kalegd/DigitalBacon/tree/main/scripts/core/menu/input">source code here</a></p>
-        <h5>Attributes for use with EditorHelper</h5>
-        <p class="bold">Required with MenuInputs for newly defined parameters</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">parameter</span>
-              </td>
-              <td class="details">
-                <p class="datatype">String</p>
-                <p>parameter name of the asset that this Checkbox affects</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">name</span>
-              </td>
-              <td class="details">
-                <p class="datatype">String</p>
-                <p>User friendly name for this parameter. Optional when listing an inherited parameter</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">AudioInput</p>
-        <p>No additional fields</p>
-        <p class="bold">CheckboxInput</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">suppressMenuFocusEvent</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Boolean</p>
-                <p class="optional">Optional</p>
-                <p>Suppresses the Menu Focus Event from being published</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">ColorInput</p>
-        <p class="bold">CubeImageInput</p>
-        <p>No additional fields</p>
-        <p class="bold">EnumInput</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">map</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Object&lt;String, Any&gt;</p>
-                <p>Map of user friendly names to their corresponding value to be used when setting the Asset's parameter</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">EulerInput</p>
-        <p class="bold">ImageInput</p>
-        <p class="bold">MaterialInput</p>
-        <p>No additional fields</p>
-        <p class="bold">NumberInput</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">min</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Number</p>
-                <p class="optional">Optional</p>
-                <p>Maximum value this field can be set to</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">max</span>
-              </td>
-              <td class="details">
-                <p class="datatype">Number</p>
-                <p class="optional">Optional</p>
-                <p>Minimum value this field can be set to</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">TextureInput</p>
-        <table class="attributes">
-          <tbody>
-            <tr>
-              <td>
-                <span></span>
-                <span class="property-name">filter</span>
-              </td>
-              <td class="details">
-                <p class="datatype">TextureType</p>
-                <p class="optional">Optional</p>
-                <p>Only allow user to select from textures of this type</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p class="bold">TextInput</p>
-        <p class="bold">Vector2Input</p>
-        <p class="bold">Vector3Input</p>
-        <p>No additional fields</p>
         <h1 id="section/PartyHandler">PartyHandler</h1>
         <h5>Functions</h5>
         <p class="bold">isHost()</p>

@@ -33,7 +33,6 @@
       let authToken = urlParams.get('access_token');
       let expiresIn = urlParams.get('expires_in');
       let authExpiry = Date.now() + (expiresIn * 1000) - 10000;
-      if(authToken) console.log("Got auth token!");
       window.addEventListener('message', (event) => {
         if(event.data == 'fetch_auth_token') {
           event.source.postMessage({

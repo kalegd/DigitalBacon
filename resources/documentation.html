@@ -110,6 +110,13 @@
               </a>
             </li>
             <li>
+              <a href="#section/Video">
+                <label type="section" role="menuitem">
+                  <span title="Video">Video</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/Components">
                 <label type="section" role="menuitem">
                   <span title="Components">Components</span>
@@ -274,7 +281,7 @@
         <h5>Hand Tools</h5>
         <p>Specific for VR Headset Users. Please see section above for what each tool does</p>
         <h5>Library</h5>
-        <p>Where you can edit all of the assets in your website. For more information on how you can configure different asset types through the menu, see the relevant sections for <a href="#section/Models">Models</a>, <a href="#section/Images">Images</a>, <a href="#section/Shapes">Shapes</a>, <a href="#section/Lights">Lights</a>, <a href="#section/Materials">Materials</a>, <a href="#section/Textures">Textures</a>, <a href="#section/Audio">Audio</a>, <a href="#section/Components">Components</a>, <a href="#section/Systems">Systems</a>, and <a href="#section/Other Assets">Other Assets</a></p>
+        <p>Where you can edit all of the assets in your website. For more information on how you can configure different asset types through the menu, see the relevant sections for <a href="#section/Models">Models</a>, <a href="#section/Images">Images</a>, <a href="#section/Shapes">Shapes</a>, <a href="#section/Lights">Lights</a>, <a href="#section/Materials">Materials</a>, <a href="#section/Textures">Textures</a>, <a href="#section/Audio">Audio</a>, <a href="#section/Video">Video</a>, <a href="#section/Components">Components</a>, <a href="#section/Systems">Systems</a>, and <a href="#section/Other Assets">Other Assets</a></p>
         <h5>Settings</h5>
         <p>In this section you can change the background (skybox) of your website, the settings your website's users will have, your own settings while editing your website, and update your avatar</p>
         <h5>Project File</h5>
@@ -2198,6 +2205,152 @@ he bottom</p>
               <td class="details">
                 <p class="datatype">Number</p>
                 <p>How loud the audio source is</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Play Event</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Event</p>
+                <p>Audio will start playing whenever this event is triggered</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Pause Event</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Event</p>
+                <p>Audio will pause whenever this event is triggered</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Stop Event</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Event</p>
+                <p>Audio will stop whenever this event is triggered</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Position</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Numbers</p>
+                <p>Location of the asset along the x, y, and z axes</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Rotation</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Numbers</p>
+                <p>Orientation of the asset represented as Euler Angles</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Scale</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Numbers</p>
+                <p>How much the asset is stretched along the x, y , and z axes</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="section/Video">Video</h1>
+        <p>All audio have the following parameters that can be edited in the menu</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Visually Edit</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>Enables visual editing for the asset</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Preview Video</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>Allows you to play the video while in the Editor</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Display</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Sides</p>
+                <p>Selects what sides of the material are visible. If Front or Back Side is selected, the opposite side will be see through</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Auto Play</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>If checked, the video will start playing automatically when the user clicks starts in the Digital Bacon website</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Loop</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Checkbox</p>
+                <p>Whether the video should play on repeat or not</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Play Event</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Event</p>
+                <p>Audio will start playing whenever this event is triggered</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Pause Event</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Event</p>
+                <p>Audio will pause whenever this event is triggered</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Stop Event</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Event</p>
+                <p>Audio will stop whenever this event is triggered</p>
               </td>
             </tr>
             <tr>
