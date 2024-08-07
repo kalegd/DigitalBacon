@@ -7,8 +7,8 @@
 import global from '/scripts/core/global.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
+import OrbitDisablingPointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import { NumberInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class NumberField extends MenuField {
@@ -27,9 +27,9 @@ class NumberField extends MenuField {
         this._numberInput = new NumberInput({
             fontSize: FontSizes.body,
             height: 0.03,
+            pointerInteractableClassOverride: OrbitDisablingPointerInteractable,
             width: 0.17,
         });
-        configureOrbitDisabling(this._numberInput);
         this._numberInput.pointerInteractable.hoveredCursor = 'text';
         this._numberInput.onBlur = () => this._blur();
         this._numberInput.onChange = () => this._update();

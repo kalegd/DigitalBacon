@@ -1,7 +1,11 @@
 import { Styles } from '/scripts/core/helpers/constants.js';
 import PointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
-import { Div, Image, Select, Text, TextInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import { Div, Image, Select, Style, Text, TextInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
+
+const ORBIT_DISABLING_STYLE = new Style({
+    pointerInteractableClassOverride: PointerInteractable,
+});
 
 export const addHoveredButtonCallback = (button) => {
     button.pointerInteractable.addHoveredCallback((hovered) => {
@@ -14,8 +18,7 @@ export const addHoveredButtonCallback = (button) => {
 };
 
 export const createSmallButton = (label, textureScale = 1) => {
-    let button = new Div(Styles.smallButton);
-    button.pointerInteractable = new PointerInteractable(button);
+    let button = new Div(Styles.smallButton, ORBIT_DISABLING_STYLE);
     addHoveredButtonCallback(button);
     if(label instanceof THREE.Texture) {
         let scale = Math.floor(textureScale * 100) + '%';
@@ -27,8 +30,7 @@ export const createSmallButton = (label, textureScale = 1) => {
 };
 
 export const createWideButton = (label = ' ') => {
-    let button = new Div(Styles.wideButton);
-    button.pointerInteractable = new PointerInteractable(button);
+    let button = new Div(Styles.wideButton, ORBIT_DISABLING_STYLE);
     addHoveredButtonCallback(button);
     let buttonText = new Text(label, Styles.bodyText);
     button.add(buttonText);
@@ -37,8 +39,8 @@ export const createWideButton = (label = ' ') => {
 };
 
 export const createWideImageButton = (label = ' ', texture) => {
-    let button = new Image(texture, Styles.wideImageButton);
-    button.pointerInteractable = new PointerInteractable(button);
+    let button = new Image(texture, Styles.wideImageButton,
+        ORBIT_DISABLING_STYLE);
     addHoveredButtonCallback(button);
     let buttonText = new Text(label, Styles.bodyText);
     button.add(buttonText);
@@ -47,10 +49,7 @@ export const createWideImageButton = (label = ' ', texture) => {
 };
 
 export const createTextInput = (style) => {
-    let textInput = new TextInput(style);
-    let oldInteractable = textInput.pointerInteractable;
-    textInput.pointerInteractable = new PointerInteractable(textInput);
-    oldInteractable.copyEventListenersTo(textInput.pointerInteractable);
+    let textInput = new TextInput(style, ORBIT_DISABLING_STYLE);
     textInput.pointerInteractable.hoveredCursor = 'text';
     return textInput;
 };

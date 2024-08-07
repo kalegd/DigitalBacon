@@ -6,7 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import { FontSizes, Styles } from '/scripts/core/helpers/constants.js';
-import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import OrbitDisablingPointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import { NumberInput, Div, Span, Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
@@ -42,9 +42,9 @@ class Vector2Field extends MenuField {
         let input = new NumberInput({
             fontSize: FontSizes.body,
             height: 0.03,
+            pointerInteractableClassOverride: OrbitDisablingPointerInteractable,
             width: 0.17,
         });
-        configureOrbitDisabling(input);
         input.pointerInteractable.hoveredCursor = 'text';
         input.onBlur = () => this._blur();
         input.onChange = () => this._update();
