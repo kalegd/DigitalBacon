@@ -91,6 +91,15 @@ class UserController extends InternalAssetEntity {
     set isXR(isXR) { this._isXR = isXR; }
     set scale(scale) {
         super.scale = scale;
+        global.camera.scale.set(1, 1, 1);
+        let object = global.camera.parent;
+        while(object) {
+            global.camera.scale.divide(object.scale);
+            object = object.parent;
+        }
+        global.camera.near = 0.1 / global.camera.scale.x;
+        global.camera.far = Math.max(1000, 1000 / global.camera.scale.x);
+        global.camera.updateProjectionMatrix();
         PubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
             { asset: this, fields: ['scale'] });
     }
