@@ -33,6 +33,7 @@ class TransformControlsHandler {
         this._placingObject = {};
         this._preTransformStates = {};
         this._id = uuidv4();
+        this._objectChangeNumber = 0;
         let tool = (global.deviceType == 'XR') ? InteractionTools.EDIT : null;
         PointerInteractableHandler.registerToolHandler(tool,
             (controller) => this._toolHandler(controller));
@@ -144,7 +145,8 @@ class TransformControlsHandler {
                 false, true);
         });
         this._transformControls.addEventListener('objectChange', () => {
-            if(global.renderer.info.render.frame % 3 == 0) {
+            this._objectChangeNumber++;
+            if(this._objectChangeNumber % 3 == 0) {
                 this._attachedAssets[global.deviceType].editorHelper
                     .roundAttributes();
             }
