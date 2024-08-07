@@ -134,6 +134,13 @@ export default class XRHand extends XRDevice {
     createHandMenu() {
         if(this._handMenu) return;
         this._handMenu = new HandMenu();
+        //Below is to get the menu positioned well for the apple vision pro
+        //In this doesn't work out with any future headsets, we may want to use
+        //the position of one of the bones in the hand
+        let targetRayController = InputHandler.getXRController(
+            XRInputDeviceTypes.HAND, this._handedness, 'targetRay');
+        if(this._object == targetRayController)
+            this._handMenu.position.set(0, 0.05, -0.05);
     }
 
     updateHandMenu(timeDelta) {
