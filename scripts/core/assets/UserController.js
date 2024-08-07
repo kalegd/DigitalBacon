@@ -301,6 +301,8 @@ class UserController extends InternalAssetEntity {
                     : XRController;
                 let xrController = InputHandler.getXRController(type,
                     handedness, 'grip');
+                if(!xrController) xrController = InputHandler.getXRController(
+                    type, handedness, 'targetRay');
                 controller = new assetClass({
                     id: xrController.uuid,
                     handedness: handedness,

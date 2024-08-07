@@ -49,6 +49,10 @@ let params = {
 setup("my-container-id", params);
 ```
 
+## Local Network Testing
+
+If you want to test your changes with another device on your local network, you can run `npm run start-ssl`. Before doing this you'll need to create both cert.pem and key.pem files. Mac Users can generate these files via `openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem`
+
 ## Contributors
 
 A special thanks to the following people for taking time to contribute to this project
