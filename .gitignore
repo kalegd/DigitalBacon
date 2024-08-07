@@ -105,7 +105,3 @@ dist
 
 # Mac generated file
 .DS_Store
-
-# SSL
-cert.pem
-key.pem
