@@ -79,14 +79,6 @@ export default class XRController extends XRDevice {
         return gamepad != null && gamepad.buttons[index].pressed;
     }
 
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
-    }
-
     static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
     static assetName = 'XR Controller';
 }

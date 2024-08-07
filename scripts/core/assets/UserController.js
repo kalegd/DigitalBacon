@@ -41,6 +41,7 @@ class UserController extends InternalAssetEntity {
         this._xrControllers = {};
         this._xrHands = {};
         this._xrDevices = new Set();
+        this._rtcCounter = 0;
     }
 
     init() {
@@ -162,6 +163,7 @@ class UserController extends InternalAssetEntity {
     getDataForRTC() {
         let codes = 0;
         let data = [];
+        this._rtcCounter++;
         if(global.deviceType == "XR") {
             codes += this._pushAvatarDataForRTC(data);
             codes += this._pushHandsDataForRTC(data);
@@ -173,7 +175,7 @@ class UserController extends InternalAssetEntity {
             data.push(...this._basicMovement.getWorldVelocity().toArray());
             codes += UserMessageCodes.USER_VELOCITY;
         }
-        if(global.renderer.info.render.frame % 300 == 0) {
+        if(this._rtcCounter % 300 == 0) {
             this._object.getWorldPosition(vector3s[0]);
             data.push(...vector3s[0].toArray());
             codes += UserMessageCodes.USER_POSITION;
@@ -310,14 +312,19 @@ class UserController extends InternalAssetEntity {
                     : XRController;
                 let xrController = InputHandler.getXRController(type,
                     handedness, 'grip');
-                if(!xrController) xrController = InputHandler.getXRController(
-                    type, handedness, 'targetRay');
+                let isTargetRayBased = false;
+                if(!xrController) {
+                    xrController = InputHandler.getXRController(type,
+                        handedness, 'targetRay');
+                    isTargetRayBased = true;
+                }
                 controller = new assetClass({
                     id: xrController.uuid,
                     handedness: handedness,
                     parentId: this._id,
                     controllerModel: controllerModel,
                     object: xrController,
+                    isTargetRayBased: isTargetRayBased,
                 });
                 ProjectHandler.addAsset(controller, false, true);
                 //controller.attachTo(this);

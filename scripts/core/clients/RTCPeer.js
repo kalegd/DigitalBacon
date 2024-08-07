@@ -204,7 +204,9 @@ export default class RTCPeer {
             try {
                 channel.send(this._sendDataQueue.dequeue());
             } catch(err) {
-                if(!err.message.includes("readyState is not 'open'")) throw err;
+                if(!err.message.includes("readyState is not 'open'") &&
+                        !err.message.includes('object is in an invalid state'))
+                    throw err;
             }
             if(this._sendDataQueue.length == 0) return;
         }

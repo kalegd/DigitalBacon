@@ -142,6 +142,20 @@ export default class XRDevice extends InternalAssetEntity {
         this._ttl = TTL;
     }
 
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    processFromRTC(float32Array, index) {
+        this._object.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        this._object.rotation.fromArray(rotation);
+    }
+
     onAddToProject() {
         this._live = true;
     }

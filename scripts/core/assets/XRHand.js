@@ -11,7 +11,7 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import HandMenu from '/scripts/core/menu/HandMenu.js';
 import { Handedness, InputHandler, XRInputDeviceTypes } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
-import { Plane, Raycaster, Vector3 } from 'three';
+import { Plane, Quaternion, Raycaster, Vector3 } from 'three';
 
 const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
 const BONE_ANGLE = 2.6;
@@ -27,6 +27,10 @@ const BONE_SETS = [
     [20,21,22],
     [20,21,24],
 ];
+const TARGET_RAY_BASED_QUATERNION = new Quaternion(0.6023779, 0.6023779,
+                                                    0.4015853, 0.336171);
+
+window.trbq = TARGET_RAY_BASED_QUATERNION;
 
 export default class XRHand extends XRDevice {
     constructor(params = {}) {
@@ -36,6 +40,7 @@ export default class XRHand extends XRDevice {
         if(!(this._handedness in Handedness)) {
             throw new Error("hand must be LEFT or RIGHT");
         }
+        this._isTargetRayBased = params['isTargetRayBased'];
         let controllerModel = params['controllerModel'];
         if(controllerModel) {
             this._object.add(controllerModel);
@@ -60,6 +65,7 @@ export default class XRHand extends XRDevice {
     exportParams() {
         let params = super.exportParams();
         params['handedness'] = this._handedness;
+        params['isTargetRayBased'] = this._isTargetRayBased;
         return params;
     }
 
@@ -123,24 +129,27 @@ export default class XRHand extends XRDevice {
         return false;
     }
 
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
+    processFromRTC(float32Array, index) {
+        super.processFromRTC(float32Array, index);
+        if(this._isTargetRayBased)
+            this._object.quaternion.multiply(TARGET_RAY_BASED_QUATERNION);
+    }
+
+    _updateHandData(float32Array, index, asset) {
+        if(!asset) return;
+        let peerHand = asset.object;
+        peerHand.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        peerHand.rotation.fromArray(rotation);
     }
 
     createHandMenu() {
         if(this._handMenu) return;
         this._handMenu = new HandMenu();
-        //Below is to get the menu positioned well for the apple vision pro
-        //In this doesn't work out with any future headsets, we may want to use
-        //the position of one of the bones in the hand
-        let targetRayController = InputHandler.getXRController(
-            XRInputDeviceTypes.HAND, this._handedness, 'targetRay');
-        if(this._object == targetRayController)
-            this._handMenu.position.set(0, 0.05, -0.05);
+        //The below is to position the menu nicely for the apple vision pro. If
+        //this doesn't work out with any future headsets, we may want to use the
+        //position of one of the bones in the hand
+        if(this._isTargetRayBased) this._handMenu.position.set(0, 0.05, -0.05);
     }
 
     updateHandMenu(timeDelta) {
