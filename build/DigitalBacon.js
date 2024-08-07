@@ -9467,6 +9467,7 @@ class Party {
             this._userAudio.srcObject = new MediaStream();
             this._setupWebSocket();
         });
+        if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
     }
 
     _setupWebSocket() {
@@ -15958,6 +15959,7 @@ class TransformControlsHandler {
         this._placingObject = {};
         this._preTransformStates = {};
         this._id = uuidv4();
+        this._objectChangeNumber = 0;
         let tool = (global$1.deviceType == 'XR') ? InteractionTools.EDIT : null;
         ni.registerToolHandler(tool,
             (controller) => this._toolHandler(controller));
@@ -16069,7 +16071,8 @@ class TransformControlsHandler {
                 false, true);
         });
         this._transformControls.addEventListener('objectChange', () => {
-            if(global$1.renderer.info.render.frame % 3 == 0) {
+            this._objectChangeNumber++;
+            if(this._objectChangeNumber % 3 == 0) {
                 this._attachedAssets[global$1.deviceType].editorHelper
                     .roundAttributes();
             }
@@ -39806,7 +39809,7 @@ var EditorHelpers = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.3.1";
+const version = "0.3.0";
 
 global$1.version = version;
 
