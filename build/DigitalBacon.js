@@ -9277,7 +9277,9 @@ class RTCPeer {
             try {
                 channel.send(this._sendDataQueue.dequeue());
             } catch(err) {
-                if(!err.message.includes("readyState is not 'open'")) throw err;
+                if(!err.message.includes("readyState is not 'open'") &&
+                        !err.message.includes('object is in an invalid state'))
+                    throw err;
             }
             if(this._sendDataQueue.length == 0) return;
         }
@@ -11864,14 +11866,6 @@ class PeerController extends InternalAssetEntity {
         object.rotation.fromArray(rotation);
     }
 
-    _updateHandData(float32Array, index, asset) {
-        if(!asset) return;
-        let peerHand = asset.object;
-        peerHand.position.fromArray(float32Array, index);
-        let rotation = float32Array.slice(index + 3, index + 6);
-        peerHand.rotation.fromArray(rotation);
-    }
-
     _updateVelocity(float32Array, index) {
         this._velocity.fromArray(float32Array, index);
         if(!this._isXR && !this._firstPerson) {
@@ -11978,22 +11972,22 @@ class PeerController extends InternalAssetEntity {
         }
         if(UserMessageCodes.LEFT_CONTROLLER & codes) {
             let asset = this._xrControllers[Rr.LEFT];
-            this._updateHandData(float32Array, index, asset);
+            if(asset) asset.processFromRTC(float32Array, index);
             index += 6;
         }
         if(UserMessageCodes.RIGHT_CONTROLLER & codes) {
             let asset = this._xrControllers[Rr.RIGHT];
-            this._updateHandData(float32Array, index, asset);
+            if(asset) asset.processFromRTC(float32Array, index);
             index += 6;
         }
         if(UserMessageCodes.LEFT_HAND & codes) {
             let asset = this._xrHands[Rr.LEFT];
-            this._updateHandData(float32Array, index, asset);
+            if(asset) asset.processFromRTC(float32Array, index);
             index += 6;
         }
         if(UserMessageCodes.RIGHT_HAND & codes) {
             let asset = this._xrHands[Rr.RIGHT];
-            this._updateHandData(float32Array, index, asset);
+            if(asset) asset.processFromRTC(float32Array, index);
             index += 6;
         }
         if(UserMessageCodes.USER_VELOCITY & codes) {
@@ -36753,6 +36747,20 @@ class XRDevice extends InternalAssetEntity {
         this._ttl = TTL;
     }
 
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    processFromRTC(float32Array, index) {
+        this._object.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        this._object.rotation.fromArray(rotation);
+    }
+
     onAddToProject() {
         this._live = true;
     }
@@ -36843,14 +36851,6 @@ class XRController extends XRDevice {
     isButtonPressed(index) {
         let gamepad = ei.getXRGamepad(this._handedness);
         return gamepad != null && gamepad.buttons[index].pressed;
-    }
-
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
     }
 
     static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
@@ -37146,6 +37146,10 @@ const BONE_SETS = [
     [20,21,22],
     [20,21,24],
 ];
+const TARGET_RAY_BASED_QUATERNION = new Quaternion(0.6023779, 0.6023779,
+                                                    0.4015853, 0.336171);
+
+window.trbq = TARGET_RAY_BASED_QUATERNION;
 
 class XRHand extends XRDevice {
     constructor(params = {}) {
@@ -37155,6 +37159,7 @@ class XRHand extends XRDevice {
         if(!(this._handedness in Rr)) {
             throw new Error("hand must be LEFT or RIGHT");
         }
+        this._isTargetRayBased = params['isTargetRayBased'];
         let controllerModel = params['controllerModel'];
         if(controllerModel) {
             this._object.add(controllerModel);
@@ -37179,6 +37184,7 @@ class XRHand extends XRDevice {
     exportParams() {
         let params = super.exportParams();
         params['handedness'] = this._handedness;
+        params['isTargetRayBased'] = this._isTargetRayBased;
         return params;
     }
 
@@ -37242,24 +37248,27 @@ class XRHand extends XRDevice {
         return false;
     }
 
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
+    processFromRTC(float32Array, index) {
+        super.processFromRTC(float32Array, index);
+        if(this._isTargetRayBased)
+            this._object.quaternion.multiply(TARGET_RAY_BASED_QUATERNION);
+    }
+
+    _updateHandData(float32Array, index, asset) {
+        if(!asset) return;
+        let peerHand = asset.object;
+        peerHand.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        peerHand.rotation.fromArray(rotation);
     }
 
     createHandMenu() {
         if(this._handMenu) return;
         this._handMenu = new HandMenu();
-        //Below is to get the menu positioned well for the apple vision pro
-        //In this doesn't work out with any future headsets, we may want to use
-        //the position of one of the bones in the hand
-        let targetRayController = ei.getXRController(
-            Mr.HAND, this._handedness, 'targetRay');
-        if(this._object == targetRayController)
-            this._handMenu.position.set(0, 0.05, -0.05);
+        //The below is to position the menu nicely for the apple vision pro. If
+        //this doesn't work out with any future headsets, we may want to use the
+        //position of one of the bones in the hand
+        if(this._isTargetRayBased) this._handMenu.position.set(0, 0.05, -0.05);
     }
 
     updateHandMenu(timeDelta) {
@@ -37346,6 +37355,7 @@ class UserController extends InternalAssetEntity {
         this._xrControllers = {};
         this._xrHands = {};
         this._xrDevices = new Set();
+        this._rtcCounter = 0;
     }
 
     init() {
@@ -37467,6 +37477,7 @@ class UserController extends InternalAssetEntity {
     getDataForRTC() {
         let codes = 0;
         let data = [];
+        this._rtcCounter++;
         if(global$1.deviceType == "XR") {
             codes += this._pushAvatarDataForRTC(data);
             codes += this._pushHandsDataForRTC(data);
@@ -37478,7 +37489,7 @@ class UserController extends InternalAssetEntity {
             data.push(...this._basicMovement.getWorldVelocity().toArray());
             codes += UserMessageCodes.USER_VELOCITY;
         }
-        if(global$1.renderer.info.render.frame % 300 == 0) {
+        if(this._rtcCounter % 300 == 0) {
             this._object.getWorldPosition(vector3s[0]);
             data.push(...vector3s[0].toArray());
             codes += UserMessageCodes.USER_POSITION;
@@ -37615,14 +37626,19 @@ class UserController extends InternalAssetEntity {
                     : XRController;
                 let xrController = ei.getXRController(type,
                     handedness, 'grip');
-                if(!xrController) xrController = ei.getXRController(
-                    type, handedness, 'targetRay');
+                let isTargetRayBased = false;
+                if(!xrController) {
+                    xrController = ei.getXRController(type,
+                        handedness, 'targetRay');
+                    isTargetRayBased = true;
+                }
                 controller = new assetClass({
                     id: xrController.uuid,
                     handedness: handedness,
                     parentId: this._id,
                     controllerModel: controllerModel,
                     object: xrController,
+                    isTargetRayBased: isTargetRayBased,
                 });
                 projectHandler.addAsset(controller, false, true);
                 //controller.attachTo(this);
@@ -39809,7 +39825,7 @@ var EditorHelpers = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.3.0";
+const version = "0.3.1";
 
 global$1.version = version;
 
