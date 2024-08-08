@@ -1,6 +1,6 @@
 {
   "name": "digitalbacon",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "Content management system for 3D websites",
   "main": "/build/DigitalBacon.min.js",
