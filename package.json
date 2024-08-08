@@ -1,6 +1,6 @@
 {
   "name": "digitalbacon",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "Content management system for 3D websites",
   "main": "/build/DigitalBacon.min.js",
@@ -22,15 +22,16 @@
     "lint": "eslint ./scripts/core --ext .js",
     "lint-fix": "eslint ./scripts/core --ext .js --fix",
     "start": "http-server -c-1 -p 8000",
+    "start-ssl": "http-server -S -c cert.pem -c-1 -p 8000",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
-    "digitalbacon-ui": "^0.1.0",
+    "digitalbacon-ui": "^0.1.1",
     "file-saver": "2.0.5",
     "jest-environment-jsdom": "^29.7.0",
     "jszip": "3.10.1",
     "jszip-utils": "0.1.0",
-    "three": "^0.164.1"
+    "three": "^0.167.1"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "5.0.2",

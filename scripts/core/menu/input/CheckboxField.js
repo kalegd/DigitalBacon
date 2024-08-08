@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import OrbitDisablingPointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import { Checkbox } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
@@ -22,9 +22,9 @@ class CheckboxField extends MenuField {
     _createInputs(initialValue, title, titleWidth, swapOrder) {
         this._checkbox = new Checkbox({
             height: 0.04,
+            pointerInteractableClassOverride: OrbitDisablingPointerInteractable,
             width: 0.04,
         });
-        configureOrbitDisabling(this._checkbox);
         if(swapOrder) {
             this.add(this._checkbox);
             this._addTitle(title, titleWidth).textAlign = 'right';

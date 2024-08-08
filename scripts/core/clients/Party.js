@@ -8,6 +8,7 @@ import global from '/scripts/core/global.js';
 import RTCPeer from '/scripts/core/clients/RTCPeer.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
+import SessionHandler from '/scripts/core/handlers/SessionHandler.js';
 import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
 
 const CONSTRAINTS = { audio: true, video: false };
@@ -155,6 +156,7 @@ class Party {
             this._userAudio.srcObject = new MediaStream();
             this._setupWebSocket();
         });
+        if(global.deviceType == 'XR') SessionHandler.exitXRSession();
     }
 
     _setupWebSocket() {

@@ -7,7 +7,7 @@
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import { numberOr } from '/scripts/core/helpers/utils.module.js';
-import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import OrbitDisablingPointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import { Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
@@ -28,10 +28,10 @@ class ColorField extends MenuField {
             backgroundVisible: true,
             borderRadius: 0.01,
             height: 0.04,
+            pointerInteractableClassOverride: OrbitDisablingPointerInteractable,
             width: 0.08,
         });
         this._colorBlock.material.color = this._color;
-        configureOrbitDisabling(this._colorBlock);
         this.add(this._colorBlock);
         this._colorBlock.onClickAndTouch = () => {
             let colorPage =global.menuController.getPage(MenuPages.COLOR_WHEEL);

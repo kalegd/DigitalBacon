@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import OrbitDisablingPointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import { Select } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
@@ -21,13 +21,13 @@ class EnumField extends MenuField {
         this._addTitle(title);
         this._selectBox = new Select({
             height: 0.03,
+            pointerInteractableClassOverride: OrbitDisablingPointerInteractable,
             width: 0.17,
         });
         this._selectBox.addOptions(...options);
         this._selectBox.value = this._lastValue;
         this._selectBox.onChange = (option) => this._handleSelection(option);
         this.add(this._selectBox);
-        configureOrbitDisabling(this._selectBox);
     }
 
     _handleSelection(option) {

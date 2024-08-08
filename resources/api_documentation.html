@@ -136,7 +136,7 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.3.0)</h1>
+        <h1>DigitalBacon (0.3.1)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
@@ -215,6 +215,16 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/LibraryHandler">LibraryHandler</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">OrbitDisablingPointerInteractable</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>Extension of DigitalBacon-UI's PointerInteractable that disables orbit controls for PC and Mobile users</p>
               </td>
             </tr>
             <tr>
@@ -381,6 +391,22 @@
                 <p class="datatype">Function</p>
                 <p class="optional">Optional</p>
                 <p>Will be called upon the user clicking the start button</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="bold">setKeyboardLock(lock)</p>
+        <p>Locks/unlocks the keyboard from being used in movement</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">lock</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p>Whether or not the keyboard should be locked</p>
               </td>
             </tr>
           </tbody>

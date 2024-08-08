@@ -6,7 +6,7 @@
 
 import global from '/scripts/core/global.js';
 import { FontSizes } from '/scripts/core/helpers/constants.js';
-import { configureOrbitDisabling } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import OrbitDisablingPointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import { TextArea, TextInput } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
@@ -27,16 +27,17 @@ class TextField extends MenuField {
             this._textInput = new TextInput({
                 fontSize: FontSizes.body,
                 height: 0.03,
+                pointerInteractableClassOverride: OrbitDisablingPointerInteractable,
                 width: 0.17,
             });
         } else {
             this._textInput = new TextArea({
                 fontSize: FontSizes.body,
                 height: 0.09,
+                pointerInteractableClassOverride: OrbitDisablingPointerInteractable,
                 width: 0.17,
             });
         }
-        configureOrbitDisabling(this._textInput);
         this._textInput.pointerInteractable.hoveredCursor = 'text';
         this._textInput.onBlur = () => this._blur();
         this._textInput.onChange = () => this._update();
