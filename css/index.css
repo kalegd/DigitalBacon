@@ -71,14 +71,14 @@ a, a:hover, a:active, a:visited {
     padding: 0px 7px;
 }
 
-#features, #resources {
+#who-this-is-for, #resources {
     background: rgba(255, 255, 255, 0.5);
     padding: 1px 20px;
     min-height: 100%;
     color: #4723D9;
 }
 
-#hosting, #contact-us {
+#features, #contact-us {
     background: rgba(0, 0, 0, 0.5);
     padding: 1px 20px;
     min-height: 100%;
