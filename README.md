@@ -12,7 +12,7 @@ Create 3D websites easily that run on AR, VR, Desktop, and Mobile devices with D
   
 </div>
 
-#### How to use
+### How to use
 Go to the [Digital Bacon Editor](https://digitalbacon.io/app) to create a 3D website and then save your project zip file. You can then host your project using the below html snippet (or just [fork this repo](https://github.com/kalegd/DigitalBaconSampleProject) and replace my-project.zip with your project file)
 ```html
 <html>
@@ -39,7 +39,9 @@ Go to the [Digital Bacon Editor](https://digitalbacon.io/app) to create a 3D web
 </html>
 ```
 
-To enable multi-user sessions on your website, you'll need an authUrl and socketUrl from a third party service like [My Digital Bacon](https://mydigitalbacon.com) and add those to your setup parameters like so
+### Adding Multi-User Support
+
+You'll need an authUrl and socketUrl tied to a server to handle all the handshaking and management between users. [My Digital Bacon](https://mydigitalbacon.com) offers a free tier that you can use for this purpose, just create an account and add your website's origin as an external project and you'll get the urls that can be plugged into your setup parameters like so
 ```javascript
 let params = {
     projectFilePath: './my-project.zip',
@@ -49,7 +51,7 @@ let params = {
 setup("my-container-id", params);
 ```
 
-## Local Network Testing
+### Local Network Testing
 
 If you want to test your changes with another device on your local network, you can run `npm run start-ssl`. Before doing this you'll need to create both cert.pem and key.pem files. Mac Users can generate these files via `openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem`
 
