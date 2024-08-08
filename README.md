@@ -41,7 +41,7 @@ Go to the [Digital Bacon Editor](https://digitalbacon.io/app) to create a 3D web
 
 ### Adding Multi-User Support
 
-You'll need an authUrl and socketUrl tied to a server to handle all the handshaking and management between users. [My Digital Bacon](https://mydigitalbacon.com) offers a free tier that you can use for this purpose, just create an account and add your website's origin as an external project and you'll get the urls that can be plugged into your setup parameters like so
+You'll need an authUrl and socketUrl tied to a server to handle all the handshaking and management between users. [My Digital Bacon](https://mydigitalbacon.com) offers a free tier that you can use for this purpose, just create an account and add your website's origin as an external project and you'll get the necessary urls to be plugged into your setup parameters like so
 ```javascript
 let params = {
     projectFilePath: './my-project.zip',
