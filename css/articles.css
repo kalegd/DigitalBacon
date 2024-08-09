@@ -1,0 +1,21 @@
+.article-list {
+    list-style: none;
+    padding-inline-start: 0;
+}
+
+.article-list li {
+    box-shadow: 0.01rem 0.01rem .15rem rgba(0, 0, 0, 0.3);
+    background-color: white;
+    cursor: pointer;
+    max-width: 600px;
+    padding: 1rem;
+}
+
+.article-list li a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.article-list li:hover {
+    background-color: #fafafa;
+}
