@@ -41,6 +41,7 @@ export default class ImageAssetHelper extends AssetEntityHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 

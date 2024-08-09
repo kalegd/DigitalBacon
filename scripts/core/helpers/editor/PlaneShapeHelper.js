@@ -45,6 +45,7 @@ export default class PlaneShapeHelper extends ShapeHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 

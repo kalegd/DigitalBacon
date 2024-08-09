@@ -49,6 +49,7 @@ export default class RingShapeHelper extends ShapeHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 

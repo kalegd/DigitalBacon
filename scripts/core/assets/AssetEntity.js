@@ -37,6 +37,7 @@ export default class AssetEntity extends Asset {
         let rotation = (params['rotation']) ? params['rotation'] : [0,0,0];
         let scale = (params['scale']) ? params['scale'] : [1,1,1];
         this._visualEdit = params['visualEdit'] || false;
+        this._renderOrder = params['renderOrder'] || 0;
         this._object.position.fromArray(position);
         this._object.rotation.fromArray(rotation);
         this._object.scale.fromArray(scale);
@@ -51,6 +52,10 @@ export default class AssetEntity extends Asset {
 
     _getDefaultName() {
         return 'Object';
+    }
+
+    _configureMesh() {
+        if(this._mesh) this._mesh.renderOrder = this._renderOrder;
     }
 
     _fetchCloneParams(visualEditOverride) {
@@ -81,6 +86,7 @@ export default class AssetEntity extends Asset {
         let params = super.exportParams();
         params['parentId'] = this._parentId;
         params['position'] = this.position;
+        params['renderOrder'] = this._renderOrder;
         params['rotation'] = this.rotation;
         params['scale'] = this.scale;
         params['visualEdit'] = this._visualEdit;
@@ -96,6 +102,7 @@ export default class AssetEntity extends Asset {
     get parentId() { return this._parentId; }
     get pointerInteractable() { return this._object.pointerInteractable; }
     get position() { return this._object.position.toArray(); }
+    get renderOrder() { return this._renderOrder; }
     get rotation() {
         let rotation = this._object.rotation.toArray();
         rotation.pop();
@@ -138,6 +145,10 @@ export default class AssetEntity extends Asset {
         this._parentId = parentId;
     }
     set position(position) { this._object.position.fromArray(position); }
+    set renderOrder(renderOrder) {
+        this._renderOrder = renderOrder;
+        if(this._mesh) this._mesh.renderOrder = renderOrder;
+    }
     set rotation(rotation) { this._object.rotation.fromArray(rotation); }
     set scale(scale) { this._object.scale.fromArray(scale); }
     set visualEdit(visualEdit) { this._visualEdit = visualEdit; }

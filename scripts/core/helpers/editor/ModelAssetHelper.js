@@ -20,6 +20,7 @@ export default class ModelAssetHelper extends AssetEntityHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 

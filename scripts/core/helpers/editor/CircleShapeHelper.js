@@ -45,6 +45,7 @@ export default class CircleShapeHelper extends ShapeHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 

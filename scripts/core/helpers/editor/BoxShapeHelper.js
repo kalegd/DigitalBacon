@@ -34,6 +34,7 @@ export default class BoxShapeHelper extends ShapeHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 
