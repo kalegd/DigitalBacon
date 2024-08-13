@@ -22,16 +22,19 @@ import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js
 
 /* global saveAs, JSZip */
 
-const PREVIEW_URL = 'https://digitalbacon.io/preview';
+const HOSTING_ORIGIN = 'https://mydigitalbacon.com';
+const HOSTING_URL = HOSTING_ORIGIN + '/login?referrer=digitalbacon';
 const PREVIEW_ORIGIN = 'https://digitalbacon.io';
+const PREVIEW_URL = PREVIEW_ORIGIN + '/preview';
 const OPTIONS = {
     'New Project': '_newProject',
-    'Load from Device': '_localLoad',
-    'Load from Google Drive': '_googleDriveLoad',
+    'Host Online': '_hostOnMyDigitalBacon',
+    'Preview Live': '_previewLive',
     'Save to Device': '_localSave',
     'Save to Google Drive': '_googleDriveSave',
+    'Load from Device': '_localLoad',
+    'Load from Google Drive': '_googleDriveLoad',
     'Sign out of Google Drive': '_googleDriveSignout',
-    'Preview Live': '_previewLive',
 };
 
 class ProjectPage extends PaginatedButtonsPage {
@@ -63,7 +66,8 @@ class ProjectPage extends PaginatedButtonsPage {
     _refreshItems() {
         let isSignedIn = GoogleDrive.isSignedIn();
         this._items = Object.keys(OPTIONS).filter((v, i) => {
-            if((!isSignedIn && i == 5) || (this._isLoadingPreview && i == 6))
+            if((this._isHosting && i == 1) || (!isSignedIn && i == 7)
+                    || (this._isLoadingPreview && i == 2))
                 return false;
             return true;
         });
@@ -228,6 +232,34 @@ class ProjectPage extends PaginatedButtonsPage {
         this._updateItemsGUI();
     }
 
+    _hostOnMyDigitalBacon() {
+        this._stopHostingAttempt();
+        this._isHosting = true;
+        this._refreshItems();
+        this._updateItemsGUI();
+        DelayedClickHandler.trigger(() => {
+            this._hostingTab = window.open(HOSTING_URL, '_blank');
+            if(!this._hostingTab) {
+                PubSub.publish(this._id,PubSubTopics.MENU_NOTIFICATION,{
+                    text: 'Please check your popup blocker settings',
+                });
+                return;
+            }
+        });
+        let jsZip = ProjectHandler.exportProject();
+        jsZip.generateAsync({type:"blob"}).then((blob) => {
+            let reader = new FileReader();
+            reader.onloadend = () => {
+                this._hostingBlob = reader.result;
+                this._hostingTab.focus();
+                this._hostingIntervalId = setInterval(() => {
+                    this._hostingTab.postMessage('HOST_PROJECT',HOSTING_ORIGIN);
+                }, 1000);
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
     _previewLive() {
         this._stopPreviewAttempt();
         this._isLoadingPreview = true;
@@ -238,34 +270,51 @@ class ProjectPage extends PaginatedButtonsPage {
             let reader = new FileReader();
             reader.onloadend = () => {
                 this._previewBlob = reader.result;
-                this._tab = window.open(PREVIEW_URL, '_blank');
-                if(!this._tab) {
+                this._previewTab = window.open(PREVIEW_URL, '_blank');
+                if(!this._previewTab) {
                     this._stopPreviewAttempt();
                     PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                         text: 'Please check your popup blocker settings',
                     });
                     return;
                 }
-                this._tab.focus();
-                this._intervalCount = 0;
-                this._intervalId = setInterval(() => {
-                    this._tab.postMessage({ topic: 'PREVIEW' }, PREVIEW_ORIGIN);
-                    this._intervalCount++;
-                    if(this._intervalCount > 10) this._stopPreviewAttempt();
+                this._previewTab.focus();
+                this._previewIntervalCount = 0;
+                this._previewIntervalId = setInterval(() => {
+                    this._previewTab.postMessage({ topic: 'PREVIEW' },
+                        PREVIEW_ORIGIN);
+                    this._previewIntervalCount++;
+                    if(this._previewIntervalCount > 10)
+                        this._stopPreviewAttempt();
                 }, 1000);
             };
             reader.readAsDataURL(blob);
         });
     }
 
-    _stopPreviewAttempt() {
-        if(this._intervalId) {
-            clearInterval(this._intervalId);
-            this._intervalId = null;
+    _stopHostingAttempt() {
+        if(this._hostingIntervalId) {
+            clearInterval(this._hostingIntervalId);
+            this._hostingIntervalId = null;
         }
-        if(this._tab) {
-            this._tab.close();
-            this._tab = null;
+        if(this._hostingTab) {
+            this._hostingTab.close();
+            this._hostingTab = null;
+        }
+        this._hostingBlob = null;
+        this._isHosting = false;
+        this._refreshItems();
+        this._updateItemsGUI();
+    }
+
+    _stopPreviewAttempt() {
+        if(this._previewIntervalId) {
+            clearInterval(this._previewIntervalId);
+            this._previewIntervalId = null;
+        }
+        if(this._previewTab) {
+            this._previewTab.close();
+            this._previewTab = null;
         }
         this._previewBlob = null;
         this._isLoadingPreview = false;
@@ -337,17 +386,29 @@ class ProjectPage extends PaginatedButtonsPage {
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_SAVING,
             (finished) => { this._updateSaving(finished); });
         window.addEventListener('message', (event) => {
-            if(event.origin != PREVIEW_ORIGIN) return;
-            if(event.data != 'READY_FOR_PREVIEW_PROJECT') return;
-            clearInterval(this._intervalId);
-            if(!this._previewBlob || !this._tab) return;
-            this._tab.postMessage({
-                topic: 'PREVIEW_PROJECT',
-                blob: this._previewBlob,
-            }, PREVIEW_ORIGIN);
-            this._isLoadingPreview = false;
-            this._refreshItems();
-            this._updateItemsGUI();
+            if(event.data == 'READY_FOR_PREVIEW_PROJECT') {
+                if(event.origin != PREVIEW_ORIGIN) return;
+                clearInterval(this._previewIntervalId);
+                if(!this._previewBlob || !this._previewTab) return;
+                this._previewTab.postMessage({
+                    topic: 'PREVIEW_PROJECT',
+                    blob: this._previewBlob,
+                }, PREVIEW_ORIGIN);
+                this._isLoadingPreview = false;
+                this._refreshItems();
+                this._updateItemsGUI();
+            } else if(event.data == 'HOST_PROJECT') {
+                if(event.origin != HOSTING_ORIGIN) return;
+                clearInterval(this._hostingIntervalId);
+                this._isHosting = false;
+                this._refreshItems();
+                this._updateItemsGUI();
+                if(!this._hostingBlob || !this._hostingTab) return;
+                this._hostingTab.postMessage({
+                    topic: 'HOST_PROJECT',
+                    blob: this._hostingBlob,
+                }, HOSTING_ORIGIN);
+            }
         });
     }
 
