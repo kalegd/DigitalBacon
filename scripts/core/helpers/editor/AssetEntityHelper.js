@@ -116,6 +116,7 @@ export default class AssetEntityHelper extends EditorHelper {
                 }
             });
             this._eventListeners.push({ type: 'pointer', callback: (_) => {
+                TransformControlsHandler.detach();
                 TransformControlsHandler.attach(this._asset);
             }, tool: InteractionTools.EDIT, topic: 'click' });
         }
@@ -285,7 +286,7 @@ export default class AssetEntityHelper extends EditorHelper {
                             ignoreDisabledCheck){
         let updated = [];
         for(let param of OBJECT_TRANSFORM_PARAMS) {
-            if(!this._disabledParams.has(param) || ignoreDisabledCheck) {
+            if(!this._disabledParams.has(param) || ignoreDisabledCheck || (TransformControlsHandler.getObject() == this._object && !TransformControlsHandler._isDragging())) {
                 let oldValue = (oldValues)
                     ? oldValues[param]
                     : this._object[param].toArray();
