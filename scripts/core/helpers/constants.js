@@ -14,7 +14,7 @@ import * as THREE from 'three';
 let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger',
              'headphones', 'home', 'image', 'lightbulb', 'material',
              'microphone', 'object', 'pencil', 'search', 'shapes', 'system',
-             'texture', 'trash', 'undo', 'redo', 'video'];
+             'text', 'texture', 'trash', 'undo', 'redo', 'video'];
 let locks = {};
 let blackPixelLock = uuidv4();
 global.loadingLocks.add(blackPixelLock);
@@ -86,6 +86,10 @@ export const Textures = {
     "systemIcon": new THREE.TextureLoader().load(
         'images/icons/system_icon_white.png',
         function() { global.loadingLocks.delete(locks['system']); },
+    ),
+    "textIcon": new THREE.TextureLoader().load(
+        'images/icons/text_icon_white.png',
+        function() { global.loadingLocks.delete(locks['text']); },
     ),
     "textureIcon": new THREE.TextureLoader().load(
         'images/icons/texture_icon_white.png',

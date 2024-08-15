@@ -5,6 +5,7 @@ const AssetScriptTypes = {
     MATERIAL: "MATERIAL",
     SHAPE: "SHAPE",
     SYSTEM: "SYSTEM",
+    TEXT: "TEXT",
     TEXTURE: "TEXTURE",
 };
 

@@ -36,6 +36,10 @@ const ASSETS = [{
     'icon': Textures.textureIcon,
     'assetType': AssetTypes.TEXTURE,
 }, {
+    'text': 'Text',
+    'icon': Textures.textIcon,
+    'assetType': AssetTypes.TEXT,
+}, {
     'text': 'Audio',
     'icon': Textures.audioIcon,
     'assetType': AssetTypes.AUDIO,

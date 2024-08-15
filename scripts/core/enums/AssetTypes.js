@@ -9,6 +9,7 @@ const AssetTypes = {
     MODEL: "MODEL",
     SHAPE: "SHAPE",
     SYSTEM: "SYSTEM",
+    TEXT: "TEXT",
     TEXTURE: "TEXTURE",
     VIDEO: "VIDEO",
 };

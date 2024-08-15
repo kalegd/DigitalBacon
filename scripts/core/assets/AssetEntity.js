@@ -147,7 +147,7 @@ export default class AssetEntity extends Asset {
     set position(position) { this._object.position.fromArray(position); }
     set renderOrder(renderOrder) {
         this._renderOrder = renderOrder;
-        if(this._mesh) this._mesh.renderOrder = renderOrder;
+        this._configureMesh();
     }
     set rotation(rotation) { this._object.rotation.fromArray(rotation); }
     set scale(scale) { this._object.scale.fromArray(scale); }

@@ -25,6 +25,7 @@ class MenuPage extends Body {
         this._id = uuidv4();
         this._controller = controller;
         this._createCloseButton();
+        this._updateMaterialOffset(100);
         if(hasBackButton) this._createBackButton();
         if(global.deviceType == 'XR') this.onClick = () => {};
     }
