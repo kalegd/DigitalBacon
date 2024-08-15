@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Digital Bacon Tips and Tricks - The Transparency Problem</title>
+    <title>Digital Bacon Tutorials - Creating a Lens of Truth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
@@ -20,12 +20,16 @@
       <span><a href="/articles">Back to all Articles</a></span>
     </div>
     <div class="content">
-      <h1 class="ta-center">The Transparency Problem</h1>
-      <p>Transparent asset not showing what's behind it correctly? Let's dive into why that happens and how to fix it by updating the render order for different objects</p>
+      <h1 class="ta-center">Creating a Lens of Truth</h1>
+      <p>In this tutorial, we'll hide a secret message behind a painting and then create a tool to see it</p>
+      <blockquote><a href="#">See this tutorial on YouTube</a></blockquote>
       <img src="/articles/images/transparency_problem.png" alt="Digital Bacon Transparency Problem">
-      <p><em>After uploading a png photo of our piggy to the Digital Bacon Editor, the ocean disappears behind the transparent portions of the image at certain angles 😑</em></p>
-      <h3>Why things disappear behind transparent assets</h3>
-      <p>To understand why, we need to learn about how rendering engines decide what to display</p>
+      <p><em>The Lens of Truth we'll be creating in action</em></p>
+      <h3>Setting up our Scene</h3>
+      <p>Let's open up the <a href="/app">Digital Bacon Editor</a> and create an exhibit wall. Opening the virtual menu and select Library -&gt; Shapes -&gt; Plus (+) button -&gt; Box. Then you can set your box width + height to 1 meter or your preferred dimensions and add a new Standard Material to it to set the color</p>
+      <p>Now let's add our secret message to the wall and then a painting on top of it. There's a plugin to conveniently add Text to Digital Bacon websites. If you're using the default project then you can just add it from the Other Assets section. Otherwise just copy and paste the plugin from the <a href="/plugins">plugins page</a></p>
+      <img src="/articles/images/transparency_problem.png" alt="Digital Bacon Transparency Problem">
+      <p><em>You should have something like this now</em></p>
       <p>To keep performance smooth and maintain high frame rates, rendering engines try to avoid unnecessary calculations. They skip over the parts of assets that are hidden behind others. The renderer only takes the geometry of an asset into account when seeing what should be skipped, not its material or transparency. You might think nothing would ever be displayed behind a transparent asset then right?</p>
       <p>Fortunately, the rendering engine renders all solid assets first. This ensures that a transparent asset won't block a solid one from being displayed. The issue is usually encountered among multiple transparent assets. To get around this, rendering engines oftentimes let you specify the <code>Render Order</code> for an asset. Assets with a higher render order won't prevent assets with a lower render order from being displayed</p>
       <h3>Solution</h3>
