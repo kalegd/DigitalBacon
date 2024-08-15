@@ -85,6 +85,7 @@ class LibraryPage extends PaginatedIconsPage {
         searchButton.onClickAndTouch = () => {
             this._controller.pushPage(MenuPages.LIBRARY_SEARCH);
         };
+        searchButton._updateMaterialOffset(100);
         this.add(searchButton);
     }
 

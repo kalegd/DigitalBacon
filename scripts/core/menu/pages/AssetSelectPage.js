@@ -48,6 +48,7 @@ class AssetSelectPage extends PaginatedButtonsPage {
         this._addButton.onClickAndTouch = () => {
             if(this._addAction) this._addAction();
         };
+        this._addButton._updateMaterialOffset(100);
         this.add(this._addButton);
     }
 

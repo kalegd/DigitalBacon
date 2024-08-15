@@ -46,6 +46,7 @@ class AssetsPage extends PaginatedButtonsPage {
             });
             this._controller.pushPage('NEW_' + this._assetType);
         };
+        addButton._updateMaterialOffset(100);
         this.add(addButton);
     }
 

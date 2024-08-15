@@ -39,11 +39,11 @@ export default class TextOverlay extends TextAsset {
         this._textComponent = new DigitalBaconUI.Text(this._text, {
             color: this._fontColor,
             fontSize: this._fontSize,
+            maxWidth: this._width,
             textAlign: this._textAlign,
             width: '100%',
         });
         this._block.add(this._textComponent);
-        this._block._updateMaterialOffset(this._renderOrder - 1);
         this._object.add(this._block);
         this._configureMesh();
     }

@@ -14,7 +14,6 @@ export default class PlainText extends TextAsset {
     constructor(params = {}) {
         params['assetId'] = PlainText.assetId;
         super(params);
-        this._renderOrder = numberOr(params['renderOrder'], 1);
         this._maxWidth = numberOr(params['maxWidth'], 1);
         this._createMesh();
     }
