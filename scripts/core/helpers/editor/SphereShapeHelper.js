@@ -32,6 +32,7 @@ export default class SphereShapeHelper extends ShapeHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 

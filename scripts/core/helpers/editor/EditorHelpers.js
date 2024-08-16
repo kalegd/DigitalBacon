@@ -8,6 +8,7 @@ import MaterialHelper from '/scripts/core/helpers/editor/MaterialHelper.js';
 import LightHelper from '/scripts/core/helpers/editor/LightHelper.js';
 import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
 import SystemHelper from '/scripts/core/helpers/editor/SystemHelper.js';
+import TextAssetHelper from '/scripts/core/helpers/editor/TextAssetHelper.js';
 import TextureHelper from '/scripts/core/helpers/editor/TextureHelper.js';
 
 export { AssetEntityHelper };
@@ -20,4 +21,5 @@ export { MaterialHelper };
 export { LightHelper };
 export { ShapeHelper };
 export { SystemHelper };
+export { TextAssetHelper };
 export { TextureHelper };

@@ -68,7 +68,7 @@ export default class EditorHelper {
                     this._publish([param]);
             }
         }
-        if(!oldValue) oldValue = currentValue;
+        if(oldValue == null) oldValue = currentValue;
         if(!ignoreUndoRedo && !this._parameterValuesEqual(oldValue, newValue)) {
             UndoRedoHandler.addAction(() => {
                 this._updateParameter(param, oldValue, ignorePublish, true);

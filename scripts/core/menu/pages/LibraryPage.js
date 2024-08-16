@@ -36,6 +36,10 @@ const ASSETS = [{
     'icon': Textures.textureIcon,
     'assetType': AssetTypes.TEXTURE,
 }, {
+    'text': 'Text',
+    'icon': Textures.textIcon,
+    'assetType': AssetTypes.TEXT,
+}, {
     'text': 'Audio',
     'icon': Textures.audioIcon,
     'assetType': AssetTypes.AUDIO,
@@ -81,6 +85,7 @@ class LibraryPage extends PaginatedIconsPage {
         searchButton.onClickAndTouch = () => {
             this._controller.pushPage(MenuPages.LIBRARY_SEARCH);
         };
+        searchButton._updateMaterialOffset(100);
         this.add(searchButton);
     }
 

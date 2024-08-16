@@ -294,7 +294,7 @@ table.basic-table tr:nth-child(even) {
     padding-top: 10px;
 }
 
-.template-buttons > a {
+.template-buttons > a, .green-button {
     background-color: #673ab7;
     border-radius: 4px;
     color: #ffffff;
@@ -304,8 +304,8 @@ table.basic-table tr:nth-child(even) {
     text-decoration: none;
 }
 
-.template-buttons > a:nth-child(2) {
-    background-color: #8ab73a;
+.template-buttons > a:nth-child(2), .green-button {
+    background-color: #4bb83a;
 }
 
 .bold {
@@ -340,12 +340,12 @@ table.basic-table tr:nth-child(even) {
     padding: 10px;
 }
 
-.pb-40 {
-    padding-bottom: 40px;
-}
-
 .c-blue {
     color: rgb(50, 50, 159);
+}
+
+.pb-40 {
+    padding-bottom: 40px;
 }
 
 @media screen and (max-width: 30rem) {

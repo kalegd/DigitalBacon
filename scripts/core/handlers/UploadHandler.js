@@ -63,6 +63,7 @@ class UploadHandler {
                         this._libraryCallback(assetId, lock, callback);
                     }, () => {
                         console.log("TODO: Tell user an error occurred");
+                        this._libraryErrorCallback(lock, callback);
                     });
                 } else {
                     let assetType;
@@ -120,6 +121,14 @@ class UploadHandler {
 
     _libraryCallback(assetId, lock, callback) {
         this._assetIds.push(assetId);
+        this._locks.delete(lock);
+        if(this._locks.size == 0) {
+            if(callback) callback(this._assetIds);
+            this._assetIds = [];
+        }
+    }
+
+    _libraryErrorCallback(lock, callback) {
         this._locks.delete(lock);
         if(this._locks.size == 0) {
             if(callback) callback(this._assetIds);

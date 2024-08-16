@@ -31,6 +31,7 @@ export default class ConeShape extends Shape {
         this._mesh = new THREE.Mesh(geometry, this._getMaterial());
         this._object.add(this._mesh);
         this._updateBVH();
+        this._configureMesh();
     }
 
     _getDefaultName() {

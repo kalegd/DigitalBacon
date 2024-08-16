@@ -5,16 +5,17 @@
  */
 
 import global from '/scripts/core/global.js';
-import CircleShape from '/scripts/core/assets/primitives/CircleShape.js';
+import TextAsset from '/scripts/core/assets/texts/TextAsset.js';
+import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import { vector3s } from '/scripts/core/helpers/constants.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import ShapeHelper from '/scripts/core/helpers/editor/ShapeHelper.js';
+import AssetEntityHelper from '/scripts/core/helpers/editor/AssetEntityHelper.js';
 
-const { NumberField } = ShapeHelper.FieldTypes;
+const { ColorField, EnumField, NumberField, TextField } = AssetEntityHelper.FieldTypes;
 
-export default class CircleShapeHelper extends ShapeHelper {
+export default class TextAssetHelper extends AssetEntityHelper {
     constructor(asset) {
-        super(asset);
+        super(asset, PubSubTopics.TEXT_UPDATED);
     }
 
     place(intersection) {
@@ -33,20 +34,15 @@ export default class CircleShapeHelper extends ShapeHelper {
     }
 
     static fields = [
-        "visualEdit",
-        "materialId",
-        { "parameter": "radius", "name": "Radius", "min": 0,
+        { "parameter": "text", "name": "Text", "type": TextField },
+        { "parameter": "fontSize", "name": "Font Size", "min": 0,
             "type": NumberField },
-        { "parameter": "segments", "name": "Sides", "min": 3,
-            "type": NumberField },
-        { "parameter": "thetaLength", "name": "Degrees", "min": 0, "max": 360,
-            "type": NumberField },
-        "parentId",
-        "position",
-        "rotation",
-        "scale",
-        "renderOrder",
+        { "parameter": "fontColor", "name": "Font Color",
+            "type": ColorField },
+        { "parameter": "textAlign", "name": "Text Alignment",
+            "map": { "Left": "left", "Center": "center", "Right": "right" },
+            "type": EnumField },
     ];
 }
 
-EditorHelperFactory.registerEditorHelper(CircleShapeHelper, CircleShape);
+EditorHelperFactory.registerEditorHelper(TextAssetHelper, TextAsset);

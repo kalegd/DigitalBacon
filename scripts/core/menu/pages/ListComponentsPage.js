@@ -55,6 +55,7 @@ class ListComponentsPage extends PaginatedListPage {
             });
             this._controller.pushPage(MenuPages.ASSET_SELECT);
         };
+        addButton._updateMaterialOffset(100);
         this.add(addButton);
     }
 

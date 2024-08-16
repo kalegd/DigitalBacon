@@ -5,6 +5,7 @@ const AssetEntityTypes = {
     LIGHT: "LIGHT",
     MODEL: "MODEL",
     SHAPE: "SHAPE",
+    TEXT: "TEXT",
     VIDEO: "VIDEO",
 };
 

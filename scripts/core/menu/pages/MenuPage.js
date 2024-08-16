@@ -25,6 +25,7 @@ class MenuPage extends Body {
         this._id = uuidv4();
         this._controller = controller;
         this._createCloseButton();
+        this._updateMaterialOffset(100);
         if(hasBackButton) this._createBackButton();
         if(global.deviceType == 'XR') this.onClick = () => {};
     }
@@ -34,6 +35,7 @@ class MenuPage extends Body {
         backButton.bypassContentPositioning = true;
         backButton.position.fromArray([-.225, 0.15, 0.001]);
         backButton.onClickAndTouch = () => this.back();
+        backButton._updateMaterialOffset(100);
         this.add(backButton);
         this._createHomeButton();
     }
@@ -43,6 +45,7 @@ class MenuPage extends Body {
         homeButton.bypassContentPositioning = true;
         homeButton.position.fromArray([-.225, 0.1, 0.001]);
         homeButton.onClickAndTouch = () => this._controller.popAllPages();
+        homeButton._updateMaterialOffset(100);
         this.add(homeButton);
     }
 
@@ -51,6 +54,7 @@ class MenuPage extends Body {
         closeButton.bypassContentPositioning = true;
         closeButton.position.fromArray([.225, 0.15, 0.001]);
         closeButton.onClickAndTouch = () => this._controller.closeMenu();
+        closeButton._updateMaterialOffset(100);
         this.add(closeButton);
     }
 

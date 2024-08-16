@@ -7,6 +7,7 @@
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
+import * as THREE from 'three';
 
 export default class ModelAsset extends AssetEntity {
     constructor(params = {}) {
@@ -18,6 +19,14 @@ export default class ModelAsset extends AssetEntity {
         this._mesh = LibraryHandler.cloneMesh(assetId);
         this._object.add(this._mesh);
         this._updateBVH();
+        this._configureMesh();
+    }
+
+    _configureMesh() {
+        if(this._mesh) this._mesh.renderOrder = this._renderOrder;
+        this._mesh.traverse((node) => {
+            if(node instanceof THREE.Mesh) node.renderOrder =this._renderOrder;;
+        });
     }
 
     _getDefaultName() {

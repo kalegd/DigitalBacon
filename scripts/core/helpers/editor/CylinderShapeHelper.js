@@ -35,6 +35,7 @@ export default class CylinderShapeHelper extends ShapeHelper {
         "position",
         "rotation",
         "scale",
+        "renderOrder",
     ];
 }
 

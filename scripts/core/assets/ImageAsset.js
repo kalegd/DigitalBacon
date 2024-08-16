@@ -23,6 +23,7 @@ export default class ImageAsset extends AssetEntity {
         this._mesh = LibraryHandler.cloneMesh(assetId);
         this._object.add(this._mesh);
         this._updateBVH();
+        this._configureMesh();
     }
 
     _getDefaultName() {

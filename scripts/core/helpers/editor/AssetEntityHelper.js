@@ -22,7 +22,7 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 import { InteractableStates } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
-const { AssetEntityField, CheckboxField, EulerField, Vector3Field } = EditorHelper.FieldTypes;
+const { AssetEntityField, CheckboxField, EulerField, NumberField, Vector3Field } = EditorHelper.FieldTypes;
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const TRANSFORM_PUBLISH_FUNCTIONS = {
     position: 'publishPosition',
@@ -116,6 +116,7 @@ export default class AssetEntityHelper extends EditorHelper {
                 }
             });
             this._eventListeners.push({ type: 'pointer', callback: (_) => {
+                TransformControlsHandler.detach();
                 TransformControlsHandler.attach(this._asset);
             }, tool: InteractionTools.EDIT, topic: 'click' });
         }
@@ -285,7 +286,7 @@ export default class AssetEntityHelper extends EditorHelper {
                             ignoreDisabledCheck){
         let updated = [];
         for(let param of OBJECT_TRANSFORM_PARAMS) {
-            if(!this._disabledParams.has(param) || ignoreDisabledCheck) {
+            if(!this._disabledParams.has(param) || ignoreDisabledCheck || (TransformControlsHandler.getObject() == this._object && !TransformControlsHandler._isDragging())) {
                 let oldValue = (oldValues)
                     ? oldValues[param]
                     : this._object[param].toArray();
@@ -445,6 +446,8 @@ export default class AssetEntityHelper extends EditorHelper {
         { "parameter": "scale", "name": "Scale", "type": Vector3Field },
         { "parameter": "visualEdit", "name": "Visually Edit",
             "type": CheckboxField },
+        { "parameter": "renderOrder", "name": "Render Order",
+            "type": NumberField },
     ];
 }
 

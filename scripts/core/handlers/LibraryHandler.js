@@ -80,6 +80,9 @@ class LibraryHandler {
                 PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
                     true);
                 if(successCallback) successCallback(assetId);
+            }).catch((err) => {
+                console.error(err);
+                if(errorCallback) errorCallback();
             });
         });
     }
