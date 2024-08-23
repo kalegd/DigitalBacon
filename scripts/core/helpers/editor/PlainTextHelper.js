@@ -19,7 +19,7 @@ export default class PlainTextHelper extends TextAssetHelper {
         "visualEdit",
         "text",
         "fontSize",
-        { "parameter": "maxWidth", "name": "Max Width", "min": 0.000001,
+        { "parameter": "maxWidth", "name": "Max Width", "min": 0,
             "type": NumberField },
         "fontColor",
         "textAlign",

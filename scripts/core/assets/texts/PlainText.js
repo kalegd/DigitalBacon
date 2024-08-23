@@ -14,7 +14,7 @@ export default class PlainText extends TextAsset {
     constructor(params = {}) {
         params['assetId'] = PlainText.assetId;
         super(params);
-        this._maxWidth = numberOr(params['maxWidth'], 1);
+        this._maxWidth = numberOr(params['maxWidth'], 0);
         this._createMesh();
     }
 
@@ -23,7 +23,7 @@ export default class PlainText extends TextAsset {
             color: this._fontColor,
             fontSize: this._fontSize,
             textAlign: this._textAlign,
-            maxWidth: this._maxWidth,
+            maxWidth: this._maxWidth || Infinity,
         });
         this._object.add(this._textComponent);
         this._configureMesh();
@@ -48,7 +48,7 @@ export default class PlainText extends TextAsset {
 
     set maxWidth(maxWidth) {
         this._maxWidth = maxWidth;
-        this._textComponent.maxWidth = maxWidth;
+        this._textComponent.maxWidth = maxWidth || Infinity;
     }
 
     static assetId = 'c03485a9-1962-4ce6-9cc6-f61546a0e143';
