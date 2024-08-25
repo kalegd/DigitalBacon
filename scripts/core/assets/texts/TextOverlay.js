@@ -29,19 +29,19 @@ export default class TextOverlay extends TextAsset {
     _createMesh() {
         this._block = new DigitalBaconUI.Body({
             borderRadius: this._borderRadius,
-            height: this._height,
+            height: this._height || 'auto',
             justifyContent: this._justifyContent,
             materialColor: this._backgroundColor,
             opacity: this._backgroundOpacity,
             padding: this._padding,
-            width: this._width,
+            width: this._width || 'auto',
         });
         this._textComponent = new DigitalBaconUI.Text(this._text, {
             color: this._fontColor,
             fontSize: this._fontSize,
-            maxWidth: this._width,
+            maxWidth: this._width || Infinity,
             textAlign: this._textAlign,
-            width: '100%',
+            width: this._width ? '100%' : 'auto',
         });
         this._block.add(this._textComponent);
         this._object.add(this._block);
@@ -104,13 +104,14 @@ export default class TextOverlay extends TextAsset {
 
     set height(height) {
         this._height = height;
-        this._block.height = height;
+        this._block.height = height || 'auto';
     }
 
     set width(width) {
         this._width = width;
-        this._block.width = width;
-        this._textComponent.maxWidth = width;
+        this._block.width = width || 'auto';
+        this._textComponent.maxWidth = width || Infinity;
+        this._textComponent.width = width ? '100%' : 'auto';
     }
 
     static assetId = '4feae9c5-95a9-4dd1-b4eb-b52bb47babd9';

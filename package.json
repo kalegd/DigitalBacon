@@ -1,6 +1,6 @@
 {
   "name": "digitalbacon",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "description": "Content management system for 3D websites",
   "main": "/build/DigitalBacon.min.js",
@@ -26,7 +26,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
-    "digitalbacon-ui": "^0.1.2",
+    "digitalbacon-ui": "^0.1.3",
     "file-saver": "2.0.5",
     "jest-environment-jsdom": "^29.7.0",
     "jszip": "3.10.1",
