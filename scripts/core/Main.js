@@ -10,6 +10,7 @@ import LiveMenuController from '/scripts/core/menu/LiveMenuController.js';
 import AmbientLight from '/scripts/core/assets/primitives/AmbientLight.js';
 import UserController from '/scripts/core/assets/UserController.js';
 import GoogleDrive from '/scripts/core/clients/GoogleDrive.js';
+import Metrics from '/scripts/core/clients/Metrics.js';
 import ReadyPlayerMe from '/scripts/core/clients/ReadyPlayerMe.js';
 import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import AudioHandler from '/scripts/core/handlers/AudioHandler.js';
@@ -106,6 +107,7 @@ export default class Main {
             DigitalBaconUI.TouchInteractableHandler.addInteractable(
                 Scene.touchInteractable);
             if(onStart) onStart();
+            Metrics.post();
         });
         DigitalBaconUI.InteractionToolHandler.setTool(InteractionTools.EDIT);
         TransformControlsHandler.init(this._renderer.domElement, this._camera,
@@ -185,7 +187,11 @@ export default class Main {
                 this._loadingMessage.classList.add("ending");
                 setTimeout(() => {
                     this._loadingMessage.classList.remove("loading");
-                    if(!global.disableImmersion) SessionHandler.displayButton();
+                    if(global.disableImmersion) {
+                        Metrics.post();
+                    } else {
+                        SessionHandler.displayButton();
+                    }
                 }, 1000);
             }, 50);
             if(global.disableImmersion) {
