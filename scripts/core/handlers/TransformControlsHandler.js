@@ -16,7 +16,7 @@ import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import { vector3s, euler, quaternion } from '/scripts/core/helpers/constants.js';
-import { uuidv4 } from '/scripts/core/helpers/utils.module.js';
+import { uuidv4, intersectRelevantObjects } from '/scripts/core/helpers/utils.module.js';
 import { TransformControls } from '/node_modules/three/examples/jsm/controls/TransformControls.js';
 import { Handedness, InputHandler, InteractionToolHandler, PointerInteractableHandler } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
@@ -303,10 +303,11 @@ class TransformControlsHandler {
         raycaster.firstHitOnly = true;
         raycaster.far = Infinity;
         let isPressed = controller['isPressed'];
-        let intersections = (global.deviceType == 'XR')
-            ? this._intersectRelevantObjects(raycaster, ownerId)
-            : raycaster.intersectObjects(ProjectHandler.getObjects(), true);
         let attachedAsset = this._attachedAssets[ownerId];
+        let intersections = (global.deviceType == 'XR')
+            ? intersectRelevantObjects(raycaster, ProjectHandler.getObjects(),
+                attachedAsset.object)
+            : raycaster.intersectObjects(ProjectHandler.getObjects(), true);
         if(intersections.length > 0) {
             controller['closestPoint'] = intersections[0].point;
             if(isPressed) {
@@ -363,20 +364,6 @@ class TransformControlsHandler {
             return true;
         }
         return false;
-    }
-
-    //Slightly modified version of Raycaster::intersectObjects
-    _intersectRelevantObjects(raycaster, ownerId) {
-        let intersects = [];
-        let objects = ProjectHandler.getObjects();
-        let attachedObject = this._attachedAssets[ownerId].object;
-        for(let i = 0, l = objects.length; i < l; i++) {
-            if(objects[i] != attachedObject) {
-                intersectObject(objects[i], raycaster, intersects, true);
-            }
-        }
-        intersects.sort(ascSort);
-        return intersects;
     }
 
     _otherOption(userController, ownerId) {
@@ -558,24 +545,6 @@ class TransformControlsHandler {
 
     getObject() {
         return this._transformControls.object;
-    }
-}
-
-//Copied from Raycaster.js
-function ascSort(a, b) {
-    return a.distance - b.distance;
-}
-
-//Copied from Raycaster.js
-function intersectObject(object, raycaster, intersects, recursive) {
-    if(object.layers.test(raycaster.layers)) {
-        object.raycast(raycaster, intersects);
-    }
-    if(recursive === true) {
-        const children = object.children;
-        for(let i = 0, l = children.length; i < l; i++) {
-            intersectObject(children[ i ], raycaster, intersects, true);
-        }
     }
 }
 

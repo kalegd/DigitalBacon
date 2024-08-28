@@ -13,6 +13,7 @@ const hands = [
     { "title": "Edit", "type": InteractionTools.EDIT },
     { "title": "Copy / Paste", "type": InteractionTools.COPY_PASTE },
     { "title": "Delete", "type": InteractionTools.DELETE },
+    { "title": "Place", "type": InteractionTools.PLACE },
     { "title": "Translate", "type": InteractionTools.TRANSLATE },
     { "title": "Rotate", "type": InteractionTools.ROTATE },
     { "title": "Scale", "type": InteractionTools.SCALE },
