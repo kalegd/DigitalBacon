@@ -24,6 +24,9 @@ class Party {
         this._userAudio.muted = true;
         this._pingIntervalId = null;
         this._authIntervalId = null;
+        navigator.permissions.query({ name: 'microphone' }).then((pStatus) => {
+            this._needPromptMicPermissions = pStatus.state == 'prompt';
+        }); 
     }
 
     host(roomId, successCallback, errorCallback) {
@@ -149,6 +152,8 @@ class Party {
     }
 
     _setupUserMedia() {
+        if(global.deviceType == 'XR' && this._needPromptMicPermissions)
+            SessionHandler.exitXRSession();
         navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
             this._userAudio.srcObject = stream;
             this._setupWebSocket();
@@ -156,7 +161,6 @@ class Party {
             this._userAudio.srcObject = new MediaStream();
             this._setupWebSocket();
         });
-        if(global.deviceType == 'XR') SessionHandler.exitXRSession();
     }
 
     _setupWebSocket() {

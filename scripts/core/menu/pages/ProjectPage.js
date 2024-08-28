@@ -278,6 +278,7 @@ class ProjectPage extends PaginatedButtonsPage {
                     });
                     return;
                 }
+                if(global.deviceType == 'XR') SessionHandler.exitXRSession();
                 this._previewTab.focus();
                 this._previewIntervalCount = 0;
                 this._previewIntervalId = setInterval(() => {
