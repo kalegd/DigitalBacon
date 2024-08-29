@@ -183,11 +183,12 @@ class NewAssetPage extends PaginatedButtonsPage {
         this._controller.getPosition(vector3s[0]);
         this._controller.getDirection(vector3s[1]).normalize()
             .divideScalar(4);
-        let position = vector3s[0].sub(vector3s[1]).toArray();
+        vector3s[0].sub(vector3s[1]).roundWithPrecision(5);
+        let position = vector3s[0].toArray();
         vector3s[0].set(0, 0, 1);
         vector3s[1].setY(0).normalize();
         quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
-        euler.setFromQuaternion(quaternion);
+        euler.setFromQuaternion(quaternion).roundWithPrecision(5);
         let rotation = euler.toArray();
         return {
             position: position,

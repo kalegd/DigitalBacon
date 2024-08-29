@@ -13,6 +13,8 @@ export default class DirectionalLight extends Light {
     constructor(params = {}) {
         params['assetId'] = DirectionalLight.assetId;
         params['visualEdit'] = false;
+        params['position'] = [0, 0, 0];
+        params['rotation'] = [0, 0, 0];
         super(params);
         let direction = params['direction'] || [0, -1, 0];
         this._createLight();

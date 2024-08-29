@@ -31,8 +31,8 @@ const OPTIONS = {
     'Host Online': '_hostOnMyDigitalBacon',
     'Preview Live': '_previewLive',
     'Save to Device': '_localSave',
-    'Save to Google Drive': '_googleDriveSave',
     'Load from Device': '_localLoad',
+    'Save to Google Drive': '_googleDriveSave',
     'Load from Google Drive': '_googleDriveLoad',
     'Sign out of Google Drive': '_googleDriveSignout',
 };
