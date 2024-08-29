@@ -350,7 +350,8 @@ class TransformControlsHandler {
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
 
-        if(global.renderer.info.render.frame % 6 == 0)
+        this._objectChangeNumber++;
+        if(this._objectChangeNumber % 6 == 0)
             asset.editorHelper._publish(['scale']);
     }
 
