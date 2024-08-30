@@ -50,6 +50,7 @@ export default class VideoAsset extends PlayableMediaAsset {
         };
         this._media.crossOrigin = "anonymous";
         this._media.src = videoUrl;
+        this._media.loop = this._loop;
         this._updateBVH();
     }
 
