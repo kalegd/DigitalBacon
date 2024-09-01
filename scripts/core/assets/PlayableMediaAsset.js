@@ -141,6 +141,12 @@ export default class PlayableMediaEntity extends AssetEntity{
         PubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(PartyHandler.isHost());
         });
+        PubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            if(this._autoplay && !this._alreadyAutoplayed) {
+                this.play(null, true);
+                this._alreadyAutoplayed = true;
+            }
+        });
         PartyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
             let type = new Uint8Array(m, 0, 1);
             if(type[0] == PlayableMediaActions.PLAY) {

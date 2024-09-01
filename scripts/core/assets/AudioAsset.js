@@ -30,8 +30,6 @@ export default class AudioAsset extends PlayableMediaAsset {
     _createMesh(assetId) {
         let audioBuffer = LibraryHandler.getBuffer(assetId);
         this._media = new THREE.PositionalAudio(AudioHandler.getListener());
-        if(!global.isEditor) this._media.autoplay = this._autoplay;
-        this._media.autoplay = this._autoplay;
         this._media.setDirectionalCone(this._coneInnerAngle,
             this._coneOuterAngle, this._coneOuterGain);
         this._media.setDistanceModel(this._distanceModel);
