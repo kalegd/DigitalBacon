@@ -295,17 +295,14 @@ table.basic-table tr:nth-child(even) {
 }
 
 .template-buttons > a, .green-button {
-    background-color: #673ab7;
+    background-color: #4bb83a;
     border-radius: 4px;
     color: #ffffff;
     font: normal 16px sans-serif;
     outline: none;
     padding: 8px;
     text-decoration: none;
-}
-
-.template-buttons > a:nth-child(2), .green-button {
-    background-color: #4bb83a;
+    width: 95px;
 }
 
 .bold {

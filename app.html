@@ -26,8 +26,14 @@
     <script type="module">
       import { setupEditor } from 'DigitalBacon';
 
+      let project = "default-project";
+      let searchParams = new URLSearchParams(window.location.search);
+      if(searchParams.has('project')) {
+          project = searchParams.get('project');
+      }
+
       let params = {
-          projectFilePath: '/projects/default-project.zip',
+          projectFilePath: '/projects/' + project + '.zip',
           authUrl: 'https://api.mydigitalbacon.com/multi-user/auth/u5kM9wezEAJUSL3nRs4pFG',
           socketUrl: 'wss://websocket.mydigitalbacon.com',
       };
