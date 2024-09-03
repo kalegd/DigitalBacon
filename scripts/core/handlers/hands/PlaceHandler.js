@@ -30,6 +30,10 @@ class PlaceHandler {
 
     grab(ownerId, asset) {
         if(this._grabbedAssets[ownerId]) this._resetAsset(ownerId);
+        for(let otherOwnerId in this._grabbedAssets) {
+            if(this._grabbedAssets[otherOwnerId].asset == asset)
+                this._resetAsset(otherOwnerId);
+        }
         let grabbedAsset = {
             asset: asset,
             ownerId: ownerId,
@@ -93,6 +97,7 @@ class PlaceHandler {
         grabbedAsset.asset.position = grabbedAsset.preState.position;
         grabbedAsset.asset.rotation = grabbedAsset.preState.rotation;
         grabbedAsset.asset.editorHelper._publish(['position', 'rotation']);
+        delete this._grabbedAssets[ownerId];
     }
 
     _clear() {
