@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Digital Bacon - Plugins</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/resources.css">
+    <link href="https://fonts.cdnfonts.com/css/montserrat" rel="stylesheet">
+  </head>
+  <body>
+    <div id="doc-container">
+      <div class="sidebar">
+        <a href="/">
+          <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
+        </a>
+        <!--<div role="search" id="sidebar-search">
+          <svg version="1.1" viewBox="0 0 1000 1000" x="0px" xmlns="http://www.w3.org/2000/svg" y="0px">
+            <path d="M968.2,849.4L667.3,549c83.9-136.5,66.7-317.4-51.7-435.6C477.1-25,252.5-25,113.9,113.4c-138.5,138.3-138.5,362.6,0,501C219.2,730.1,413.2,743,547.6,666.5l301.9,301.4c43.6,43.6,76.9,14.9,104.2-12.4C981,928.3,1011.8,893,968.2,849.4z M524.5,522c-88.9,88.7-233,88.7-321.8,0c-88.9-88.7-88.9-232.6,0-321.3c88.9-88.7,233-88.7,321.8,0C613.4,289.4,613.4,433.3,524.5,522z"></path>
+          </svg>
+          <input placeholder="Search..." aria-label="Search" type="text" value="">
+        </div>-->
+        <div id="sidebar-navigation">
+          <ul>
+            <li>
+              <a href="#section/AddDelete">
+                <label type="section" role="menuitem">
+                  <span title="AddDelete">Adding and Deleting Assets</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Grabbable">
+                <label type="section" role="menuitem">
+                  <span title="Grabbable">Picking up Assets</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Publish">
+                <label type="section" role="menuitem">
+                  <span title="Publish">Publishing Events</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/GlobalAudio">
+                <label type="section" role="menuitem">
+                  <span title="GlobalAudio">Global Audio</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/TextureScroll">
+                <label type="section" role="menuitem">
+                  <span title="TextureScroll">Texture Scrolling</span>
+                </label>
+              </a>
+            </li>
+            <li>
+              <a href="#section/Water">
+                <label type="section" role="menuitem">
+                  <span title="Water">Water</span>
+                </label>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div id="main-content">
+        <a class="only-large-screen" href="/">
+          <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
+        </a>
+        <h1>Digital Bacon Plugins</h1>
+        <p>Want more interactive content? Dynamic Assets? See if any of our plugins can help enhance your 3D websites in the ways you want</p>
+        <h1 id="section/AddDelete">Adding and Deleting Assets</h1>
+        <p><span class="fw-bold">Add System</span> enables all assets with a Add Component attached to them to be added to the scene. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/AddSystem.js">Download</a></p>
+        <p><span class="fw-bold">Add Component</span> used to specify which assets will be added to the scene and the event that will trigger it. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/AddComponent.js">Download</a></p>
+        <p><span class="fw-bold">Delete System</span> enables all assets with a Delete Component attached to them to be deleted. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/DeleteSystem.js">Download</a></p>
+        <p><span class="fw-bold">Delete Component</span> used to specify which assets will be deleted and the event that will trigger the deletion. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/DeleteComponent.js">Download</a></p>
+        <h1 id="section/Grabbable">Picking up Assets</h1>
+        <p><span class="fw-bold">Grabbable System</span> enables all assets with a Grabbable Component attached to them to be picked up by the user. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/GrabbableSystem.js">Download</a></p>
+        <p><span class="fw-bold">Grabbable Component</span> used to specify which assets can be picked up by the user. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/grabbableComponent.js">Download</a></p>
+        <h1 id="section/Publish">Publishing Events</h1>
+        <p><span class="fw-bold">Publish System</span> enables all assets with a Publish Component attached to publish the specified event when clicked on by the user. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/PublishSystem.js">Download</a></p>
+        <p><span class="fw-bold">Grabbable Component</span> used to specify what event will be published by the assets the component is attached to when clicked on by the user. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/PublishComponent.js">Download</a></p>
+        <h1 id="section/GlobalAudio">Global Audio</h1>
+        <p><span class="fw-bold">Global Audio</span> let's you play audio normally through the computer instead of the left and right speaker volumes being affected by the user's orientation relative to the audio source. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/GlobalAudio.js">Download</a></p>
+        <h1 id="section/TextureScroll">Texture Scrolling</h1>
+        <p><span class="fw-bold">Texture Scroll System</span> enables all textures with a Texture Scroll Component attached to them to pan in any direction. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/TextureScrollSystem.js">Download</a></p>
+        <p><span class="fw-bold">Texture Scroll Component</span> used to specify how much the texture should scroll both horizontally and vertically. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/TextureScrollComponent.js">Download</a></p>
+        <h1 id="section/Water">Water</h1>
+        <p><span class="fw-bold">Water</span> A custom asset that simulates the look of water over a flat surface. <a class="c-blue intercept-download" href="https://raw.githubusercontent.com/kalegd/DigitalBacon-Plugins/main/scripts/Water.js">Download</a></p>
+      </div>
+    </div>
+    <script>
+      let nodeList = document.querySelectorAll('.intercept-download');
+      nodeList.forEach((link) => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          fetch(link.href).then((response) => {
+            if(!response.ok) throw new Error(response.statusText);
+            return response.blob();
+          }).then((blob) => {
+            if(!blob) return;
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = link.href.substring(link.href.lastIndexOf('/') + 1);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
