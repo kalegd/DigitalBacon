@@ -11,7 +11,7 @@ import { vector3s, SIDE_MAP } from '/scripts/core/helpers/constants.js';
 import PlayableMediaAssetHelper from '/scripts/core/helpers/editor/PlayableMediaAssetHelper.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 
-const { CheckboxField, EnumField } = PlayableMediaAssetHelper.FieldTypes;
+const { EnumField } = PlayableMediaAssetHelper.FieldTypes;
 
 export default class VideoAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {
@@ -35,8 +35,7 @@ export default class VideoAssetHelper extends PlayableMediaAssetHelper {
 
     static fields = [
         "visualEdit",
-        { "parameter": "previewMedia", "name": "Preview Video",
-            "suppressMenuFocusEvent": true, "type": CheckboxField},
+        "previewMedia",
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
             "type": EnumField },
         "autoplay",

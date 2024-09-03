@@ -142,8 +142,13 @@ class LibraryHandler {
 
     loadLibraryAssetFromArrayBuffer(assetId, assetDetails, arraybuffers) {
         let options;
-        if(assetDetails['Type'] in AssetScriptTypes)
+        if(assetDetails['Type'] in AssetScriptTypes) {
             options = { type: 'application/javascript' };
+        } else if(assetDetails['Filepath'].endsWith('.mp4')) {
+            options = { type: 'video/mp4' };
+        } else if(assetDetails['Filepath'].endsWith('.webm')) {
+            options = { type: 'video/webm' };
+        }
         let blob = new Blob(arraybuffers, options);
         return this.loadLibraryAsset(assetId, assetDetails, blob);
     }

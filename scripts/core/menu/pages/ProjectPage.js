@@ -31,8 +31,8 @@ const OPTIONS = {
     'Host Online': '_hostOnMyDigitalBacon',
     'Preview Live': '_previewLive',
     'Save to Device': '_localSave',
-    'Save to Google Drive': '_googleDriveSave',
     'Load from Device': '_localLoad',
+    'Save to Google Drive': '_googleDriveSave',
     'Load from Google Drive': '_googleDriveLoad',
     'Sign out of Google Drive': '_googleDriveSignout',
 };
@@ -278,6 +278,7 @@ class ProjectPage extends PaginatedButtonsPage {
                     });
                     return;
                 }
+                if(global.deviceType == 'XR') SessionHandler.exitXRSession();
                 this._previewTab.focus();
                 this._previewIntervalCount = 0;
                 this._previewIntervalId = setInterval(() => {

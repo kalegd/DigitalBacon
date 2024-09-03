@@ -9,6 +9,7 @@ import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import InteractionTools from '/scripts/core/enums/InteractionTools.js';
 import CopyPasteControlsHandler from '/scripts/core/handlers/CopyPasteControlsHandler.js';
 import TransformControlsHandler from '/scripts/core/handlers/TransformControlsHandler.js';
+import PlaceHandler from '/scripts/core/handlers/hands/PlaceHandler.js';
 import RotateHandler from '/scripts/core/handlers/hands/RotateHandler.js';
 import ScaleHandler from '/scripts/core/handlers/hands/ScaleHandler.js';
 import TranslateHandler from '/scripts/core/handlers/hands/TranslateHandler.js';
@@ -83,6 +84,9 @@ export default class AssetEntityHelper extends EditorHelper {
             this._eventListeners.push({ type: 'pointer', callback: (message) =>{
                 CopyPasteControlsHandler.copy(message.owner.id, this._asset);
             }, tool: InteractionTools.COPY_PASTE, topic: 'click' });
+            this._eventListeners.push({ type: 'grip', callback: (message) =>{
+                PlaceHandler.grab(message.owner.id, this._asset);
+            }, tool: InteractionTools.PLACE, topic: 'down' });
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;

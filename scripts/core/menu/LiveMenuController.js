@@ -13,6 +13,7 @@ import JoinPartyPage from '/scripts/core/menu/pages/JoinPartyPage.js';
 import PartyPage from '/scripts/core/menu/pages/PartyPage.js';
 import PeerPage from '/scripts/core/menu/pages/PeerPage.js';
 import SettingsPage from '/scripts/core/menu/pages/SettingsPage.js';
+import TextInputPage from '/scripts/core/menu/pages/TextInputPage.js';
 import UserSettingsPage from '/scripts/core/menu/pages/UserSettingsPage.js';
 
 export default class LiveMenuController extends MenuController {
@@ -25,6 +26,7 @@ export default class LiveMenuController extends MenuController {
         this._pages[MenuPages.PARTY] = new PartyPage(this);
         this._pages[MenuPages.PEER] = new PeerPage(this);
         this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
+        this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         this._pageCalls.push(MenuPages.HOME);
         this._object.add(this.getCurrentPage());

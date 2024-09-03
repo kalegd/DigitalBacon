@@ -209,6 +209,36 @@ export const storeStringValuesInSet = (object, set) => {
     }
 };
 
+//Copied from Raycaster.js
+function ascSort(a, b) {
+    return a.distance - b.distance;
+}
+
+//Copied from Raycaster.js
+function intersectObject(object, raycaster, intersects, recursive) {
+    if(object.layers.test(raycaster.layers)) {
+        object.raycast(raycaster, intersects);
+    }
+    if(recursive === true) {
+        const children = object.children;
+        for(let i = 0, l = children.length; i < l; i++) {
+            intersectObject(children[ i ], raycaster, intersects, true);
+        }
+    }
+}
+
+//Slightly modified version of Raycaster::intersectObjects
+export const intersectRelevantObjects = (raycaster, objects, ignoredObject) => {
+    let intersects = [];
+    for(let i = 0, l = objects.length; i < l; i++) {
+        if(objects[i] != ignoredObject) {
+            intersectObject(objects[i], raycaster, intersects, true);
+        }
+    }
+    intersects.sort(ascSort);
+    return intersects;
+}
+
 //https://dmitripavlutin.com/javascript-queue/
 export class Queue {
     constructor() {
