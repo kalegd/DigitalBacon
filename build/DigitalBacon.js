@@ -435,6 +435,36 @@ const storeStringValuesInSet = (object, set) => {
     }
 };
 
+//Copied from Raycaster.js
+function ascSort(a, b) {
+    return a.distance - b.distance;
+}
+
+//Copied from Raycaster.js
+function intersectObject(object, raycaster, intersects, recursive) {
+    if(object.layers.test(raycaster.layers)) {
+        object.raycast(raycaster, intersects);
+    }
+    if(recursive === true) {
+        const children = object.children;
+        for(let i = 0, l = children.length; i < l; i++) {
+            intersectObject(children[ i ], raycaster, intersects, true);
+        }
+    }
+}
+
+//Slightly modified version of Raycaster::intersectObjects
+const intersectRelevantObjects = (raycaster, objects, ignoredObject) => {
+    let intersects = [];
+    for(let i = 0, l = objects.length; i < l; i++) {
+        if(objects[i] != ignoredObject) {
+            intersectObject(objects[i], raycaster, intersects, true);
+        }
+    }
+    intersects.sort(ascSort);
+    return intersects;
+};
+
 //https://dmitripavlutin.com/javascript-queue/
 class Queue {
     constructor() {
@@ -472,6 +502,7 @@ var utils = /*#__PURE__*/Object.freeze({
   disposeMaterial: disposeMaterial,
   fullDispose: fullDispose,
   hslToRGB: hslToRGB$1,
+  intersectRelevantObjects: intersectRelevantObjects,
   numberOr: numberOr$1,
   polarToCartesian: polarToCartesian$1,
   radiansToDegrees: radiansToDegrees$1,
@@ -5748,8 +5779,13 @@ class LibraryHandler {
 
     loadLibraryAssetFromArrayBuffer(assetId, assetDetails, arraybuffers) {
         let options;
-        if(assetDetails['Type'] in AssetScriptTypes)
+        if(assetDetails['Type'] in AssetScriptTypes) {
             options = { type: 'application/javascript' };
+        } else if(assetDetails['Filepath'].endsWith('.mp4')) {
+            options = { type: 'video/mp4' };
+        } else if(assetDetails['Filepath'].endsWith('.webm')) {
+            options = { type: 'video/webm' };
+        }
         let blob = new Blob(arraybuffers, options);
         return this.loadLibraryAsset(assetId, assetDetails, blob);
     }
@@ -9352,6 +9388,9 @@ class Party {
         this._userAudio.muted = true;
         this._pingIntervalId = null;
         this._authIntervalId = null;
+        navigator.permissions.query({ name: 'microphone' }).then((pStatus) => {
+            this._needPromptMicPermissions = pStatus.state == 'prompt';
+        }); 
     }
 
     host(roomId, successCallback, errorCallback) {
@@ -9477,6 +9516,8 @@ class Party {
     }
 
     _setupUserMedia() {
+        if(global$1.deviceType == 'XR' && this._needPromptMicPermissions)
+            sessionHandler.exitXRSession();
         navigator.mediaDevices.getUserMedia(CONSTRAINTS).then((stream) => {
             this._userAudio.srcObject = stream;
             this._setupWebSocket();
@@ -9484,7 +9525,6 @@ class Party {
             this._userAudio.srcObject = new MediaStream();
             this._setupWebSocket();
         });
-        if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
     }
 
     _setupWebSocket() {
@@ -11209,6 +11249,12 @@ class PlayableMediaEntity extends AssetEntity{
         pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
             this._onPartyStarted(partyHandler.isHost());
         });
+        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            if(this._autoplay && !this._alreadyAutoplayed) {
+                this.play(null, true);
+                this._alreadyAutoplayed = true;
+            }
+        });
         partyHandler.addInternalBufferMessageHandler(this._id, (p, m) => {
             let type = new Uint8Array(m, 0, 1);
             if(type[0] == PlayableMediaActions.PLAY) {
@@ -11267,8 +11313,6 @@ class AudioAsset extends PlayableMediaEntity {
     _createMesh(assetId) {
         let audioBuffer = libraryHandler.getBuffer(assetId);
         this._media = new THREE.PositionalAudio(audioHandler.getListener());
-        if(!global$1.isEditor) this._media.autoplay = this._autoplay;
-        this._media.autoplay = this._autoplay;
         this._media.setDirectionalCone(this._coneInnerAngle,
             this._coneOuterAngle, this._coneOuterGain);
         this._media.setDistanceModel(this._distanceModel);
@@ -11732,6 +11776,7 @@ class VideoAsset extends PlayableMediaEntity {
         };
         this._media.crossOrigin = "anonymous";
         this._media.src = videoUrl;
+        this._media.loop = this._loop;
         this._updateBVH();
     }
 
@@ -11768,16 +11813,6 @@ class VideoAsset extends PlayableMediaEntity {
         this._side = side;
         this._material.side = side;
         this._material.needsUpdate = true;
-    }
-
-    _addPartySubscriptions() {
-        super._addPartySubscriptions();
-        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
-            if(this._autoplay && !this._alreadyAutoplayed) {
-                this.play(null, true);
-                this._alreadyAutoplayed = true;
-            }
-        });
     }
 
     static assetType = AssetTypes.VIDEO;
@@ -12066,6 +12101,9 @@ libraryHandler.loadBuiltIn(PeerController);
  */
 
 
+const vec3 = new THREE.Vector3();
+let lastRenderFrame;
+
 class TextAsset extends AssetEntity {
     constructor(params = {}) {
         super(params);
@@ -12074,6 +12112,7 @@ class TextAsset extends AssetEntity {
         this._fontSize = numberOr$1(params['fontSize'], 0.1);
         this._text = params['text'] || 'Hi :)';
         this._textAlign = params['textAlign'] || 'left';
+        if(global$1.deviceType == 'XR') this.update = this._update;
     }
 
     _createMesh() {
@@ -12116,6 +12155,28 @@ class TextAsset extends AssetEntity {
     set textAlign(textAlign) {
         this._textAlign = textAlign;
         this._textComponent.textAlign = textAlign;
+    }
+
+    _update() {
+        if(this._skipFrame) {
+            this._skipFrame--;
+            return;
+        }
+        if(lastRenderFrame != global$1.renderer.info.render.frame) {
+            lastRenderFrame = global$1.renderer.info.render.frame;
+            global$1.camera.getWorldPosition(vec3);
+        }
+        let worldPosition = this.getWorldPosition();
+        let distance = worldPosition.distanceTo(vec3);
+        let worldScale = Math.max(...this.getWorldScale().toArray());
+        let fontSize = this._fontSize * worldScale;
+        if(distance > fontSize * 200) {
+            this._skipFrame = 30;
+            this._textComponent.visible = false;
+        } else {
+            this._skipFrame = 15;
+            this._textComponent.visible = true;
+        }
     }
 
     static assetType = AssetTypes.TEXT;
@@ -13351,6 +13412,8 @@ class DirectionalLight extends Light {
     constructor(params = {}) {
         params['assetId'] = DirectionalLight.assetId;
         params['visualEdit'] = false;
+        params['position'] = [0, 0, 0];
+        params['rotation'] = [0, 0, 0];
         super(params);
         let direction = params['direction'] || [0, -1, 0];
         this._createLight();
@@ -14428,6 +14491,7 @@ const InteractionTools = {
     COPY_PASTE: "COPY_PASTE",
     DELETE: "DELETE",
     EDIT: "EDIT",
+    PLACE: "PLACE",
     ROTATE: "ROTATE",
     SCALE: "SCALE",
     TRANSLATE: "TRANSLATE",
@@ -16525,10 +16589,11 @@ class TransformControlsHandler {
         raycaster.firstHitOnly = true;
         raycaster.far = Infinity;
         let isPressed = controller['isPressed'];
-        let intersections = (global$1.deviceType == 'XR')
-            ? this._intersectRelevantObjects(raycaster, ownerId)
-            : raycaster.intersectObjects(projectHandler.getObjects(), true);
         let attachedAsset = this._attachedAssets[ownerId];
+        let intersections = (global$1.deviceType == 'XR')
+            ? intersectRelevantObjects(raycaster, projectHandler.getObjects(),
+                attachedAsset.object)
+            : raycaster.intersectObjects(projectHandler.getObjects(), true);
         if(intersections.length > 0) {
             controller['closestPoint'] = intersections[0].point;
             if(isPressed) {
@@ -16571,7 +16636,8 @@ class TransformControlsHandler {
             factor * this._initialScalingValues.y,
             factor * this._initialScalingValues.z);
 
-        if(global$1.renderer.info.render.frame % 6 == 0)
+        this._objectChangeNumber++;
+        if(this._objectChangeNumber % 6 == 0)
             asset.editorHelper._publish(['scale']);
     }
 
@@ -16585,20 +16651,6 @@ class TransformControlsHandler {
             return true;
         }
         return false;
-    }
-
-    //Slightly modified version of Raycaster::intersectObjects
-    _intersectRelevantObjects(raycaster, ownerId) {
-        let intersects = [];
-        let objects = projectHandler.getObjects();
-        let attachedObject = this._attachedAssets[ownerId].object;
-        for(let i = 0, l = objects.length; i < l; i++) {
-            if(objects[i] != attachedObject) {
-                intersectObject(objects[i], raycaster, intersects, true);
-            }
-        }
-        intersects.sort(ascSort);
-        return intersects;
     }
 
     _otherOption(userController, ownerId) {
@@ -16783,25 +16835,113 @@ class TransformControlsHandler {
     }
 }
 
-//Copied from Raycaster.js
-function ascSort(a, b) {
-    return a.distance - b.distance;
-}
+let transformControlsHandler = new TransformControlsHandler();
 
-//Copied from Raycaster.js
-function intersectObject(object, raycaster, intersects, recursive) {
-    if(object.layers.test(raycaster.layers)) {
-        object.raycast(raycaster, intersects);
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class PlaceHandler {
+    constructor() {
+        this._id = uuidv4();
+        this._controllerAlreadyPressed = {};
+        this._grabbedAssets = {};
+        ni.registerToolHandler(InteractionTools.PLACE,
+            (controller) => this._toolHandler(controller));
+        Ar.addUpdateListener(() => {
+            if(Object.keys(this._grabbedAssets).length > 0) this._clear();
+            this._controllerAlreadyPressed = {};
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, () => {
+            if(Object.keys(this._grabbedAssets).length > 0) this._clear();
+            this._controllerAlreadyPressed = {};
+        });
     }
-    if(recursive === true) {
-        const children = object.children;
-        for(let i = 0, l = children.length; i < l; i++) {
-            intersectObject(children[ i ], raycaster, intersects, true);
+
+    grab(ownerId, asset) {
+        if(this._grabbedAssets[ownerId]) this._resetAsset(ownerId);
+        for(let otherOwnerId in this._grabbedAssets) {
+            if(this._grabbedAssets[otherOwnerId].asset == asset)
+                this._resetAsset(otherOwnerId);
+        }
+        let grabbedAsset = {
+            asset: asset,
+            ownerId: ownerId,
+            preState: asset.editorHelper.getObjectTransformation(),
+        };
+        this._grabbedAssets[ownerId] = grabbedAsset;
+        this._controllerAlreadyPressed[ownerId] = true;
+        asset.editorHelper._disableParam('position');
+        asset.editorHelper._disableParam('rotation');
+        asset.editorHelper._disableParam('scale');
+    }
+
+    _checkPlacement(controller, place) {
+        let ownerId = controller.owner.id;
+        let grabbedAsset = this._grabbedAssets[ownerId];
+        let asset = grabbedAsset.asset;
+        let editorHelper = asset.editorHelper;
+        let raycaster = controller['raycaster'];
+        raycaster.firstHitOnly = true;
+        raycaster.far = Infinity;
+        let intersections = intersectRelevantObjects(raycaster,
+            projectHandler.getObjects(), asset.object);
+        if(intersections.length > 0) {
+            controller['closestPoint'] = intersections[0].point;
+            editorHelper.place(intersections[0]);
+            let postState = editorHelper.getObjectTransformation();
+            if(place) {
+                editorHelper.roundAttributes(true);
+                editorHelper.setObjectTransformation(grabbedAsset.preState,
+                    postState, false, false, true);
+                editorHelper._enableParam('position');
+                editorHelper._enableParam('rotation');
+                editorHelper._enableParam('scale');
+                delete this._grabbedAssets[ownerId];
+            } else {
+                editorHelper.setObjectTransformation(grabbedAsset.preState,
+                    postState, false, true, true);
+            }
+        } else {
+            editorHelper._updateParameter('position',
+                grabbedAsset.preState.position, false, true, null, true);
+            editorHelper._updateParameter('rotation',
+                grabbedAsset.preState.rotation, false, true, null, true);
         }
     }
+
+    _toolHandler(controller) {
+        let ownerId = controller.owner.id;
+        if(!this._grabbedAssets[ownerId]) return false;
+        let place = false;
+        if(controller.isPressed != this._controllerAlreadyPressed[ownerId]) {
+            this._controllerAlreadyPressed[ownerId] = controller.isPressed;
+            if(controller.isPressed) place = true;
+        }
+        this._checkPlacement(controller, place);
+        return true;
+    }
+
+    _resetAsset(ownerId) {
+        let grabbedAsset = this._grabbedAssets[ownerId];
+        grabbedAsset.asset.position = grabbedAsset.preState.position;
+        grabbedAsset.asset.rotation = grabbedAsset.preState.rotation;
+        grabbedAsset.asset.editorHelper._publish(['position', 'rotation']);
+        delete this._grabbedAssets[ownerId];
+    }
+
+    _clear() {
+        for(let ownerId in this._grabbedAssets) {
+            this._resetAsset(ownerId);
+        }
+        this._grabbedAssets = {};
+    }
 }
 
-let transformControlsHandler = new TransformControlsHandler();
+let placeHandler = new PlaceHandler();
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -17691,7 +17831,7 @@ class AudioField extends MenuField {
  */
 
 
-let CheckboxField$9 = class CheckboxField extends MenuField {
+let CheckboxField$8 = class CheckboxField extends MenuField {
     constructor(params) {
         super(params);
         let initialValue = params['initialValue'] || false;
@@ -19032,7 +19172,7 @@ class EditorHelper {
     }
 
     _createCheckboxField(field) {
-        return new CheckboxField$9({
+        return new CheckboxField$8({
             'title': field.name,
             'initialValue': this._asset[field.parameter],
             'suppressMenuFocusEvent': field.suppressMenuFocusEvent == true,
@@ -19204,7 +19344,7 @@ class EditorHelper {
     static FieldTypes = {
         AssetEntityField: AssetEntityField$1,
         AudioField: AudioField,
-        CheckboxField: CheckboxField$9,
+        CheckboxField: CheckboxField$8,
         ColorField: ColorField$7,
         CubeImageField: CubeImageField$1,
         EnumField: EnumField$c,
@@ -19228,7 +19368,7 @@ editorHelperFactory.registerEditorHelper(EditorHelper, Asset);
  */
 
 
-const { AssetEntityField, CheckboxField: CheckboxField$8, EulerField, NumberField: NumberField$j, Vector3Field: Vector3Field$1 } = EditorHelper.FieldTypes;
+const { AssetEntityField, CheckboxField: CheckboxField$7, EulerField, NumberField: NumberField$j, Vector3Field: Vector3Field$1 } = EditorHelper.FieldTypes;
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const TRANSFORM_PUBLISH_FUNCTIONS = {
     position: 'publishPosition',
@@ -19289,6 +19429,9 @@ class AssetEntityHelper extends EditorHelper {
             this._eventListeners.push({ type: 'pointer', callback: (message) =>{
                 copyPasteControlsHandler.copy(message.owner.id, this._asset);
             }, tool: InteractionTools.COPY_PASTE, topic: 'click' });
+            this._eventListeners.push({ type: 'grip', callback: (message) =>{
+                placeHandler.grab(message.owner.id, this._asset);
+            }, tool: InteractionTools.PLACE, topic: 'down' });
             for(let handlerDetails of TRS_HANDLERS) {
                 let handler = handlerDetails.handler;
                 let tool = handlerDetails.tool;
@@ -19651,7 +19794,7 @@ class AssetEntityHelper extends EditorHelper {
         { "parameter": "rotation", "name": "Rotation", "type": EulerField },
         { "parameter": "scale", "name": "Scale", "type": Vector3Field$1 },
         { "parameter": "visualEdit", "name": "Visually Edit",
-            "type": CheckboxField$8 },
+            "type": CheckboxField$7 },
         { "parameter": "renderOrder", "name": "Render Order",
             "type": NumberField$j },
     ];
@@ -19671,7 +19814,7 @@ editorHelperFactory.registerEditorHelper(AssetEntityHelper, AssetEntity);
  */
 
 
-const { CheckboxField: CheckboxField$7, TextField: TextField$1 } = AssetEntityHelper.FieldTypes;
+const { CheckboxField: CheckboxField$6, TextField: TextField$1 } = AssetEntityHelper.FieldTypes;
 
 class PlayableMediaAssetHelper extends AssetEntityHelper {
     constructor(asset, updatedTopic) {
@@ -19697,12 +19840,12 @@ class PlayableMediaAssetHelper extends AssetEntityHelper {
 
     static fields = [
         "visualEdit",
-        { "parameter": "previewMedia", "name": "Preview Audio",
-            "suppressMenuFocusEvent": true, "type": CheckboxField$7 },
+        { "parameter": "previewMedia", "name": "Preview Media",
+            "suppressMenuFocusEvent": true, "type": CheckboxField$6 },
         { "parameter": "autoplay", "name": "Auto Play",
-            "suppressMenuFocusEvent": true, "type": CheckboxField$7 },
+            "suppressMenuFocusEvent": true, "type": CheckboxField$6 },
         { "parameter": "loop", "name": "Loop",
-            "suppressMenuFocusEvent": true, "type": CheckboxField$7 },
+            "suppressMenuFocusEvent": true, "type": CheckboxField$6 },
         { "parameter": "playTopic", "name": "Play Event", "singleLine": true,
             "type": TextField$1 },
         { "parameter": "pauseTopic", "name": "Pause Event", "singleLine": true,
@@ -19791,7 +19934,7 @@ editorHelperFactory.registerEditorHelper(AudioAssetHelper, AudioAsset);
  */
 
 
-const { CheckboxField: CheckboxField$6, EnumField: EnumField$a, NumberField: NumberField$h } = EditorHelper.FieldTypes;
+const { CheckboxField: CheckboxField$5, EnumField: EnumField$a, NumberField: NumberField$h } = EditorHelper.FieldTypes;
 
 class MaterialHelper extends EditorHelper {
     constructor(asset) {
@@ -19854,7 +19997,7 @@ class MaterialHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "transparent", "name": "Transparent",
-            "type": CheckboxField$6 },
+            "type": CheckboxField$5 },
         { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
             "type": NumberField$h },
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
@@ -19871,7 +20014,7 @@ editorHelperFactory.registerEditorHelper(MaterialHelper, Material);
  */
 
 
-const { CheckboxField: CheckboxField$5, ColorField: ColorField$6, EnumField: EnumField$9, NumberField: NumberField$g, TextureField: TextureField$3 } = MaterialHelper.FieldTypes;
+const { CheckboxField: CheckboxField$4, ColorField: ColorField$6, EnumField: EnumField$9, NumberField: NumberField$g, TextureField: TextureField$3 } = MaterialHelper.FieldTypes;
 
 class BasicMaterialHelper extends MaterialHelper {
     constructor(asset) {
@@ -19887,7 +20030,7 @@ class BasicMaterialHelper extends MaterialHelper {
         "opacity",
         { "parameter": "alphaMapId","name": "Alpha Map",
             "filter": [TextureTypes.BASIC], "type": TextureField$3 },
-        { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxField$5},
+        { "parameter": "wireframe", "name": "Wireframe", "type": CheckboxField$4},
         { "parameter": "envMapId","name": "Environment Map",
             "filter": [TextureTypes.CUBE], "type": TextureField$3 },
         { "parameter": "combine","name": "Color & Environment Blend",
@@ -20035,7 +20178,7 @@ editorHelperFactory.registerEditorHelper(ImageAssetHelper, ImageAsset);
  */
 
 
-const { CheckboxField: CheckboxField$4, EnumField: EnumField$5 } = PlayableMediaAssetHelper.FieldTypes;
+const { EnumField: EnumField$5 } = PlayableMediaAssetHelper.FieldTypes;
 
 class VideoAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {
@@ -20059,8 +20202,7 @@ class VideoAssetHelper extends PlayableMediaAssetHelper {
 
     static fields = [
         "visualEdit",
-        { "parameter": "previewMedia", "name": "Preview Video",
-            "suppressMenuFocusEvent": true, "type": CheckboxField$4},
+        "previewMedia",
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
             "type": EnumField$5 },
         "autoplay",
@@ -34440,7 +34582,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
             'getFromSource': () =>
                 settingsHandler.getEditorSettings()['User Scale'],
         }));
-        fields.push(new CheckboxField$9({
+        fields.push(new CheckboxField$8({
             'title': 'Enable Flying',
             'initialValue': true,
             'onUpdate': (value) => {
@@ -34450,7 +34592,7 @@ class EditorSettingsPage extends DynamicFieldsPage {
                 settingsHandler.getEditorSettings()['Enable Flying'],
         }));
         if(global$1.deviceType == "XR") {
-            fields.push(new CheckboxField$9({
+            fields.push(new CheckboxField$8({
                 'title': 'Swap Joysticks',
                 'initialValue': false,
                 'onUpdate': (value) => {
@@ -34484,6 +34626,7 @@ const hands = [
     { "title": "Edit", "type": InteractionTools.EDIT },
     { "title": "Copy / Paste", "type": InteractionTools.COPY_PASTE },
     { "title": "Delete", "type": InteractionTools.DELETE },
+    { "title": "Place", "type": InteractionTools.PLACE },
     { "title": "Translate", "type": InteractionTools.TRANSLATE },
     { "title": "Rotate", "type": InteractionTools.ROTATE },
     { "title": "Scale", "type": InteractionTools.SCALE },
@@ -36064,11 +36207,12 @@ class NewAssetPage extends PaginatedButtonsPage {
         this._controller.getPosition(vector3s[0]);
         this._controller.getDirection(vector3s[1]).normalize()
             .divideScalar(4);
-        let position = vector3s[0].sub(vector3s[1]).toArray();
+        vector3s[0].sub(vector3s[1]).roundWithPrecision(5);
+        let position = vector3s[0].toArray();
         vector3s[0].set(0, 0, 1);
         vector3s[1].setY(0).normalize();
         quaternion.setFromUnitVectors(vector3s[0], vector3s[1]);
-        euler.setFromQuaternion(quaternion);
+        euler.setFromQuaternion(quaternion).roundWithPrecision(5);
         let rotation = euler.toArray();
         return {
             position: position,
@@ -38124,8 +38268,8 @@ const OPTIONS$1 = {
     'Host Online': '_hostOnMyDigitalBacon',
     'Preview Live': '_previewLive',
     'Save to Device': '_localSave',
-    'Save to Google Drive': '_googleDriveSave',
     'Load from Device': '_localLoad',
+    'Save to Google Drive': '_googleDriveSave',
     'Load from Google Drive': '_googleDriveLoad',
     'Sign out of Google Drive': '_googleDriveSignout',
 };
@@ -38371,6 +38515,7 @@ class ProjectPage extends PaginatedButtonsPage {
                     });
                     return;
                 }
+                if(global$1.deviceType == 'XR') sessionHandler.exitXRSession();
                 this._previewTab.focus();
                 this._previewIntervalCount = 0;
                 this._previewIntervalId = setInterval(() => {
@@ -38782,7 +38927,7 @@ class SketchfabLoginPage extends MenuPage {
         let titleBlock = new TextComponent('Login to Sketchfab', Styles.title);
         this.add(titleBlock);
 
-        let staySignedInCheckbox = new CheckboxField$9({
+        let staySignedInCheckbox = new CheckboxField$8({
             'title': 'Stay signed in on this device',
             'titleWidth': 0.27,
             'initialValue': false,
@@ -39415,7 +39560,7 @@ class UserSettingsPage extends DynamicFieldsPage {
             'getFromSource': () =>
                 settingsHandler.getUserSettings()['User Scale'],
         }));
-        fields.push(new CheckboxField$9({
+        fields.push(new CheckboxField$8({
             'title': 'Enable Flying',
             'initialValue': true,
             'onUpdate': (value) => {
@@ -39425,7 +39570,7 @@ class UserSettingsPage extends DynamicFieldsPage {
                 settingsHandler.getUserSettings()['Enable Flying'],
         }));
         if(global$1.deviceType == "XR" && !global$1.isEditor) {
-            fields.push(new CheckboxField$9({
+            fields.push(new CheckboxField$8({
                 'title': 'Swap Joysticks',
                 'initialValue': false,
                 'onUpdate': (value) => {
@@ -39581,11 +39726,268 @@ class LiveMenuController extends MenuController {
         this._pages[MenuPages.PARTY] = new PartyPage(this);
         this._pages[MenuPages.PEER] = new PeerPage(this);
         this._pages[MenuPages.SETTINGS] = new SettingsPage(this);
+        this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
         this._pageCalls.push(MenuPages.HOME);
         this._object.add(this.getCurrentPage());
     }
 }
+
+const KEY = 'DIGITAL_BACON_METRICS:' + window.location.origin + ':HAS_VISITED';
+
+class Metrics {
+    constructor() {
+        let hasVisitedBefore = localStorage.getItem(KEY);
+        if(hasVisitedBefore) {
+            this._userType = 'RETURN';
+        } else {
+            detectIncognito().then((result) => {
+                this._userType = (result.isPrivate) ? 'PRIVATE' : 'UNIQUE';
+            });
+        }
+    }
+
+    post() {
+        let immersionDisabled = global$1.disableImmersion == true;
+        let params = {
+            userType: this._userType || 'PRIVATE',
+            deviceType: global$1.deviceType,
+            immersionDisabled: immersionDisabled,
+            isEditor: global$1.isEditor,
+        };
+        fetch('https://api.digitalbacon.io/app-stats', {
+            method: 'POST',
+            body: JSON.stringify(params),
+            headers: { 'Content-type': 'application/json' },
+            referrerPolicy: 'no-referrer-when-downgrade',
+        }).then((response) => {
+            return response.json();
+        }).then((body) => {
+            if(this._userType != 'RETURN') localStorage.setItem(KEY, true);
+            if(body.data && body.data.timestamp) {
+                this._timestamp = body.data.timestamp;
+                if(!immersionDisabled) {
+                    window.onbeforeunload = () => {
+                        this.put({ pageClosed: true });
+                    };
+                }
+            }
+        }).catch((error) => {
+            console.error('Could not POST to app-stats endpoint');
+            console.error(error);
+        });
+    }
+
+    put(params) {
+        if(!this._timestamp) return;
+        params.timestamp = this._timestamp;
+        fetch('https://api.digitalbacon.io/app-stats', {
+            method: 'PUT',
+            body: JSON.stringify(params),
+            headers: { 'Content-type': 'application/json' },
+            referrerPolicy: 'no-referrer-when-downgrade',
+            keepalive: true,
+        }).catch((error) => {
+            console.error('Could not PUT to app-stats endpoint');
+            console.error(error);
+        });
+    }
+}
+
+/**
+ *
+ * detectIncognito v1.3.0 - (c) 2022 Joe Rutkowski <Joe@dreggle.com> (https://github.com/Joe12387/detectIncognito)
+ *
+ **/
+var detectIncognito = function () {
+    return new Promise(function (resolve, reject) {
+        var browserName = "Unknown";
+        function __callback(isPrivate) {
+            resolve({
+                isPrivate: isPrivate,
+                browserName: browserName
+            });
+        }
+        function identifyChromium() {
+            var ua = navigator.userAgent;
+            if (ua.match(/Chrome/)) {
+                if (navigator.brave !== undefined) {
+                    return "Brave";
+                }
+                else if (ua.match(/Edg/)) {
+                    return "Edge";
+                }
+                else if (ua.match(/OPR/)) {
+                    return "Opera";
+                }
+                return "Chrome";
+            }
+            else {
+                return "Chromium";
+            }
+        }
+        function assertEvalToString(value) {
+            return value === eval.toString().length;
+        }
+        function isSafari() {
+            var v = navigator.vendor;
+            return (v !== undefined && v.indexOf("Apple") === 0 && assertEvalToString(37));
+        }
+        function isChrome() {
+            var v = navigator.vendor;
+            return (v !== undefined && v.indexOf("Google") === 0 && assertEvalToString(33));
+        }
+        function isFirefox() {
+            return (document.documentElement !== undefined &&
+                document.documentElement.style.MozAppearance !== undefined &&
+                assertEvalToString(37));
+        }
+        function isMSIE() {
+            return (navigator.msSaveBlob !== undefined && assertEvalToString(39));
+        }
+        /**
+         * Safari (Safari for iOS & macOS)
+         **/
+        function newSafariTest() {
+            var tmp_name = String(Math.random());
+            try {
+                var db = window.indexedDB.open(tmp_name, 1);
+                db.onupgradeneeded = function (i) {
+                    var _a, _b;
+                    var res = (_a = i.target) === null || _a === void 0 ? void 0 : _a.result;
+                    try {
+                        res.createObjectStore("test", {
+                            autoIncrement: true
+                        }).put(new Blob);
+                        __callback(false);
+                    }
+                    catch (e) {
+                        var message = e;
+                        if (e instanceof Error) {
+                            message = (_b = e.message) !== null && _b !== void 0 ? _b : e;
+                        }
+                        if (typeof message !== 'string') {
+                            return __callback(false);
+                        }
+                        var matchesExpectedError = /BlobURLs are not yet supported/.test(message);
+                        return __callback(matchesExpectedError);
+                    }
+                    finally {
+                        res.close();
+                        window.indexedDB.deleteDatabase(tmp_name);
+                    }
+                };
+            }
+            catch (e) {
+                return __callback(false);
+            }
+        }
+        function oldSafariTest() {
+            var openDB = window.openDatabase;
+            var storage = window.localStorage;
+            try {
+                openDB(null, null, null, null);
+            }
+            catch (e) {
+                return __callback(true);
+            }
+            try {
+                storage.setItem("test", "1");
+                storage.removeItem("test");
+            }
+            catch (e) {
+                return __callback(true);
+            }
+            return __callback(false);
+        }
+        function safariPrivateTest() {
+            if (navigator.maxTouchPoints !== undefined) {
+                newSafariTest();
+            }
+            else {
+                oldSafariTest();
+            }
+        }
+        /**
+         * Chrome
+         **/
+        function getQuotaLimit() {
+            var w = window;
+            if (w.performance !== undefined &&
+                w.performance.memory !== undefined &&
+                w.performance.memory.jsHeapSizeLimit !== undefined) {
+                return performance.memory.jsHeapSizeLimit;
+            }
+            return 1073741824;
+        }
+        // >= 76
+        function storageQuotaChromePrivateTest() {
+            navigator.webkitTemporaryStorage.queryUsageAndQuota(function (_, quota) {
+                var quotaInMib = Math.round(quota / (1024 * 1024));
+                var quotaLimitInMib = Math.round(getQuotaLimit() / (1024 * 1024)) * 2;
+                __callback(quotaInMib < quotaLimitInMib);
+            }, function (e) {
+                reject(new Error("detectIncognito somehow failed to query storage quota: " +
+                    e.message));
+            });
+        }
+        // 50 to 75
+        function oldChromePrivateTest() {
+            var fs = window.webkitRequestFileSystem;
+            var success = function () {
+                __callback(false);
+            };
+            var error = function () {
+                __callback(true);
+            };
+            fs(0, 1, success, error);
+        }
+        function chromePrivateTest() {
+            if (self.Promise !== undefined && self.Promise.allSettled !== undefined) {
+                storageQuotaChromePrivateTest();
+            }
+            else {
+                oldChromePrivateTest();
+            }
+        }
+        /**
+         * Firefox
+         **/
+        function firefoxPrivateTest() {
+            __callback(navigator.serviceWorker === undefined);
+        }
+        /**
+         * MSIE
+         **/
+        function msiePrivateTest() {
+            __callback(window.indexedDB === undefined);
+        }
+        function main() {
+            if (isSafari()) {
+                browserName = 'Safari';
+                safariPrivateTest();
+            }
+            else if (isChrome()) {
+                browserName = identifyChromium();
+                chromePrivateTest();
+            }
+            else if (isFirefox()) {
+                browserName = "Firefox";
+                firefoxPrivateTest();
+            }
+            else if (isMSIE()) {
+                browserName = "Internet Explorer";
+                msiePrivateTest();
+            }
+            else {
+                reject(new Error("detectIncognito cannot determine the browser"));
+            }
+        }
+        main();
+    });
+};
+
+let metrics = new Metrics();
 
 var Stats = function () {
 
@@ -39838,6 +40240,7 @@ class Main {
             ii.addInteractable(
                 scene.touchInteractable);
             if(onStart) onStart();
+            metrics.post();
         });
         Ar.setTool(InteractionTools.EDIT);
         transformControlsHandler.init(this._renderer.domElement, this._camera,
@@ -39917,7 +40320,11 @@ class Main {
                 this._loadingMessage.classList.add("ending");
                 setTimeout(() => {
                     this._loadingMessage.classList.remove("loading");
-                    if(!global$1.disableImmersion) sessionHandler.displayButton();
+                    if(global$1.disableImmersion) {
+                        metrics.post();
+                    } else {
+                        sessionHandler.displayButton();
+                    }
                 }, 1000);
             }, 50);
             if(global$1.disableImmersion) {
@@ -40335,7 +40742,7 @@ var EditorHelpers = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.3.3";
+const version = "0.3.4";
 
 global$1.version = version;
 
