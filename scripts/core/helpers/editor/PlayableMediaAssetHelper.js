@@ -35,7 +35,7 @@ export default class PlayableMediaAssetHelper extends AssetEntityHelper {
 
     static fields = [
         "visualEdit",
-        { "parameter": "previewMedia", "name": "Preview Audio",
+        { "parameter": "previewMedia", "name": "Preview Media",
             "suppressMenuFocusEvent": true, "type": CheckboxField },
         { "parameter": "autoplay", "name": "Auto Play",
             "suppressMenuFocusEvent": true, "type": CheckboxField },

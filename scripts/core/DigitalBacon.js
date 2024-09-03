@@ -20,7 +20,7 @@ import * as utils from '/scripts/core/helpers/utils.module.js';
 import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
 import * as DigitalBaconUI from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
-const version = "0.3.3";
+const version = "0.3.4";
 
 global.version = version;
 
