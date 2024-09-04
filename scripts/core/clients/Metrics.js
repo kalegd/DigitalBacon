@@ -34,9 +34,9 @@ class Metrics {
             if(body.data && body.data.timestamp) {
                 this._timestamp = body.data.timestamp;
                 if(!immersionDisabled) {
-                    window.onbeforeunload = () => {
+                    window.addEventListener('beforeunload', () => {
                         this.put({ pageClosed: true });
-                    };
+                    });
                 }
             }
         }).catch((error) => {
