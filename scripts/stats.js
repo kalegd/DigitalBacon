@@ -22,9 +22,9 @@ class Stats {
         }).then((body) => {
             if(body.data && body.data.timestamp) {
                 this._timestamp = body.data.timestamp;
-                window.onbeforeunload = () => {
+                window.addEventListener('beforeunload', () => {
                     this.put({ pageClosed: true });
-                };
+                });
             }
             if(userType != 'RETURN') localStorage.setItem(this._key, true);
         }).catch((error) => {
