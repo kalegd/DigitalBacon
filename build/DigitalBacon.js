@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Vector3, Vector2, Plane, Line3, Box3, Matrix4, Ray, Mesh, Vector4, Quaternion, Color, MeshBasicMaterial, DoubleSide, Triangle, Sphere, IntType, DataTexture, RGBAFormat, FloatType, NearestFilter, RGIntegerFormat, UnsignedIntType, BufferAttribute, Loader, LoaderUtils, FileLoader, LinearSRGBColorSpace, SpotLight as SpotLight$1, PointLight as PointLight$1, DirectionalLight as DirectionalLight$1, SRGBColorSpace, MeshPhysicalMaterial, InstancedMesh, InstancedBufferAttribute, Object3D, TextureLoader, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, Texture as Texture$1, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, PropertyBinding, BufferGeometry, FrontSide, SkinnedMesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, QuaternionKeyframeTrack, ColorManagement, SphereGeometry, Matrix3, TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Interpolant, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, NumberKeyframeTrack, VectorKeyframeTrack, InstancedBufferGeometry, BackSide, PlaneGeometry, Float32BufferAttribute, UnsignedByteType, UnsignedShortType, ByteType, ShortType, RGFormat, RedFormat, RGBAIntegerFormat, RedIntegerFormat, UniformsUtils, MeshDepthMaterial, RGBADepthPacking, MeshDistanceMaterial, ShaderChunk, CubeTexture as CubeTexture$1, BoxGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, Raycaster, Euler, CylinderGeometry, OctahedronGeometry, TorusGeometry } from 'three';
+import { Vector3, Vector2, Plane, Line3, Box3, Matrix4, Ray, Mesh, Vector4, Quaternion, Color, MeshBasicMaterial, DoubleSide, Triangle, Sphere, IntType, DataTexture, RGBAFormat, FloatType, NearestFilter, RGIntegerFormat, UnsignedIntType, BufferAttribute, Loader, LoaderUtils, FileLoader, LinearSRGBColorSpace, SpotLight as SpotLight$1, PointLight as PointLight$1, DirectionalLight as DirectionalLight$1, SRGBColorSpace, MeshPhysicalMaterial, InstancedMesh, InstancedBufferAttribute, Object3D, TextureLoader, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, Texture as Texture$1, PointsMaterial, Material as Material$1, LineBasicMaterial, MeshStandardMaterial, PropertyBinding, BufferGeometry, FrontSide, SkinnedMesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, Skeleton, AnimationClip, Bone, InterpolateLinear, QuaternionKeyframeTrack, ColorManagement, SphereGeometry, Matrix3, TrianglesDrawMode, TriangleFanDrawMode, TriangleStripDrawMode, Interpolant, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, NumberKeyframeTrack, VectorKeyframeTrack, InstancedBufferGeometry, BackSide, PlaneGeometry, Float32BufferAttribute, UnsignedByteType, UnsignedShortType, ByteType, ShortType, RGFormat, RedFormat, RGBAIntegerFormat, RedIntegerFormat, UniformsUtils, MeshDepthMaterial, RGBADepthPacking, MeshDistanceMaterial, ShaderChunk, CubeTexture as CubeTexture$1, BoxGeometry, EventDispatcher, MOUSE, TOUCH, Spherical, Euler, Raycaster, CylinderGeometry, OctahedronGeometry, TorusGeometry } from 'three';
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -12361,6 +12361,76 @@ libraryHandler.loadBuiltIn(TextOverlay);
  */
 
 
+class Component extends Asset {
+    constructor(params = {}) {
+        super(params);
+    }
+
+    supports(_asset) {
+        return true;
+    }
+
+    static assetType = AssetTypes.COMPONENT;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class PublishComponent extends Component {
+    constructor(params = {}) {
+        params['assetId'] = PublishComponent.assetId;
+        super(params);
+        this._topic = params['topic'] || '';
+        this._pointerEvent = params['pointerEvent'] || 'click';
+        this._gripEvent = params['gripEvent'] || 'none';
+        this._touchEvent = params['touchEvent'] || 'none';
+    }
+
+    _getDefaultName() {
+        return PublishComponent.assetName;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['topic'] = this._topic;
+        params['pointerEvent'] = this._pointerEvent;
+        params['gripEvent'] = this._gripEvent;
+        params['touchEvent'] = this._touchEvent;
+        return params;
+    }
+
+    get topic() { return this._topic; }
+    get pointerEvent() { return this._pointerEvent; }
+    get gripEvent() { return this._gripEvent; }
+    get touchEvent() { return this._touchEvent; }
+
+    set topic(topic) { this._topic = topic; }
+    set pointerEvent(pointerEvent) { this._pointerEvent = pointerEvent; }
+    set gripEvent(gripEvent) { this._gripEvent = gripEvent; }
+    set touchEvent(touchEvent) { this._touchEvent = touchEvent; }
+
+    supports(asset) {
+        return asset instanceof AssetEntity;
+    }
+
+    static assetId = '2a310a93-3f00-465a-862f-2bf8de118984';
+    static assetName = 'Publish Component';
+}
+
+projectHandler.registerAsset(PublishComponent);
+libraryHandler.loadBuiltIn(PublishComponent);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
 class Light extends AssetEntity {
     constructor(params = {}) {
         super(params);
@@ -14192,6 +14262,1796 @@ class ToonMaterial extends Material {
 
 projectHandler.registerAsset(ToonMaterial);
 libraryHandler.loadBuiltIn(ToonMaterial);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+let ATTACHED_COMPONENTS = {};
+
+pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_ATTACHED, (message) =>{
+    if(!(message.componentAssetId in ATTACHED_COMPONENTS))
+        ATTACHED_COMPONENTS[message.componentAssetId] = {};
+    ATTACHED_COMPONENTS[message.componentAssetId][message.id] = message;
+});
+
+pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_DETACHED, (message) =>{
+    if(!(message.componentAssetId in ATTACHED_COMPONENTS)) return;
+    delete ATTACHED_COMPONENTS[message.componentAssetId][message.id];
+});
+
+pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.PROJECT_LOADING, (done) => {
+    if(!done) ATTACHED_COMPONENTS = {};
+});
+
+class System extends Asset {
+    constructor(params = {}) {
+        super(params);
+        this._subscriptionTopics = [];
+    }
+
+    _getDefaultName() {
+        return 'System';
+    }
+
+    _addSystemSubscriptions() {
+        pubSub.subscribe(this._id, PubSubTopics.USER_READY, () => {
+            this._onUserReady();
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
+            this._onPeerReady(message.peer);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PEER_DISCONNECTED, (message) =>{
+            this._onPeerDisconnected(message.peer);
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
+            this._onPartyStarted(partyHandler.isHost());
+        });
+        pubSub.subscribe(this._id, PubSubTopics.PARTY_ENDED, () => {
+            this._onPartyEnded();
+        });
+        this._subscriptionTopics.push(PubSubTopics.USER_READY);
+        this._subscriptionTopics.push(PubSubTopics.PEER_READY);
+        this._subscriptionTopics.push(PubSubTopics.PARTY_STARTED);
+        this._subscriptionTopics.push(PubSubTopics.PARTY_ENDED);
+    }
+
+    _removeSystemSubscriptions() {
+        for(let subscription of this._subscriptionTopics) {
+            pubSub.unsubscribe(this._id, subscription);
+        }
+        this._subscriptionTopics = [];
+    }
+
+    _listenForComponentAdded(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_ADDED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+    }
+
+    _listenForComponentAttached(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+        if(componentAssetId in ATTACHED_COMPONENTS) {
+            for(let id in ATTACHED_COMPONENTS[componentAssetId]) {
+                handler(ATTACHED_COMPONENTS[componentAssetId][id]);
+            }
+        }
+    }
+
+    _listenForComponentDeleted(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_DELETED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+    }
+
+    _listenForComponentDetached(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+    }
+
+    _listenForComponentUpdated(componentAssetId, handler) {
+        if(!componentAssetId || !handler) return;
+        let topic = PubSubTopics.COMPONENT_UPDATED + ':' + componentAssetId;
+        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
+        this._subscriptionTopics.push(topic);
+    }
+
+    _onUserReady() {}
+    _onPeerReady() {}
+    _onPeerDisconnected() {}
+    _onPeerMessage(_p, _m) {}
+    _onPeerBufferMessage(_p, _m) {}
+    _onPartyStarted() {}
+    _onPartyEnded() {}
+
+    _publishPeerMessage(message, skipQueue) {
+        partyHandler.publishInternalMessage(this._id, message, skipQueue);
+    }
+
+    _publishPeerBufferMessage(message, skipQueue) {
+        partyHandler.publishInternalBufferMessage(this._idBytes, message,
+            skipQueue);
+    }
+
+    get description() {
+        console.error("get System.description should be overridden");
+        return '';
+    }
+
+    needsUpdates() {
+        return false;
+    }
+
+    onAddToProject() {
+        this._addSystemSubscriptions();
+        partyHandler.addInternalMessageHandler(this._id,
+            (p, m) => this._onPeerMessage(p, m));
+        partyHandler.addInternalBufferMessageHandler(this._id,
+            (p, m) => this._onPeerBufferMessage(p, m));
+    }
+
+    onRemoveFromProject() {
+        this._removeSystemSubscriptions();
+    }
+
+    static assetType = AssetTypes.SYSTEM;
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+  
+class Avatar extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = Avatar.assetId;
+        super(params);
+        if(params == null) {
+            params = {};
+        }
+        this._avatarParent = new THREE.Object3D();
+        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
+        this._verticalOffset = params['verticalOffset'] || 0;
+        this._object.position.setY(this._verticalOffset);
+        this._object.add(this._avatarParent);
+
+        this._createMesh(this._avatarUrl);
+        let parentAsset = projectHandler.getSessionAsset(this._parentId);
+        if(parentAsset && parentAsset.registerAvatar) {
+            parentAsset.registerAvatar(this);
+        }
+    }
+
+    _createMesh(filename) {
+        if(/\.glb/.test(filename)) {
+            let gltfLoader = new GLTFLoader();
+            gltfLoader.load(filename, (gltf) => {
+                gltf.scene.rotateY(Math.PI);
+                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
+                    let hands = new Set();
+                    gltf.scene.traverse((child) => {
+                        if(child.name.toLowerCase().includes("hand")) {
+                            hands.add(child);
+                        }
+                    });
+                    hands.forEach((hand) => { hand.parent.remove(hand); });
+                    gltf.scene.position.setY(-0.65);
+                }
+                this._avatarParent.add(gltf.scene);
+                this._saveOriginalTransparencyStates();
+                this._dimensions = 3;
+            }, () => {}, (error) => {
+                console.log(error);
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
+            new THREE.TextureLoader().load(filename, (texture) => {
+                let width = texture.image.width;
+                let height = texture.image.height;
+                if(width > height) {
+                    let factor = 0.3 / width;
+                    width = 0.3;
+                    height *= factor;
+                } else {
+                    let factor = 0.3 / height;
+                    height = 0.3;
+                    width *= factor;
+                }
+                let material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                });
+                let geometry = new THREE.PlaneGeometry(width, height);
+                geometry.rotateY(Math.PI);
+                let mesh = new THREE.Mesh(geometry, material);
+                this._avatarParent.add(mesh);
+                this._saveOriginalTransparencyStates();
+                //let sprite = new THREE.Sprite(material);
+                //this._avatarParent.add(sprite);
+                this._dimensions = 2;
+            }, () => {}, () => {
+                if(filename != DEFAULT_URL) {
+                    this._createMesh(DEFAULT_URL);
+                } else {
+                    console.error("Can't display default avatar :(");
+                }
+            });
+        } else {
+            if(filename != DEFAULT_URL) {
+                this._createMesh(DEFAULT_URL);
+            } else {
+                console.error("Default avatar URL is invalid :(");
+            }
+        }
+    }
+
+    _saveOriginalTransparencyStates() {
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        material.userData['transparent'] = material.transparent;
+                        material.userData['opacity'] = material.opacity;
+                    }
+                } else {
+                    let material = node.material;
+                    material.userData['transparent'] = material.transparent;
+                    material.userData['opacity'] = material.opacity;
+                }
+            }
+        });
+    }
+
+    fade(percent) {
+        this._isFading = true;
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                node.renderOrder = Infinity;
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let material = node.material[i];
+                        if(!material.transparent) {
+                            material.transparent = true;
+                            material.needsUpdate = true;
+                        }
+                        material.opacity = material.userData['opacity']*percent;
+                    }
+                } else {
+                    let material = node.material;
+                    if(!material.transparent) {
+                        material.transparent = true;
+                        material.needsUpdate = true;
+                    }
+                    material.opacity = material.userData['opacity'] * percent;
+                }
+            }
+        });
+    }
+
+    endFade() {
+        if(!this._isFading) return;
+        this._isFading = false;
+        this._avatarParent.traverse(function(node) {
+            if(node instanceof THREE.Mesh && node.material) {
+                if(Array.isArray(node.material)) {
+                    for(let i = 0; i < node.material.length; i++) {
+                        let mtrl = node.material[i];
+                        if(mtrl.transparent != mtrl.userData['transparent']) {
+                            mtrl.transparent = mtrl.userData['transparent'];
+                            mtrl.needsUpdate = true;
+                        }
+                        mtrl.opacity = mtrl.userData['opacity'];
+                    }
+                } else {
+                    let mtrl = node.material;
+                    if(mtrl.transparent != mtrl.userData['transparent']) {
+                        mtrl.transparent = mtrl.userData['transparent'];
+                        mtrl.needsUpdate = true;
+                    }
+                    mtrl.opacity = mtrl.userData['opacity'];
+                }
+            }
+        });
+    }
+
+    lookAtLocal(point) {
+        if(this._object.parent) {
+            vector3s[0].copy(point);
+            this._object.parent.localToWorld(vector3s[0]);
+            this._object.lookAt(vector3s[0]);
+        }
+    }
+
+    updateSourceUrl(url) {
+        while(this._avatarParent.children[0]) {
+            let child = this._avatarParent.children[0];
+            this._avatarParent.remove(child);
+            fullDispose(child, true);
+        }
+        this._avatarUrl = url;
+        this._createMesh(url);
+    }
+
+    get avatarUrl() { return this._avatarUrl; }
+    get verticalOffset() { return this._verticalOffset; }
+
+    set avatarUrl(avatarUrl) { this.updateSourceUrl(avatarUrl); }
+    set verticalOffset(verticalOffset) {
+        this._verticalOffset = verticalOffset;
+        this._object.position.setY(verticalOffset);
+    }
+
+    displayAvatar() {
+        this._object.add(this._avatarParent);
+    }
+
+    hideAvatar() {
+        this._object.remove(this._avatarParent);
+    }
+
+    isDisplayingAvatar() {
+        return this._avatarParent.parent == this._object;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['avatarUrl'] = this._avatarUrl;
+        params['verticalOffset'] = this._verticalOffset;
+        return params;
+    }
+
+    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
+    static assetName = 'Avatar';
+}
+
+projectHandler.registerAsset(Avatar);
+libraryHandler.loadBuiltIn(Avatar);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class BasicMovement {
+    constructor(params) {
+        if(params == null) {
+            params = {};
+        }
+        this._avatar = params['Avatar'];
+        this._userObj = params['User Object'];
+        this._velocity = new THREE.Vector3();
+        this._verticalVelocity = 0;
+        this._worldVelocity = new THREE.Vector3();
+        this._snapRotationTriggered = false;
+        this._disabled = false;
+    }
+
+    _setupMobileFlyingButtons() {
+        this._mobileUp = false;
+        this._mobileDown = false;
+        let upButton = ei.addExtraControlsButton(
+            'mobile-flying-up-button', 'UP');
+        let downButton = ei.addExtraControlsButton(
+            'mobile-flying-down-button', 'DOWN');
+        upButton.addEventListener('touchstart',
+            () => { this._mobileUp = true; });
+        upButton.addEventListener('touchend',
+            () => { this._mobileUp = false; });
+        downButton.addEventListener('touchstart',
+            () => { this._mobileDown = true; });
+        downButton.addEventListener('touchend',
+            () => { this._mobileDown = false; });
+    }
+
+    _moveForward(velocity, timeDelta) {
+        // move forward parallel to the xz-plane
+        // assumes camera.up is y-up
+        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
+        // not using addScaledVector because we use vector3s[0] later
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s[0]);
+    }
+
+    _moveRight(velocity, timeDelta) {
+        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
+        vector3s[0].y = 0;
+        vector3s[0].multiplyScalar(velocity);
+        this._worldVelocity.add(vector3s[0]);
+        vector3s[0].multiplyScalar(timeDelta);
+        this._userObj.position.add(vector3s[0]);
+    }
+
+    _moveUp(velocity, timeDelta) {
+        velocity = this._userObj.scale.y * velocity;
+        this._worldVelocity.setY(velocity);
+        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
+        this._userObj.position.add(vector3s[0]);
+    }
+
+    _snapLeft() {
+        this._userObj.rotateY(Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
+    }
+
+    _snapRight() {
+        this._userObj.rotateY(-Math.PI/8);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: global$1.userController, fields: ['rotation'] });
+    }
+
+    disable() {
+        this._disabled = true;
+    }
+
+    enable() {
+        this._enabled = true;
+    }
+
+    getWorldVelocity() {
+        return this._worldVelocity;
+    }
+
+    setPerspective(perspective) {
+        this._perspective = perspective;
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updatePositionVR(timeDelta);
+            this.update = this._updatePositionVR;
+        } else if(global$1.deviceType == "POINTER") {
+            this._updatePosition(timeDelta);
+            this.update = this._updatePosition;
+        } else if(global$1.deviceType == "TOUCH_SCREEN") {
+            this._setupMobileFlyingButtons();
+            this._updatePositionMobile(timeDelta);
+            this.update = this._updatePositionMobile;
+        }
+    }
+
+    _updatePosition(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        // Decrease the velocity.
+        let slowdownFactor = (1 - timeDelta) * 0.88;
+        this._velocity.x *= slowdownFactor;
+        if(flightEnabled)
+            this._verticalVelocity *= slowdownFactor;
+        this._velocity.z *= slowdownFactor;
+
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            if (ei.isKeyCodePressed("ArrowUp")
+                    || ei.isKeyCodePressed("KeyW"))
+                this._velocity.z += movementSpeed / 4;
+            if (ei.isKeyCodePressed("ArrowDown")
+                    || ei.isKeyCodePressed("KeyS"))
+                this._velocity.z -= movementSpeed / 4;
+            if (ei.isKeyCodePressed("ArrowLeft")
+                    || ei.isKeyCodePressed("KeyA"))
+                this._velocity.x -= movementSpeed / 4;
+            if (ei.isKeyCodePressed("ArrowRight")
+                    || ei.isKeyCodePressed("KeyD"))
+                this._velocity.x += movementSpeed / 4;
+            if (flightEnabled && ei.isKeyCodePressed("Space")
+                    != ei.isKeyPressed("Shift")
+                    && !ei.isKeyPressed("Meta")) {
+                this._verticalVelocity =
+                    (ei.isKeyCodePressed("Space"))
+                        ? movementSpeed
+                        : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s[1].copy(vector3s[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s[1].add(vector3s[0]);
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * settingsHandler.getUserScale()) {
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.object.position);
+                this._avatar.lookAtLocal(vector3s[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionMobile(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || timeDelta > 1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        this._velocity.x = 0;
+        if(flightEnabled)
+            this._verticalVelocity *= (1 - timeDelta) * 0.88;
+        this._velocity.z = 0;
+        if(global$1.sessionActive && !global$1.keyboardLock) {
+            let joystickAngle = ei.getJoystickAngle();
+            let joystickDistance = ei.getJoystickDistance();
+            let movingDistance = movementSpeed * joystickDistance;
+            this._velocity.x = movingDistance * Math.cos(joystickAngle);
+            this._velocity.z = movingDistance * Math.sin(joystickAngle);
+            if(flightEnabled && this._mobileUp != this._mobileDown) {
+                this._verticalVelocity = (this._mobileUp)
+                    ? movementSpeed
+                    : -movementSpeed;
+            }
+        }
+
+        if(this._velocity.length() > movementSpeed) {
+            this._velocity.normalize().multiplyScalar(movementSpeed);
+        }
+        if(this._avatar) {
+            this._moveRight(this._velocity.x, timeDelta);
+            vector3s[1].copy(vector3s[0]);
+            this._moveForward(this._velocity.z, timeDelta);
+            vector3s[1].add(vector3s[0]);
+            if(this._perspective != 1 && vector3s[1].length() > 0.001
+                    * settingsHandler.getUserScale()) {
+                vector3s[1].multiplyScalar(-2).add(
+                    this._avatar.object.position);
+                this._avatar.lookAtLocal(vector3s[1]);
+            }
+            if(flightEnabled) {
+                this._moveUp(this._verticalVelocity, timeDelta);
+            }
+        } else {
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+
+    _updatePositionVR(timeDelta) {
+        this._worldVelocity.set(0, 0, 0);
+        if(this._disabled || global$1.xrSessionType=='AR' || timeDelta >1) return;
+        let movementSpeed = settingsHandler.getMovementSpeed();
+        let flightEnabled = settingsHandler.isFlyingEnabled();
+        let leftHandController = global$1.userController.getHand(Rr.LEFT);
+        let handMenu = leftHandController?._handMenu;
+        let movementGamepad;
+        let rotationGamepad;
+        if(settingsHandler.areJoysticksSwapped()) {
+            movementGamepad = ei.getXRGamepad(Rr.RIGHT);
+            rotationGamepad = ei.getXRGamepad(Rr.LEFT);
+        } else {
+            movementGamepad = ei.getXRGamepad(Rr.LEFT);
+            rotationGamepad = ei.getXRGamepad(Rr.RIGHT);
+        }
+        this._velocity.x = 0;
+        this._velocity.y = 0;
+        this._velocity.z = 0;
+        if(movementGamepad) {
+            let axes = movementGamepad.axes;
+            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
+            this._velocity.x = movementSpeed * axes[2];//Left/Right
+
+            this._moveRight(this._velocity.x, timeDelta);
+            this._moveForward(this._velocity.z, timeDelta);
+        } else if(handMenu?.walkingTool?.owner) {
+            let walkingDirection = handMenu.calculateWalkingDirection();
+            this._worldVelocity.x = walkingDirection.x * movementSpeed;
+            this._worldVelocity.z = walkingDirection.z * movementSpeed;
+            this._userObj.position.x += this._worldVelocity.x * timeDelta;
+            this._userObj.position.z += this._worldVelocity.z * timeDelta;
+        }
+        if(rotationGamepad) {
+            let verticalForce = rotationGamepad.axes[3];
+            let rotationForce = rotationGamepad.axes[2];
+            if(Math.abs(rotationForce) > 0.7) {
+                if(!this._snapRotationTriggered) {
+                    this._snapRotationTriggered = true; 
+                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
+                }
+            } else {
+                this._snapRotationTriggered = false;
+            }
+            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
+                this._velocity.y = -1 * movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+        } else if(handMenu?.open) {
+            let verticalForce = handMenu.flyingUp - handMenu.flyingDown;
+            if(flightEnabled && verticalForce) {
+                this._velocity.y = movementSpeed * verticalForce;
+                this._moveUp(this._velocity.y, timeDelta);
+            }
+            if(!this._snapRotationTriggered) {
+                if(handMenu.snapLeft) {
+                    this._snapRotationTriggered = true;
+                    this._snapLeft();
+                } else if(handMenu.snapRight) {
+                    this._snapRotationTriggered = true;
+                    this._snapRight();
+                }
+            } else if(!handMenu.snapLeft && !handMenu.snapRight) {
+                this._snapRotationTriggered = false;
+            }
+        } else {
+            this._snapRotationTriggered = false;
+        }
+        this._userObj.updateMatrixWorld(true);
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const TTL = 5;
+
+class XRDevice extends InternalAssetEntity {
+    constructor(params = {}) {
+        if(!params['assetId']) params['assetId'] = XRDevice.assetId;
+        super(params);
+        this._ttl = TTL;
+        this._modelUrl = params['modelUrl'];
+        if(this._modelUrl) {
+            this._loadModelFromUrl();
+        }
+        this._vector3 = new Vector3();
+        this._euler = new Euler();
+        this._quaternion = new Quaternion();
+        this._registerOwner(params);
+    }
+
+    _loadModelFromUrl() {
+        let gltfLoader = new GLTFLoader();
+        gltfLoader.load(this._modelUrl, (gltf) => {
+            this._modelObject = gltf.scene;
+            this._object.add(gltf.scene);
+        });
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['parentId']);
+        if(owner.registerXRDevice) {
+            owner.registerXRDevice(this);
+        }
+    }
+
+    _enableARMask() {
+        this._isAR = global$1.xrSessionType == 'AR';
+        if(this._isAR) this._setARMask();
+        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
+            let isAR = global$1.xrSessionType == 'AR';
+            if(this._isAR == isAR) return;
+            this._isAR = isAR;
+            if(isAR) {
+                this._setARMask();
+            } else {
+                this._removeARMask();
+            }
+        });
+    }
+
+    _setARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = -Infinity;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = false;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = false;
+                    }
+                }
+            }
+        });
+    }
+
+    _removeARMask() {
+        this._object.traverse((node) => {
+            if (node instanceof Mesh) {
+                node.renderOrder = 0;
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach((mtrl) => {
+                            mtrl.colorWrite = true;
+                        });
+                    }
+                    else {
+                        node.material.colorWrite = true;
+                    }
+                }
+            }
+        });
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['modelUrl'] = this._modelUrl;
+        return params;
+    }
+
+    isInScene() {
+        return this._object.parent != null;
+    }
+
+    get modelUrl() { return this._modelUrl; }
+
+    getModelObject() {
+        return this._modelObject;
+    }
+
+    getWorldPosition() {
+        this._object.getWorldPosition(this._vector3);
+        return this._vector3;
+    }
+
+    getWorldRotation() {
+        this._object.getWorldQuaternion(this._quaternion);
+        this._quaternion.normalize();
+        this._euler.setFromQuaternion(this._quaternion);
+        return this._euler;
+    }
+
+    getWorldQuaternion() {
+        this._object.getWorldQuaternion(this._quaternion);
+        return this._quaternion;
+    }
+
+    set modelUrl(modelUrl) { this._modelUrl = modelUrl; }
+
+    decrementTTL(timeDelta) {
+        this._ttl -= timeDelta;
+        if(this._ttl < 0) {
+            projectHandler.deleteAsset(this);
+        }
+    }
+
+    resetTTL() {
+        this._ttl = TTL;
+    }
+
+    pushDataForRTC(data) {
+        let position = this._object.position.toArray();
+        let rotation = this._object.rotation.toArray();
+        rotation.pop();
+        data.push(...position);
+        data.push(...rotation);
+    }
+
+    processFromRTC(float32Array, index) {
+        this._object.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        this._object.rotation.fromArray(rotation);
+    }
+
+    onAddToProject() {
+        this._live = true;
+    }
+
+    onRemoveFromProject() {
+        super.onRemoveFromProject();
+        this._live = false;
+    }
+
+    static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';
+    static assetName = 'XR Device';
+}
+
+projectHandler.registerAsset(XRDevice);
+libraryHandler.loadBuiltIn(XRDevice);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+class XRController extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRController.assetId;
+        super(params);
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = controllerModel.motionController.assetUrl;
+        }
+        this._handedness = params['handedness'];
+        if(!(this._handedness in Rr)) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['parentId']);
+        if(owner.registerXRController) {
+            owner.registerXRController(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let controller = ei.getXRController(
+            Mr.CONTROLLER, this._handedness, 'targetRay');
+        let assetObject = asset.object;
+        if(!controller) return;
+        controller.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    get handedness() { return this._handedness; }
+
+    getTargetRayDirection() {
+        let xrController = ei.getXRController(
+            Mr.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrController = ei.getXRController(
+            Mr.CONTROLLER, this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldPosition(this._raycasterOrigin);
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    isButtonPressed(index) {
+        let gamepad = ei.getXRGamepad(this._handedness);
+        return gamepad != null && gamepad.buttons[index].pressed;
+    }
+
+    static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
+    static assetName = 'XR Controller';
+}
+
+projectHandler.registerAsset(XRController);
+libraryHandler.loadBuiltIn(XRController);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const BODY_STYLE$1 = new Style({
+    borderRadius: 0.01,
+    borderWidth: 0.001,
+    height: 0.13,
+    justifyContent: 'spaceAround',
+    materialColor: Colors.defaultMenuBackground,
+    opacity: 0.7,
+    width: 0.1,
+});
+const BUTTON_STYLE = new Style({
+    borderRadius: 0.005,
+    borderWidth: 0.0005,
+    height: 0.018,
+    opacity: 0,
+    width: 0.085,
+});
+const TEXT_STYLE = new Style({ color: Colors.white, fontSize: 0.01 });
+
+//Creating arrow texture
+let resolution = 256;
+let unit = resolution / 16;
+let canvas = document.createElement('canvas');
+canvas.width = resolution;
+canvas.height = resolution;
+let ctx = canvas.getContext('2d');
+ctx.fillStyle = '#ffffff';
+ctx.fillRect(0, 0, resolution, resolution);
+ctx.fillStyle = '#19b932';
+function drawArrow(ctx) {
+    ctx.fillRect(resolution / 2 - 0.75 * unit, resolution / 2 - 3.5 * unit,
+        1.5 * unit, 1.5 * unit);
+    ctx.beginPath();
+    ctx.moveTo(unit * 8, unit * 2.75);
+    ctx.lineTo(unit * 9.75, unit * 4.75);
+    ctx.lineTo(unit * 6.25, unit * 4.75);
+    ctx.fill();
+}
+
+for(let i = 0; i < 4; i++) {
+    ctx.translate(resolution / 2, resolution / 2);
+    ctx.rotate(i * Math.PI / 2);
+    ctx.translate(resolution / -2, resolution / -2);
+    drawArrow(ctx);
+}
+ctx.fillRect(0, 0, resolution, 8);
+ctx.fillRect(0, resolution - 8, resolution, 8);
+
+class HandMenu extends Body {
+    constructor() {
+        super(BODY_STYLE$1);
+        this._open = false;
+        this._createWalkingTool();
+        this._addButtons();
+        this._walkingDirection = new THREE.Vector3();
+        this.onClick = () => {};
+    }
+
+    _addButtons() {
+        this.flyingUp = false;
+        this.flyingDown = false;
+        this.snapLeft = false;
+        this.snapRight = false;
+
+        this._createMenuButton();
+        this._createWalkingToolButton();
+        this._createFlyingButtons();
+        this._createSnapRotationButtons();
+    }
+
+    _createMenuButton() {
+        let button = createWideButton('Menu');
+        button.addStyle(BUTTON_STYLE);
+        button.textComponent.addStyle(TEXT_STYLE);
+        button.onClick = () => global$1.menuController._openMenu();
+        button.onTouch = (message) => {
+            if(message.owner.object == this.parent) return;
+            global$1.menuController._openMenu();
+        };
+        this.add(button);
+    }
+
+    _createWalkingToolButton() {
+        let button = createWideButton('Walking Tool');
+        button.addStyle(BUTTON_STYLE);
+        button.textComponent.addStyle(TEXT_STYLE);
+        button.onClick = () => {
+            this.walkingTool.position.set(0, 0, 0.05);
+            this.localToWorld(this.walkingTool.position);
+            this.walkingTool.rotation.set(0, 0, 0);
+            scene.object.add(this.walkingTool);
+            scene.gripInteractable.addChild(this.walkingTool.gripInteractable);
+        };
+        button.onTouch = (message) => {
+            if(message.owner.object == this.parent) return;
+            this.walkingTool.position.set(0, 0, 0.05);
+            this.localToWorld(this.walkingTool.position);
+            this.walkingTool.rotation.set(0, 0, 0);
+            scene.object.add(this.walkingTool);
+            scene.gripInteractable.addChild(this.walkingTool.gripInteractable);
+        };
+        this.add(button);
+    }
+
+    _createFlyingButtons() {
+        let span = new Span({
+            height: 0.018,
+            justifyContent: 'spaceBetween',
+            width: 0.085,
+        });
+        let flyingButtons = [];
+        for(let direction of ['down', 'up']) {
+            let button = createWideButton(direction == 'down' ? '<' : '>');
+            let param = 'flying' + direction.substring(0, 1).toUpperCase()
+                + direction.substring(1);
+            button.addStyle(BUTTON_STYLE);
+            button.addStyle(new Style({ width: 0.018 }));
+            button.rotation.z = Math.PI / 2;
+            button.textComponent.addStyle(TEXT_STYLE);
+            button.pointerInteractable.addEventListener('down', (message) => {
+                this[param] = true;
+                button.pointerInteractable.capture(message.owner);
+            });
+            button.pointerInteractable.addEventListener('up', () => {
+                this[param] = false;
+            });
+            button.touchInteractable.addEventListener('down', (message) => {
+                if(message.owner.object == this.parent) return;
+                this[param] = true;
+            });
+            button.touchInteractable.addEventListener('up', (message) => {
+                if(message.owner.object == this.parent) return;
+                this[param] = false;
+            });
+            flyingButtons.push(button);
+        }
+        span.add(flyingButtons[0]);
+        let text = new TextComponent('Fly', TEXT_STYLE);
+        span.add(text);
+        span.add(flyingButtons[1]);
+        this.add(span);
+    }
+
+    _createSnapRotationButtons() {
+        let span = new Span({
+            height: 0.018,
+            justifyContent: 'spaceBetween',
+            width: 0.085,
+        });
+        let snapButtons = [];
+        for(let direction of ['left', 'right']) {
+            let button = createWideButton(direction == 'left' ? '<' : '>');
+            let param = 'snap' + direction.substring(0, 1).toUpperCase()
+                + direction.substring(1);
+            button.addStyle(BUTTON_STYLE);
+            button.addStyle(new Style({ width: 0.018 }));
+            button.textComponent.addStyle(TEXT_STYLE);
+            button.pointerInteractable.addEventListener('down', (message) => {
+                this[param] = true;
+                button.pointerInteractable.capture(message.owner);
+            });
+            button.pointerInteractable.addEventListener('up', () => {
+                this[param] = false;
+            });
+            button.touchInteractable.addEventListener('down', (message) => {
+                if(message.owner.object == this.parent) return;
+                this[param] = true;
+            });
+            button.touchInteractable.addEventListener('up', (message) => {
+                if(message.owner.object == this.parent) return;
+                this[param] = false;
+            });
+            snapButtons.push(button);
+        }
+        span.add(snapButtons[0]);
+        let text = new TextComponent('Rotate', TEXT_STYLE);
+        span.add(text);
+        span.add(snapButtons[1]);
+        this.add(span);
+    }
+
+    _createWalkingTool() {
+        let texture = new THREE.CanvasTexture(canvas);
+        texture.repeat.set(4, 2);
+        texture.offset.set(0.5, -0.5);
+        texture.wrapS = THREE.RepeatWrapping;
+        let geometry = new THREE.SphereGeometry(0.05);
+        let material = new THREE.MeshLambertMaterial({
+            map: texture,
+            side: THREE.DoubleSide,
+            transparent: true,
+        });
+        this.walkingTool = new THREE.Mesh(geometry, material);
+        this.walkingTool.renderOrder = Infinity;
+        this.walkingToolLabel = new TextComponent('Grab and Point', TEXT_STYLE);
+        this.walkingToolLabel.position.y = 0.07;
+        this.walkingTool.add(this.walkingToolLabel);
+        let gripInteractable = new GripInteractable(this.walkingTool);
+        gripInteractable.addEventListener('down', (message) => {
+            if(this.walkingTool.owner) return;
+            gripInteractable.capture(message.owner);
+            this.walkingTool.owner = message.owner;
+            this.walkingToolLabel.visible = false;
+            message.owner.object.attach(this.walkingTool);
+            material.opacity = 0.5;
+        });
+        gripInteractable.addEventListener('up', (message) => {
+            if(this.walkingTool.owner != message.owner) return;
+            scene.object.attach(this.walkingTool);
+            this.walkingTool.owner = null;
+            this.walkingToolLabel.visible = true;
+            material.opacity = 1;
+        });
+    }
+
+    calculateWalkingDirection() {
+        let bones = this.walkingTool.owner.object?.asset?._modelObject
+            ?.motionController?.bones;
+        if(!bones) return;
+        bones[8].getWorldPosition(vector3s[0]);
+        bones[9].getWorldPosition(this._walkingDirection);
+        this._walkingDirection.sub(vector3s[0]);
+        this._walkingDirection.normalize();
+        return this._walkingDirection;
+    }
+
+    removeWalkingTool() {
+        if(this.walkingTool.parent)
+            this.walkingTool.parent.remove(this.walkingTool);
+        scene.gripInteractable.removeChild(this.walkingTool.gripInteractable);
+    }
+
+    update(timeDelta) {
+        if(!this._opening) return;
+        this._scale += timeDelta * 3;
+        if(this._scale > 1) {
+            this._scale = 1;
+            this._opening = false;
+        }
+        this.scale.setScalar(this._scale);
+    }
+
+    get open() { return this._open; }
+    set open(open) {
+        if(this._open == open) return;
+        if(open) {
+            this._opening = true;
+            this._scale = 0.01;
+            this.scale.setScalar(this._scale);
+        } else {
+            this.flyingUp = false;
+            this.flyingDown = false;
+            this.snapLeft = false;
+            this.snapRight = false;
+        }
+        this._open = open;
+    }
+}
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
+const BONE_ANGLE = 2.6;
+const PALM_ANGLE = 0.7;
+const THUMB_ANGLE = 0.2;
+const BONE_SETS = [
+    [5,6,7],
+    [5,6,9],
+    [10,11,12],
+    [10,11,14],
+    [15,16,17],
+    [15,16,19],
+    [20,21,22],
+    [20,21,24],
+];
+const TARGET_RAY_BASED_QUATERNION = new Quaternion(0.6023779, 0.6023779,
+                                                    0.4015853, 0.336171);
+
+window.trbq = TARGET_RAY_BASED_QUATERNION;
+
+class XRHand extends XRDevice {
+    constructor(params = {}) {
+        params['assetId'] = XRHand.assetId;
+        super(params);
+        this._handedness = params['handedness'];
+        if(!(this._handedness in Rr)) {
+            throw new Error("hand must be LEFT or RIGHT");
+        }
+        this._isTargetRayBased = params['isTargetRayBased'];
+        let controllerModel = params['controllerModel'];
+        if(controllerModel) {
+            this._object.add(controllerModel);
+            this._modelObject = controllerModel;
+            this._modelUrl = DEFAULT_HAND_PROFILE_PATH
+                + this._handedness.toLowerCase() + '.glb';
+            this._isUsers = true;
+            this._enableARMask();
+        }
+        this._palmDirection = new Vector3();
+        this._raycasterOrigin = new Vector3();
+        this._raycasterDirection = new Vector3();
+    }
+
+    _registerOwner(params) {
+        let owner = projectHandler.getSessionAsset(params['parentId']);
+        if(owner.registerXRHand) {
+            owner.registerXRHand(params['handedness'], this);
+        }
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['handedness'] = this._handedness;
+        params['isTargetRayBased'] = this._isTargetRayBased;
+        return params;
+    }
+
+    addFromTargetRay(asset, position, rotation) {
+        let hand = ei.getXRController(Mr.HAND,
+            this._handedness, 'targetRay');
+        let assetObject = asset.object;
+        if(!hand) return;
+        hand.add(assetObject);
+        if(position) assetObject.position.fromArray(position);
+        if(rotation) assetObject.rotation.fromArray(rotation);
+        asset.attachTo(this);
+    }
+
+    get handedness() { return this._handedness; }
+
+    getTargetRayDirection() {
+        let xrController = ei.getXRController(Mr.HAND,
+            this._handedness, 'targetRay');
+        if(!xrController) return null;
+        xrController.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return this._raycasterDirection;
+    }
+
+    getRaycaster() {
+        let xrHand = ei.getXRController(Mr.HAND,
+            this._handedness, 'targetRay');
+        if(!xrHand) return null;
+        xrHand.getWorldPosition(this._raycasterOrigin);
+        xrHand.getWorldDirection(this._raycasterDirection).negate()
+            .normalize();
+        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
+            0.01, 50);
+    }
+
+    getPalmDirection() {
+        if(this._isUsers) {
+            this._palmDirection.copy(this._modelObject.motionController
+                .palmDirection);
+        } else if(this._handedness == Rr.LEFT) {
+            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
+                0.1958660688459766);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        } else {
+            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
+                0.19586401335899684);
+            this._object.localToWorld(this._palmDirection)
+                .sub(this.getWorldPosition());
+        }
+        return this._palmDirection;
+    }
+
+    isButtonPressed(index) {
+        if(index == 0) {
+            return this._modelObject.motionController.isPinching;
+        } else if(index == 1) {
+            return this._modelObject.motionController.isGrabbing;
+        }
+        return false;
+    }
+
+    processFromRTC(float32Array, index) {
+        super.processFromRTC(float32Array, index);
+        if(this._isTargetRayBased)
+            this._object.quaternion.multiply(TARGET_RAY_BASED_QUATERNION);
+    }
+
+    _updateHandData(float32Array, index, asset) {
+        if(!asset) return;
+        let peerHand = asset.object;
+        peerHand.position.fromArray(float32Array, index);
+        let rotation = float32Array.slice(index + 3, index + 6);
+        peerHand.rotation.fromArray(rotation);
+    }
+
+    createHandMenu() {
+        if(this._handMenu) return;
+        this._handMenu = new HandMenu();
+        //The below is to position the menu nicely for the apple vision pro. If
+        //this doesn't work out with any future headsets, we may want to use the
+        //position of one of the bones in the hand
+        if(this._isTargetRayBased) this._handMenu.position.set(0, 0.05, -0.05);
+    }
+
+    updateHandMenu(timeDelta) {
+        if(!this._handMenu) return;
+        let bones = this._modelObject.motionController.bones;
+        let open = true;
+        for(let boneSet of BONE_SETS) {
+            vector3s[0].subVectors(bones[boneSet[0]].position,
+                bones[boneSet[1]].position);
+            vector3s[1].subVectors(bones[boneSet[2]].position,
+                bones[boneSet[1]].position);
+            if(vector3s[0].angleTo(vector3s[1]) < BONE_ANGLE) {
+                open = false;
+                break;
+            }
+        }
+        if(open) {//Check thumb knuckle position and palm direction
+            if(!this._plane1) {
+                this._plane1 = new Plane();
+                this._plane2 = new Plane();
+            }
+            this._plane1.setFromCoplanarPoints(bones[0].position,
+                bones[6].position, bones[11].position);
+            this._plane2.setFromCoplanarPoints(bones[0].position,
+                bones[2].position, bones[6].position);
+            if(this._plane1.normal.angleTo(this._plane2.normal) > THUMB_ANGLE) {
+                open = false;
+            } else {
+                global$1.camera.getWorldPosition(vector3s[0])
+                    .sub(this.getWorldPosition());
+                if(this.getPalmDirection().angleTo(vector3s[0]) > PALM_ANGLE)
+                    open = false;
+            }
+        }
+        if(open != this._handMenu.open) {
+            this._handMenu.open = open;
+            this._object[open ? 'add' : 'remove'](this._handMenu);
+        }
+        if(open) {
+            let palmDirection = this.getPalmDirection().add(
+                this.getWorldPosition());
+            this._handMenu.lookAt(palmDirection);
+            this._handMenu.update(timeDelta);
+        }
+    }
+
+    onRemoveFromProject() {
+        super.onRemoveFromProject();
+        if(this._handMenu) this._handMenu.removeWalkingTool();
+    }
+
+    static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
+    static assetName = 'XR Hand';
+}
+
+projectHandler.registerAsset(XRHand);
+libraryHandler.loadBuiltIn(XRHand);
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+
+const AVATAR_KEY = "DigitalBacon:Avatar";
+const USERNAME_KEY = "DigitalBacon:Username";
+const FADE_START = 0.6;
+const FADE_END = 0.2;
+//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
+const FADE_RANGE = FADE_START - FADE_END;
+const EPSILON = 0.00000000001;
+  
+class UserController extends InternalAssetEntity {
+    constructor(params = {}) {
+        params['assetId'] = UserController.assetId;
+        super(params);
+        this._isXR = false;
+        this._username = localStorage.getItem(USERNAME_KEY)
+            || generateRandomUsername();
+        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
+            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+        this._avatarFadeUpdateNumber = 0;
+        this._xrControllers = {};
+        this._xrHands = {};
+        this._xrDevices = new Set();
+        this._rtcCounter = 0;
+    }
+
+    init() {
+        if(global$1.deviceType == 'XR') {
+            this.isXR = true;
+        }
+        let scale = settingsHandler.getUserScale();
+        this.scale = [scale, scale, scale];
+        this._setup();
+    }
+
+    _setup() {
+        if(global$1.deviceType != "XR") {
+            this._avatar = new Avatar({
+                'avatarUrl': this._avatarUrl,
+                'parentId': this._id,
+                'verticalOffset': global$1.cameraFocus.position.y,
+            });
+            audioHandler.setListenerParent(this._avatar.object);
+        } else {
+            this._avatar = new Avatar({
+                'object': global$1.camera,
+                'parentId': this._id,
+                'avatarUrl': this._avatarUrl,
+            });
+        }
+        this._avatar.parent = this;
+        projectHandler.addAsset(this._avatar);
+        this._basicMovement = new BasicMovement({
+            'User Object': this._object,
+            'Avatar': this._avatar,
+        });
+    }
+
+    get avatar() { return this._avatar; }
+    get isXR() { return this._isXR; }
+    get scale() { return super.scale; }
+    get username() { return this._username; }
+
+    set avatarUrl(url) {
+        localStorage.setItem(AVATAR_KEY, url);
+        this._avatarUrl = url;
+        this._avatar.updateSourceUrl(url);
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this._avatar, fields: ['avatarUrl'] });
+    }
+
+    set isXR(isXR) { this._isXR = isXR; }
+    set scale(scale) {
+        super.scale = scale;
+        global$1.camera.scale.set(1, 1, 1);
+        let object = global$1.camera.parent;
+        while(object) {
+            global$1.camera.scale.divide(object.scale);
+            object = object.parent;
+        }
+        global$1.camera.near = 0.1 / global$1.camera.scale.x;
+        global$1.camera.far = Math.max(1000, 1000 / global$1.camera.scale.x);
+        global$1.camera.updateProjectionMatrix();
+        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
+            { asset: this, fields: ['scale'] });
+    }
+    set username(username) {
+        localStorage.setItem(USERNAME_KEY, username);
+        this._username = username;
+        pubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
+    }
+
+    getController(handedness) {
+        return this._xrControllers[handedness];
+    }
+
+    getHand(handedness) {
+        return this._xrHands[handedness];
+    }
+
+    getXRDevices() {
+        return this._xrDevices;
+    }
+
+    registerXRController(handedness, xrController) {
+        this._xrControllers[handedness] = xrController;
+        this._xrDevices.add(xrController);
+    }
+
+    registerXRHand(handedness, xrHand) {
+        this._xrHands[handedness] = xrHand;
+        this._xrDevices.add(xrHand);
+    }
+
+    registerXRDevice(xrDevice) {
+        this._xrDevices.add(xrDevice);
+    }
+
+    disableBasicMovement() {
+        this._basicMovement.disable();
+    }
+
+    enableBasicMovement() {
+        this._basicMovement.enable();
+    }
+
+    getDistanceBetweenHands() {
+        if(global$1.deviceType != 'XR') return;
+        let leftController = this._xrControllers[Rr.LEFT];
+        let rightController = this._xrControllers[Rr.RIGHT];
+        if(!leftController || !rightController) {
+            leftController = this._xrHands[Rr.LEFT];
+            rightController = this._xrHands[Rr.RIGHT];
+            if(!leftController || !rightController) return;
+        }
+        if(!leftController.isInScene() || !rightController.isInScene()) return;
+
+        let leftPosition = leftController.getWorldPosition();
+        let rightPosition = rightController.getWorldPosition();
+        return leftPosition.distanceTo(rightPosition);
+    }
+
+    getDataForRTC() {
+        let codes = 0;
+        let data = [];
+        this._rtcCounter++;
+        if(global$1.deviceType == "XR") {
+            codes += this._pushAvatarDataForRTC(data);
+            codes += this._pushHandsDataForRTC(data);
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            codes += this._pushAvatarDataForRTC(data);
+        }
+        let worldVelocity = this._basicMovement.getWorldVelocity();
+        if(worldVelocity.length() >= 0.00001) {
+            data.push(...this._basicMovement.getWorldVelocity().toArray());
+            codes += UserMessageCodes.USER_VELOCITY;
+        }
+        if(this._rtcCounter % 300 == 0) {
+            this._object.getWorldPosition(vector3s[0]);
+            data.push(...vector3s[0].toArray());
+            codes += UserMessageCodes.USER_POSITION;
+        }
+        let codesArray = new Uint8Array([codes]);
+        return [codesArray.buffer, Float32Array.from(data).buffer];
+    }
+
+    _pushAvatarDataForRTC(data) {
+        let position = global$1.camera.position.toArray();
+        let rotation = global$1.camera.rotation.toArray();
+        rotation.pop();
+
+        data.push(...position);
+        data.push(...rotation);
+        return UserMessageCodes.AVATAR;
+    }
+
+    _pushHandsDataForRTC(data) {
+        let codes = 0;
+        for(let type of ['CONTROLLER', 'HAND']) {
+            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
+            for(let handedness of [Rr.LEFT, Rr.RIGHT]) {
+                let controller = this[map][handedness];
+                if(controller && controller.isInScene()) {
+                    controller.pushDataForRTC(data);
+                    codes += UserMessageCodes[handedness + '_' + type];
+                }
+            }
+        }
+        return codes;
+    }
+
+    hasChild(object) {
+        return object.parent == this._object;
+    }
+
+    exportParams() {
+        let params = super.exportParams();
+        params['isXR'] = this._isXR;
+        params['username'] = this._username;
+        return params;
+    }
+
+    _updateAvatar() {
+        if(!this._avatar.isDisplayingAvatar()) {
+            let data = [];
+            this._pushAvatarDataForRTC(data);
+            let rotation = data.slice(3, 6);
+            this._avatar.object.rotation.fromArray(rotation);
+        }
+        let updateNumber = sessionHandler.getControlsUpdateNumber();
+        if(this._avatarFadeUpdateNumber == updateNumber) return;
+        this._avatarFadeUpdateNumber = updateNumber;
+        let cameraDistance = sessionHandler.getCameraDistance();
+        if(cameraDistance > FADE_START * 2) return;
+        let diff = cameraDistance - this._avatarFadeCameraDistance;
+        if(Math.abs(diff) < EPSILON) return;
+        //Fade Logic Start
+        this._avatarFadeCameraDistance = cameraDistance;
+        let fadePercent = Math.max(cameraDistance, FADE_END);
+        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
+        if(fadePercent == 0) {
+            if(this._avatar.isDisplayingAvatar()) {
+                this._basicMovement.setPerspective(1);
+                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
+                    1);
+                this._avatar.hideAvatar();
+            }
+            return;
+        } else if(!this._avatar.isDisplayingAvatar()) {
+            this._basicMovement.setPerspective(3);
+            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
+            this._avatar.displayAvatar();
+        }
+        (fadePercent < 1)
+            ? this._avatar.fade(fadePercent)
+            : this._avatar.endFade();
+        //Fade Logic end
+
+        //Disappear Logic start
+        //let object = this._avatar.getObject();
+        //if(cameraDistance < FADE_MIDDLE) {
+        //    if(object.parent) this._avatar.removeFromScene();
+        //} else if(!object.parent) {
+        //    this._avatar.addToScene(global.cameraFocus,
+        //        this._pointerInteractable, this._gripInteractable);
+        //}
+        //Disappear Logic end
+    }
+
+    update(timeDelta) {
+        if(global$1.deviceType == "XR") {
+            this._updateHands(timeDelta);
+        } else if(this._avatar) {
+            this._updateAvatar();
+        }
+        this._basicMovement.update(timeDelta);
+    }
+
+    _getControllerModelUrl(object) {
+        if(object && object.motionController) {
+            return object.motionController.assetUrl;
+        }
+    }
+
+    _updateHands(timeDelta) {
+        for(let side in Rr) {
+            this._updateHand(timeDelta, Mr.CONTROLLER, side);
+            this._updateHand(timeDelta, Mr.HAND, side);
+        }
+    }
+
+    _updateHand(timeDelta, type, handedness) {
+        let controller = (type == Mr.HAND)
+            ? this._xrHands[handedness]
+            : this._xrControllers[handedness];
+        let controllerModel = ei.getXRControllerModel(type,
+            handedness);
+        let source = ei.getXRInputSource(type, handedness);
+        if(controller && controller._live) {
+            if(source) {
+                controller.resetTTL();
+                if(type==Mr.HAND && handedness==Rr.LEFT)
+                    controller.updateHandMenu(timeDelta);
+            } else {
+                controller.decrementTTL(timeDelta);
+            }
+        } else if(source && this._getControllerModelUrl(controllerModel)) {
+            if(!controller) {
+                if(controllerModel.children.length == 0) return;
+                let assetClass = (type == Mr.HAND)
+                    ? XRHand
+                    : XRController;
+                let xrController = ei.getXRController(type,
+                    handedness, 'grip');
+                let isTargetRayBased = false;
+                if(!xrController) {
+                    xrController = ei.getXRController(type,
+                        handedness, 'targetRay');
+                    isTargetRayBased = true;
+                }
+                controller = new assetClass({
+                    id: xrController.uuid,
+                    handedness: handedness,
+                    parentId: this._id,
+                    controllerModel: controllerModel,
+                    object: xrController,
+                    isTargetRayBased: isTargetRayBased,
+                });
+                projectHandler.addAsset(controller, false, true);
+                //controller.attachTo(this);
+                if(type==Mr.HAND && handedness==Rr.LEFT)
+                    controller.createHandMenu();
+            } else {
+                projectHandler.addAsset(controller, false, true);
+            }
+        }
+    }
+
+    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
+    static assetName = 'User';
+}
+
+function generateRandomUsername() {
+    return String.fromCharCode(97+Math.floor(Math.random() * 26))
+            + Math.floor(Math.random() * 100);
+}
+
+let userController = new UserController();
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+const COMPONENT_ASSET_ID = '2a310a93-3f00-465a-862f-2bf8de118984';
+
+class PublishSystem extends System {
+    constructor(params = {}) {
+        params['assetId'] = PublishSystem.assetId;
+        super(params);
+        this._actions = {};
+        this._addSubscriptions();
+    }
+
+    _getDefaultName() {
+        return PublishSystem.assetName;
+    }
+
+    get description() { return 'Publishes events when assets are selected'; }
+
+    _addSubscriptions() {
+        if(global$1.isEditor) return;
+        this._listenForComponentAttached(COMPONENT_ASSET_ID, (message) => {
+            let id = message.id + ':' + message.componentId;
+            if(this._actions[id]) return;
+            let instance = projectHandler.getSessionAsset(message.id);
+            let component = projectHandler.getSessionAsset(message.componentId);
+            let callback = () => {
+                pubSub.publish(this._id, component.topic, {
+                    asset: instance, userController: userController,
+                });
+                this._publish(component.topic, instance.id);
+            };
+            if(component.pointerEvent != 'none')
+                instance.pointerInteractable.addEventListener(
+                    component.pointerEvent, callback);
+            if(component.gripEvent != 'none')
+                instance.gripInteractable.addEventListener(
+                    component.gripEvent, callback);
+            if(component.touchEvent != 'none')
+                instance.touchInteractable.addEventListener(
+                    component.touchEvent, callback);
+            this._actions[id] = {
+                callback: callback,
+                pointerEvent: component.pointerEvent,
+                gripEvent: component.gripEvent,
+                touchEvent: component.touchEvent,
+            };
+        });
+        this._listenForComponentDetached(COMPONENT_ASSET_ID, (message) => {
+            let id = message.id + ':' + message.componentId;
+            let action = this._actions[id];
+            if(!action) return;
+            let instance = projectHandler.getSessionAsset(message.id);
+            if(action.pointerEvent != 'none')
+                instance.pointerInteractable.removeEventListener(
+                    action.pointerEvent, action.callback);
+            if(action.gripEvent != 'none')
+                instance.gripInteractable.removeEventListener(
+                    action.gripEvent, action.callback);
+            if(action.touchEvent != 'none')
+                instance.touchInteractable.removeEventListener(
+                    action.touchEvent, action.callback);
+            delete this._actions[id];
+        });
+    }
+
+    _onPeerMessage(peer, message) {
+        let instance = projectHandler.getSessionAsset(message.id);
+        pubSub.publish(this._id, message.pubSubTopic, {
+            asset: instance, userController: peer.controller,
+        });
+    }
+
+    _publish(pubSubTopic, objectId) {
+        let message = {
+            pubSubTopic: pubSubTopic,
+            id: objectId,
+        };
+        this._publishPeerMessage(message);
+    }
+
+    static assetId = 'a94b683c-8176-486a-98fc-b44a8bebae57';
+    static assetName = 'Publish System';
+}
+
+projectHandler.registerAsset(PublishSystem);
+libraryHandler.loadBuiltIn(PublishSystem);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -18055,7 +19915,7 @@ let CubeImageField$1 = class CubeImageField extends MenuField {
  */
 
 
-let EnumField$c = class EnumField extends MenuField {
+let EnumField$d = class EnumField extends MenuField {
     constructor(params) {
         super(params);
         this._lastValue =  params['initialValue'];
@@ -18534,7 +20394,7 @@ let NumberField$k = class NumberField extends MenuField {
  */
 
 
-let TextField$2 = class TextField extends MenuField {
+let TextField$3 = class TextField extends MenuField {
     constructor(params) {
         super(params);
         this._onBlur = params['onBlur'];
@@ -19210,7 +21070,7 @@ class EditorHelper {
     }
 
     _createEnumField(field) {
-        return new EnumField$c({
+        return new EnumField$d({
             'title': field.name,
             'initialValue': this._getKeyFromValue(field.map,
                 this._asset[field.parameter]),
@@ -19278,7 +21138,7 @@ class EditorHelper {
     }
 
     _createTextField(field) {
-        return new TextField$2({
+        return new TextField$3({
             'title': field.name,
             'initialValue': this._asset[field.parameter],
             'getFromSource': () => this._asset[field.parameter],
@@ -19347,12 +21207,12 @@ class EditorHelper {
         CheckboxField: CheckboxField$8,
         ColorField: ColorField$7,
         CubeImageField: CubeImageField$1,
-        EnumField: EnumField$c,
+        EnumField: EnumField$d,
         EulerField: EulerField$1,
         ImageField: ImageField$1,
         MaterialField: MaterialField$1,
         NumberField: NumberField$k,
-        TextField: TextField$2,
+        TextField: TextField$3,
         TextureField: TextureField$4,
         Vector2Field: Vector2Field$3,
         Vector3Field: Vector3Field$2,
@@ -19814,7 +21674,7 @@ editorHelperFactory.registerEditorHelper(AssetEntityHelper, AssetEntity);
  */
 
 
-const { CheckboxField: CheckboxField$6, TextField: TextField$1 } = AssetEntityHelper.FieldTypes;
+const { CheckboxField: CheckboxField$6, TextField: TextField$2 } = AssetEntityHelper.FieldTypes;
 
 class PlayableMediaAssetHelper extends AssetEntityHelper {
     constructor(asset, updatedTopic) {
@@ -19847,11 +21707,11 @@ class PlayableMediaAssetHelper extends AssetEntityHelper {
         { "parameter": "loop", "name": "Loop",
             "suppressMenuFocusEvent": true, "type": CheckboxField$6 },
         { "parameter": "playTopic", "name": "Play Event", "singleLine": true,
-            "type": TextField$1 },
+            "type": TextField$2 },
         { "parameter": "pauseTopic", "name": "Pause Event", "singleLine": true,
-            "type": TextField$1 },
+            "type": TextField$2 },
         { "parameter": "stopTopic", "name": "Stop Event", "singleLine": true,
-            "type": TextField$1 },
+            "type": TextField$2 },
         "parentId",
         "position",
         "rotation",
@@ -19869,7 +21729,7 @@ editorHelperFactory.registerEditorHelper(PlayableMediaAssetHelper,
  */
 
 
-const { EnumField: EnumField$b, NumberField: NumberField$i } = PlayableMediaAssetHelper.FieldTypes;
+const { EnumField: EnumField$c, NumberField: NumberField$i } = PlayableMediaAssetHelper.FieldTypes;
 
 class AudioAssetHelper extends PlayableMediaAssetHelper {
     constructor(asset) {
@@ -19905,7 +21765,7 @@ class AudioAssetHelper extends PlayableMediaAssetHelper {
         { "parameter": "coneOuterGain", "name": "Cone Outer Gain", "min": 0,
             "max": 1, "type": NumberField$i },
         { "parameter": "distanceModel", "name": "Distance Model",
-            "map": DISTANCE_MODEL_MAP, "type": EnumField$b },
+            "map": DISTANCE_MODEL_MAP, "type": EnumField$c },
         "loop",
         { "parameter": "maxDistance", "name": "Max Rolloff Distance",
             "min": 0.01, "type": NumberField$i },
@@ -19934,7 +21794,7 @@ editorHelperFactory.registerEditorHelper(AudioAssetHelper, AudioAsset);
  */
 
 
-const { CheckboxField: CheckboxField$5, EnumField: EnumField$a, NumberField: NumberField$h } = EditorHelper.FieldTypes;
+const { CheckboxField: CheckboxField$5, EnumField: EnumField$b, NumberField: NumberField$h } = EditorHelper.FieldTypes;
 
 class MaterialHelper extends EditorHelper {
     constructor(asset) {
@@ -20001,7 +21861,7 @@ class MaterialHelper extends EditorHelper {
         { "parameter": "opacity", "name": "Opacity", "min": 0, "max": 1,
             "type": NumberField$h },
         { "parameter": "side", "name": "Display", "map": SIDE_MAP,
-            "type": EnumField$a },
+            "type": EnumField$b },
     ];
 }
 
@@ -20014,7 +21874,7 @@ editorHelperFactory.registerEditorHelper(MaterialHelper, Material);
  */
 
 
-const { CheckboxField: CheckboxField$4, ColorField: ColorField$6, EnumField: EnumField$9, NumberField: NumberField$g, TextureField: TextureField$3 } = MaterialHelper.FieldTypes;
+const { CheckboxField: CheckboxField$4, ColorField: ColorField$6, EnumField: EnumField$a, NumberField: NumberField$g, TextureField: TextureField$3 } = MaterialHelper.FieldTypes;
 
 class BasicMaterialHelper extends MaterialHelper {
     constructor(asset) {
@@ -20034,7 +21894,7 @@ class BasicMaterialHelper extends MaterialHelper {
         { "parameter": "envMapId","name": "Environment Map",
             "filter": [TextureTypes.CUBE], "type": TextureField$3 },
         { "parameter": "combine","name": "Color & Environment Blend",
-            "map": COMBINE_MAP, "type": EnumField$9 },
+            "map": COMBINE_MAP, "type": EnumField$a },
         { "parameter": "reflectivity","name": "Reflectivity",
             "min": 0, "max": 1, "type": NumberField$g },
         { "parameter": "refractionRatio","name": "Refraction Ratio",
@@ -20051,7 +21911,7 @@ editorHelperFactory.registerEditorHelper(BasicMaterialHelper, BasicMaterial);
  */
 
 
-const { EnumField: EnumField$8 } = EditorHelper.FieldTypes;
+const { EnumField: EnumField$9 } = EditorHelper.FieldTypes;
 
 class TextureHelper extends EditorHelper {
     constructor(asset) {
@@ -20060,7 +21920,7 @@ class TextureHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "colorSpace", "name": "Color Space",
-            "map": COLOR_SPACE_MAP, "type": EnumField$8 },
+            "map": COLOR_SPACE_MAP, "type": EnumField$9 },
     ];
 }
 
@@ -20073,7 +21933,7 @@ editorHelperFactory.registerEditorHelper(TextureHelper, Texture);
  */
 
 
-const { EnumField: EnumField$7, ImageField, Vector2Field: Vector2Field$2 } = TextureHelper.FieldTypes;
+const { EnumField: EnumField$8, ImageField, Vector2Field: Vector2Field$2 } = TextureHelper.FieldTypes;
 
 class BasicTextureHelper extends TextureHelper {
     constructor(asset) {
@@ -20083,9 +21943,9 @@ class BasicTextureHelper extends TextureHelper {
     static fields = [
         { "parameter": "image", "name": "Image", "type": ImageField },
         { "parameter": "wrapS", "name": "Horizontal Wrapping", "map": WRAP_MAP,
-            "type": EnumField$7 },
+            "type": EnumField$8 },
         { "parameter": "wrapT", "name": "Vertical Wrapping", "map": WRAP_MAP,
-            "type": EnumField$7 },
+            "type": EnumField$8 },
         { "parameter": "repeat", "name": "Repeat", "type": Vector2Field$2 },
         { "parameter": "offset", "name": "Offset", "type": Vector2Field$2 },
         "colorSpace",
@@ -20101,17 +21961,13 @@ editorHelperFactory.registerEditorHelper(BasicTextureHelper, BasicTexture);
  */
 
 
-class Component extends Asset {
-    constructor(params = {}) {
-        super(params);
+class ComponentHelper extends EditorHelper {
+    constructor(asset) {
+        super(asset, PubSubTopics.COMPONENT_UPDATED);
     }
-
-    supports(_asset) {
-        return true;
-    }
-
-    static assetType = AssetTypes.COMPONENT;
 }
+
+editorHelperFactory.registerEditorHelper(ComponentHelper, Component);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -20120,13 +21976,43 @@ class Component extends Asset {
  */
 
 
-class ComponentHelper extends EditorHelper {
+const { EnumField: EnumField$7, TextField: TextField$1 } = ComponentHelper.FieldTypes;
+const interactableEvents = {
+    None: 'none',
+    Click: 'click',
+    Drag: 'drag',
+    Down: 'down',
+    Up: 'up',
+    Move: 'move',
+    Over: 'over',
+    Out: 'out',
+};
+const touchInteractableEvents = {
+    None: 'none',
+    Click: 'click',
+    Drag: 'drag',
+    Down: 'down',
+    Up: 'up',
+};
+
+class PublishComponentHelper extends ComponentHelper {
     constructor(asset) {
-        super(asset, PubSubTopics.COMPONENT_UPDATED);
+        super(asset);
     }
+
+    static fields = [
+        { "parameter": "topic", "name": "Event", "singleLine": true,
+            "type": TextField$1 },
+        { "parameter": "pointerEvent", "name": "Pointer Action",
+            "map": interactableEvents, "type": EnumField$7 },
+        { "parameter": "gripEvent", "name": "Grip Action",
+            "map": interactableEvents, "type": EnumField$7 },
+        { "parameter": "touchEvent", "name": "Touch Action",
+            "map": touchInteractableEvents, "type": EnumField$7 },
+    ];
 }
 
-editorHelperFactory.registerEditorHelper(ComponentHelper, Component);
+editorHelperFactory.registerEditorHelper(PublishComponentHelper, PublishComponent);
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -21096,150 +22982,6 @@ class StandardMaterialHelper extends MaterialHelper {
 
 editorHelperFactory.registerEditorHelper(StandardMaterialHelper,
     StandardMaterial);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-let ATTACHED_COMPONENTS = {};
-
-pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_ATTACHED, (message) =>{
-    if(!(message.componentAssetId in ATTACHED_COMPONENTS))
-        ATTACHED_COMPONENTS[message.componentAssetId] = {};
-    ATTACHED_COMPONENTS[message.componentAssetId][message.id] = message;
-});
-
-pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.COMPONENT_DETACHED, (message) =>{
-    if(!(message.componentAssetId in ATTACHED_COMPONENTS)) return;
-    delete ATTACHED_COMPONENTS[message.componentAssetId][message.id];
-});
-
-pubSub.subscribe('SYSTEM_MODULE', PubSubTopics.PROJECT_LOADING, (done) => {
-    if(!done) ATTACHED_COMPONENTS = {};
-});
-
-class System extends Asset {
-    constructor(params = {}) {
-        super(params);
-        this._subscriptionTopics = [];
-    }
-
-    _getDefaultName() {
-        return 'System';
-    }
-
-    _addSystemSubscriptions() {
-        pubSub.subscribe(this._id, PubSubTopics.USER_READY, () => {
-            this._onUserReady();
-        });
-        pubSub.subscribe(this._id, PubSubTopics.PEER_READY, (message) => {
-            this._onPeerReady(message.peer);
-        });
-        pubSub.subscribe(this._id, PubSubTopics.PEER_DISCONNECTED, (message) =>{
-            this._onPeerDisconnected(message.peer);
-        });
-        pubSub.subscribe(this._id, PubSubTopics.PARTY_STARTED, () => {
-            this._onPartyStarted(partyHandler.isHost());
-        });
-        pubSub.subscribe(this._id, PubSubTopics.PARTY_ENDED, () => {
-            this._onPartyEnded();
-        });
-        this._subscriptionTopics.push(PubSubTopics.USER_READY);
-        this._subscriptionTopics.push(PubSubTopics.PEER_READY);
-        this._subscriptionTopics.push(PubSubTopics.PARTY_STARTED);
-        this._subscriptionTopics.push(PubSubTopics.PARTY_ENDED);
-    }
-
-    _removeSystemSubscriptions() {
-        for(let subscription of this._subscriptionTopics) {
-            pubSub.unsubscribe(this._id, subscription);
-        }
-        this._subscriptionTopics = [];
-    }
-
-    _listenForComponentAdded(componentAssetId, handler) {
-        if(!componentAssetId || !handler) return;
-        let topic = PubSubTopics.COMPONENT_ADDED + ':' + componentAssetId;
-        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
-        this._subscriptionTopics.push(topic);
-    }
-
-    _listenForComponentAttached(componentAssetId, handler) {
-        if(!componentAssetId || !handler) return;
-        let topic = PubSubTopics.COMPONENT_ATTACHED + ':' + componentAssetId;
-        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
-        this._subscriptionTopics.push(topic);
-        if(componentAssetId in ATTACHED_COMPONENTS) {
-            for(let id in ATTACHED_COMPONENTS[componentAssetId]) {
-                handler(ATTACHED_COMPONENTS[componentAssetId][id]);
-            }
-        }
-    }
-
-    _listenForComponentDeleted(componentAssetId, handler) {
-        if(!componentAssetId || !handler) return;
-        let topic = PubSubTopics.COMPONENT_DELETED + ':' + componentAssetId;
-        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
-        this._subscriptionTopics.push(topic);
-    }
-
-    _listenForComponentDetached(componentAssetId, handler) {
-        if(!componentAssetId || !handler) return;
-        let topic = PubSubTopics.COMPONENT_DETACHED + ':' + componentAssetId;
-        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
-        this._subscriptionTopics.push(topic);
-    }
-
-    _listenForComponentUpdated(componentAssetId, handler) {
-        if(!componentAssetId || !handler) return;
-        let topic = PubSubTopics.COMPONENT_UPDATED + ':' + componentAssetId;
-        pubSub.subscribe(this._id, topic, (message) => { handler(message); });
-        this._subscriptionTopics.push(topic);
-    }
-
-    _onUserReady() {}
-    _onPeerReady() {}
-    _onPeerDisconnected() {}
-    _onPeerMessage(_p, _m) {}
-    _onPeerBufferMessage(_p, _m) {}
-    _onPartyStarted() {}
-    _onPartyEnded() {}
-
-    _publishPeerMessage(message, skipQueue) {
-        partyHandler.publishInternalMessage(this._id, message, skipQueue);
-    }
-
-    _publishPeerBufferMessage(message, skipQueue) {
-        partyHandler.publishInternalBufferMessage(this._idBytes, message,
-            skipQueue);
-    }
-
-    get description() {
-        console.error("get System.description should be overridden");
-        return '';
-    }
-
-    needsUpdates() {
-        return false;
-    }
-
-    onAddToProject() {
-        this._addSystemSubscriptions();
-        partyHandler.addInternalMessageHandler(this._id,
-            (p, m) => this._onPeerMessage(p, m));
-        partyHandler.addInternalBufferMessageHandler(this._id,
-            (p, m) => this._onPeerBufferMessage(p, m));
-    }
-
-    onRemoveFromProject() {
-        this._removeSystemSubscriptions();
-    }
-
-    static assetType = AssetTypes.SYSTEM;
-}
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -33539,7 +35281,7 @@ class MenuController {
  */
 
 
-const BODY_STYLE$1 = new Style({
+const BODY_STYLE = new Style({
     borderRadius: 0.01,
     borderWidth: 0.001,
     height: 0.3,
@@ -33550,7 +35292,7 @@ const BODY_STYLE$1 = new Style({
 
 class MenuPage extends Body {
     constructor(controller, hasBackButton) {
-        super(BODY_STYLE$1);
+        super(BODY_STYLE);
         this._id = uuidv4();
         this._controller = controller;
         this._createCloseButton();
@@ -34432,7 +36174,7 @@ class EditAcknowledgementsPage extends MenuPage {
 
         this._fields = [];
         for(let key of ['Asset', 'Author', 'License', 'Source URL']) {
-            let field = new TextField$2({
+            let field = new TextField$3({
                 'title': key,
                 'singleLine': true,
                 'onBlur': (oldValue, newValue) => {
@@ -36702,1561 +38444,6 @@ class PeerPage extends MenuPage {
  */
 
 
-const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-  
-class Avatar extends InternalAssetEntity {
-    constructor(params = {}) {
-        params['assetId'] = Avatar.assetId;
-        super(params);
-        if(params == null) {
-            params = {};
-        }
-        this._avatarParent = new THREE.Object3D();
-        this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
-        this._verticalOffset = params['verticalOffset'] || 0;
-        this._object.position.setY(this._verticalOffset);
-        this._object.add(this._avatarParent);
-
-        this._createMesh(this._avatarUrl);
-        let parentAsset = projectHandler.getSessionAsset(this._parentId);
-        if(parentAsset && parentAsset.registerAvatar) {
-            parentAsset.registerAvatar(this);
-        }
-    }
-
-    _createMesh(filename) {
-        if(/\.glb/.test(filename)) {
-            let gltfLoader = new GLTFLoader();
-            gltfLoader.load(filename, (gltf) => {
-                gltf.scene.rotateY(Math.PI);
-                if(gltf.scene.children[0].name.includes("AvatarRoot")) {
-                    let hands = new Set();
-                    gltf.scene.traverse((child) => {
-                        if(child.name.toLowerCase().includes("hand")) {
-                            hands.add(child);
-                        }
-                    });
-                    hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.65);
-                }
-                this._avatarParent.add(gltf.scene);
-                this._saveOriginalTransparencyStates();
-                this._dimensions = 3;
-            }, () => {}, (error) => {
-                console.log(error);
-                if(filename != DEFAULT_URL) {
-                    this._createMesh(DEFAULT_URL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else if(/\.png$|\.jpg$|\.jpeg$/.test(filename)) {
-            new THREE.TextureLoader().load(filename, (texture) => {
-                let width = texture.image.width;
-                let height = texture.image.height;
-                if(width > height) {
-                    let factor = 0.3 / width;
-                    width = 0.3;
-                    height *= factor;
-                } else {
-                    let factor = 0.3 / height;
-                    height = 0.3;
-                    width *= factor;
-                }
-                let material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                });
-                let geometry = new THREE.PlaneGeometry(width, height);
-                geometry.rotateY(Math.PI);
-                let mesh = new THREE.Mesh(geometry, material);
-                this._avatarParent.add(mesh);
-                this._saveOriginalTransparencyStates();
-                //let sprite = new THREE.Sprite(material);
-                //this._avatarParent.add(sprite);
-                this._dimensions = 2;
-            }, () => {}, () => {
-                if(filename != DEFAULT_URL) {
-                    this._createMesh(DEFAULT_URL);
-                } else {
-                    console.error("Can't display default avatar :(");
-                }
-            });
-        } else {
-            if(filename != DEFAULT_URL) {
-                this._createMesh(DEFAULT_URL);
-            } else {
-                console.error("Default avatar URL is invalid :(");
-            }
-        }
-    }
-
-    _saveOriginalTransparencyStates() {
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        material.userData['transparent'] = material.transparent;
-                        material.userData['opacity'] = material.opacity;
-                    }
-                } else {
-                    let material = node.material;
-                    material.userData['transparent'] = material.transparent;
-                    material.userData['opacity'] = material.opacity;
-                }
-            }
-        });
-    }
-
-    fade(percent) {
-        this._isFading = true;
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                node.renderOrder = Infinity;
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let material = node.material[i];
-                        if(!material.transparent) {
-                            material.transparent = true;
-                            material.needsUpdate = true;
-                        }
-                        material.opacity = material.userData['opacity']*percent;
-                    }
-                } else {
-                    let material = node.material;
-                    if(!material.transparent) {
-                        material.transparent = true;
-                        material.needsUpdate = true;
-                    }
-                    material.opacity = material.userData['opacity'] * percent;
-                }
-            }
-        });
-    }
-
-    endFade() {
-        if(!this._isFading) return;
-        this._isFading = false;
-        this._avatarParent.traverse(function(node) {
-            if(node instanceof THREE.Mesh && node.material) {
-                if(Array.isArray(node.material)) {
-                    for(let i = 0; i < node.material.length; i++) {
-                        let mtrl = node.material[i];
-                        if(mtrl.transparent != mtrl.userData['transparent']) {
-                            mtrl.transparent = mtrl.userData['transparent'];
-                            mtrl.needsUpdate = true;
-                        }
-                        mtrl.opacity = mtrl.userData['opacity'];
-                    }
-                } else {
-                    let mtrl = node.material;
-                    if(mtrl.transparent != mtrl.userData['transparent']) {
-                        mtrl.transparent = mtrl.userData['transparent'];
-                        mtrl.needsUpdate = true;
-                    }
-                    mtrl.opacity = mtrl.userData['opacity'];
-                }
-            }
-        });
-    }
-
-    lookAtLocal(point) {
-        if(this._object.parent) {
-            vector3s[0].copy(point);
-            this._object.parent.localToWorld(vector3s[0]);
-            this._object.lookAt(vector3s[0]);
-        }
-    }
-
-    updateSourceUrl(url) {
-        while(this._avatarParent.children[0]) {
-            let child = this._avatarParent.children[0];
-            this._avatarParent.remove(child);
-            fullDispose(child, true);
-        }
-        this._avatarUrl = url;
-        this._createMesh(url);
-    }
-
-    get avatarUrl() { return this._avatarUrl; }
-    get verticalOffset() { return this._verticalOffset; }
-
-    set avatarUrl(avatarUrl) { this.updateSourceUrl(avatarUrl); }
-    set verticalOffset(verticalOffset) {
-        this._verticalOffset = verticalOffset;
-        this._object.position.setY(verticalOffset);
-    }
-
-    displayAvatar() {
-        this._object.add(this._avatarParent);
-    }
-
-    hideAvatar() {
-        this._object.remove(this._avatarParent);
-    }
-
-    isDisplayingAvatar() {
-        return this._avatarParent.parent == this._object;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['avatarUrl'] = this._avatarUrl;
-        params['verticalOffset'] = this._verticalOffset;
-        return params;
-    }
-
-    static assetId = '8cad6685-035d-416f-b085-7cb05583bb49';
-    static assetName = 'Avatar';
-}
-
-projectHandler.registerAsset(Avatar);
-libraryHandler.loadBuiltIn(Avatar);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class BasicMovement {
-    constructor(params) {
-        if(params == null) {
-            params = {};
-        }
-        this._avatar = params['Avatar'];
-        this._userObj = params['User Object'];
-        this._velocity = new THREE.Vector3();
-        this._verticalVelocity = 0;
-        this._worldVelocity = new THREE.Vector3();
-        this._snapRotationTriggered = false;
-        this._disabled = false;
-    }
-
-    _setupMobileFlyingButtons() {
-        this._mobileUp = false;
-        this._mobileDown = false;
-        let upButton = ei.addExtraControlsButton(
-            'mobile-flying-up-button', 'UP');
-        let downButton = ei.addExtraControlsButton(
-            'mobile-flying-down-button', 'DOWN');
-        upButton.addEventListener('touchstart',
-            () => { this._mobileUp = true; });
-        upButton.addEventListener('touchend',
-            () => { this._mobileUp = false; });
-        downButton.addEventListener('touchstart',
-            () => { this._mobileDown = true; });
-        downButton.addEventListener('touchend',
-            () => { this._mobileDown = false; });
-    }
-
-    _moveForward(velocity, timeDelta) {
-        // move forward parallel to the xz-plane
-        // assumes camera.up is y-up
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].crossVectors(this._userObj.up, vector3s[0]);
-        // not using addScaledVector because we use vector3s[0] later
-        vector3s[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s[0]);
-        vector3s[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s[0]);
-    }
-
-    _moveRight(velocity, timeDelta) {
-        vector3s[0].setFromMatrixColumn(global$1.camera.matrixWorld, 0);
-        vector3s[0].y = 0;
-        vector3s[0].multiplyScalar(velocity);
-        this._worldVelocity.add(vector3s[0]);
-        vector3s[0].multiplyScalar(timeDelta);
-        this._userObj.position.add(vector3s[0]);
-    }
-
-    _moveUp(velocity, timeDelta) {
-        velocity = this._userObj.scale.y * velocity;
-        this._worldVelocity.setY(velocity);
-        vector3s[0].fromArray([0, velocity * timeDelta, 0]);
-        this._userObj.position.add(vector3s[0]);
-    }
-
-    _snapLeft() {
-        this._userObj.rotateY(Math.PI/8);
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: global$1.userController, fields: ['rotation'] });
-    }
-
-    _snapRight() {
-        this._userObj.rotateY(-Math.PI/8);
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: global$1.userController, fields: ['rotation'] });
-    }
-
-    disable() {
-        this._disabled = true;
-    }
-
-    enable() {
-        this._enabled = true;
-    }
-
-    getWorldVelocity() {
-        return this._worldVelocity;
-    }
-
-    setPerspective(perspective) {
-        this._perspective = perspective;
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updatePositionVR(timeDelta);
-            this.update = this._updatePositionVR;
-        } else if(global$1.deviceType == "POINTER") {
-            this._updatePosition(timeDelta);
-            this.update = this._updatePosition;
-        } else if(global$1.deviceType == "TOUCH_SCREEN") {
-            this._setupMobileFlyingButtons();
-            this._updatePositionMobile(timeDelta);
-            this.update = this._updatePositionMobile;
-        }
-    }
-
-    _updatePosition(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(this._disabled || timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        // Decrease the velocity.
-        let slowdownFactor = (1 - timeDelta) * 0.88;
-        this._velocity.x *= slowdownFactor;
-        if(flightEnabled)
-            this._verticalVelocity *= slowdownFactor;
-        this._velocity.z *= slowdownFactor;
-
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            if (ei.isKeyCodePressed("ArrowUp")
-                    || ei.isKeyCodePressed("KeyW"))
-                this._velocity.z += movementSpeed / 4;
-            if (ei.isKeyCodePressed("ArrowDown")
-                    || ei.isKeyCodePressed("KeyS"))
-                this._velocity.z -= movementSpeed / 4;
-            if (ei.isKeyCodePressed("ArrowLeft")
-                    || ei.isKeyCodePressed("KeyA"))
-                this._velocity.x -= movementSpeed / 4;
-            if (ei.isKeyCodePressed("ArrowRight")
-                    || ei.isKeyCodePressed("KeyD"))
-                this._velocity.x += movementSpeed / 4;
-            if (flightEnabled && ei.isKeyCodePressed("Space")
-                    != ei.isKeyPressed("Shift")
-                    && !ei.isKeyPressed("Meta")) {
-                this._verticalVelocity =
-                    (ei.isKeyCodePressed("Space"))
-                        ? movementSpeed
-                        : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s[1].add(vector3s[0]);
-            if(this._perspective != 1 && vector3s[1].length() > 0.001
-                    * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.object.position);
-                this._avatar.lookAtLocal(vector3s[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionMobile(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(this._disabled || timeDelta > 1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        this._velocity.x = 0;
-        if(flightEnabled)
-            this._verticalVelocity *= (1 - timeDelta) * 0.88;
-        this._velocity.z = 0;
-        if(global$1.sessionActive && !global$1.keyboardLock) {
-            let joystickAngle = ei.getJoystickAngle();
-            let joystickDistance = ei.getJoystickDistance();
-            let movingDistance = movementSpeed * joystickDistance;
-            this._velocity.x = movingDistance * Math.cos(joystickAngle);
-            this._velocity.z = movingDistance * Math.sin(joystickAngle);
-            if(flightEnabled && this._mobileUp != this._mobileDown) {
-                this._verticalVelocity = (this._mobileUp)
-                    ? movementSpeed
-                    : -movementSpeed;
-            }
-        }
-
-        if(this._velocity.length() > movementSpeed) {
-            this._velocity.normalize().multiplyScalar(movementSpeed);
-        }
-        if(this._avatar) {
-            this._moveRight(this._velocity.x, timeDelta);
-            vector3s[1].copy(vector3s[0]);
-            this._moveForward(this._velocity.z, timeDelta);
-            vector3s[1].add(vector3s[0]);
-            if(this._perspective != 1 && vector3s[1].length() > 0.001
-                    * settingsHandler.getUserScale()) {
-                vector3s[1].multiplyScalar(-2).add(
-                    this._avatar.object.position);
-                this._avatar.lookAtLocal(vector3s[1]);
-            }
-            if(flightEnabled) {
-                this._moveUp(this._verticalVelocity, timeDelta);
-            }
-        } else {
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-
-    _updatePositionVR(timeDelta) {
-        this._worldVelocity.set(0, 0, 0);
-        if(this._disabled || global$1.xrSessionType=='AR' || timeDelta >1) return;
-        let movementSpeed = settingsHandler.getMovementSpeed();
-        let flightEnabled = settingsHandler.isFlyingEnabled();
-        let leftHandController = global$1.userController.getHand(Rr.LEFT);
-        let handMenu = leftHandController?._handMenu;
-        let movementGamepad;
-        let rotationGamepad;
-        if(settingsHandler.areJoysticksSwapped()) {
-            movementGamepad = ei.getXRGamepad(Rr.RIGHT);
-            rotationGamepad = ei.getXRGamepad(Rr.LEFT);
-        } else {
-            movementGamepad = ei.getXRGamepad(Rr.LEFT);
-            rotationGamepad = ei.getXRGamepad(Rr.RIGHT);
-        }
-        this._velocity.x = 0;
-        this._velocity.y = 0;
-        this._velocity.z = 0;
-        if(movementGamepad) {
-            let axes = movementGamepad.axes;
-            this._velocity.z = -1 * movementSpeed * axes[3];//Forward/Backward
-            this._velocity.x = movementSpeed * axes[2];//Left/Right
-
-            this._moveRight(this._velocity.x, timeDelta);
-            this._moveForward(this._velocity.z, timeDelta);
-        } else if(handMenu?.walkingTool?.owner) {
-            let walkingDirection = handMenu.calculateWalkingDirection();
-            this._worldVelocity.x = walkingDirection.x * movementSpeed;
-            this._worldVelocity.z = walkingDirection.z * movementSpeed;
-            this._userObj.position.x += this._worldVelocity.x * timeDelta;
-            this._userObj.position.z += this._worldVelocity.z * timeDelta;
-        }
-        if(rotationGamepad) {
-            let verticalForce = rotationGamepad.axes[3];
-            let rotationForce = rotationGamepad.axes[2];
-            if(Math.abs(rotationForce) > 0.7) {
-                if(!this._snapRotationTriggered) {
-                    this._snapRotationTriggered = true; 
-                    (rotationForce > 0) ? this._snapRight() : this._snapLeft();
-                }
-            } else {
-                this._snapRotationTriggered = false;
-            }
-            if(flightEnabled && Math.abs(verticalForce) > 0.2) {
-                this._velocity.y = -1 * movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y, timeDelta);
-            }
-        } else if(handMenu?.open) {
-            let verticalForce = handMenu.flyingUp - handMenu.flyingDown;
-            if(flightEnabled && verticalForce) {
-                this._velocity.y = movementSpeed * verticalForce;
-                this._moveUp(this._velocity.y, timeDelta);
-            }
-            if(!this._snapRotationTriggered) {
-                if(handMenu.snapLeft) {
-                    this._snapRotationTriggered = true;
-                    this._snapLeft();
-                } else if(handMenu.snapRight) {
-                    this._snapRotationTriggered = true;
-                    this._snapRight();
-                }
-            } else if(!handMenu.snapLeft && !handMenu.snapRight) {
-                this._snapRotationTriggered = false;
-            }
-        } else {
-            this._snapRotationTriggered = false;
-        }
-        this._userObj.updateMatrixWorld(true);
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const TTL = 5;
-
-class XRDevice extends InternalAssetEntity {
-    constructor(params = {}) {
-        if(!params['assetId']) params['assetId'] = XRDevice.assetId;
-        super(params);
-        this._ttl = TTL;
-        this._modelUrl = params['modelUrl'];
-        if(this._modelUrl) {
-            this._loadModelFromUrl();
-        }
-        this._vector3 = new Vector3();
-        this._euler = new Euler();
-        this._quaternion = new Quaternion();
-        this._registerOwner(params);
-    }
-
-    _loadModelFromUrl() {
-        let gltfLoader = new GLTFLoader();
-        gltfLoader.load(this._modelUrl, (gltf) => {
-            this._modelObject = gltf.scene;
-            this._object.add(gltf.scene);
-        });
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['parentId']);
-        if(owner.registerXRDevice) {
-            owner.registerXRDevice(this);
-        }
-    }
-
-    _enableARMask() {
-        this._isAR = global$1.xrSessionType == 'AR';
-        if(this._isAR) this._setARMask();
-        pubSub.subscribe(this._id, PubSubTopics.SESSION_STARTED, () => {
-            let isAR = global$1.xrSessionType == 'AR';
-            if(this._isAR == isAR) return;
-            this._isAR = isAR;
-            if(isAR) {
-                this._setARMask();
-            } else {
-                this._removeARMask();
-            }
-        });
-    }
-
-    _setARMask() {
-        this._object.traverse((node) => {
-            if (node instanceof Mesh) {
-                node.renderOrder = -Infinity;
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        node.material.forEach((mtrl) => {
-                            mtrl.colorWrite = false;
-                        });
-                    }
-                    else {
-                        node.material.colorWrite = false;
-                    }
-                }
-            }
-        });
-    }
-
-    _removeARMask() {
-        this._object.traverse((node) => {
-            if (node instanceof Mesh) {
-                node.renderOrder = 0;
-                if (node.material) {
-                    if (Array.isArray(node.material)) {
-                        node.material.forEach((mtrl) => {
-                            mtrl.colorWrite = true;
-                        });
-                    }
-                    else {
-                        node.material.colorWrite = true;
-                    }
-                }
-            }
-        });
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['modelUrl'] = this._modelUrl;
-        return params;
-    }
-
-    isInScene() {
-        return this._object.parent != null;
-    }
-
-    get modelUrl() { return this._modelUrl; }
-
-    getModelObject() {
-        return this._modelObject;
-    }
-
-    getWorldPosition() {
-        this._object.getWorldPosition(this._vector3);
-        return this._vector3;
-    }
-
-    getWorldRotation() {
-        this._object.getWorldQuaternion(this._quaternion);
-        this._quaternion.normalize();
-        this._euler.setFromQuaternion(this._quaternion);
-        return this._euler;
-    }
-
-    getWorldQuaternion() {
-        this._object.getWorldQuaternion(this._quaternion);
-        return this._quaternion;
-    }
-
-    set modelUrl(modelUrl) { this._modelUrl = modelUrl; }
-
-    decrementTTL(timeDelta) {
-        this._ttl -= timeDelta;
-        if(this._ttl < 0) {
-            projectHandler.deleteAsset(this);
-        }
-    }
-
-    resetTTL() {
-        this._ttl = TTL;
-    }
-
-    pushDataForRTC(data) {
-        let position = this._object.position.toArray();
-        let rotation = this._object.rotation.toArray();
-        rotation.pop();
-        data.push(...position);
-        data.push(...rotation);
-    }
-
-    processFromRTC(float32Array, index) {
-        this._object.position.fromArray(float32Array, index);
-        let rotation = float32Array.slice(index + 3, index + 6);
-        this._object.rotation.fromArray(rotation);
-    }
-
-    onAddToProject() {
-        this._live = true;
-    }
-
-    onRemoveFromProject() {
-        super.onRemoveFromProject();
-        this._live = false;
-    }
-
-    static assetId = '0a90fe9c-be4d-4298-a896-9bd99abad8e6';
-    static assetName = 'XR Device';
-}
-
-projectHandler.registerAsset(XRDevice);
-libraryHandler.loadBuiltIn(XRDevice);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-class XRController extends XRDevice {
-    constructor(params = {}) {
-        params['assetId'] = XRController.assetId;
-        super(params);
-        let controllerModel = params['controllerModel'];
-        if(controllerModel) {
-            this._object.add(controllerModel);
-            this._modelObject = controllerModel;
-            this._modelUrl = controllerModel.motionController.assetUrl;
-        }
-        this._handedness = params['handedness'];
-        if(!(this._handedness in Rr)) {
-            throw new Error("hand must be LEFT or RIGHT");
-        }
-        this._raycasterOrigin = new Vector3();
-        this._raycasterDirection = new Vector3();
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['parentId']);
-        if(owner.registerXRController) {
-            owner.registerXRController(params['handedness'], this);
-        }
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['handedness'] = this._handedness;
-        return params;
-    }
-
-    addFromTargetRay(asset, position, rotation) {
-        let controller = ei.getXRController(
-            Mr.CONTROLLER, this._handedness, 'targetRay');
-        let assetObject = asset.object;
-        if(!controller) return;
-        controller.add(assetObject);
-        if(position) assetObject.position.fromArray(position);
-        if(rotation) assetObject.rotation.fromArray(rotation);
-        asset.attachTo(this);
-    }
-
-    get handedness() { return this._handedness; }
-
-    getTargetRayDirection() {
-        let xrController = ei.getXRController(
-            Mr.CONTROLLER, this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return this._raycasterDirection;
-    }
-
-    getRaycaster() {
-        let xrController = ei.getXRController(
-            Mr.CONTROLLER, this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldPosition(this._raycasterOrigin);
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
-    }
-
-    isButtonPressed(index) {
-        let gamepad = ei.getXRGamepad(this._handedness);
-        return gamepad != null && gamepad.buttons[index].pressed;
-    }
-
-    static assetId = 'c7e118a4-6c74-4e41-bf1d-36f83516e7c3';
-    static assetName = 'XR Controller';
-}
-
-projectHandler.registerAsset(XRController);
-libraryHandler.loadBuiltIn(XRController);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const BODY_STYLE = new Style({
-    borderRadius: 0.01,
-    borderWidth: 0.001,
-    height: 0.13,
-    justifyContent: 'spaceAround',
-    materialColor: Colors.defaultMenuBackground,
-    opacity: 0.7,
-    width: 0.1,
-});
-const BUTTON_STYLE = new Style({
-    borderRadius: 0.005,
-    borderWidth: 0.0005,
-    height: 0.018,
-    opacity: 0,
-    width: 0.085,
-});
-const TEXT_STYLE = new Style({ color: Colors.white, fontSize: 0.01 });
-
-//Creating arrow texture
-let resolution = 256;
-let unit = resolution / 16;
-let canvas = document.createElement('canvas');
-canvas.width = resolution;
-canvas.height = resolution;
-let ctx = canvas.getContext('2d');
-ctx.fillStyle = '#ffffff';
-ctx.fillRect(0, 0, resolution, resolution);
-ctx.fillStyle = '#19b932';
-function drawArrow(ctx) {
-    ctx.fillRect(resolution / 2 - 0.75 * unit, resolution / 2 - 3.5 * unit,
-        1.5 * unit, 1.5 * unit);
-    ctx.beginPath();
-    ctx.moveTo(unit * 8, unit * 2.75);
-    ctx.lineTo(unit * 9.75, unit * 4.75);
-    ctx.lineTo(unit * 6.25, unit * 4.75);
-    ctx.fill();
-}
-
-for(let i = 0; i < 4; i++) {
-    ctx.translate(resolution / 2, resolution / 2);
-    ctx.rotate(i * Math.PI / 2);
-    ctx.translate(resolution / -2, resolution / -2);
-    drawArrow(ctx);
-}
-ctx.fillRect(0, 0, resolution, 8);
-ctx.fillRect(0, resolution - 8, resolution, 8);
-
-class HandMenu extends Body {
-    constructor() {
-        super(BODY_STYLE);
-        this._open = false;
-        this._createWalkingTool();
-        this._addButtons();
-        this._walkingDirection = new THREE.Vector3();
-        this.onClick = () => {};
-    }
-
-    _addButtons() {
-        this.flyingUp = false;
-        this.flyingDown = false;
-        this.snapLeft = false;
-        this.snapRight = false;
-
-        this._createMenuButton();
-        this._createWalkingToolButton();
-        this._createFlyingButtons();
-        this._createSnapRotationButtons();
-    }
-
-    _createMenuButton() {
-        let button = createWideButton('Menu');
-        button.addStyle(BUTTON_STYLE);
-        button.textComponent.addStyle(TEXT_STYLE);
-        button.onClick = () => global$1.menuController._openMenu();
-        button.onTouch = (message) => {
-            if(message.owner.object == this.parent) return;
-            global$1.menuController._openMenu();
-        };
-        this.add(button);
-    }
-
-    _createWalkingToolButton() {
-        let button = createWideButton('Walking Tool');
-        button.addStyle(BUTTON_STYLE);
-        button.textComponent.addStyle(TEXT_STYLE);
-        button.onClick = () => {
-            this.walkingTool.position.set(0, 0, 0.05);
-            this.localToWorld(this.walkingTool.position);
-            this.walkingTool.rotation.set(0, 0, 0);
-            scene.object.add(this.walkingTool);
-            scene.gripInteractable.addChild(this.walkingTool.gripInteractable);
-        };
-        button.onTouch = (message) => {
-            if(message.owner.object == this.parent) return;
-            this.walkingTool.position.set(0, 0, 0.05);
-            this.localToWorld(this.walkingTool.position);
-            this.walkingTool.rotation.set(0, 0, 0);
-            scene.object.add(this.walkingTool);
-            scene.gripInteractable.addChild(this.walkingTool.gripInteractable);
-        };
-        this.add(button);
-    }
-
-    _createFlyingButtons() {
-        let span = new Span({
-            height: 0.018,
-            justifyContent: 'spaceBetween',
-            width: 0.085,
-        });
-        let flyingButtons = [];
-        for(let direction of ['down', 'up']) {
-            let button = createWideButton(direction == 'down' ? '<' : '>');
-            let param = 'flying' + direction.substring(0, 1).toUpperCase()
-                + direction.substring(1);
-            button.addStyle(BUTTON_STYLE);
-            button.addStyle(new Style({ width: 0.018 }));
-            button.rotation.z = Math.PI / 2;
-            button.textComponent.addStyle(TEXT_STYLE);
-            button.pointerInteractable.addEventListener('down', (message) => {
-                this[param] = true;
-                button.pointerInteractable.capture(message.owner);
-            });
-            button.pointerInteractable.addEventListener('up', () => {
-                this[param] = false;
-            });
-            button.touchInteractable.addEventListener('down', (message) => {
-                if(message.owner.object == this.parent) return;
-                this[param] = true;
-            });
-            button.touchInteractable.addEventListener('up', (message) => {
-                if(message.owner.object == this.parent) return;
-                this[param] = false;
-            });
-            flyingButtons.push(button);
-        }
-        span.add(flyingButtons[0]);
-        let text = new TextComponent('Fly', TEXT_STYLE);
-        span.add(text);
-        span.add(flyingButtons[1]);
-        this.add(span);
-    }
-
-    _createSnapRotationButtons() {
-        let span = new Span({
-            height: 0.018,
-            justifyContent: 'spaceBetween',
-            width: 0.085,
-        });
-        let snapButtons = [];
-        for(let direction of ['left', 'right']) {
-            let button = createWideButton(direction == 'left' ? '<' : '>');
-            let param = 'snap' + direction.substring(0, 1).toUpperCase()
-                + direction.substring(1);
-            button.addStyle(BUTTON_STYLE);
-            button.addStyle(new Style({ width: 0.018 }));
-            button.textComponent.addStyle(TEXT_STYLE);
-            button.pointerInteractable.addEventListener('down', (message) => {
-                this[param] = true;
-                button.pointerInteractable.capture(message.owner);
-            });
-            button.pointerInteractable.addEventListener('up', () => {
-                this[param] = false;
-            });
-            button.touchInteractable.addEventListener('down', (message) => {
-                if(message.owner.object == this.parent) return;
-                this[param] = true;
-            });
-            button.touchInteractable.addEventListener('up', (message) => {
-                if(message.owner.object == this.parent) return;
-                this[param] = false;
-            });
-            snapButtons.push(button);
-        }
-        span.add(snapButtons[0]);
-        let text = new TextComponent('Rotate', TEXT_STYLE);
-        span.add(text);
-        span.add(snapButtons[1]);
-        this.add(span);
-    }
-
-    _createWalkingTool() {
-        let texture = new THREE.CanvasTexture(canvas);
-        texture.repeat.set(4, 2);
-        texture.offset.set(0.5, -0.5);
-        texture.wrapS = THREE.RepeatWrapping;
-        let geometry = new THREE.SphereGeometry(0.05);
-        let material = new THREE.MeshLambertMaterial({
-            map: texture,
-            side: THREE.DoubleSide,
-            transparent: true,
-        });
-        this.walkingTool = new THREE.Mesh(geometry, material);
-        this.walkingTool.renderOrder = Infinity;
-        this.walkingToolLabel = new TextComponent('Grab and Point', TEXT_STYLE);
-        this.walkingToolLabel.position.y = 0.07;
-        this.walkingTool.add(this.walkingToolLabel);
-        let gripInteractable = new GripInteractable(this.walkingTool);
-        gripInteractable.addEventListener('down', (message) => {
-            if(this.walkingTool.owner) return;
-            gripInteractable.capture(message.owner);
-            this.walkingTool.owner = message.owner;
-            this.walkingToolLabel.visible = false;
-            message.owner.object.attach(this.walkingTool);
-            material.opacity = 0.5;
-        });
-        gripInteractable.addEventListener('up', (message) => {
-            if(this.walkingTool.owner != message.owner) return;
-            scene.object.attach(this.walkingTool);
-            this.walkingTool.owner = null;
-            this.walkingToolLabel.visible = true;
-            material.opacity = 1;
-        });
-    }
-
-    calculateWalkingDirection() {
-        let bones = this.walkingTool.owner.object?.asset?._modelObject
-            ?.motionController?.bones;
-        if(!bones) return;
-        bones[8].getWorldPosition(vector3s[0]);
-        bones[9].getWorldPosition(this._walkingDirection);
-        this._walkingDirection.sub(vector3s[0]);
-        this._walkingDirection.normalize();
-        return this._walkingDirection;
-    }
-
-    removeWalkingTool() {
-        if(this.walkingTool.parent)
-            this.walkingTool.parent.remove(this.walkingTool);
-        scene.gripInteractable.removeChild(this.walkingTool.gripInteractable);
-    }
-
-    update(timeDelta) {
-        if(!this._opening) return;
-        this._scale += timeDelta * 3;
-        if(this._scale > 1) {
-            this._scale = 1;
-            this._opening = false;
-        }
-        this.scale.setScalar(this._scale);
-    }
-
-    get open() { return this._open; }
-    set open(open) {
-        if(this._open == open) return;
-        if(open) {
-            this._opening = true;
-            this._scale = 0.01;
-            this.scale.setScalar(this._scale);
-        } else {
-            this.flyingUp = false;
-            this.flyingDown = false;
-            this.snapLeft = false;
-            this.snapRight = false;
-        }
-        this._open = open;
-    }
-}
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const DEFAULT_HAND_PROFILE_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles/generic-hand/';
-const BONE_ANGLE = 2.6;
-const PALM_ANGLE = 0.7;
-const THUMB_ANGLE = 0.2;
-const BONE_SETS = [
-    [5,6,7],
-    [5,6,9],
-    [10,11,12],
-    [10,11,14],
-    [15,16,17],
-    [15,16,19],
-    [20,21,22],
-    [20,21,24],
-];
-const TARGET_RAY_BASED_QUATERNION = new Quaternion(0.6023779, 0.6023779,
-                                                    0.4015853, 0.336171);
-
-window.trbq = TARGET_RAY_BASED_QUATERNION;
-
-class XRHand extends XRDevice {
-    constructor(params = {}) {
-        params['assetId'] = XRHand.assetId;
-        super(params);
-        this._handedness = params['handedness'];
-        if(!(this._handedness in Rr)) {
-            throw new Error("hand must be LEFT or RIGHT");
-        }
-        this._isTargetRayBased = params['isTargetRayBased'];
-        let controllerModel = params['controllerModel'];
-        if(controllerModel) {
-            this._object.add(controllerModel);
-            this._modelObject = controllerModel;
-            this._modelUrl = DEFAULT_HAND_PROFILE_PATH
-                + this._handedness.toLowerCase() + '.glb';
-            this._isUsers = true;
-            this._enableARMask();
-        }
-        this._palmDirection = new Vector3();
-        this._raycasterOrigin = new Vector3();
-        this._raycasterDirection = new Vector3();
-    }
-
-    _registerOwner(params) {
-        let owner = projectHandler.getSessionAsset(params['parentId']);
-        if(owner.registerXRHand) {
-            owner.registerXRHand(params['handedness'], this);
-        }
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['handedness'] = this._handedness;
-        params['isTargetRayBased'] = this._isTargetRayBased;
-        return params;
-    }
-
-    addFromTargetRay(asset, position, rotation) {
-        let hand = ei.getXRController(Mr.HAND,
-            this._handedness, 'targetRay');
-        let assetObject = asset.object;
-        if(!hand) return;
-        hand.add(assetObject);
-        if(position) assetObject.position.fromArray(position);
-        if(rotation) assetObject.rotation.fromArray(rotation);
-        asset.attachTo(this);
-    }
-
-    get handedness() { return this._handedness; }
-
-    getTargetRayDirection() {
-        let xrController = ei.getXRController(Mr.HAND,
-            this._handedness, 'targetRay');
-        if(!xrController) return null;
-        xrController.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return this._raycasterDirection;
-    }
-
-    getRaycaster() {
-        let xrHand = ei.getXRController(Mr.HAND,
-            this._handedness, 'targetRay');
-        if(!xrHand) return null;
-        xrHand.getWorldPosition(this._raycasterOrigin);
-        xrHand.getWorldDirection(this._raycasterDirection).negate()
-            .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
-    }
-
-    getPalmDirection() {
-        if(this._isUsers) {
-            this._palmDirection.copy(this._modelObject.motionController
-                .palmDirection);
-        } else if(this._handedness == Rr.LEFT) {
-            this._palmDirection.set(0.9750661112291139, -0.10431964344732528,
-                0.1958660688459766);
-            this._object.localToWorld(this._palmDirection)
-                .sub(this.getWorldPosition());
-        } else {
-            this._palmDirection.set(-0.9750665315668015, -0.1043194340529684,
-                0.19586401335899684);
-            this._object.localToWorld(this._palmDirection)
-                .sub(this.getWorldPosition());
-        }
-        return this._palmDirection;
-    }
-
-    isButtonPressed(index) {
-        if(index == 0) {
-            return this._modelObject.motionController.isPinching;
-        } else if(index == 1) {
-            return this._modelObject.motionController.isGrabbing;
-        }
-        return false;
-    }
-
-    processFromRTC(float32Array, index) {
-        super.processFromRTC(float32Array, index);
-        if(this._isTargetRayBased)
-            this._object.quaternion.multiply(TARGET_RAY_BASED_QUATERNION);
-    }
-
-    _updateHandData(float32Array, index, asset) {
-        if(!asset) return;
-        let peerHand = asset.object;
-        peerHand.position.fromArray(float32Array, index);
-        let rotation = float32Array.slice(index + 3, index + 6);
-        peerHand.rotation.fromArray(rotation);
-    }
-
-    createHandMenu() {
-        if(this._handMenu) return;
-        this._handMenu = new HandMenu();
-        //The below is to position the menu nicely for the apple vision pro. If
-        //this doesn't work out with any future headsets, we may want to use the
-        //position of one of the bones in the hand
-        if(this._isTargetRayBased) this._handMenu.position.set(0, 0.05, -0.05);
-    }
-
-    updateHandMenu(timeDelta) {
-        if(!this._handMenu) return;
-        let bones = this._modelObject.motionController.bones;
-        let open = true;
-        for(let boneSet of BONE_SETS) {
-            vector3s[0].subVectors(bones[boneSet[0]].position,
-                bones[boneSet[1]].position);
-            vector3s[1].subVectors(bones[boneSet[2]].position,
-                bones[boneSet[1]].position);
-            if(vector3s[0].angleTo(vector3s[1]) < BONE_ANGLE) {
-                open = false;
-                break;
-            }
-        }
-        if(open) {//Check thumb knuckle position and palm direction
-            if(!this._plane1) {
-                this._plane1 = new Plane();
-                this._plane2 = new Plane();
-            }
-            this._plane1.setFromCoplanarPoints(bones[0].position,
-                bones[6].position, bones[11].position);
-            this._plane2.setFromCoplanarPoints(bones[0].position,
-                bones[2].position, bones[6].position);
-            if(this._plane1.normal.angleTo(this._plane2.normal) > THUMB_ANGLE) {
-                open = false;
-            } else {
-                global$1.camera.getWorldPosition(vector3s[0])
-                    .sub(this.getWorldPosition());
-                if(this.getPalmDirection().angleTo(vector3s[0]) > PALM_ANGLE)
-                    open = false;
-            }
-        }
-        if(open != this._handMenu.open) {
-            this._handMenu.open = open;
-            this._object[open ? 'add' : 'remove'](this._handMenu);
-        }
-        if(open) {
-            let palmDirection = this.getPalmDirection().add(
-                this.getWorldPosition());
-            this._handMenu.lookAt(palmDirection);
-            this._handMenu.update(timeDelta);
-        }
-    }
-
-    onRemoveFromProject() {
-        super.onRemoveFromProject();
-        if(this._handMenu) this._handMenu.removeWalkingTool();
-    }
-
-    static assetId = 'd26f490e-dc3a-4f96-82d4-ab9f3bdb92b2';
-    static assetName = 'XR Hand';
-}
-
-projectHandler.registerAsset(XRHand);
-libraryHandler.loadBuiltIn(XRHand);
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
-const AVATAR_KEY = "DigitalBacon:Avatar";
-const USERNAME_KEY = "DigitalBacon:Username";
-const FADE_START = 0.6;
-const FADE_END = 0.2;
-//const FADE_MIDDLE = (FADE_START + FADE_END) / 2;
-const FADE_RANGE = FADE_START - FADE_END;
-const EPSILON = 0.00000000001;
-  
-class UserController extends InternalAssetEntity {
-    constructor(params = {}) {
-        params['assetId'] = UserController.assetId;
-        super(params);
-        this._isXR = false;
-        this._username = localStorage.getItem(USERNAME_KEY)
-            || generateRandomUsername();
-        this._avatarUrl = localStorage.getItem(AVATAR_KEY)
-            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
-        this._avatarFadeUpdateNumber = 0;
-        this._xrControllers = {};
-        this._xrHands = {};
-        this._xrDevices = new Set();
-        this._rtcCounter = 0;
-    }
-
-    init() {
-        if(global$1.deviceType == 'XR') {
-            this.isXR = true;
-        }
-        let scale = settingsHandler.getUserScale();
-        this.scale = [scale, scale, scale];
-        this._setup();
-    }
-
-    _setup() {
-        if(global$1.deviceType != "XR") {
-            this._avatar = new Avatar({
-                'avatarUrl': this._avatarUrl,
-                'parentId': this._id,
-                'verticalOffset': global$1.cameraFocus.position.y,
-            });
-            audioHandler.setListenerParent(this._avatar.object);
-        } else {
-            this._avatar = new Avatar({
-                'object': global$1.camera,
-                'parentId': this._id,
-                'avatarUrl': this._avatarUrl,
-            });
-        }
-        this._avatar.parent = this;
-        projectHandler.addAsset(this._avatar);
-        this._basicMovement = new BasicMovement({
-            'User Object': this._object,
-            'Avatar': this._avatar,
-        });
-    }
-
-    get avatar() { return this._avatar; }
-    get isXR() { return this._isXR; }
-    get scale() { return super.scale; }
-    get username() { return this._username; }
-
-    set avatarUrl(url) {
-        localStorage.setItem(AVATAR_KEY, url);
-        this._avatarUrl = url;
-        this._avatar.updateSourceUrl(url);
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: this._avatar, fields: ['avatarUrl'] });
-    }
-
-    set isXR(isXR) { this._isXR = isXR; }
-    set scale(scale) {
-        super.scale = scale;
-        global$1.camera.scale.set(1, 1, 1);
-        let object = global$1.camera.parent;
-        while(object) {
-            global$1.camera.scale.divide(object.scale);
-            object = object.parent;
-        }
-        global$1.camera.near = 0.1 / global$1.camera.scale.x;
-        global$1.camera.far = Math.max(1000, 1000 / global$1.camera.scale.x);
-        global$1.camera.updateProjectionMatrix();
-        pubSub.publish(this._id, PubSubTopics.INTERNAL_UPDATED,
-            { asset: this, fields: ['scale'] });
-    }
-    set username(username) {
-        localStorage.setItem(USERNAME_KEY, username);
-        this._username = username;
-        pubSub.publish(this._id, PubSubTopics.USERNAME_UPDATED, this._username);
-    }
-
-    getController(handedness) {
-        return this._xrControllers[handedness];
-    }
-
-    getHand(handedness) {
-        return this._xrHands[handedness];
-    }
-
-    getXRDevices() {
-        return this._xrDevices;
-    }
-
-    registerXRController(handedness, xrController) {
-        this._xrControllers[handedness] = xrController;
-        this._xrDevices.add(xrController);
-    }
-
-    registerXRHand(handedness, xrHand) {
-        this._xrHands[handedness] = xrHand;
-        this._xrDevices.add(xrHand);
-    }
-
-    registerXRDevice(xrDevice) {
-        this._xrDevices.add(xrDevice);
-    }
-
-    disableBasicMovement() {
-        this._basicMovement.disable();
-    }
-
-    enableBasicMovement() {
-        this._basicMovement.enable();
-    }
-
-    getDistanceBetweenHands() {
-        if(global$1.deviceType != 'XR') return;
-        let leftController = this._xrControllers[Rr.LEFT];
-        let rightController = this._xrControllers[Rr.RIGHT];
-        if(!leftController || !rightController) {
-            leftController = this._xrHands[Rr.LEFT];
-            rightController = this._xrHands[Rr.RIGHT];
-            if(!leftController || !rightController) return;
-        }
-        if(!leftController.isInScene() || !rightController.isInScene()) return;
-
-        let leftPosition = leftController.getWorldPosition();
-        let rightPosition = rightController.getWorldPosition();
-        return leftPosition.distanceTo(rightPosition);
-    }
-
-    getDataForRTC() {
-        let codes = 0;
-        let data = [];
-        this._rtcCounter++;
-        if(global$1.deviceType == "XR") {
-            codes += this._pushAvatarDataForRTC(data);
-            codes += this._pushHandsDataForRTC(data);
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            codes += this._pushAvatarDataForRTC(data);
-        }
-        let worldVelocity = this._basicMovement.getWorldVelocity();
-        if(worldVelocity.length() >= 0.00001) {
-            data.push(...this._basicMovement.getWorldVelocity().toArray());
-            codes += UserMessageCodes.USER_VELOCITY;
-        }
-        if(this._rtcCounter % 300 == 0) {
-            this._object.getWorldPosition(vector3s[0]);
-            data.push(...vector3s[0].toArray());
-            codes += UserMessageCodes.USER_POSITION;
-        }
-        let codesArray = new Uint8Array([codes]);
-        return [codesArray.buffer, Float32Array.from(data).buffer];
-    }
-
-    _pushAvatarDataForRTC(data) {
-        let position = global$1.camera.position.toArray();
-        let rotation = global$1.camera.rotation.toArray();
-        rotation.pop();
-
-        data.push(...position);
-        data.push(...rotation);
-        return UserMessageCodes.AVATAR;
-    }
-
-    _pushHandsDataForRTC(data) {
-        let codes = 0;
-        for(let type of ['CONTROLLER', 'HAND']) {
-            let map = (type == 'CONTROLLER') ? '_xrControllers' : '_xrHands';
-            for(let handedness of [Rr.LEFT, Rr.RIGHT]) {
-                let controller = this[map][handedness];
-                if(controller && controller.isInScene()) {
-                    controller.pushDataForRTC(data);
-                    codes += UserMessageCodes[handedness + '_' + type];
-                }
-            }
-        }
-        return codes;
-    }
-
-    hasChild(object) {
-        return object.parent == this._object;
-    }
-
-    exportParams() {
-        let params = super.exportParams();
-        params['isXR'] = this._isXR;
-        params['username'] = this._username;
-        return params;
-    }
-
-    _updateAvatar() {
-        if(!this._avatar.isDisplayingAvatar()) {
-            let data = [];
-            this._pushAvatarDataForRTC(data);
-            let rotation = data.slice(3, 6);
-            this._avatar.object.rotation.fromArray(rotation);
-        }
-        let updateNumber = sessionHandler.getControlsUpdateNumber();
-        if(this._avatarFadeUpdateNumber == updateNumber) return;
-        this._avatarFadeUpdateNumber = updateNumber;
-        let cameraDistance = sessionHandler.getCameraDistance();
-        if(cameraDistance > FADE_START * 2) return;
-        let diff = cameraDistance - this._avatarFadeCameraDistance;
-        if(Math.abs(diff) < EPSILON) return;
-        //Fade Logic Start
-        this._avatarFadeCameraDistance = cameraDistance;
-        let fadePercent = Math.max(cameraDistance, FADE_END);
-        fadePercent = (fadePercent - FADE_END) / FADE_RANGE;
-        if(fadePercent == 0) {
-            if(this._avatar.isDisplayingAvatar()) {
-                this._basicMovement.setPerspective(1);
-                pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED,
-                    1);
-                this._avatar.hideAvatar();
-            }
-            return;
-        } else if(!this._avatar.isDisplayingAvatar()) {
-            this._basicMovement.setPerspective(3);
-            pubSub.publish(this._id, PubSubTopics.USER_PERSPECTIVE_CHANGED, 3);
-            this._avatar.displayAvatar();
-        }
-        (fadePercent < 1)
-            ? this._avatar.fade(fadePercent)
-            : this._avatar.endFade();
-        //Fade Logic end
-
-        //Disappear Logic start
-        //let object = this._avatar.getObject();
-        //if(cameraDistance < FADE_MIDDLE) {
-        //    if(object.parent) this._avatar.removeFromScene();
-        //} else if(!object.parent) {
-        //    this._avatar.addToScene(global.cameraFocus,
-        //        this._pointerInteractable, this._gripInteractable);
-        //}
-        //Disappear Logic end
-    }
-
-    update(timeDelta) {
-        if(global$1.deviceType == "XR") {
-            this._updateHands(timeDelta);
-        } else if(this._avatar) {
-            this._updateAvatar();
-        }
-        this._basicMovement.update(timeDelta);
-    }
-
-    _getControllerModelUrl(object) {
-        if(object && object.motionController) {
-            return object.motionController.assetUrl;
-        }
-    }
-
-    _updateHands(timeDelta) {
-        for(let side in Rr) {
-            this._updateHand(timeDelta, Mr.CONTROLLER, side);
-            this._updateHand(timeDelta, Mr.HAND, side);
-        }
-    }
-
-    _updateHand(timeDelta, type, handedness) {
-        let controller = (type == Mr.HAND)
-            ? this._xrHands[handedness]
-            : this._xrControllers[handedness];
-        let controllerModel = ei.getXRControllerModel(type,
-            handedness);
-        let source = ei.getXRInputSource(type, handedness);
-        if(controller && controller._live) {
-            if(source) {
-                controller.resetTTL();
-                if(type==Mr.HAND && handedness==Rr.LEFT)
-                    controller.updateHandMenu(timeDelta);
-            } else {
-                controller.decrementTTL(timeDelta);
-            }
-        } else if(source && this._getControllerModelUrl(controllerModel)) {
-            if(!controller) {
-                if(controllerModel.children.length == 0) return;
-                let assetClass = (type == Mr.HAND)
-                    ? XRHand
-                    : XRController;
-                let xrController = ei.getXRController(type,
-                    handedness, 'grip');
-                let isTargetRayBased = false;
-                if(!xrController) {
-                    xrController = ei.getXRController(type,
-                        handedness, 'targetRay');
-                    isTargetRayBased = true;
-                }
-                controller = new assetClass({
-                    id: xrController.uuid,
-                    handedness: handedness,
-                    parentId: this._id,
-                    controllerModel: controllerModel,
-                    object: xrController,
-                    isTargetRayBased: isTargetRayBased,
-                });
-                projectHandler.addAsset(controller, false, true);
-                //controller.attachTo(this);
-                if(type==Mr.HAND && handedness==Rr.LEFT)
-                    controller.createHandMenu();
-            } else {
-                projectHandler.addAsset(controller, false, true);
-            }
-        }
-    }
-
-    static assetId = 'ac0ff650-6ad5-4c00-a234-0a320d5a8bef';
-    static assetName = 'User';
-}
-
-function generateRandomUsername() {
-    return String.fromCharCode(97+Math.floor(Math.random() * 26))
-            + Math.floor(Math.random() * 100);
-}
-
-let userController = new UserController();
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-
 /* global saveAs, JSZip */
 
 const HOSTING_ORIGIN = 'https://mydigitalbacon.com';
@@ -39677,6 +39864,7 @@ const pages = [
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
     { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
     { "title": "Acknowledgements", "menuPage": MenuPages.ACKNOWLEDGEMENTS },
+    { "title": "Build Your Own 3D Website" },
 ];
 
 class HomePage extends MenuPage {
@@ -39702,8 +39890,13 @@ class HomePage extends MenuPage {
             let button = createWideButton(page.title);
             button.margin = 0.004;
             columnBlock.add(button);
-            button.onClickAndTouch =
-                () => this._controller.pushPage(page.menuPage);
+            if(page['menuPage']) {
+                button.onClickAndTouch =
+                    () => this._controller.pushPage(page.menuPage);
+            } else {
+                button.onClickAndTouch =
+                    () => top.window.location.href = 'https://digitalbacon.io';
+            }
         }
         this.add(columnBlock);
     }
@@ -39767,9 +39960,9 @@ class Metrics {
             if(body.data && body.data.timestamp) {
                 this._timestamp = body.data.timestamp;
                 if(!immersionDisabled) {
-                    window.onbeforeunload = () => {
+                    window.addEventListener('beforeunload', () => {
                         this.put({ pageClosed: true });
-                    };
+                    });
                 }
             }
         }).catch((error) => {
@@ -40691,6 +40884,8 @@ var Assets = /*#__PURE__*/Object.freeze({
   PlainText: PlainText,
   PlaneShape: PlaneShape,
   PointLight: PointLight,
+  PublishComponent: PublishComponent,
+  PublishSystem: PublishSystem,
   RingShape: RingShape,
   Shape: Shape,
   SphereShape: SphereShape,
@@ -40742,7 +40937,7 @@ var EditorHelpers = /*#__PURE__*/Object.freeze({
  */
 
 
-const version = "0.3.4";
+const version = "0.3.5";
 
 global$1.version = version;
 
