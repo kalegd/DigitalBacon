@@ -2770,11 +2770,63 @@ he bottom</p>
           </tbody>
         </table>
         <h1 id="section/Components">Components</h1>
-        <p>Components are essentially labels that can be attached to other instances to let Systems know to alter their behavior. For example, attaching a Grabbable Component to an asset will notify the Grabbable System to add functionality to the asset so that users may pick it up and down in the live site</p>
-        <p>There are no built in components in Digital Bacon, but you can find them available online. In the coming months we hope to provide a platform for users to be able to find and use additional assets easily</p>
+        <p>Components are essentially labels that can be attached to other assets to let Systems know to alter their behavior. For example, attaching a Grabbable Component to an asset will notify the Grabbable System to add functionality to the asset so that users may pick it up and down in the live site. There are many more components than what you'll see in Digital Bacon by default. Check out our list of <a href="/resources/plugins">plugins</a> to find some you might find useful</p>
+        <ul>
+          <li><a href="#section/Component-Publish">Publish Component</a></li>
+        </ul>
+        <h5 id="section/Component-Publish">Publish Component</h5>
+        <p>Allows you to specify what events should be published for various actions on an asset like clicking, grabbing, and touching</p>
+        <table class="attributes">
+          <tbody>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Event</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Event</p>
+                <p>The event that will be published by the actions specified below</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Pointer Action</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Interactable Action</p>
+                <p>The action done by mouse, touch screen tap, or XR target ray on an asset that should trigger the event</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Grip Action</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Interactable Action</p>
+                <p>The action done by XR controller grip button or hand tracking grab gesture on an asset that should trigger the event</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">Touch Action</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Touch Interactable Action</p>
+                <p>The action done by XR controller or hand touching an asset that should trigger the event</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <h1 id="section/Systems">Systems</h1>
-        <p>Systems can alter the behavior of Assets with components that pertain to that System. Going off the previous example, if you were to omit the Grabbable System then users would not be able to pick up objects in your live website</p>
-        <p>There are no built in systems in Digital Bacon, but you can find them available online. In the coming months we hope to provide a platform for users to be able to find and use additional assets easily</p>
+        <p>Systems can alter the behavior of Assets with components that pertain to that System. Going off the previous example, if you were to omit the Grabbable System then users would not be able to pick up objects in your live website. There are many more systems than what you'll see in Digital Bacon by default. Check out our list of <a href="/resources/plugins">plugins</a> to find some you might find useful</p>
+        <ul>
+          <li><a href="#section/System-Publish">Publish System</a></li>
+        </ul>
+        <h5 id="section/System-Publish">Publish System</h5>
+        <p>Enables publishing events when assets with a Publish Component are interacted with</p>
         <h1 id="section/Other Assets">Other Assets</h1>
         <p>Digital Bacon allows other custom assets to be included in the project that don't fit in the other categories. These are plugins that can be included just like Components and Systems that can be found online. In the coming months we hope to provide a platform for users to be able to find and use additional assets easily</p>
       </div>
