@@ -16,6 +16,7 @@ const pages = [
     { "title": "Settings", "menuPage": MenuPages.SETTINGS },
     { "title": "Connect with Peers", "menuPage": MenuPages.PARTY },
     { "title": "Acknowledgements", "menuPage": MenuPages.ACKNOWLEDGEMENTS },
+    { "title": "Build Your Own 3D Website" },
 ];
 
 class HomePage extends MenuPage {
@@ -41,8 +42,13 @@ class HomePage extends MenuPage {
             let button = createWideButton(page.title);
             button.margin = 0.004;
             columnBlock.add(button);
-            button.onClickAndTouch =
-                () => this._controller.pushPage(page.menuPage);
+            if(page['menuPage']) {
+                button.onClickAndTouch =
+                    () => this._controller.pushPage(page.menuPage);
+            } else {
+                button.onClickAndTouch =
+                    () => top.window.location.href = 'https://digitalbacon.io';
+            }
         }
         this.add(columnBlock);
     }
