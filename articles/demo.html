@@ -1,0 +1,44 @@
+<html>
+  <head>
+    <title>Digital Bacon - Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="theme-color" content="#ffebfd"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/app.css">
+    <!-- SHIM FOR WEBRTC CAUSE FIREFOX IS OLD MAN -->
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.0/adapter.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "DigitalBacon": "https://cdn.jsdelivr.net/npm/digitalbacon@latest/build/DigitalBacon.min.js",
+          "three": "https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js"
+        }
+      }
+    </script>
+    <script src="https://apis.google.com/js/api.js" defer></script>
+    <script src="https://accounts.google.com/gsi/client" defer></script>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script type="module">
+      import { setup } from 'DigitalBacon';
+
+      let project = "default-project";
+      let searchParams = new URLSearchParams(window.location.search);
+      if(searchParams.has('project')) {
+          project = searchParams.get('project');
+      }
+
+      let params = {
+          projectFilePath: '/projects/' + project + '.zip',
+          authUrl: 'https://api.mydigitalbacon.com/multi-user/auth/u5kM9wezEAJUSL3nRs4pFG',
+          socketUrl: 'wss://websocket.mydigitalbacon.com',
+      };
+
+      setup("container", params);
+    </script>
+  </body>
+</html>
