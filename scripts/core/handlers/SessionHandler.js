@@ -44,14 +44,16 @@ class SessionHandler {
     }
 
     _addBakedWithLabel() {
-        this._bakedWithLabel = document.createElement('p');
-        this._bakedWithLabel.innerHTML = 'Baked with <a style="color: rgb(255, 199, 229);" href="https://digitalbacon.io">Digital Bacon</a> &#10084;';
-        this._bakedWithLabel.style.color = 'rgb(255, 199, 229)';
+        this._bakedWithLabel = document.createElement('div');
         this._bakedWithLabel.style.bottom = '0';
-        this._bakedWithLabel.style.fontSize = '12px';
-        this._bakedWithLabel.style.fontStyle = 'italic';
         this._bakedWithLabel.style.position = 'absolute';
         this._bakedWithLabel.style.width = '100%';
+        let p = document.createElement('p');
+        p.innerHTML = 'Baked with <a style="color: white;" href="https://digitalbacon.io">Digital Bacon</a> &#10084;';
+        p.style.color = 'rgb(255, 199, 229)';
+        p.style.display = 'inline-block';
+        p.style.fontSize = '16px';
+        this._bakedWithLabel.appendChild(p);
     }
 
     _configureForXR() {
