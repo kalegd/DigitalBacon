@@ -22,6 +22,7 @@ class MaterialField extends MenuField {
         super(params);
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
+        this._privateIds = params['privateIds'] || new Set();
         this._createInputs(title);
         this._updateMaterial(this._lastValue);
     }
@@ -47,8 +48,10 @@ class MaterialField extends MenuField {
             let filteredMaterials = {};
             filteredMaterials["null\n"] = { Name: "Blank" };
             for(let materialId in materials) {
-                filteredMaterials[materialId] =
-                    { Name: materials[materialId].name };
+                let material = materials[materialId];
+                if((material.isPrivate || material.constructor.isPrivate)
+                    && !this._privateIds.has(materialId)) continue;
+                filteredMaterials[materialId] = { Name: material.name };
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
             page.setContent(filteredMaterials, (materialId) => {

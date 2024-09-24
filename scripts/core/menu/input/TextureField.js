@@ -19,6 +19,7 @@ class TextureField extends MenuField {
         this._lastValue =  params['initialValue'];
         this._filter =  params['filter'];
         let title = params['title'] || 'Missing Field Name...';
+        this._privateIds = params['privateIds'] || new Set();
         this._createInputs(title);
         this._updateTexture(this._lastValue);
     }
@@ -47,8 +48,10 @@ class TextureField extends MenuField {
                 if(this._filter &&
                         !this._filter.includes(textures[textureId].textureType))
                     continue;
-                filteredTextures[textureId] =
-                    { Name: textures[textureId].name };
+                let texture = textures[textureId];
+                if((texture.isPrivate || texture.constructor.isPrivate)
+                    && !this._privateIds.has(textureId)) continue;
+                filteredTextures[textureId] = { Name: texture.name };
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
             page.setContent(filteredTextures, (textureId) => {

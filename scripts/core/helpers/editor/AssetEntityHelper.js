@@ -444,7 +444,7 @@ export default class AssetEntityHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "parentId", "name": "Parent", "includeScene": true,
-            "excludeSelf": true, "type": AssetEntityField },
+            "type": AssetEntityField },
         { "parameter": "position", "name": "Position", "type": Vector3Field },
         { "parameter": "rotation", "name": "Rotation", "type": EulerField },
         { "parameter": "scale", "name": "Scale", "type": Vector3Field },

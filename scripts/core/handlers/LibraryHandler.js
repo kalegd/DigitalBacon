@@ -195,6 +195,15 @@ class LibraryHandler {
         };
     }
 
+    loadPrivate(assetClass) {
+        if(assetClass.assetId in this.library) return;
+        this.library[assetClass.assetId] = {
+            'Name': assetClass.assetName,
+            'Type': assetClass.assetType,
+            'IsPrivate': true,
+        };
+    }
+
     _loadAssetFromURL(isExternal, url, successCallback, errorCallback) {
         let name = url.split('/').pop();
         let assetId = uuidv4();
@@ -465,7 +474,7 @@ class LibraryHandler {
         let libraryDetails = {};
         for(let assetId of assetIds) {
             let assetDetails = this.library[assetId];
-            if(assetDetails['IsBuiltIn']) continue;//Built-in asset
+            if(assetDetails['IsBuiltIn'] || assetDetails['IsPrivate']) continue;
             let assetType = assetDetails['Type'];
             libraryDetails[assetId] = {
                 'Name': assetDetails['Name'],

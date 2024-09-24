@@ -231,8 +231,11 @@ export default class EditorHelper {
     _createAssetEntityField(field) {
         return new AssetEntityField({
             'title': field.name,
-            'exclude': field.excludeSelf ? this._id : null,
+            'exclude': field.includeSelf ? null : this._id,
             'filter': typeof field.filter == 'function' ? field.filter : null,
+            'privateIds': field.privateIdsParameter
+                ? this._asset[field.privateIdsParameter]
+                : null,
             'includeScene': field.includeScene,
             'initialValue': this._asset[field.parameter],
             'getFromSource': () => this._asset[field.parameter],

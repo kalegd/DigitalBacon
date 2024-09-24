@@ -19,7 +19,7 @@ class AssetsPage extends PaginatedButtonsPage {
         super(controller, true);
         this._assetType = assetType;
         this._assets = {};
-        this._items = Object.keys(this._assets);
+        this._items = [];
         this._addPageContent();
         this._createAddButton();
     }
@@ -65,7 +65,10 @@ class AssetsPage extends PaginatedButtonsPage {
 
     _refreshItems() {
         this._assets = ProjectHandler.getAssetsForType(this._assetType);
-        this._items = Object.keys(this._assets);
+        this._items = [];
+        for(let id in this._assets) {
+            if(!this._assets[id].isPrivate) this._items.push(id);
+        }
     }
 
     _addSubscriptions() {
