@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import ComponentsHandler from '/scripts/core/handlers/assetTypes/ComponentsHandler.js';
@@ -66,8 +67,8 @@ class ListComponentsPage extends PaginatedListPage {
 
     _selectNewComponent() {
         let currentPage = this._controller.getCurrentPage();
-        let page = this._controller.getPage(MenuPages.NEW_COMPONENT);
-        page.setContent((component) => {
+        let page = this._controller.getPage(MenuPages.NEW_ASSET);
+        page.setContent(AssetTypes.COMPONENT, (component) => {
             if(!component.supports(this._asset)) {
                 PubSub.publish(this._id, PubSubTopics.MENU_NOTIFICATION, {
                     text: 'Component is not supported for this type of asset',
@@ -81,7 +82,7 @@ class ListComponentsPage extends PaginatedListPage {
             componentPage.setAsset(component);
             this._controller.pushPage(MenuPages.COMPONENT);
         });
-        this._controller.pushPage(MenuPages.NEW_COMPONENT);
+        this._controller.pushPage(MenuPages.NEW_ASSET);
     }
 
     _getItemName(item) {

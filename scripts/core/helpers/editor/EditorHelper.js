@@ -11,6 +11,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
 import AssetEntityField from '/scripts/core/menu/input/AssetEntityField.js';
+import AssetSetField from '/scripts/core/menu/input/AssetSetField.js';
 import AudioField from '/scripts/core/menu/input/AudioField.js';
 import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
 import ColorField from '/scripts/core/menu/input/ColorField.js';
@@ -27,6 +28,7 @@ import Vector3Field from '/scripts/core/menu/input/Vector3Field.js';
 
 const INPUT_TYPE_TO_CREATE_FUNCTION = {
     AssetEntityField: "_createAssetEntityField",
+    AssetSetField: "_createAssetSetField",
     AudioField: "_createAudioField",
     CheckboxField: "_createCheckboxField",
     ColorField: "_createColorField",
@@ -245,6 +247,22 @@ export default class EditorHelper {
         });
     }
 
+    _createAssetSetField(field) {
+        return new AssetSetField({
+            'title': field.name,
+            'getOptions': field.optionsFunction,
+            'getNewOptions': field.newOptionsFunction,
+            'initialValue': this._asset[field.parameter],
+            'getFromSource': () => this._asset[field.parameter],
+            'onAdd': (value) => {
+                this._addToParameter(field.parameter, value);
+            },
+            'onRemove': (value, index) => {
+                this._removeFromParameter(field.parameter, value);
+            },
+        });
+    }
+
     _createAudioField(field) {
         return new AudioField({
             'title': field.name,
@@ -428,6 +446,7 @@ export default class EditorHelper {
 
     static FieldTypes = {
         AssetEntityField: AssetEntityField,
+        AssetSetField: AssetSetField,
         AudioField: AudioField,
         CheckboxField: CheckboxField,
         ColorField: ColorField,

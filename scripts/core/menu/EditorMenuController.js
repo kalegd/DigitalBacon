@@ -12,6 +12,7 @@ import AcknowledgementsPage from '/scripts/core/menu/pages/AcknowledgementsPage.
 import AssetPage from '/scripts/core/menu/pages/AssetPage.js';
 import AssetsPage from '/scripts/core/menu/pages/AssetsPage.js';
 import AssetSelectPage from '/scripts/core/menu/pages/AssetSelectPage.js';
+import AssetSetPage from '/scripts/core/menu/pages/AssetSetPage.js';
 import ColorWheelPage from '/scripts/core/menu/pages/ColorWheelPage.js';
 import EditAcknowledgementsPage from '/scripts/core/menu/pages/EditAcknowledgementsPage.js';
 import EditorSettingsPage from '/scripts/core/menu/pages/EditorSettingsPage.js';
@@ -43,6 +44,7 @@ export default class EditorMenuController extends MenuController {
         super();
         this._pages[MenuPages.ACKNOWLEDGEMENTS] =new AcknowledgementsPage(this);
         this._pages[MenuPages.ASSET_SELECT] = new AssetSelectPage(this);
+        this._pages[MenuPages.ASSET_SET] = new AssetSetPage(this);
         this._pages[MenuPages.COLOR_WHEEL] = new ColorWheelPage(this);
         this._pages[MenuPages.EDIT_ACKNOWLEDGEMENTS]
             = new EditAcknowledgementsPage(this);
@@ -54,6 +56,7 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.LIST_COMPONENTS] = new ListComponentsPage(this);
         this._pages[MenuPages.LOAD_GDRIVE] = new LoadFromGDrivePage(this);
         this._pages[MenuPages.NAVIGATION] = new NavigationPage(this);
+        this._pages[MenuPages.NEW_ASSET] = new NewAssetPage(this);
         this._pages[MenuPages.PARTY] = new PartyPage(this);
         this._pages[MenuPages.PEER] = new PeerPage(this);
         this._pages[MenuPages.PROJECT] = new ProjectPage(this);
@@ -70,7 +73,6 @@ export default class EditorMenuController extends MenuController {
             if(assetType == AssetTypes.INTERNAL) continue;
             this._pages[assetType + 'S'] = new AssetsPage(this, assetType);
             this._pages[assetType] = new AssetPage(this, assetType);
-            this._pages['NEW_' + assetType] = new NewAssetPage(this, assetType);
         }
         this._pageCalls.push(MenuPages.NAVIGATION);
         if(global.deviceType == 'XR') {

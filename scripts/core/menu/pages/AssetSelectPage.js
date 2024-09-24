@@ -92,7 +92,7 @@ class AssetSelectPage extends PaginatedButtonsPage {
             if(!this._addButton.parent) {
                 this.add(this._addButton);
             }
-        } else if(this._addButton.parentComponent) {
+        } else if(this._addButton.parent) {
             this.remove(this._addButton);
         }
     }

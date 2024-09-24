@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import TexturesHandler from '/scripts/core/handlers/assetTypes/TexturesHandler.js';
 import { Colors, Textures } from '/scripts/core/helpers/constants.js';
@@ -86,8 +87,8 @@ class TextureField extends MenuField {
             global.menuController.pushPage(MenuPages.TEXTURE);
         } else {
             let newTexturePage = global.menuController.getPage(
-                MenuPages.NEW_TEXTURE);
-            newTexturePage.setContent((texture) => {
+                MenuPages.NEW_ASSET);
+            newTexturePage.setContent(AssetTypes.TEXTURE, (texture) => {
                 this._handleTextureSelection(texture.id, currentPage);
                 if(currentPage != global.menuController.getCurrentPage())return;
                 let texturePage = global.menuController.getPage(
@@ -95,7 +96,7 @@ class TextureField extends MenuField {
                 texturePage.setAsset(texture);
                 global.menuController.pushPage(MenuPages.TEXTURE);
             });
-            global.menuController.pushPage(MenuPages.NEW_TEXTURE);
+            global.menuController.pushPage(MenuPages.NEW_ASSET);
         }
     }
 

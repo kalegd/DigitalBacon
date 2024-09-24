@@ -39,9 +39,8 @@ const SPECIAL_OPTIONS = {
 };
 
 class NewAssetPage extends PaginatedButtonsPage {
-    constructor(controller, assetType) {
+    constructor(controller) {
         super(controller, true);
-        this._assetType = assetType;
         this._items = [];
         this._addPageContent();
     }
@@ -206,7 +205,15 @@ class NewAssetPage extends PaginatedButtonsPage {
     }
 
     _refreshItems() {
-        if(!(this._assetType in AssetScriptTypes)) {
+        if(this._customAssets) {
+            this._items = [];
+            for(let assetId of this._customAssets) {
+                this._items.push({
+                    assetId: assetId,
+                    assetName: LibraryHandler.getAssetName(assetId),
+                });
+            }
+        } else if(!(this._assetType in AssetScriptTypes)) {
             this._items = [];
             if(this._assetType == AssetEntityTypes.MODEL)
                 this._items.push(SPECIAL_OPTIONS.SKETCHFAB);
@@ -229,8 +236,10 @@ class NewAssetPage extends PaginatedButtonsPage {
         }
     }
 
-    setContent(additionalAction) {
+    setContent(assetType, additionalAction, customAssets) {
+        this._assetType = assetType;
         this._additionalAction = additionalAction;
+        this._customAssets = customAssets;
     }
 }
 
