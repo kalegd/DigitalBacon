@@ -66,7 +66,7 @@ export default class Main {
     _createCamera() {
         let ratio = this._container.clientWidth / this._container.clientHeight;
         this._camera = new THREE.PerspectiveCamera(
-            global.deviceType != "XR" ? 45 : 90, //Field of View Angle
+            45, //Field of View Angle
             ratio, //Aspect Ratio
             0.1, //Clipping for things closer than this amount
             1000 //Clipping for things farther than this amount
@@ -89,16 +89,23 @@ export default class Main {
     }
 
     _setupDigitalBaconUI() {
+        let deviceType = (global.disableImmersion && global.deviceType == 'XR')
+            ? 'TOUCH_SCREEN'
+            : global.deviceType;
         DigitalBaconUI.Keyboard.scale.set(0.4, 0.4, 0.4);
         DigitalBaconUI.InputHandler.enableXRControllerManagement(
             UserController.object);
         DigitalBaconUI.init(this._container, this._renderer, this._scene,
-            this._camera, global.deviceType, this._cameraFocus);
+            this._camera, deviceType, this._cameraFocus);
     }
 
     _createHandlers(onStart) {
         AudioHandler.init();
-        if(global.disableImmersion) return;
+        if(global.disableImmersion) {
+            DigitalBaconUI.PointerInteractableHandler.addInteractable(
+                Scene.pointerInteractable);
+            return;
+        }
         SessionHandler.init(this._container, () => {
             DigitalBaconUI.GripInteractableHandler.addInteractable(
                 Scene.gripInteractable);
@@ -198,6 +205,8 @@ export default class Main {
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });
+                global.dynamicAssets.add(
+                    DigitalBaconUI.PointerInteractableHandler);
                 if(this._callback) this._callback(this);
                 return;
             } else if(global.deviceType == "XR") {
