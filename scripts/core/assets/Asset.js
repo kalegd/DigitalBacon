@@ -79,6 +79,10 @@ export default class Asset {
         this._name = name;
     }
 
+    set isPrivate(isPrivate) {
+        this._isPrivate = isPrivate;
+    }
+
     addComponent(componentId, ignorePublish) {
         let component = ProjectHandler.getAsset(componentId);
         if(!component) return;

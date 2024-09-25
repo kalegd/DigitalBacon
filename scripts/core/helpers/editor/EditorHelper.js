@@ -50,13 +50,14 @@ export default class EditorHelper {
         this._id = asset.id;
         this._updatedTopic = updatedTopic + ':' + asset.assetId + ':'
             + this._id;
+        this._deletedAssetSetValues = new Set();
         this._deletedAttachedComponents = new Set();
         this._disabledParams = new Set();
         this._addComponentSubscriptions();
     }
 
-    _publish(params) {
-        let message = { asset: this._asset, fields: params };
+    _publish(params, extraData) {
+        let message = { asset: this._asset, fields: params,extraData:extraData};
         PubSub.publish(this._id, this._updatedTopic, message);
     }
 
@@ -88,6 +89,76 @@ export default class EditorHelper {
         } else {
             return value1 == value2;
         }
+    }
+
+    _addToParameter(param, funcName, removeFuncName, value, ignorePublish,
+            ignoreUndoRedo) {
+        let asset = ProjectHandler.getAsset(value);
+        if(asset) {
+            this._asset[funcName](value);
+            this.updateMenuField(param);
+        } else {
+            asset = ProjectHandler.getSessionAsset(value);
+            if(!asset) return;
+            this._subscribeToAssetAdded(asset, param, funcName, value);
+        }
+        if(!ignorePublish) {
+            this._publish([param], {
+                [param]: { type: 'useFunction', funcName: funcName,value:value},
+            });
+        }
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._removeFromParameter(param, removeFuncName, funcName,value,
+                    ignorePublish, true);
+            }, () => {
+                this._addToParameter(param, funcName, removeFuncName, value,
+                    ignorePublish, true);
+            });
+        }
+    }
+
+    _removeFromParameter(param, funcName, addFuncName, value, ignorePublish, ignoreUndoRedo){
+        let asset = ProjectHandler.getAsset(value);
+        if(asset) {
+            this._asset[funcName](value);
+            this.updateMenuField(param);
+        } else {
+            asset = ProjectHandler.getSessionAsset(value);
+            if(!asset) return;
+        }
+        this._unsubscribeFromAssetAdded(asset);
+        if(!ignorePublish) {
+            this._publish([param], {
+                [param]: { type: 'useFunction', funcName: funcName,value:value},
+            });
+        }
+        if(!ignoreUndoRedo) {
+            UndoRedoHandler.addAction(() => {
+                this._addToParameter(param, addFuncName, funcName, value,
+                    ignorePublish, true);
+            }, () => {
+                this._removeFromParameter(param, funcName, addFuncName, value,
+                    ignorePublish, true);
+            });
+        }
+    }
+
+    _subscribeToAssetAdded(asset, param, funcName, value) {
+        this._deletedAssetSetValues.add(asset);
+        let assetType = asset.constructor.assetType;
+        let topic = assetType + '_ADDED:' + asset.assetId + ':' + asset.id;
+        PubSub.subscribe(this._id, topic, (asset) => {
+            if(!this._deletedAssetSetValues.has(asset)) return;
+            this._addToParameter(param, funcName, null, value, true, true);
+        });
+    }
+
+    _unsubscribeFromAssetAdded(asset) {
+        if(!this._deletedAssetSetValues.has(asset)) return;
+        this._deletedAssetSetValues.delete(asset);
+        let topic = assetType + '_ADDED:' + asset.assetId + ':' + asset.id;
+        PubSub.unsubscribe(this._id, topic);
     }
 
     updateMenuField(param) {
@@ -255,10 +326,12 @@ export default class EditorHelper {
             'initialValue': this._asset[field.parameter],
             'getFromSource': () => this._asset[field.parameter],
             'onAdd': (value) => {
-                this._addToParameter(field.parameter, value);
+                this._addToParameter(field.parameter, field.addFunction,
+                    field.removeFunction, value);
             },
             'onRemove': (value, index) => {
-                this._removeFromParameter(field.parameter, value);
+                this._removeFromParameter(field.parameter, field.removeFunction,
+                    field.addFunction, value);
             },
         });
     }

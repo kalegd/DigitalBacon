@@ -49,10 +49,7 @@ class AssetSetField extends MenuField {
     updateFromSource() {
         if(!this._getFromSource) return;
         let newValue = this._getFromSource();
-        if(newValue != this._lastValue) {
-            this._lastValue = newValue;
-            this._selectBox.value = newValue;
-        }
+        if(newValue != this._lastValue) this._lastValue = newValue;
     }
 }
 

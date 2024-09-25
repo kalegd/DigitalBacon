@@ -44,7 +44,7 @@ export default class AssetsHandler {
             });
         }
         if(ignorePublish) return;
-        let topic = this._addedTopic + ':' + asset.assetId;
+        let topic = this._addedTopic + ':' + asset.assetId + ':' + asset.id;
         PubSub.publish(this._id, topic, asset, true);
     }
 

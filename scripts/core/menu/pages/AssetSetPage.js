@@ -7,6 +7,7 @@
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
+import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import { Styles } from '/scripts/core/helpers/constants.js';
 import { createSmallButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
@@ -70,7 +71,6 @@ class AssetSetPage extends PaginatedListPage {
         page.setContent(null, (asset) => {
             if(this._onAdd) this._onAdd(asset.id);
             if(currentPage != this._controller.getCurrentPage()) return;
-            this._controller.back();
             let assetType = asset.constructor.assetType;
             let assetPage = this._controller.getPage(assetType);
             if(!assetPage) return;
@@ -99,7 +99,7 @@ class AssetSetPage extends PaginatedListPage {
     }
 
     _refreshItems() {
-        this._items = this._getAssetSet();
+        this._items = this._getAssets(this._getAssetSet());
     }
 
     setContent(title, getAssetSet, options, newOptions, onAdd, onRemove) {
@@ -111,8 +111,17 @@ class AssetSetPage extends PaginatedListPage {
         this._newOptions = newOptions;
         this._onAdd = onAdd;
         this._onRemove = onRemove;
-        this._items = this._getAssetSet();
+        this._items = this._getAssets(this._getAssetSet());
         this._page = 0;
+    }
+
+    _getAssets(assetIds) {
+        let assets = [];
+        for(let assetId of assetIds) {
+            let asset = ProjectHandler.getAsset(assetId);
+            if(asset) assets.push(asset);
+        }
+        return assets;
     }
 
     _addSubscriptions() {
