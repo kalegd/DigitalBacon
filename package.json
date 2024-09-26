@@ -7,8 +7,8 @@
     "file-saver": "2.0.5",
     "jszip": "3.10.1",
     "jszip-utils": "0.1.0",
-    "three": "0.167.1",
-    "digitalbacon-ui": "0.1.2"
+    "three": "0.169.0",
+    "digitalbacon-ui": "0.1.5"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "4.0.0",
