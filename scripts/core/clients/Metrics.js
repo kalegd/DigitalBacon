@@ -15,7 +15,7 @@ class Metrics {
     }
 
     post() {
-        let immersionDisabled = global.disableImmersion == true;
+        let immersionDisabled = global.immersionDisabled == true;
         let params = {
             userType: this._userType || 'PRIVATE',
             deviceType: global.deviceType,

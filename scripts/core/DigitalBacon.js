@@ -32,12 +32,16 @@ function getDeviceType() {
     return global.deviceType;
 }
 
-function disableImmersion() {
-    global.disableImmersion = true;
+function getRenderer() {
+    return global.renderer;
 }
 
 function isEditor() {
     return global.isEditor;
+}
+
+function isImmersionDisabled() {
+    return global.immersionDisabled;
 }
 
 function setKeyboardLock(lock) {
@@ -58,10 +62,11 @@ if(window != null) {
         Scene: Scene,
         SettingsHandler: SettingsHandler,
         UserController: UserController,
-        disableImmersion: disableImmersion,
         getCamera: getCamera,
         getDeviceType: getDeviceType,
+        getRenderer: getRenderer,
         isEditor: isEditor,
+        isImmersionDisabled: isImmersionDisabled,
         setKeyboardLock: setKeyboardLock,
         setup: setup,
         setupEditor: setupEditor,
@@ -82,10 +87,11 @@ export { PubSub };
 export { Scene };
 export { SettingsHandler };
 export { UserController };
-export { disableImmersion };
 export { getCamera };
 export { getDeviceType };
+export { getRenderer };
 export { isEditor };
+export { isImmersionDisabled };
 export { setKeyboardLock };
 export { setup, setupEditor };
 export { utils };

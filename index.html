@@ -161,14 +161,16 @@
       import {
           setup,
           getCamera,
-          disableImmersion,
       } from 'DigitalBacon';
       import { Object3D } from 'three';
 
       let camera, cameraFocus, scene;
+      let params = {
+          projectFilePath: "/projects/default-project.zip",
+          disableImmersion: true,
+      };
 
-      disableImmersion();
-      setup("container", { projectFilePath: "/projects/default-project.zip" })
+      setup("container", params)
           .then((App) => {
               camera = getCamera();
               cameraFocus = new Object3D();

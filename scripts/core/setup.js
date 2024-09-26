@@ -88,6 +88,7 @@ global.deviceType = DeviceTypes.TOUCH_SCREEN;
 global.isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
 
 function start(callback, containerId, params) {
+    global.immersionDisabled = params.disableImmersion;
     setupContainer(containerId);
     window.main = new Main(callback, containerId, params);
 }

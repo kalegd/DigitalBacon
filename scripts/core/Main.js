@@ -56,6 +56,7 @@ export default class Main {
 
     _createRenderer() {
         this._renderer = new THREE.WebGLRenderer({ antialias : true });
+        this._renderer.setPixelRatio(window.devicePixelRatio);
         this._container.appendChild(this._renderer.domElement);
         if(global.deviceType == "XR") {
             this._renderer.xr.enabled = true;
@@ -76,7 +77,7 @@ export default class Main {
     }
 
     _createUser() {
-        if(global.disableImmersion) return;
+        if(global.immersionDisabled) return;
         this._cameraFocus = new THREE.Object3D();
         if(global.deviceType != "XR") {
             this._cameraFocus.position.setY(1.7); //Height of your eyes
@@ -89,7 +90,7 @@ export default class Main {
     }
 
     _setupDigitalBaconUI() {
-        let deviceType = (global.disableImmersion && global.deviceType == 'XR')
+        let deviceType = (global.immersionDisabled && global.deviceType == 'XR')
             ? 'TOUCH_SCREEN'
             : global.deviceType;
         DigitalBaconUI.Keyboard.scale.set(0.4, 0.4, 0.4);
@@ -101,7 +102,7 @@ export default class Main {
 
     _createHandlers(onStart) {
         AudioHandler.init();
-        if(global.disableImmersion) {
+        if(global.immersionDisabled) {
             DigitalBaconUI.PointerInteractableHandler.addInteractable(
                 Scene.pointerInteractable);
             return;
@@ -122,7 +123,7 @@ export default class Main {
     }
 
     _createClients() {
-        if(global.disableImmersion) return;
+        if(global.immersionDisabled) return;
         if(global.isEditor) GoogleDrive.init();
         ReadyPlayerMe.init(this._container);
     }
@@ -132,7 +133,7 @@ export default class Main {
             let lock = uuidv4();
             global.loadingLocks.add(lock);
             ProjectHandler.load(projectFilePath, () => {
-                if(!global.disableImmersion) this._setupForImmersion();
+                if(!global.immersionDisabled) this._setupForImmersion();
                 global.loadingLocks.delete(lock);
             }, (error) => {
                 this._loadingMessage.classList.remove("loading");
@@ -142,7 +143,7 @@ export default class Main {
         } else {
             let ambientLight = new AmbientLight({ 'visualEdit': false });
             ProjectHandler.addAsset(ambientLight, true, true);
-            if(!global.disableImmersion) this._setupForImmersion();
+            if(!global.immersionDisabled) this._setupForImmersion();
         }
     }
 
@@ -160,7 +161,7 @@ export default class Main {
 
     _addEventListeners() {
         window.addEventListener('resize', () => { this._onResize(); });
-        if(!global.disableImmersion) {
+        if(!global.immersionDisabled) {
             this._container.addEventListener('wheel', function(event) {
                 event.preventDefault();
             }, {passive: false, capture: true});
@@ -194,14 +195,14 @@ export default class Main {
                 this._loadingMessage.classList.add("ending");
                 setTimeout(() => {
                     this._loadingMessage.classList.remove("loading");
-                    if(global.disableImmersion) {
+                    if(global.immersionDisabled) {
                         Metrics.post();
                     } else {
                         SessionHandler.displayButton();
                     }
                 }, 1000);
             }, 50);
-            if(global.disableImmersion) {
+            if(global.immersionDisabled) {
                 this._renderer.setAnimationLoop(() => {
                     this._update();
                 });

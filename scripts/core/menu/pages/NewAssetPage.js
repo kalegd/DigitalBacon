@@ -21,7 +21,7 @@ import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Styles, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
 import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
-const URL_PREFIX_PATTERN = /^https:\/\//i;
+const URL_PREFIX_PATTERN = /^http[s]{0,1}:\/\//i;
 
 const SPECIAL_OPTIONS = {
     CDN: {
@@ -77,9 +77,9 @@ class NewAssetPage extends PaginatedButtonsPage {
             (url) => {
                 if(!this._isUrlValid(url)) return;
                 this._controller.back();
-                let textPage = this._controller.getPage(MenuPages.TEXT);
+                let textPage = this._controller.getPage(MenuPages.MESSAGE);
                 textPage.setContent("Load from CDN", "Loading...");
-                this._controller.pushPage(MenuPages.TEXT);
+                this._controller.pushPage(MenuPages.MESSAGE);
                 LibraryHandler.loadExternalAsset(url, (assetId) => {
                     this._handleExternalAsset(assetId);
                 }, () => {
@@ -148,7 +148,7 @@ class NewAssetPage extends PaginatedButtonsPage {
             params['assetId'] = assetId;
         }
         let asset = ProjectHandler.addNewAsset(assetId, params);
-        let textPage = this._controller.getPage(MenuPages.TEXT);
+        let textPage = this._controller.getPage(MenuPages.MESSAGE);
         if(textPage.parent) this._controller.back();
         if(assetType != this._assetType) return;
         if(this.parent) this._controller.back();

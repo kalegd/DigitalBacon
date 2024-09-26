@@ -329,7 +329,7 @@ class ProjectHandler {
     reset() {
         this._sessionAssets = {};
         this._sessionAssets[Scene.id] = Scene;
-        if(!global.disableImmersion) UndoRedoHandler.reset();
+        if(!global.immersionDisabled) UndoRedoHandler.reset();
         for(let type in this._assetHandlers) {
             this._assetHandlers[type].reset();
         }

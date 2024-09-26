@@ -8,7 +8,7 @@ import { Styles } from '/scripts/core/helpers/constants.js';
 import MenuPage from '/scripts/core/menu/pages/MenuPage.js';
 import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
-class TextPage extends MenuPage {
+class MessagePage extends MenuPage {
     constructor(controller) {
         super(controller, true);
         this._addPageContent();
@@ -23,9 +23,9 @@ class TextPage extends MenuPage {
     }
 
     setContent(title, text) {
-        this._titleBlock.textComponent.text = title;
-        this._textBlock.textComponent.text = text;
+        this._titleBlock.text = title;
+        this._textBlock.text = text;
     }
 }
 
-export default TextPage;
+export default MessagePage;

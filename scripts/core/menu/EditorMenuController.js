@@ -33,7 +33,7 @@ import SketchfabAssetPage from '/scripts/core/menu/pages/SketchfabAssetPage.js';
 import SketchfabLoginPage from '/scripts/core/menu/pages/SketchfabLoginPage.js';
 import SketchfabSearchPage from '/scripts/core/menu/pages/SketchfabSearchPage.js';
 import SkyboxPage from '/scripts/core/menu/pages/SkyboxPage.js';
-import TextPage from '/scripts/core/menu/pages/TextPage.js';
+import MessagePage from '/scripts/core/menu/pages/MessagePage.js';
 import TextInputPage from '/scripts/core/menu/pages/TextInputPage.js';
 import TwoButtonPage from '/scripts/core/menu/pages/TwoButtonPage.js';
 import UserSettingsPage from '/scripts/core/menu/pages/UserSettingsPage.js';
@@ -55,6 +55,7 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.LIBRARY_SEARCH] = new LibrarySearchPage(this);
         this._pages[MenuPages.LIST_COMPONENTS] = new ListComponentsPage(this);
         this._pages[MenuPages.LOAD_GDRIVE] = new LoadFromGDrivePage(this);
+        this._pages[MenuPages.MESSAGE] = new MessagePage(this);
         this._pages[MenuPages.NAVIGATION] = new NavigationPage(this);
         this._pages[MenuPages.NEW_ASSET] = new NewAssetPage(this);
         this._pages[MenuPages.PARTY] = new PartyPage(this);
@@ -65,7 +66,6 @@ export default class EditorMenuController extends MenuController {
         this._pages[MenuPages.SKETCHFAB_LOGIN] = new SketchfabLoginPage(this);
         this._pages[MenuPages.SKETCHFAB_SEARCH] = new SketchfabSearchPage(this);
         this._pages[MenuPages.SKYBOX] = new SkyboxPage(this);
-        this._pages[MenuPages.TEXT] = new TextPage(this);
         this._pages[MenuPages.TEXT_INPUT] = new TextInputPage(this);
         this._pages[MenuPages.TWO_BUTTON] = new TwoButtonPage(this);
         this._pages[MenuPages.USER_SETTINGS] = new UserSettingsPage(this);
