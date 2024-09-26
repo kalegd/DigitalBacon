@@ -18,6 +18,7 @@ class AssetPage extends DynamicFieldsPage {
     constructor(controller, assetType) {
         super(controller, true);
         this._assetType = assetType;
+        this._assetStack = [];
     }
 
     _createTitleBlock() {
@@ -53,16 +54,17 @@ class AssetPage extends DynamicFieldsPage {
             () => ProjectHandler.deleteAsset(this._asset);
     }
 
-    setAsset(asset) {
+    setAsset(asset, ignoreStackPush) {
         this._asset = asset;
         let name = asset.name;
         this._titleField.value = name;
         this._setFields(asset.editorHelper.getMenuFields());
+        if(!ignoreStackPush) this._assetStack.push(asset);
     }
 
     _addSubscriptions() {
         PubSub.subscribe(this._id, this._assetType + '_DELETED', (e) => {
-            if(e.asset == this._asset) {
+            while(this._assetStack.includes(e.asset)) {
                 this._controller.popPagesPast(this._assetType);
             }
         });
@@ -75,6 +77,7 @@ class AssetPage extends DynamicFieldsPage {
             if(!done) return;
             this._removeSubscriptions();
             this._controller.setPage(MenuPages.NAVIGATION);
+            this._assetStack = [];
         });
     }
 
@@ -86,7 +89,12 @@ class AssetPage extends DynamicFieldsPage {
 
     back() {
         this._removeCurrentFields();
-        this._removeSubscriptions();
+        this._assetStack.pop();
+        if(this._assetStack.length) {
+            this.setAsset(this._assetStack[this._assetStack.length - 1], true);
+        } else {
+            this._removeSubscriptions();
+        }
         super.back();
     }
 

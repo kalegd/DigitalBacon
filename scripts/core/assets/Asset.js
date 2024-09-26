@@ -18,6 +18,7 @@ export default class Asset {
             ? params['name']
             : this._getDefaultName();
         this._components = new Set();
+        this._isPrivate = params['isPrivate'] || false;
         if(params['components']) {
             params['components'].forEach((id) => this.addComponent(id));
         }
@@ -38,6 +39,7 @@ export default class Asset {
             "name": this._name,
             "assetId": this._assetId,
             "components": componentIds,
+            "isPrivate": this._isPrivate,
         };
     }
 
@@ -57,6 +59,7 @@ export default class Asset {
     }
     get id() { return this._id; }
     get name() { return this._name; }
+    get isPrivate() { return this._isPrivate || this.constructor.isPrivate; }
 
     set components(componentIds) {
         for(let component of this._components) {
@@ -74,6 +77,10 @@ export default class Asset {
     set name(name) {
         if(name == null || this._name == name) return;
         this._name = name;
+    }
+
+    set isPrivate(isPrivate) {
+        this._isPrivate = isPrivate;
     }
 
     addComponent(componentId, ignorePublish) {

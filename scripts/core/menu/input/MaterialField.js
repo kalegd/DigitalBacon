@@ -5,6 +5,7 @@
  */
 
 import global from '/scripts/core/global.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import PubSubTopics from '/scripts/core/enums/PubSubTopics.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
@@ -22,6 +23,7 @@ class MaterialField extends MenuField {
         super(params);
         this._lastValue =  params['initialValue'];
         let title = params['title'] || 'Missing Field Name...';
+        this._privateIds = params['privateIds'] || new Set();
         this._createInputs(title);
         this._updateMaterial(this._lastValue);
     }
@@ -47,8 +49,10 @@ class MaterialField extends MenuField {
             let filteredMaterials = {};
             filteredMaterials["null\n"] = { Name: "Blank" };
             for(let materialId in materials) {
-                filteredMaterials[materialId] =
-                    { Name: materials[materialId].name };
+                let material = materials[materialId];
+                if((material.isPrivate || material.constructor.isPrivate)
+                    && !this._privateIds.has(materialId)) continue;
+                filteredMaterials[materialId] = { Name: material.name };
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
             page.setContent(filteredMaterials, (materialId) => {
@@ -72,8 +76,8 @@ class MaterialField extends MenuField {
     _selectNewMaterial() {
         let currentPage = global.menuController.getCurrentPage();
         let newMaterialPage = global.menuController.getPage(
-            MenuPages.NEW_MATERIAL);
-        newMaterialPage.setContent((material) => {
+            MenuPages.NEW_ASSET);
+        newMaterialPage.setContent(AssetTypes.MATERIAL, (material) => {
             this._handleMaterialSelection(material.id, currentPage);
             if(currentPage != global.menuController.getCurrentPage()) return;
             let materialPage = global.menuController.getPage(
@@ -81,7 +85,7 @@ class MaterialField extends MenuField {
             materialPage.setAsset(material);
             global.menuController.pushPage(MenuPages.MATERIAL);
         });
-        global.menuController.pushPage(MenuPages.NEW_MATERIAL);
+        global.menuController.pushPage(MenuPages.NEW_ASSET);
     }
 
     _handleMaterialSelection(materialId, callingPage) {

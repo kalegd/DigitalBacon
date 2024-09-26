@@ -38,7 +38,7 @@ class TransformControlsHandler {
         PointerInteractableHandler.registerToolHandler(tool,
             (controller) => this._toolHandler(controller));
         if(global.deviceType != 'XR') {
-            scene.add(this._transformControls);
+            scene.add(this._transformControls.getHelper());
             this._addEventListeners();
         }
         InteractionToolHandler.addUpdateListener((handTool) => {

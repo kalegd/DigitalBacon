@@ -19,7 +19,7 @@ class AssetsPage extends PaginatedButtonsPage {
         super(controller, true);
         this._assetType = assetType;
         this._assets = {};
-        this._items = Object.keys(this._assets);
+        this._items = [];
         this._addPageContent();
         this._createAddButton();
     }
@@ -39,12 +39,12 @@ class AssetsPage extends PaginatedButtonsPage {
         addButton.bypassContentPositioning = true;
         addButton.position.fromArray([0.175, 0.12, 0.001]);
         addButton.onClickAndTouch = () => {
-            let page = this._controller.getPage('NEW_' + this._assetType);
-            page.setContent((asset) => {
+            let page = this._controller.getPage('NEW_ASSET');
+            page.setContent(this._assetType, (asset) => {
                 if(asset.constructor.assetType == this._assetType)
                     this._handleItemInteraction(asset.id);
             });
-            this._controller.pushPage('NEW_' + this._assetType);
+            this._controller.pushPage('NEW_ASSET');
         };
         addButton._updateMaterialOffset(100);
         this.add(addButton);
@@ -65,7 +65,10 @@ class AssetsPage extends PaginatedButtonsPage {
 
     _refreshItems() {
         this._assets = ProjectHandler.getAssetsForType(this._assetType);
-        this._items = Object.keys(this._assets);
+        this._items = [];
+        for(let id in this._assets) {
+            if(!this._assets[id].isPrivate) this._items.push(id);
+        }
     }
 
     _addSubscriptions() {

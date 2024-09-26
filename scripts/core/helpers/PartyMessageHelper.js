@@ -335,7 +335,8 @@ class PartyMessageHelper {
                 if(parentAsset) asset.addTo(parentAsset, true);
             }
         }
-        PubSub.publish(this._id, message.assetType + '_ADDED', asset);
+        let topic = message.assetType + '_ADDED:' + asset.assetId +':'+asset.id;
+        PubSub.publish(this._id, topic, asset);
     }
 
     _handleInstanceDeleted(peer, message) {
@@ -353,7 +354,7 @@ class PartyMessageHelper {
     _handleInstanceUpdated(peer, message) {
         let asset = ProjectHandler.getSessionAsset(message.params.id);
         if(asset) {
-            this._handleAssetUpdate(asset, message.params,
+            this._handleAssetUpdate(asset, message.params, message.extraData,
                 message.assetType + '_UPDATED');
         }
     }
@@ -402,18 +403,25 @@ class PartyMessageHelper {
             { settings: settings });
     }
 
-    _handleAssetUpdate(asset, params, topic) {
+    _handleAssetUpdate(asset, params, extraData, topic) {
         let updatedParams = [];
         for(let param in params) {
             if(param == 'id') continue;
             updatedParams.push(param);
-            if(param in asset) asset[param] = params[param];
+            if(extraData?.[param]) {
+                if(extraData[param].type == 'useFunction') {
+                    asset[extraData[param].funcName](extraData[param].value);
+                }
+            } else if(param in asset) {
+                asset[param] = params[param];
+            }
             if(asset.editorHelper) asset.editorHelper.updateMenuField(param);
         }
         let message = {
             asset: asset,
             fields: updatedParams,
         };
+        if(extraData) message.extraData = extraData;
         PubSub.publish(this._id, topic, message);
     }
 
@@ -564,6 +572,8 @@ class PartyMessageHelper {
             params: asset,
             assetType: assetType,
         };
+        if(updateMessage.extraData)
+            peerMessage.extraData = updateMessage.extraData;
         this._partyHandler.publishInternalMessage('instance_updated',
             peerMessage);
     }

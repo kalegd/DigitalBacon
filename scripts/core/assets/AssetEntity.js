@@ -68,9 +68,15 @@ export default class AssetEntity extends Asset {
         return params;
     }
 
-    clone(visualEditOverride) {
+    clone(recursive, visualEditOverride) {
         let params = this._fetchCloneParams(visualEditOverride);
-        return ProjectHandler.addNewAsset(this._assetId, params);
+        let clonedAsset = ProjectHandler.addNewAsset(this._assetId, params);
+        if(recursive) {
+            for(let child of this.children) {
+                clonedAsset.add(child.clone(true));
+            }
+        }
+        return clonedAsset;
     }
 
     preview() {

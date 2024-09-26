@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import AssetScriptTypes from '/scripts/core/enums/AssetScriptTypes.js';
 import AudioFileTypes from '/scripts/core/enums/AudioFileTypes.js';
@@ -142,11 +143,12 @@ class LibraryHandler {
 
     loadLibraryAssetFromArrayBuffer(assetId, assetDetails, arraybuffers) {
         let options;
+        let source = assetDetails.Filepath || assetDetails.URL;
         if(assetDetails['Type'] in AssetScriptTypes) {
             options = { type: 'application/javascript' };
-        } else if(assetDetails['Filepath'].endsWith('.mp4')) {
+        } else if(source.endsWith('.mp4')) {
             options = { type: 'video/mp4' };
-        } else if(assetDetails['Filepath'].endsWith('.webm')) {
+        } else if(source.endsWith('.webm')) {
             options = { type: 'video/webm' };
         }
         let blob = new Blob(arraybuffers, options);
@@ -192,6 +194,15 @@ class LibraryHandler {
             'Name': assetClass.assetName,
             'Type': assetClass.assetType,
             'IsBuiltIn': true,
+        };
+    }
+
+    loadPrivate(assetClass) {
+        if(assetClass.assetId in this.library) return;
+        this.library[assetClass.assetId] = {
+            'Name': assetClass.assetName,
+            'Type': assetClass.assetType,
+            'IsPrivate': true,
         };
     }
 
@@ -292,6 +303,7 @@ class LibraryHandler {
             let gltfLoader = new GLTFLoader();
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
+                this.library[assetId]['Animations'] = gltf.animations;
                 buildBVH(gltf.scene);
                 if(!ignorePublish)
                     PubSub.publish(this._id, PubSubTopics.ASSET_ADDED, assetId,
@@ -306,6 +318,7 @@ class LibraryHandler {
             let objectURL = URL.createObjectURL(blob);
             new THREE.TextureLoader().load(objectURL, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
+                global.renderer.initTexture(texture);
                 let width = texture.image.width;
                 let height = texture.image.height;
                 if(width > height) {
@@ -378,6 +391,11 @@ class LibraryHandler {
         } else if(assetDetails['Type'] == AssetTypes.MODEL) {
             return clone(assetDetails['Mesh']);
         }
+    }
+
+    getAnimations(assetId) {
+        let assetDetails = this.library[assetId];
+        return assetDetails?.['Animations'];
     }
 
     getBuffer(assetId) {
@@ -465,7 +483,7 @@ class LibraryHandler {
         let libraryDetails = {};
         for(let assetId of assetIds) {
             let assetDetails = this.library[assetId];
-            if(assetDetails['IsBuiltIn']) continue;//Built-in asset
+            if(assetDetails['IsBuiltIn'] || assetDetails['IsPrivate']) continue;
             let assetType = assetDetails['Type'];
             libraryDetails[assetId] = {
                 'Name': assetDetails['Name'],

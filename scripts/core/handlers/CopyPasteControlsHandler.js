@@ -43,7 +43,7 @@ class CopyPasteControlsHandler {
         let previewAsset = this._previewAssets[ownerId];
         let previewObject = previewAsset.object;
         previewAsset.parent.object.attach(previewObject);
-        previewAsset.clone(this._copiedAssets[ownerId].visualEdit);
+        previewAsset.clone(false, this._copiedAssets[ownerId].visualEdit);
         ProjectHandler.getAsset(ownerId).object.attach(previewObject);
         this._assetAlreadyPastedByGrip[ownerId] = true;
     }

@@ -21,7 +21,7 @@ import UploadHandler from '/scripts/core/handlers/UploadHandler.js';
 import { Styles, euler, quaternion, vector3s } from '/scripts/core/helpers/constants.js';
 import PaginatedButtonsPage from '/scripts/core/menu/pages/PaginatedButtonsPage.js';
 import { Text } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
-const URL_PREFIX_PATTERN = /^https:\/\//i;
+const URL_PREFIX_PATTERN = /^http[s]{0,1}:\/\//i;
 
 const SPECIAL_OPTIONS = {
     CDN: {
@@ -39,9 +39,8 @@ const SPECIAL_OPTIONS = {
 };
 
 class NewAssetPage extends PaginatedButtonsPage {
-    constructor(controller, assetType) {
+    constructor(controller) {
         super(controller, true);
-        this._assetType = assetType;
         this._items = [];
         this._addPageContent();
     }
@@ -78,9 +77,9 @@ class NewAssetPage extends PaginatedButtonsPage {
             (url) => {
                 if(!this._isUrlValid(url)) return;
                 this._controller.back();
-                let textPage = this._controller.getPage(MenuPages.TEXT);
+                let textPage = this._controller.getPage(MenuPages.MESSAGE);
                 textPage.setContent("Load from CDN", "Loading...");
-                this._controller.pushPage(MenuPages.TEXT);
+                this._controller.pushPage(MenuPages.MESSAGE);
                 LibraryHandler.loadExternalAsset(url, (assetId) => {
                     this._handleExternalAsset(assetId);
                 }, () => {
@@ -149,7 +148,7 @@ class NewAssetPage extends PaginatedButtonsPage {
             params['assetId'] = assetId;
         }
         let asset = ProjectHandler.addNewAsset(assetId, params);
-        let textPage = this._controller.getPage(MenuPages.TEXT);
+        let textPage = this._controller.getPage(MenuPages.MESSAGE);
         if(textPage.parent) this._controller.back();
         if(assetType != this._assetType) return;
         if(this.parent) this._controller.back();
@@ -206,7 +205,15 @@ class NewAssetPage extends PaginatedButtonsPage {
     }
 
     _refreshItems() {
-        if(!(this._assetType in AssetScriptTypes)) {
+        if(this._customAssets) {
+            this._items = [];
+            for(let assetId of this._customAssets) {
+                this._items.push({
+                    assetId: assetId,
+                    assetName: LibraryHandler.getAssetName(assetId),
+                });
+            }
+        } else if(!(this._assetType in AssetScriptTypes)) {
             this._items = [];
             if(this._assetType == AssetEntityTypes.MODEL)
                 this._items.push(SPECIAL_OPTIONS.SKETCHFAB);
@@ -229,8 +236,10 @@ class NewAssetPage extends PaginatedButtonsPage {
         }
     }
 
-    setContent(additionalAction) {
+    setContent(assetType, additionalAction, customAssets) {
+        this._assetType = assetType;
         this._additionalAction = additionalAction;
+        this._customAssets = customAssets;
     }
 }
 

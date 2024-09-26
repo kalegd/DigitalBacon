@@ -8,18 +8,22 @@ import global from '/scripts/core/global.js';
 import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
+import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
+import { Textures } from '/scripts/core/helpers/constants.js';
 import { stringWithMaxLength } from '/scripts/core/helpers/utils.module.js';
-import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
+import { createSmallButton, createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
+import { Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
 class AssetEntityField extends MenuField {
     constructor(params) {
         super(params);
-        this._lastValue =  params['initialValue'];
-        this._exclude =  params['exclude'];
-        this._filter =  params['filter'];
+        this._lastValue = params['initialValue'];
+        this._exclude = params['exclude'];
+        this._filter = params['filter'];
+        this._privateIds = params['privateIds'] || new Set();
         this._includeScene =  params['includeScene'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
@@ -28,12 +32,19 @@ class AssetEntityField extends MenuField {
 
     _createInputs(title) {
         this._addTitle(title);
+        this._buttonsSpan = new Span({ height: 0.03, width: 0.17 });
         this._assetEntitySelection = createWideButton('');
         this._assetEntitySelection.textComponent.fontSize = 0.017;
         this._assetEntitySelection.height = 0.03;
-        this._assetEntitySelection.width = 0.17;
+        this._assetEntitySelection.width = 0.13;
+        this._editButton = createSmallButton(Textures.pencilIcon);
+        this._editButton.marginLeft = 0.01;
+        this._editButton.height = 0.03;
+        this._editButton.width = 0.03;
+        this._buttonsSpan.add(this._assetEntitySelection);
+        this._buttonsSpan.add(this._editButton);
         this._updateAssetEntity();
-        this.add(this._assetEntitySelection);
+        this.add(this._buttonsSpan);
         this._assetEntitySelection.onClickAndTouch = () => {
             let assets = ProjectHandler.getAssets();
             let filteredAssets = {};
@@ -45,6 +56,8 @@ class AssetEntityField extends MenuField {
                 let asset = assets[assetId];
                 if(asset instanceof InternalAssetEntity) continue;
                 if(asset instanceof AssetEntity) {
+                    if((asset.isPrivate || asset.constructor.isPrivate)
+                        && !this._privateIds.has(assetId)) continue;
                     if(this._filter && !this._filter(asset)) continue;
                     filteredAssets[assetId] = { Name: asset.name };
                 }
@@ -55,6 +68,15 @@ class AssetEntityField extends MenuField {
                 this._handleAssetSelection(assetId);
             });
             global.menuController.pushPage(MenuPages.ASSET_SELECT);
+        };
+        this._editButton.onClickAndTouch = () => {
+            if(!this._lastValue) return;
+            let assetEntity = ProjectHandler.getAsset(this._lastValue);
+            if(!assetEntity) return;
+            let assetType = assetEntity.constructor.assetType;
+            let page = global.menuController.getPage(assetType);
+            page.setAsset(assetEntity);
+            global.menuController.pushPage(assetType);
         };
     }
 
@@ -77,6 +99,11 @@ class AssetEntityField extends MenuField {
             : Scene.id == this._lastValue ? 'Scene' : " ";
         assetEntityName = stringWithMaxLength(assetEntityName, 16);
         this._assetEntitySelection.textComponent.text = assetEntityName;
+        if(assetEntity) {
+            this._buttonsSpan.add(this._editButton);
+        } else {
+            this._buttonsSpan.remove(this._editButton);
+        }
     }
 
     updateFromSource() {

@@ -136,7 +136,7 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.3.5)</h1>
+        <h1>DigitalBacon (0.3.6)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
@@ -385,6 +385,17 @@
             <tr>
               <td>
                 <span></span>
+                <span class="property-name">disableImmersion</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Boolean</p>
+                <p class="optional">Optional</p>
+                <p>If provided and true, will not enable immersive sessions for AR/VR headsets and not provide an avatar to move around the scene with for PC, mobile, and tablet users</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
                 <span class="property-name">onStart</span>
               </td>
               <td class="details">
@@ -417,8 +428,10 @@
         <p class="bold">getDeviceType()</p>
         <p>Should only be run after Promise from setup() or setupEditor() resolves</p>
         <p class="return-data pb-40">Returns one of "XR", "MOBILE", or "POINTER"</p>
-        <p class="bold">disableImmersion()</p>
-        <p>Disables immersive capabilities such as the UserController and Menu. Must be run before calling either setup() or setupEditor()</p>
+        <p class="bold">getRenderer()</p>
+        <p class="return-data pb-40">Returns the Renderer <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer">(See Three.js WebGLRenderer Documentation for more details)</a></p>
+        <p class="bold">isImmersionDisabled()</p>
+        <p class="return-data">Returns whether disableImmersion is enabled</p>
         <h1 id="section/App">App</h1>
         <h5>Functions</h5>
         <p class="bold">getRenderer()</p>
