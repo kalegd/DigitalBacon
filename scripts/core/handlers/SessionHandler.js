@@ -182,7 +182,7 @@ class SessionHandler {
             global.sessionActive = true;
             AudioHandler.resume();
             InputHandler.showExtraControls();
-            InputHandler.createJoystick();
+            InputHandler.showJoystick();
             PubSub.publish(null, PubSubTopics.SESSION_STARTED);
             if(this._onStart) {
                 this._onStart();
