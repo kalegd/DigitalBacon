@@ -9,7 +9,6 @@
     <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="/css/resources.css">
     <link href="https://fonts.cdnfonts.com/css/montserrat" rel="stylesheet">
-    <script src="/scripts/stats.js" type="module"></script>
   </head>
   <body>
     <div id="doc-container">
@@ -124,6 +123,13 @@
               </a>
             </li>
             <li>
+              <a href="#section/THREE">
+                <label type="section" role="menuitem">
+                  <span title="THREE">THREE</span>
+                </label>
+              </a>
+            </li>
+            <li>
               <a href="#section/UserController">
                 <label type="section" role="menuitem">
                   <span title="UserController">UserController</span>
@@ -137,23 +143,18 @@
         <a class="only-large-screen" href="/">
           <img src="/images/digital_bacon_pig_compressed.png" alt="Digital Bacon logo" class="logo">
         </a>
-        <h1>DigitalBacon (0.3.6)</h1>
+        <h1>DigitalBacon (0.3.7)</h1>
         <p>This API document is meant for software developers using the DigitalBacon JavaScript module. <a href="/resources/documentation">Looking for the Application Guide?</a></p>
         <p>For past versions of this document, please checkout the version you need from <a href="https://github.com/kalegd/DigitalBacon">GitHub</a></p>
         <h1 id="section/Introduction">Introduction</h1>
         <p>DigitalBacon is a library to create and deploy three.js scenes that support PC, Mobile, and VR sessions without all the boilerplate required to do it yourself. Additionally this library hopes to enable developers to create more complex scenes faster by exposing the renderer, scene, camera, helper functions, and more</p>
         <h1 id="section/HowToUse">How to Use</h1>
-        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a> or using a package manager like npm. When importing it into your project, Digital Bacon requires three.js to be included in the import map. Please see below for an example that has the dependencies installed locally via npm</p>
-        <pre class="codeblock"><code>&lt;script type="importmap"&gt;
-  {
-    "imports": {
-      "DigitalBacon": "/node_modules/digitalbacon/build/DigitalBacon.js",
-      "three": "/node_modules/three/build/three.module.js"
-    }
-  }
-&lt;/script&gt;</code></pre>
-        <p>Then in the script you want to use the module in, you can import either the attributes and functions you need individually or everything as so</p>
-        <pre class="codeblock"<code>import * as DigitalBacon from 'DigitalBacon';</code></pre>
+        <p>You can download the DigitalBacon module <a href="https://github.com/kalegd/DigitalBacon/tree/main/build">from GitHub under the build folder</a> or using a package manager like npm. Please see below for an example that has DigitalBacon installed locally via npm. Assume a div with id my-container-id is already in our html file</p>
+        <pre class="codeblock"><code>import * as DigitalBacon from '/node_modules/digitalbacon/build/DigitalBacon.js';
+
+let params = { projectFilePath: './my-project.zip' };
+
+DigitalBacon.setup("my-container-id", params);</code></pre>
         <h1 id="section/DigitalBacon">DigitalBacon Module</h1>
         <h5>Attributes</h5>
         <table class="attributes">
@@ -276,6 +277,16 @@
               <td class="details">
                 <p class="datatype">Object</p>
                 <p>See <a href="#section/SettingsHandler">SettingsHandler</a> for more info</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span></span>
+                <span class="property-name">THREE</span>
+              </td>
+              <td class="details">
+                <p class="datatype">Object</p>
+                <p>See <a href="#section/THREE">THREE</a> for more info</p>
               </td>
             </tr>
             <tr>
@@ -1264,6 +1275,8 @@
             </tr>
           </tbody>
         </table>
+        <h1 id="section/THREE">THREE</h1>
+        <p>See three.js documentation <a href="https://threejs.org/docs/">here</a></p>
         <h1 id="section/UserController">UserController</h1>
         <h5>Functions</h5>
         <p class="bold">getAvatar()</p>
