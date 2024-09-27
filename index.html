@@ -161,8 +161,8 @@
       import {
           setup,
           getCamera,
+          THREE,
       } from 'DigitalBacon';
-      import { Object3D } from 'three';
 
       let camera, cameraFocus, scene;
       let params = {
@@ -173,7 +173,7 @@
       setup("container", params)
           .then((App) => {
               camera = getCamera();
-              cameraFocus = new Object3D();
+              cameraFocus = new THREE.Object3D();
               scene = App.getScene();
               scene.add(cameraFocus);
               cameraFocus.add(camera);
