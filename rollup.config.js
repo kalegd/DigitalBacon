@@ -71,6 +71,7 @@ export default {
             extensions: '.js',
         }),
         replace({
+            delimiters: ['', ''],
             values: replacementMap,
         }),
     ],
