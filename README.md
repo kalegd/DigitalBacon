@@ -20,8 +20,7 @@ Go to the [Digital Bacon Editor](https://digitalbacon.io/app) to create a 3D web
     <script type="importmap">
       {
         "imports": {
-          "DigitalBacon": "https://cdn.jsdelivr.net/npm/digitalbacon@latest/build/DigitalBacon.min.js",
-          "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"
+          "DigitalBacon": "https://cdn.jsdelivr.net/npm/digitalbacon@latest/build/DigitalBacon.min.js"
         }
       }
     </script>
