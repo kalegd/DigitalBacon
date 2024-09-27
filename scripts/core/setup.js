@@ -279,7 +279,7 @@ function setupContainer(containerId) {
     container.innerHTML = `
       <div id="digital-bacon-loading" class="loading">
         <h1>Loading...</h1>
-        <img src="images/digital_bacon_pig_compressed.png">
+        <img src="/images/digital_bacon_pig_compressed.png">
       </div>
       <div id="digital-bacon-error">
         <h1>Error Loading Default Environment</h1>

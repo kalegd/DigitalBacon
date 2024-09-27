@@ -1,5 +1,6 @@
 import fs from 'fs';
 import mime from 'mime';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import rootImport from 'rollup-plugin-root-import';
 import terser from '@rollup/plugin-terser';
@@ -13,17 +14,14 @@ function base64Encode(file) {
 let replacementMap = {};
 let icons = ['audio', 'checkmark', 'component', 'ellipsis', 'hamburger', 'headphones', 'home', 'image', 'lightbulb', 'material', 'microphone', 'object', 'pencil', 'search', 'shapes', 'system', 'text', 'texture', 'trash', 'undo', 'redo', 'video'];
 let filesToReplace = [
-    'images/black_pixel.png',
-    'images/digital_bacon_pig_compressed.png',
-    'images/icons/backspace_icon_white.png',
-    'images/icons/shift_icon_white.png',
-    'images/icons/enter_icon_white.png',
+    '/images/black_pixel.png',
+    '/images/digital_bacon_pig_compressed.png',
 ];
 for(let icon of icons) {
-    filesToReplace.push('images/icons/' + icon + '_icon_white.png');
+    filesToReplace.push('/images/icons/' + icon + '_icon_white.png');
 }
 for(let file of filesToReplace) {
-    replacementMap[file] = base64Encode(file);
+    replacementMap[file] = base64Encode(file.substring(1));
 }
 
 function header() {
@@ -62,10 +60,8 @@ export default {
             ],
         },
     ],
-    external: [
-        'three',
-    ],
     plugins: [
+        nodeResolve(),
         rootImport({
             // Will first look in `client/src/*` and then `common/src/*`.
             root: `${__dirname}`,
@@ -75,6 +71,7 @@ export default {
             extensions: '.js',
         }),
         replace({
+            delimiters: ['', ''],
             values: replacementMap,
         }),
     ],

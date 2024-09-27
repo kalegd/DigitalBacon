@@ -24,95 +24,95 @@ for(let icon of icons) {
 }
 export const Textures = {
     "audioIcon": new THREE.TextureLoader().load(
-        'images/icons/audio_icon_white.png',
+        '/images/icons/audio_icon_white.png',
         function() { global.loadingLocks.delete(locks['audio']); },
     ),
     "checkmarkIcon": new THREE.TextureLoader().load(
-        'images/icons/checkmark_icon_white.png',
+        '/images/icons/checkmark_icon_white.png',
         function() { global.loadingLocks.delete(locks['checkmark']); },
     ),
     "componentIcon": new THREE.TextureLoader().load(
-        'images/icons/component_icon_white.png',
+        '/images/icons/component_icon_white.png',
         function() { global.loadingLocks.delete(locks['component']); },
     ),
     "ellipsisIcon": new THREE.TextureLoader().load(
-        'images/icons/ellipsis_icon_white.png',
+        '/images/icons/ellipsis_icon_white.png',
         function() { global.loadingLocks.delete(locks['ellipsis']); },
     ),
     "hamburgerIcon": new THREE.TextureLoader().load(
-        'images/icons/hamburger_icon_white.png',
+        '/images/icons/hamburger_icon_white.png',
         function() { global.loadingLocks.delete(locks['hamburger']); },
     ),
     "headphonesIcon": new THREE.TextureLoader().load(
-        'images/icons/headphones_icon_white.png',
+        '/images/icons/headphones_icon_white.png',
         function() { global.loadingLocks.delete(locks['headphones']); },
     ),
     "homeIcon": new THREE.TextureLoader().load(
-        'images/icons/home_icon_white.png',
+        '/images/icons/home_icon_white.png',
         function() { global.loadingLocks.delete(locks['home']); },
     ),
     "imageIcon": new THREE.TextureLoader().load(
-        'images/icons/image_icon_white.png',
+        '/images/icons/image_icon_white.png',
         function() { global.loadingLocks.delete(locks['image']); },
     ),
     "lightbulbIcon": new THREE.TextureLoader().load(
-        'images/icons/lightbulb_icon_white.png',
+        '/images/icons/lightbulb_icon_white.png',
         function() { global.loadingLocks.delete(locks['lightbulb']); },
     ),
     "materialIcon": new THREE.TextureLoader().load(
-        'images/icons/material_icon_white.png',
+        '/images/icons/material_icon_white.png',
         function() { global.loadingLocks.delete(locks['material']); },
     ),
     "microphoneIcon": new THREE.TextureLoader().load(
-        'images/icons/microphone_icon_white.png',
+        '/images/icons/microphone_icon_white.png',
         function() { global.loadingLocks.delete(locks['microphone']); },
     ),
     "objectIcon": new THREE.TextureLoader().load(
-        'images/icons/object_icon_white.png',
+        '/images/icons/object_icon_white.png',
         function() { global.loadingLocks.delete(locks['object']); },
     ),
     "pencilIcon": new THREE.TextureLoader().load(
-        'images/icons/pencil_icon_white.png',
+        '/images/icons/pencil_icon_white.png',
         function() { global.loadingLocks.delete(locks['pencil']); },
     ),
     "searchIcon": new THREE.TextureLoader().load(
-        'images/icons/search_icon_white.png',
+        '/images/icons/search_icon_white.png',
         function() { global.loadingLocks.delete(locks['search']); },
     ),
     "shapesIcon": new THREE.TextureLoader().load(
-        'images/icons/shapes_icon_white.png',
+        '/images/icons/shapes_icon_white.png',
         function() { global.loadingLocks.delete(locks['shapes']); },
     ),
     "systemIcon": new THREE.TextureLoader().load(
-        'images/icons/system_icon_white.png',
+        '/images/icons/system_icon_white.png',
         function() { global.loadingLocks.delete(locks['system']); },
     ),
     "textIcon": new THREE.TextureLoader().load(
-        'images/icons/text_icon_white.png',
+        '/images/icons/text_icon_white.png',
         function() { global.loadingLocks.delete(locks['text']); },
     ),
     "textureIcon": new THREE.TextureLoader().load(
-        'images/icons/texture_icon_white.png',
+        '/images/icons/texture_icon_white.png',
         function() { global.loadingLocks.delete(locks['texture']); },
     ),
     "trashIcon": new THREE.TextureLoader().load(
-        'images/icons/trash_icon_white.png',
+        '/images/icons/trash_icon_white.png',
         function() { global.loadingLocks.delete(locks['trash']); },
     ),
     "undoIcon": new THREE.TextureLoader().load(
-        'images/icons/undo_icon_white.png',
+        '/images/icons/undo_icon_white.png',
         function() { global.loadingLocks.delete(locks['undo']); },
     ),
     "redoIcon": new THREE.TextureLoader().load(
-        'images/icons/redo_icon_white.png',
+        '/images/icons/redo_icon_white.png',
         function() { global.loadingLocks.delete(locks['redo']); },
     ),
     "videoIcon": new THREE.TextureLoader().load(
-        'images/icons/video_icon_white.png',
+        '/images/icons/video_icon_white.png',
         function() { global.loadingLocks.delete(locks['video']); },
     ),
     "blackPixel": new THREE.TextureLoader().load(
-        'images/black_pixel.png',
+        '/images/black_pixel.png',
         function() { global.loadingLocks.delete(blackPixelLock); },
     ),
 };
@@ -134,11 +134,6 @@ export const Colors = {
     "defaultIdle": new THREE.Color(0x969696),
     "hoveredButton": new THREE.Color(0x63666b),
     "defaultMenuBackground": new THREE.Color(0x000000),
-};
-
-export const Fonts = {
-    "defaultFamily": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.json',
-    "defaultTexture": 'https://cdn.jsdelivr.net/npm/msdf-fonts/build/custom/digitalbacon-OpenSans-Regular-msdf.png',
 };
 
 export const FontSizes = {

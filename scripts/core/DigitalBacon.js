@@ -19,8 +19,9 @@ import OrbitDisablingPointerInteractable from '/scripts/core/interactables/Orbit
 import * as utils from '/scripts/core/helpers/utils.module.js';
 import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
 import * as DigitalBaconUI from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
+import * as THREE from 'three';
 
-const version = "0.3.6";
+const version = "0.3.7";
 
 global.version = version;
 
@@ -61,6 +62,7 @@ if(window != null) {
         PubSub: PubSub,
         Scene: Scene,
         SettingsHandler: SettingsHandler,
+        THREE: THREE,
         UserController: UserController,
         getCamera: getCamera,
         getDeviceType: getDeviceType,
@@ -86,6 +88,7 @@ export { ProjectHandler };
 export { PubSub };
 export { Scene };
 export { SettingsHandler };
+export { THREE };
 export { UserController };
 export { getCamera };
 export { getDeviceType };
