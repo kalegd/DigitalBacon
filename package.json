@@ -1,7 +1,8 @@
 {
   "scripts": {
     "build": "rollup -c",
-    "start": "http-server -c-1 -p 8000"
+    "start": "http-server -c-1 -p 8000",
+    "start-ssl": "http-server -S -c cert.pem -c-1 -p 8000"
   },
   "dependencies": {
     "file-saver": "2.0.5",
