@@ -1,0 +1,89 @@
+<html>
+  <head>
+    <title>Digital Bacon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "DigitalBacon": "/build/DigitalBacon.min.js"
+        }
+      }
+    </script>
+    <style>
+      #content-overlay {
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      #title {
+        background-color: #000000aa;
+        padding: 1px;
+        pointer-events: all;
+      }
+
+      .pb-5vh {
+        padding-bottom: 5vh;
+      }
+
+      .pt-10vh {
+        padding-top: 10vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container-parent">
+      <div id="container"></div>
+    </div>
+    <div id="content-overlay" class="overlay" style="height: 1300vh;">
+      <div class="pt-10vh">
+        <div id="title">
+          <h3>Check out the PDF Pitch Deck <a href="/investors/digital-bacon-pitch-deck.pdf">here</a></h3>
+          <h3>Or scroll down to experience it as a 3D website</h3>
+        </div>
+      </div>
+      <div>
+        <h3 style="padding-bottom: 170vh">Keep on scrolling down</h3>
+        <h3 id="move-message" class="pb-5vh"></h3>
+      </div>
+    </div>
+    <script type="module">
+      import {
+          setup,
+          getDeviceType,
+          LibraryHandler,
+          ProjectHandler,
+      } from 'DigitalBacon';
+
+      let camera, cameraFocus, scene;
+      let params = {
+          projectFilePath: "/investors/pitch_deck_project.zip",
+          disableImmersion: true,
+      };
+      let moveMessage = document.getElementById('move-message');
+
+      setup("container", params)
+          .then((App) => {
+              let deviceType = getDeviceType();
+              moveMessage.innerText = (deviceType == 'POINTER')
+                  ? 'Try making him move using the WASD or Arrow Keys'
+                  : 'Try making him move using the joystick';
+              if(deviceType != 'POINTER') {
+                  moveMessage.style.paddingLeft = '115px';
+                  moveMessage.style.paddingBottom = '33px';
+                  moveMessage.style.textAlign = 'left';
+              }
+              LibraryHandler.loadAsset('/a16z/ScrollSystem.js', (assetId) => {
+                  let asset = ProjectHandler.addNewAsset(assetId);
+              });
+      });
+    </script>
+  </body>
+</html>
