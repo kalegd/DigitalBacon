@@ -34,7 +34,7 @@
       }
 
       #scroll-message {
-        margin-bottom: 190vh;
+        margin-bottom: 240vh;
       }
 
       .pb-5vh {
@@ -68,16 +68,17 @@
       import {
           setup,
           getDeviceType,
+          DigitalBaconUI,
           LibraryHandler,
           ProjectHandler,
       } from 'DigitalBacon';
 
-      let camera, cameraFocus, scene;
       let params = {
           projectFilePath: "/investors/pitch_deck_project.zip",
           disableImmersion: true,
       };
       let moveMessage = document.getElementById('move-message');
+      DigitalBaconUI.InputHandler.configureJoystickForLvhContainer();
 
       setup("container", params)
           .then((App) => {
