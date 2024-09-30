@@ -23,10 +23,18 @@
         justify-content: space-between;
       }
 
-      #title {
+      #title, #scroll-message {
         background-color: #000000aa;
         padding: 1px;
         pointer-events: all;
+      }
+
+      #title a {
+        color: orange;
+      }
+
+      #scroll-message {
+        margin-bottom: 190vh;
       }
 
       .pb-5vh {
@@ -45,12 +53,14 @@
     <div id="content-overlay" class="overlay" style="height: 1300vh;">
       <div class="pt-10vh">
         <div id="title">
-          <h3>Check out the PDF Pitch Deck <a href="/investors/digital-bacon-pitch-deck.pdf">here</a></h3>
+          <h3>Check out the PDF pitch deck <a href="/investors/digital-bacon-pitch-deck.pdf">here</a></h3>
           <h3>Or scroll down to experience it as a 3D website</h3>
         </div>
       </div>
       <div>
-        <h3 style="padding-bottom: 170vh">Keep on scrolling down</h3>
+        <div id="scroll-message">
+          <h3>Keep on scrolling down to see how fast he can speed run</h3>
+        </div>
         <h3 id="move-message" class="pb-5vh"></h3>
       </div>
     </div>
