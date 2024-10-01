@@ -38,7 +38,8 @@ class NotificationHub extends Span {
     }
 
     _createNotification() {
-        this._textComponent = new Text('Placeholder', Styles.bodyText);
+        this._textComponent = new Text('Placeholder', Styles.bodyText,
+            { textAlign: 'center', maxWidth: 0.3 });
         this.add(this._textComponent);
         this.visible = false;
     }

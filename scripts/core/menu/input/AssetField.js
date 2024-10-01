@@ -5,10 +5,8 @@
  */
 
 import global from '/scripts/core/global.js';
-import AssetEntity from '/scripts/core/assets/AssetEntity.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import Scene from '/scripts/core/assets/Scene.js';
-import AssetTypes from '/scripts/core/enums/AssetTypes.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import { Textures } from '/scripts/core/helpers/constants.js';
@@ -17,7 +15,7 @@ import { createSmallButton, createWideButton } from '/scripts/core/helpers/Digit
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import { Span } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 
-class AssetEntityField extends MenuField {
+class AssetField extends MenuField {
     constructor(params) {
         super(params);
         this._lastValue = params['initialValue'];
@@ -27,25 +25,25 @@ class AssetEntityField extends MenuField {
         this._includeScene =  params['includeScene'];
         let title = params['title'] || 'Missing Field Name...';
         this._createInputs(title);
-        this._updateAssetEntity(this._lastValue);
+        this._updateAsset(this._lastValue);
     }
 
     _createInputs(title) {
         this._addTitle(title);
         this._buttonsSpan = new Span({ height: 0.03, width: 0.17 });
-        this._assetEntitySelection = createWideButton('');
-        this._assetEntitySelection.textComponent.fontSize = 0.017;
-        this._assetEntitySelection.height = 0.03;
-        this._assetEntitySelection.width = 0.13;
+        this._assetSelection = createWideButton('');
+        this._assetSelection.textComponent.fontSize = 0.017;
+        this._assetSelection.height = 0.03;
+        this._assetSelection.width = 0.13;
         this._editButton = createSmallButton(Textures.pencilIcon);
         this._editButton.marginLeft = 0.01;
         this._editButton.height = 0.03;
         this._editButton.width = 0.03;
-        this._buttonsSpan.add(this._assetEntitySelection);
+        this._buttonsSpan.add(this._assetSelection);
         this._buttonsSpan.add(this._editButton);
-        this._updateAssetEntity();
+        this._updateAsset();
         this.add(this._buttonsSpan);
-        this._assetEntitySelection.onClickAndTouch = () => {
+        this._assetSelection.onClickAndTouch = () => {
             let assets = ProjectHandler.getAssets();
             let filteredAssets = {};
             filteredAssets["null\n"] = { Name: "Blank" };
@@ -55,12 +53,10 @@ class AssetEntityField extends MenuField {
                 if(this._exclude == assetId) continue;
                 let asset = assets[assetId];
                 if(asset instanceof InternalAssetEntity) continue;
-                if(asset instanceof AssetEntity) {
-                    if((asset.isPrivate || asset.constructor.isPrivate)
-                        && !this._privateIds.has(assetId)) continue;
-                    if(this._filter && !this._filter(asset)) continue;
-                    filteredAssets[assetId] = { Name: asset.name };
-                }
+                if((asset.isPrivate || asset.constructor.isPrivate)
+                    && !this._privateIds.has(assetId)) continue;
+                if(this._filter && !this._filter(asset)) continue;
+                filteredAssets[assetId] = { Name: asset.name };
             }
             let page = global.menuController.getPage(MenuPages.ASSET_SELECT);
             page.setContent(filteredAssets, (assetId) => {
@@ -71,11 +67,11 @@ class AssetEntityField extends MenuField {
         };
         this._editButton.onClickAndTouch = () => {
             if(!this._lastValue) return;
-            let assetEntity = ProjectHandler.getAsset(this._lastValue);
-            if(!assetEntity) return;
-            let assetType = assetEntity.constructor.assetType;
+            let asset = ProjectHandler.getAsset(this._lastValue);
+            if(!asset) return;
+            let assetType = asset.constructor.assetType;
             let page = global.menuController.getPage(assetType);
-            page.setAsset(assetEntity);
+            page.setAsset(asset);
             global.menuController.pushPage(assetType);
         };
     }
@@ -86,20 +82,20 @@ class AssetEntityField extends MenuField {
         }
         if(this._lastValue != assetId) {
             if(this._onUpdate) this._onUpdate(assetId);
-            this._updateAssetEntity(assetId);
+            this._updateAsset(assetId);
         }
         global.menuController.back();
     }
 
-    _updateAssetEntity(assetId) {
+    _updateAsset(assetId) {
         this._lastValue = assetId;
-        let assetEntity = ProjectHandler.getAsset(this._lastValue);
-        let assetEntityName = assetEntity
-            ? assetEntity.name
+        let asset = ProjectHandler.getAsset(this._lastValue);
+        let assetName = asset
+            ? asset.name
             : Scene.id == this._lastValue ? 'Scene' : " ";
-        assetEntityName = stringWithMaxLength(assetEntityName, 16);
-        this._assetEntitySelection.textComponent.text = assetEntityName;
-        if(assetEntity) {
+        assetName = stringWithMaxLength(assetName, 16);
+        this._assetSelection.textComponent.text = assetName;
+        if(asset) {
             this._buttonsSpan.add(this._editButton);
         } else {
             this._buttonsSpan.remove(this._editButton);
@@ -108,9 +104,9 @@ class AssetEntityField extends MenuField {
 
     updateFromSource() {
         if(!this._getFromSource) return;
-        let assetEntity = this._getFromSource();
-        if(this._lastValue != assetEntity) this._updateAssetEntity(assetEntity);
+        let asset = this._getFromSource();
+        if(this._lastValue != asset) this._updateAsset(asset);
     }
 }
 
-export default AssetEntityField;
+export default AssetField;

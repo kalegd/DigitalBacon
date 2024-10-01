@@ -6,7 +6,6 @@
 
 import global from '/scripts/core/global.js';
 import MenuPages from '/scripts/core/enums/MenuPages.js';
-import OrbitDisablingPointerInteractable from '/scripts/core/interactables/OrbitDisablingPointerInteractable.js';
 import MenuField from '/scripts/core/menu/input/MenuField.js';
 import { createWideButton } from '/scripts/core/helpers/DigitalBaconUIHelper.js';
 
@@ -37,13 +36,6 @@ class AssetSetField extends MenuField {
                 this._onAdd, this._onRemove);
             global.menuController.pushPage(MenuPages.ASSET_SET);
         };
-    }
-
-    _handleSelection(option) {
-        if(this._lastValue != option) {
-            if(this._onUpdate) this._onUpdate(option);
-            this._lastValue = option;
-        }
     }
 
     updateFromSource() {

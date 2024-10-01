@@ -23,7 +23,7 @@ import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactor
 import { InteractableStates } from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
-const { AssetEntityField, CheckboxField, EulerField, NumberField, Vector3Field } = EditorHelper.FieldTypes;
+const { AssetField, CheckboxField, EulerField, NumberField, Vector3Field } = EditorHelper.FieldTypes;
 const OBJECT_TRANSFORM_PARAMS = ['position', 'rotation', 'scale'];
 const TRANSFORM_PUBLISH_FUNCTIONS = {
     position: 'publishPosition',
@@ -35,6 +35,9 @@ const TRS_HANDLERS = [
     { handler: RotateHandler, tool: InteractionTools.ROTATE },
     { handler: ScaleHandler, tool: InteractionTools.SCALE },
 ];
+const assetFieldFilter = (asset) => {
+    return asset instanceof AssetEntity;
+};
 
 export default class AssetEntityHelper extends EditorHelper {
     constructor(asset, updatedTopic) {
@@ -444,7 +447,7 @@ export default class AssetEntityHelper extends EditorHelper {
 
     static fields = [
         { "parameter": "parentId", "name": "Parent", "includeScene": true,
-            "type": AssetEntityField },
+            "filter": assetFieldFilter, "type": AssetField },
         { "parameter": "position", "name": "Position", "type": Vector3Field },
         { "parameter": "rotation", "name": "Rotation", "type": EulerField },
         { "parameter": "scale", "name": "Scale", "type": Vector3Field },
