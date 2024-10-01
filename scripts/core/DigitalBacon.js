@@ -33,6 +33,10 @@ function getDeviceType() {
     return global.deviceType;
 }
 
+function getMenuController() {
+    return global.menuController;
+}
+
 function getRenderer() {
     return global.renderer;
 }
@@ -66,6 +70,7 @@ if(window != null) {
         UserController: UserController,
         getCamera: getCamera,
         getDeviceType: getDeviceType,
+        getMenuController: getMenuController,
         getRenderer: getRenderer,
         isEditor: isEditor,
         isImmersionDisabled: isImmersionDisabled,
@@ -92,6 +97,7 @@ export { THREE };
 export { UserController };
 export { getCamera };
 export { getDeviceType };
+export { getMenuController };
 export { getRenderer };
 export { isEditor };
 export { isImmersionDisabled };
