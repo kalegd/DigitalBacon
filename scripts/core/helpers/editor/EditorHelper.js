@@ -298,8 +298,11 @@ export default class EditorHelper {
     }
 
     _createStandardField(field) {
-        if(field.type.name in INPUT_TYPE_TO_CREATE_FUNCTION) {
-            return this[INPUT_TYPE_TO_CREATE_FUNCTION[field.type.name]](field);
+        let type = typeof field.type == 'string'
+            ? field.type
+            : field.type.name;
+        if(type in INPUT_TYPE_TO_CREATE_FUNCTION) {
+            return this[INPUT_TYPE_TO_CREATE_FUNCTION[type]](field);
         }
     }
 
