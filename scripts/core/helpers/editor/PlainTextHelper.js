@@ -23,6 +23,7 @@ export default class PlainTextHelper extends TextAssetHelper {
             "type": NumberField },
         "fontColor",
         "textAlign",
+        "parentId",
         "position",
         "rotation",
         "scale",

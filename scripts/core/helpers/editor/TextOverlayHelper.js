@@ -36,6 +36,7 @@ export default class TextOverlayHelper extends TextAssetHelper {
             "map": { "Start": "start", "Center": "center", "End": "end" },
             "type": EnumField },
         "textAlign",
+        "parentId",
         "position",
         "rotation",
         "scale",
