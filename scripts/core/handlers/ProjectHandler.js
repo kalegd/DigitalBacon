@@ -178,7 +178,7 @@ class ProjectHandler {
                 pendingAssets[id].handler.loadAsset(pendingAssets[id].params,
                     isDiff);
                 for(let dependencyId of pendingAssets[id].dependedOnBy) {
-                    pendingAssets[dependencyId].dependsOn.delete(id);
+                    pendingAssets[dependencyId]?.dependsOn?.delete?.(id);
                 }
                 delete pendingAssets[id];
                 loadedSomething = true;
@@ -187,8 +187,8 @@ class ProjectHandler {
                 let pendingAsset = pendingAssets[maxDependedOnByAssetId];
                 this._loadAssetWithoutDependencies(pendingAsset, isDiff);
                 for(let dependencyId of pendingAsset.dependedOnBy) {
-                    pendingAssets[dependencyId].dependsOn
-                        .delete(maxDependedOnByAssetId);
+                    pendingAssets[dependencyId]?.dependsOn
+                        ?.delete?.(maxDependedOnByAssetId);
                 }
                 assetsPendingUpdates[maxDependedOnByAssetId] = pendingAsset;
                 delete pendingAssets[maxDependedOnByAssetId];
