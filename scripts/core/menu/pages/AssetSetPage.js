@@ -23,6 +23,7 @@ class AssetSetPage extends PaginatedListPage {
         this._items = [];
         this._addPageContent();
         this._createAddButton();
+        this._assetStack = [];
     }
 
     _addPageContent() {
@@ -102,7 +103,8 @@ class AssetSetPage extends PaginatedListPage {
         this._items = this._getAssets(this._getAssetSet());
     }
 
-    setContent(title, getAssetSet, options, newOptions, onAdd, onRemove) {
+    setContent(title, getAssetSet, options, newOptions, onAdd, onRemove,
+            ignoreStackPush) {
         this._titleBlock.text = title;
         this._getAssetSet = getAssetSet
             ? () => Array.from(getAssetSet())
@@ -113,6 +115,8 @@ class AssetSetPage extends PaginatedListPage {
         this._onRemove = onRemove;
         this._items = this._getAssets(this._getAssetSet());
         this._page = 0;
+        if(!ignoreStackPush) this._assetStack.push([title, getAssetSet, options,
+            newOptions, onAdd, onRemove]);
     }
 
     _getAssets(assetIds) {
@@ -128,11 +132,23 @@ class AssetSetPage extends PaginatedListPage {
         PubSub.subscribe(this._id, PubSubTopics.PROJECT_LOADING, (done) => {
             if(!done) return;
             this._controller.setPage(MenuPages.NAVIGATION);
+            this._assetStack = [];
         });
     }
 
     _removeSubscriptions() {
         PubSub.unsubscribe(this._id, PubSubTopics.PROJECT_LOADING);
+    }
+
+    back() {
+        this._assetStack.pop();
+        if(this._assetStack.length) {
+            this.setContent(...this._assetStack[this._assetStack.length - 1],
+                true);
+        } else {
+            this._removeSubscriptions();
+        }
+        super.back();
     }
 
     _onAdded() {
