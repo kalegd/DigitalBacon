@@ -86,7 +86,7 @@ export default class EditorHelper {
     }
 
     _parameterValuesEqual(value1, value2) {
-        if(Array.isArray(value1) || Array.isArray(value2)) {
+        if(Array.isArray(value1) && Array.isArray(value2)) {
             return value1.reduce((a, v, i) => a && value2[i] == v, true);
         } else {
             return value1 == value2;
