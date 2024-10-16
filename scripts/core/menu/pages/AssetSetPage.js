@@ -44,6 +44,8 @@ class AssetSetPage extends PaginatedListPage {
                 for(let assetId of this._options) {
                     let asset = ProjectHandler.getAsset(assetId);
                     if(!asset) continue;
+                    if(asset.constructor.assetType == AssetTypes.INTERNAL)
+                        continue;
                     hasOptions = true;
                     assets[assetId] = { Name: asset.name };
                 }

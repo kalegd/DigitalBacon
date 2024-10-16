@@ -30,6 +30,7 @@ export default class VideoAsset extends PlayableMediaAsset {
         let videoUrl = LibraryHandler.getUrl(assetId);
         if(!videoUrl) return;
         this._media = document.createElement('video');
+        this._media.playsInline = true;
         this._media.onloadedmetadata = () => {
             let texture = new THREE.VideoTexture(this._media);
             texture.colorSpace = THREE.SRGBColorSpace;
@@ -51,6 +52,10 @@ export default class VideoAsset extends PlayableMediaAsset {
         this._media.crossOrigin = "anonymous";
         this._media.src = videoUrl;
         this._media.loop = this._loop;
+        if(global.immersionDisabled && this._autoplay) {
+            this._media.muted = true;
+            this._media.play();
+        }
         this._updateBVH();
     }
 
