@@ -16,6 +16,7 @@ import PubSub from '/scripts/core/handlers/PubSub.js';
 import { defaultImageSize } from '/scripts/core/helpers/constants.js';
 import { blobToHash, buildBVH, uuidv4 } from '/scripts/core/helpers/utils.module.js';
 import * as THREE from 'three';
+import { DRACOLoader } from '/node_modules/three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 
@@ -301,6 +302,9 @@ class LibraryHandler {
         return new Promise((resolve, reject) => {
             let objectURL = URL.createObjectURL(blob);
             let gltfLoader = new GLTFLoader();
+            let dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/');
+            gltfLoader.setDRACOLoader(dracoLoader);
             gltfLoader.load(objectURL, (gltf) => {
                 this.library[assetId]['Mesh'] = gltf.scene;
                 this.library[assetId]['Animations'] = gltf.animations;

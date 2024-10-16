@@ -138,7 +138,7 @@ export const Colors = {
 
 export const FontSizes = {
     "header": 0.03,
-    "body": 0.02,
+    "body": 0.019,
 };
 
 let titleStyle = new Style({

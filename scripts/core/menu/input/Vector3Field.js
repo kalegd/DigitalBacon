@@ -90,7 +90,7 @@ class Vector3Field extends MenuField {
 
     updateFromSource() {
         if(!this._getFromSource) return;
-        let value = this._getFromSource();
+        let value = this._getFromSource() || this._lastValue;
         if(value[0] != this._lastValue[0] || value[1] != this._lastValue[1]
                 || value[2] != this._lastValue[2]) {
             this._lastValue = value;

@@ -21,7 +21,8 @@ import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
 import * as DigitalBaconUI from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
-const version = "0.3.7";
+const version = "0.3.8";
+const dynamicAssets = global.dynamicAssets;
 
 global.version = version;
 
@@ -31,6 +32,10 @@ function getCamera() {
 
 function getDeviceType() {
     return global.deviceType;
+}
+
+function getMenuController() {
+    return global.menuController;
 }
 
 function getRenderer() {
@@ -64,8 +69,10 @@ if(window != null) {
         SettingsHandler: SettingsHandler,
         THREE: THREE,
         UserController: UserController,
+        dynamicAssets: dynamicAssets,
         getCamera: getCamera,
         getDeviceType: getDeviceType,
+        getMenuController: getMenuController,
         getRenderer: getRenderer,
         isEditor: isEditor,
         isImmersionDisabled: isImmersionDisabled,
@@ -90,8 +97,10 @@ export { Scene };
 export { SettingsHandler };
 export { THREE };
 export { UserController };
+export { dynamicAssets };
 export { getCamera };
 export { getDeviceType };
+export { getMenuController };
 export { getRenderer };
 export { isEditor };
 export { isImmersionDisabled };

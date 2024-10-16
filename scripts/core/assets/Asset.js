@@ -30,15 +30,11 @@ export default class Asset {
     }
 
     exportParams() {
-        let componentIds = [];
-        for(let component of this._components) {
-            componentIds.push(component.id);
-        }
         return {
             "id": this._id,
             "name": this._name,
             "assetId": this._assetId,
-            "components": componentIds,
+            "components": this.components,
             "isPrivate": this._isPrivate,
         };
     }

@@ -10,9 +10,10 @@ import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
 import PubSub from '/scripts/core/handlers/PubSub.js';
 import UndoRedoHandler from '/scripts/core/handlers/UndoRedoHandler.js';
 import EditorHelperFactory from '/scripts/core/helpers/editor/EditorHelperFactory.js';
-import AssetEntityField from '/scripts/core/menu/input/AssetEntityField.js';
+import AssetField from '/scripts/core/menu/input/AssetField.js';
 import AssetSetField from '/scripts/core/menu/input/AssetSetField.js';
 import AudioField from '/scripts/core/menu/input/AudioField.js';
+import ButtonField from '/scripts/core/menu/input/ButtonField.js';
 import CheckboxField from '/scripts/core/menu/input/CheckboxField.js';
 import ColorField from '/scripts/core/menu/input/ColorField.js';
 import CubeImageField from '/scripts/core/menu/input/CubeImageField.js';
@@ -27,9 +28,10 @@ import Vector2Field from '/scripts/core/menu/input/Vector2Field.js';
 import Vector3Field from '/scripts/core/menu/input/Vector3Field.js';
 
 const INPUT_TYPE_TO_CREATE_FUNCTION = {
-    AssetEntityField: "_createAssetEntityField",
+    AssetField: "_createAssetField",
     AssetSetField: "_createAssetSetField",
     AudioField: "_createAudioField",
+    ButtonField: "_createButtonField",
     CheckboxField: "_createCheckboxField",
     ColorField: "_createColorField",
     CubeImageField: "_createCubeImageField",
@@ -84,7 +86,7 @@ export default class EditorHelper {
     }
 
     _parameterValuesEqual(value1, value2) {
-        if(Array.isArray(value1) || Array.isArray(value2)) {
+        if(Array.isArray(value1) && Array.isArray(value2)) {
             return value1.reduce((a, v, i) => a && value2[i] == v, true);
         } else {
             return value1 == value2;
@@ -296,13 +298,16 @@ export default class EditorHelper {
     }
 
     _createStandardField(field) {
-        if(field.type.name in INPUT_TYPE_TO_CREATE_FUNCTION) {
-            return this[INPUT_TYPE_TO_CREATE_FUNCTION[field.type.name]](field);
+        let type = typeof field.type == 'string'
+            ? field.type
+            : field.type.name;
+        if(type in INPUT_TYPE_TO_CREATE_FUNCTION) {
+            return this[INPUT_TYPE_TO_CREATE_FUNCTION[type]](field);
         }
     }
 
-    _createAssetEntityField(field) {
-        return new AssetEntityField({
+    _createAssetField(field) {
+        return new AssetField({
             'title': field.name,
             'exclude': field.includeSelf ? null : this._id,
             'filter': typeof field.filter == 'function' ? field.filter : null,
@@ -343,6 +348,16 @@ export default class EditorHelper {
             'getFromSource': () => this._asset[field.parameter],
             'onUpdate': (newValue) => {
                 this._updateParameter(field.parameter, newValue);
+            },
+        });
+    }
+
+    _createButtonField(field) {
+        return new ButtonField({
+            'title': field.name,
+            'onClick': () => {
+                if(typeof this[field.parameter] == 'function')
+                    this[field.parameter]();
             },
         });
     }
@@ -518,9 +533,10 @@ export default class EditorHelper {
     }
 
     static FieldTypes = {
-        AssetEntityField: AssetEntityField,
+        AssetField: AssetField,
         AssetSetField: AssetSetField,
         AudioField: AudioField,
+        ButtonField: ButtonField,
         CheckboxField: CheckboxField,
         ColorField: ColorField,
         CubeImageField: CubeImageField,
