@@ -199,13 +199,14 @@ export const concatenateArrayBuffersFromList = (buffers) => {
 
 export const typedArrayToArray = (typedArray) => [].slice.call(typedArray);
 
-export const storeStringValuesInSet = (object, set) => {
+export const storeStringValuesInSet = (object, set, ignoreId) => {
     if(typeof object != 'object') return;
     for(let key in object) {
+        if(ignoreId && key == 'id') continue;
         let value = object[key];
         (typeof value == 'string')
             ? set.add(value)
-            : storeStringValuesInSet(value, set);
+            : storeStringValuesInSet(value, set, ignoreId);
     }
 };
 

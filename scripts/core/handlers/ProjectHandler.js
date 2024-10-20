@@ -315,15 +315,16 @@ class ProjectHandler {
 
     addAssetFromHandler(asset) {
         let id = asset.id;
-        if(asset.onAddToProject) asset.onAddToProject();
         if('object' in asset) {
             if(asset.parent) asset.parent.object.add(asset.object);
             this._objects.push(asset.object);
         }
-        if(this._assets[id]) return; //Prevent multi-user collisions
-                                              //caused by undo/redo
-        this._assets[id] = asset;
-        this._sessionAssets[id] = asset;
+        //Avoid multi-user collisions caused by undo/redo
+        if(!this._assets[id]) {
+            this._assets[id] = asset;
+            this._sessionAssets[id] = asset;
+        }
+        if(asset.onAddToProject) asset.onAddToProject();
     }
 
     reset() {
@@ -382,9 +383,20 @@ class ProjectHandler {
             projectDetails[type.toLowerCase() + 's'] = details;
         }
 
-        storeStringValuesInSet(projectDetails, values);
-        if(skipInternals)
+        storeStringValuesInSet(projectDetails, values, true);
+        if(skipInternals) {
             assetIds = assetIds.filter((assetId) => values.has(assetId));
+            //Clear out unused private assets as users can't typically delete
+            //those themselves
+            for(let type in this._assetHandlers) {
+                if(type == AssetTypes.INTERNAL) continue;
+                let assets = projectDetails[type.toLowerCase() + 's'];
+                for(let assetId in assets) {
+                    assets[assetId] = assets[assetId].filter(
+                        (asset) => !asset.isPrivate || values.has(asset.id));
+                }
+            }
+        }
         projectDetails['library'] = LibraryHandler.getLibraryDetails(
             assetIds);
         return projectDetails;

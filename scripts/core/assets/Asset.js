@@ -18,7 +18,8 @@ export default class Asset {
             ? params['name']
             : this._getDefaultName();
         this._components = new Set();
-        this._isPrivate = params['isPrivate'] || false;
+        this._isPrivate = params['isPrivate']
+            || this.constructor.isPrivate == true;
         if(params['components']) {
             params['components'].forEach((id) => this.addComponent(id));
         }

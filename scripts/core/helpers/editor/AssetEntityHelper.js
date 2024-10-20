@@ -352,7 +352,11 @@ export default class AssetEntityHelper extends EditorHelper {
     }
 
     _overwriteAssetFunctions() {
-        this._asset.onAddToProject = () => this.onAddToProject();
+        this._asset._onAddToProject = this._asset.onAddToProject;
+        this._asset.onAddToProject = () => {
+            if(this._asset._onAddToProject) this._asset._onAddToProject();
+            this.onAddToProject();
+        };
         this._asset._onRemoveFromProject = this._asset.onRemoveFromProject;
         this._asset.onRemoveFromProject = () => {
             this._asset._onRemoveFromProject();
