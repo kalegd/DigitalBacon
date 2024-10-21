@@ -300,7 +300,7 @@ export default class AssetEntityHelper extends EditorHelper {
                 let newValue = newValues[param];
                 if(oldValue.reduce((a,v,i) => a && newValue[i] == v, true))
                     continue;
-                this._object[param].fromArray(newValue);
+                this._asset[param] = newValue;
                 this.updateMenuField(param);
                 updated.push(param);
             }
