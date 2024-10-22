@@ -378,7 +378,7 @@ class ProjectHandler {
         for(let type in this._assetHandlers) {
             if(skipInternals && type == AssetTypes.INTERNAL) continue;
             let handler = this._assetHandlers[type];
-            let details = handler.getAssetsDetails();
+            let details = handler.getAssetsDetails(skipInternals);
             if(!details) continue;
             projectDetails[type.toLowerCase() + 's'] = details;
         }

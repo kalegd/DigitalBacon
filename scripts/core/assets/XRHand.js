@@ -98,8 +98,10 @@ export default class XRHand extends XRDevice {
         xrHand.getWorldPosition(this._raycasterOrigin);
         xrHand.getWorldDirection(this._raycasterDirection).negate()
             .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
+        let raycaster = new Raycaster(this._raycasterOrigin,
+            this._raycasterDirection, 0.01, 50);
+        raycaster.layers.mask = global.camera.layers.mask;
+        return raycaster;
     }
 
     getPalmDirection() {

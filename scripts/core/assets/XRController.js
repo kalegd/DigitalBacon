@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import XRDevice from '/scripts/core/assets/XRDevice.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -70,8 +71,10 @@ export default class XRController extends XRDevice {
         xrController.getWorldPosition(this._raycasterOrigin);
         xrController.getWorldDirection(this._raycasterDirection).negate()
             .normalize();
-        return new Raycaster(this._raycasterOrigin, this._raycasterDirection,
-            0.01, 50);
+        let raycaster = new Raycaster(this._raycasterOrigin,
+            this._raycasterDirection, 0.01, 50);
+        raycaster.layers.mask = global.camera.layers.mask;
+        return raycaster;
     }
 
     isButtonPressed(index) {

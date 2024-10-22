@@ -135,10 +135,11 @@ export default class AssetsHandler {
         }
     }
 
-    getAssetsDetails() {
+    getAssetsDetails(skipEphemerals) {
         let assetsDetails = {};
         for(let id in this._assets) {
             let asset = this._assets[id];
+            if(skipEphemerals && asset.constructor.isEphemeral) continue;
             let assetId = asset.assetId;
             let params = asset.exportParams();
             if(!(assetId in assetsDetails)) assetsDetails[assetId] = [];
