@@ -62,7 +62,7 @@ class NewAssetPage extends PaginatedButtonsPage {
             return;
         }
         let params;
-        if(this._assetType in AssetEntityTypes) {
+        if(this._assetType == null || this._assetType in AssetEntityTypes) {
             params = this._getNewEntityParams();
             params['assetId'] = item.assetId;
         }
