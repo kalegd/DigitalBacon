@@ -12,7 +12,7 @@ import { fullDispose } from '/scripts/core/helpers/utils.module.js';
 import { GLTFLoader } from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 
-const DEFAULT_URL = 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+const DEFAULT_URL = 'https://cdn.jsdelivr.net/npm/digitalbacon@0.3.9/models/default_avatar.glb';
   
 export default class Avatar extends InternalAssetEntity {
     constructor(params = {}) {

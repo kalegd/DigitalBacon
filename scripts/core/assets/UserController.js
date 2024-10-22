@@ -36,7 +36,7 @@ class UserController extends InternalAssetEntity {
         this._username = localStorage.getItem(USERNAME_KEY)
             || generateRandomUsername();
         this._avatarUrl = localStorage.getItem(AVATAR_KEY)
-            || 'https://d1a370nemizbjq.cloudfront.net/6a141c79-d6e5-4b0d-aa0d-524a8b9b54a4.glb';
+            || 'https://cdn.jsdelivr.net/npm/digitalbacon@0.3.9/models/default_avatar.glb';
         this._avatarFadeUpdateNumber = 0;
         this._xrControllers = {};
         this._xrHands = {};
