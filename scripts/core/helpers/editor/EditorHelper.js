@@ -478,7 +478,7 @@ export default class EditorHelper {
                 this._updateParameter(field.parameter, newValue, false, false,
                     oldValue);
             },
-            'onUpdate': (newValue) => {
+            'onUpdate': (field.onlyUpdateOnBlur) ? null : (newValue) => {
                 this._updateParameter(field.parameter, newValue, false, true);
             },
         });
