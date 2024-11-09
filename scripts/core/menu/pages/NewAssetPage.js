@@ -221,7 +221,8 @@ class NewAssetPage extends PaginatedButtonsPage {
             this._items.push(SPECIAL_OPTIONS.CDN);
             for(let assetId in LibraryHandler.library) {
                 let libraryAsset = LibraryHandler.library[assetId];
-                if(libraryAsset['Type']  == this._assetType) {
+                let isPrivate = libraryAsset['IsPrivate'];
+                if(libraryAsset['Type'] == this._assetType && !isPrivate) {
                     this._items.push({
                         assetId: assetId,
                         assetName: libraryAsset['Name'],
@@ -229,7 +230,8 @@ class NewAssetPage extends PaginatedButtonsPage {
                 }
             }
         } else {
-            this._items =ProjectHandler.getAssetClassesForType(this._assetType);
+            this._items = ProjectHandler.getAssetClassesForType(this._assetType)
+                .filter((assetClass) => !assetClass.isPrivate);
             if(this._assetType == AssetTypes.TEXTURE) return;
             this._items.unshift(SPECIAL_OPTIONS.CDN);
             this._items.unshift(SPECIAL_OPTIONS.DEVICE);
