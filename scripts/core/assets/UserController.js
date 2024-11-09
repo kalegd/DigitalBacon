@@ -66,6 +66,7 @@ class UserController extends InternalAssetEntity {
                 'object': global.camera,
                 'parentId': this._id,
                 'avatarUrl': this._avatarUrl,
+                'isXR': true,
             });
         }
         this._avatar.parent = this;

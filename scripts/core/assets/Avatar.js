@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import global from '/scripts/core/global.js';
 import InternalAssetEntity from '/scripts/core/assets/InternalAssetEntity.js';
 import LibraryHandler from '/scripts/core/handlers/LibraryHandler.js';
 import ProjectHandler from '/scripts/core/handlers/ProjectHandler.js';
@@ -21,6 +22,7 @@ export default class Avatar extends InternalAssetEntity {
         if(params == null) {
             params = {};
         }
+        this._isXR = params['isXR'] == true;
         this._avatarParent = new THREE.Object3D();
         this._avatarUrl = params['avatarUrl'] || DEFAULT_URL;
         this._verticalOffset = params['verticalOffset'] || 0;
@@ -41,13 +43,48 @@ export default class Avatar extends InternalAssetEntity {
                 gltf.scene.rotateY(Math.PI);
                 if(gltf.scene.children[0].name.includes("AvatarRoot")) {
                     let hands = new Set();
+                    let largestZOffset = 0;
+                    let eyeOffset = new THREE.Vector3(0, 0.65, 0);
+                    let skeleton = gltf.scene.children[0].children[1]?.skeleton;
+                    if(skeleton) {
+                        let leftEye = skeleton.getBoneByName('LeftEye');
+                        let rightEye = skeleton.getBoneByName('RightEye');
+                        if(leftEye && rightEye) {
+                            leftEye.getWorldPosition(vector3s[0]);
+                            rightEye.getWorldPosition(vector3s[1]);
+                            eyeOffset.copy(vector3s[0]).add(vector3s[1])
+                                .divideScalar(2);
+                            eyeOffset.x = 0;
+                            if(!this._isXR) eyeOffset.z = 0;
+                        }
+                    }
                     gltf.scene.traverse((child) => {
                         if(child.name.toLowerCase().includes("hand")) {
                             hands.add(child);
                         }
+                        if(child instanceof THREE.Mesh && child.geometry) {
+                            let positions = child.geometry.getAttribute(
+                                'position');
+                            for(let i = 0; i < positions.count; i++) {
+                                vector3s[0].fromBufferAttribute(positions, i);
+
+                                if(Math.abs(vector3s[0].y - eyeOffset.y) < 0.1
+                                        && Math.abs(vector3s[0].x) < 0.1
+                                        && largestZOffset < vector3s[0].z) {
+                                    largestZOffset = vector3s[0].z;
+                                }
+                            }
+                        }
                     });
                     hands.forEach((hand) => { hand.parent.remove(hand); });
-                    gltf.scene.position.setY(-0.65);
+                    gltf.scene.position.sub(eyeOffset);
+                    if(this._isXR && this._object == global.camera
+                            && largestZOffset > -eyeOffset.z + 0.1) {
+                        //We don't want any facial accessories like glasses or
+                        //visors blocking our view
+                        global.camera.near = largestZOffset + eyeOffset.z;
+                        global.camera.updateProjectionMatrix();
+                    }
                 }
                 this._avatarParent.add(gltf.scene);
                 this._saveOriginalTransparencyStates();
@@ -191,9 +228,11 @@ export default class Avatar extends InternalAssetEntity {
     }
 
     get avatarUrl() { return this._avatarUrl; }
+    get isXR() { return this._isXR; }
     get verticalOffset() { return this._verticalOffset; }
 
     set avatarUrl(avatarUrl) { this.updateSourceUrl(avatarUrl); }
+    set isXR(isXR) { this._isXR = isXR; }
     set verticalOffset(verticalOffset) {
         this._verticalOffset = verticalOffset;
         this._object.position.setY(verticalOffset);
@@ -214,6 +253,7 @@ export default class Avatar extends InternalAssetEntity {
     exportParams() {
         let params = super.exportParams();
         params['avatarUrl'] = this._avatarUrl;
+        params['isXR'] = this._isXR;
         params['verticalOffset'] = this._verticalOffset;
         return params;
     }
