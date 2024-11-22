@@ -46,11 +46,11 @@ class DynamicFieldsPage extends MenuPage {
     }
 
     _createPreviousAndNextButtons() {
-        this._previousButtonParent = new Div();
+        this._previousButtonParent = new Div({ width: 0.04 });
         this._previousButton = createSmallButton('<');
         this._previousButton.onClickAndTouch = () => this._loadPrevPage();
         this._previousButtonParent.add(this._previousButton);
-        this._nextButtonParent = new Div();
+        this._nextButtonParent = new Div({ width: 0.04 });
         this._nextButton = createSmallButton('>');
         this._nextButton.onClickAndTouch = () => this._loadNextPage();
         this._nextButtonParent.add(this._nextButton);
@@ -96,6 +96,7 @@ class DynamicFieldsPage extends MenuPage {
         let availableHeight = FIELDS_CONTAINER_HEIGHT;
         for(let i = this._firstItemIndex; i < this._fields.length; i++) {
             let field = this._fields[i];
+            if(field.computedHeight == 0) field.updateLayout(true);
             availableHeight -= field.computedHeight;
             //Allow oversized fields if it's the first field
             if(availableHeight >= 0 || i == this._firstItemIndex) {

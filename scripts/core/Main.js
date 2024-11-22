@@ -208,6 +208,9 @@ export default class Main {
                 });
                 global.dynamicAssets.add(
                     DigitalBaconUI.PointerInteractableHandler);
+                global.dynamicAssets.add(DigitalBaconUI.LayoutUpdateHandler);
+                global.dynamicAssets.add(
+                    DigitalBaconUI.InstancedBackgroundManager);
                 if(this._callback) this._callback(this);
                 return;
             } else if(global.deviceType == "XR") {
@@ -241,6 +244,8 @@ export default class Main {
                     DigitalBaconUI.TouchInteractableHandler);
             }
             global.dynamicAssets.add(DigitalBaconUI.UpdateHandler);
+            global.dynamicAssets.add(DigitalBaconUI.LayoutUpdateHandler);
+            global.dynamicAssets.add(DigitalBaconUI.InstancedBackgroundManager);
             if(this._callback) this._callback(this);
         } else {
             this._loadingMessage.children[0].innerHTML = "Loading "

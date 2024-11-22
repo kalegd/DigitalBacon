@@ -70,7 +70,7 @@ class AcknowledgementsPage extends MenuPage {
     }
 
     _createPreviousAndNextButtons() {
-        this._previousButtonParent = new Div();
+        this._previousButtonParent = new Div({ width: 0.04 });
         this._previousButton = createSmallButton('<');
         this._previousButton.onClickAndTouch = () => {
             this._page += this._acknowledgements.length - 1;
@@ -78,7 +78,7 @@ class AcknowledgementsPage extends MenuPage {
             this._setAsset();
         };
         this._previousButtonParent.add(this._previousButton);
-        this._nextButtonParent = new Div();
+        this._nextButtonParent = new Div({ width: 0.04 });
         this._nextButton = createSmallButton('>');
         this._nextButton.onClickAndTouch = () => {
             this._page += 1;
