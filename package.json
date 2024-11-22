@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@rollup/plugin-node-resolve": "^15.3.0",
-    "digitalbacon-ui": "^0.1.9",
+    "digitalbacon-ui": "^0.2.0",
     "file-saver": "2.0.5",
     "jest-environment-jsdom": "^29.7.0",
     "jszip": "3.10.1",
