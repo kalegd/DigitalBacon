@@ -88,7 +88,7 @@ export default class BasicMovement {
     }
 
     enable() {
-        this._enabled = true;
+        this._disabled = false;
     }
 
     getWorldVelocity() {
