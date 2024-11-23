@@ -21,7 +21,7 @@ import * as EditorHelpers from '/scripts/core/helpers/editor/EditorHelpers.js';
 import * as DigitalBaconUI from '/node_modules/digitalbacon-ui/build/DigitalBacon-UI.min.js';
 import * as THREE from 'three';
 
-const version = "0.3.10";
+const version = "0.3.11";
 const dynamicAssets = global.dynamicAssets;
 
 global.version = version;
